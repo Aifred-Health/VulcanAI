@@ -5,6 +5,13 @@ The engine deals with training, evaluating, saving and checkpointing. Most of th
 
 """
 
+
+"""
+
+- Need to adjust learning rate based on the number of epochs
+
+"""
+
 import abc
 
 class Engine(object):

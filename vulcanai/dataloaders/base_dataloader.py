@@ -6,7 +6,7 @@ This class allows us format our data consistently no matter the source
 
 import abc
 
-class DataLoader(object):
+class DataLoader(object): #TODO: I think this should subclass the torch dataset??
 
     __metaclass__ = abc.ABCMeta
 
