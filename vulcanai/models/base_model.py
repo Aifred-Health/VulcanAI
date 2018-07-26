@@ -2,7 +2,6 @@ __author__ = 'Caitrin'
 """
 This file will describe the required components of any model, much as was previously done in the __init__ of net.py
 This closely follows pytorch's torch.nn.module
-Composibility may be an issue.
 Any method can also be extended by calling super, as will very likely be the case with forward - there are some procedures that are necessary for every model
 """
 
