@@ -1,2 +1,6 @@
-__author__ = 'Caitrin'
-#returns the correct object, should never be called elsewhere...
+
+#TODO: figure out how to best store names....
+
+def factory(schedulerName):
+
+    pass

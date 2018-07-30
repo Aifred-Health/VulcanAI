@@ -338,3 +338,13 @@ class CNN(object):
             self.layers.append(layer)
             print('\t\t{}'.format(layer))
             self.input_dim = layer.out_channels
+
+
+    def train(self, epochs, train_loader, test_loader, criterion, optimizer, change_rate=None, use_gpu=False, engine="base"):
+
+        pass
+
+
+        #TODO: I don't think this should actually be here
+
+
