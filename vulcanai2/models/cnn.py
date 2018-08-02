@@ -342,7 +342,7 @@ class CNN(object):
 
     def train(self, epochs, train_loader, test_loader, criterion, optimizer, change_rate=None, use_gpu=False, engine="base"):
 
-        pass
+        engine.train(epochs, t)
 
 
         #TODO: I don't think this should actually be here

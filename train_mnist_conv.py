@@ -23,7 +23,8 @@ num_epochs = int(n_iters / (len(train_dataset) / batch_size))
 
 train_loader = DataLoader(dataset=train_dataset,
                         batch_size=batch_size,
-                        shuffle=True)
+                        shuffle=True,
+                        num_workers=4)
 
 test_loader = DataLoader(dataset=test_dataset,
                         batch_size=batch_size,
@@ -54,7 +55,9 @@ conv_net = cnn(
 
 # # Use to load model from disk
 # # dense_net = Network.load_model('models/20170704194033_3_dense_test.network')
-conv_net.train(
+optimizer = optimizer.
+optimizer = 'adam'
+conv_net.train(,
     network,
     epochs,
     train_loader, #TODO: we probably want to give a ratio to split this for validation.....? maybe we don't always want to do this?
@@ -64,6 +67,11 @@ conv_net.train(
     change_rate=None,
     use_gpu=False
 )
+
+
+conv_net.transform
+conv_net.auc
+
 
 #save record
 #save model
