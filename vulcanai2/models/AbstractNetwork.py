@@ -59,11 +59,8 @@ class AbstractNetwork(nn.module):
             self.criterion = loss.CrossEntropyLoss
 
 
-    @abc.abstractmethod
-    def forward(self): #TODO: uhhhh do you want to define this if it's really self? do you want to subclass nn.module??
-        pass
-
-
+    #TODO: figure out how this works in conjunction with optimizer
+    #TODO: fix the fact that you copy pasted this
     def cuda(self, device_id=None):
         """Moves all model parameters and buffers to the GPU.
         Arguments:
@@ -78,38 +75,14 @@ class AbstractNetwork(nn.module):
         self.is_cuda = False
         return self._apply(lambda t: t.cpu())
 
+    @abc.abstractmethod
+    def forward(self, batch): #TODO: uhhhh do you want to define this if it's really self? do you want to subclass nn.module??
+        pass
+
+    #TODO: deal with the fact that you copied this
     def prepare_batch(self, batch):
         if self.is_cuda:
             batch = self.cuda_tf()(batch)
         if self.mode == 'eval':
             batch = self.detach_tf()(batch)
         return batch
-
-    @abc.abstractmethod
-    def forward(self, batch):
-        batch = self.prepare_batch(batch)
-        net_out = self.network(batch)
-
-        cri_out = {}
-        if self.mode in self.criterions:
-            cri_tmp = self.criterions[self.mode](net_out, batch)
-            if cri_tmp is not None:
-                cri_out = cri_tmp
-
-        met_out = {}
-        if self.mode in self.metrics:
-            met_tmp = self.metrics[self.mode](cri_out, net_out, batch)
-            if met_tmp is not None:
-                met_out = met_tmp
-
-        out = {}
-        if type(net_out) is dict:
-            for key, value in net_out.items():
-                out[key] = value
-        if type(cri_out) is dict:
-            for key, value in cri_out.items():
-                out[key] = value
-        if type(met_out) is dict:
-            for key, value in met_out.items():
-                out[key] = value
-        return out
