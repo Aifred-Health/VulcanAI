@@ -58,6 +58,8 @@ class AbstractNetwork(nn.module):
         elif not criterion:
             self.criterion = loss.CrossEntropyLoss
 
+        self.network = None #TODO: this should be a nn.sequential??
+
 
     #TODO: figure out how this works in conjunction with optimizer
     #TODO: fix the fact that you copy pasted this
