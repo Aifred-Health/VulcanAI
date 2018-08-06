@@ -6,8 +6,9 @@ import datetime
 import torch.nn.modules.activation as activations #TODO: want to call it activation but namespace, so what to do best?
 from torch import optim
 import torch.nn.modules.loss as loss
+from layers import * #TODO: blarg
 
-class AbstractNetwork(nn.module):
+class AbstractNetwork():
 
     #TODO: this should be the same for every model, given that you pass a config??
     #TODO: come up with an alternate way to validate config
@@ -58,7 +59,11 @@ class AbstractNetwork(nn.module):
         elif not criterion:
             self.criterion = loss.CrossEntropyLoss
 
-        self.network = None #TODO: this should be a nn.sequential??
+        self.network = nn.Sequential()
+        self.create_network()
+
+
+    #TODO: define setters for everything and call those... although I really don't care about making things private?
 
 
     #TODO: figure out how this works in conjunction with optimizer
@@ -77,14 +82,51 @@ class AbstractNetwork(nn.module):
         self.is_cuda = False
         return self._apply(lambda t: t.cpu())
 
+    #TODO: I think this needs to take into account passing through networks
     @abc.abstractmethod
-    def forward(self, batch): #TODO: uhhhh do you want to define this if it's really self? do you want to subclass nn.module??
+    def create_network(self):
         pass
 
     #TODO: deal with the fact that you copied this
+    #TODO: figure out if you really need this?
     def prepare_batch(self, batch):
         if self.is_cuda:
             batch = self.cuda_tf()(batch)
         if self.mode == 'eval':
             batch = self.detach_tf()(batch)
         return batch
+
+    def get_all_layers(self):
+        layers = []
+        for l_name, l in self.input_network['network'].network.named_children():
+            if isinstance(l, nn.Sequential):
+                for subl_name, subl in l.named_children():
+                    layers.append(subl)
+            else:
+                for param in l.parameters():
+                    self.input_dimensions= param.size(0)
+
+
+
+    def create_classification_layer(self, num_classes,
+                                    nonlinearity):
+        """
+        Create a classification layer. Normally used as the last layer.
+        Args:
+            network: network you want to append a classification to
+            num_classes: how many classes you want to predict
+            nonlinearity: nonlinearity to use as a string (see DenseLayer)
+        Returns: the classification layer appended to all previous layers
+        """
+        print('\tOutput Layer:')
+        layer_name ="classification_layer"
+        layer = DenseUnit(
+                          in_channels=self.input_dim,
+                          out_channels=num_classes,
+                          bias=True,
+                          activation=nonlinearity,
+                          norm=None)
+        self.network.add_module(layer_name, layer)
+        self.layers.append(layer)
+        print('\t\t{}'.format(layer))
+
