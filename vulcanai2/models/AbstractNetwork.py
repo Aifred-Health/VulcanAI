@@ -6,7 +6,7 @@ import datetime
 import torch.nn.modules.activation as activations #TODO: want to call it activation but namespace, so what to do best?
 from torch import optim
 import torch.nn.modules.loss as loss
-from layers import * #TODO: blarg
+from .Layers import * #TODO: blarg
 
 class AbstractNetwork():
 
@@ -129,4 +129,3 @@ class AbstractNetwork():
         self.network.add_module(layer_name, layer)
         self.layers.append(layer)
         print('\t\t{}'.format(layer))
-

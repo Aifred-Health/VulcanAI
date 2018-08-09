@@ -6,7 +6,7 @@ from torch.autograd import Variable
 from datetime import datetime
 import time
 from tqdm import tqdm
-from callbacks import CallbackContainer, History, TQDM
+from .Callbacks import CallbackContainer, History, TQDM
 
 class AbstractNetworkTrainer():
 

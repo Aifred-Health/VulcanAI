@@ -1,9 +1,9 @@
 __author__ = 'Caitrin'
 import torch.nn as nn
 import torch.nn.functional as F
-from AbstractNetwork import AbstractNetwork
+from .AbstractNetwork import AbstractNetwork
 import jsonschema
-import schemas
+
 
 class CNN(AbstractNetwork):
     """Class to generate networks and train them."""
@@ -97,4 +97,3 @@ class CNN(AbstractNetwork):
             self.layers.append(layer)
             print('\t\t{}'.format(layer))
             self.input_dim = layer.out_channels
-
