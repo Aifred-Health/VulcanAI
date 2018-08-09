@@ -8,7 +8,7 @@ import schemas
 
 class DNN(AbstractNetwork):
     """Class to generate networks and train them."""
-    def __init__(self):
+    def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None, activation=activations.Softmax, pred_activation=activations.Softmax, optimizer=optim.Adam, learning_rate=0.001, lr_scheduler=None, stopping_rule='best_validation_error', criterion=None):
         pass #TODO: use super init, but with **kwargs?
 
 

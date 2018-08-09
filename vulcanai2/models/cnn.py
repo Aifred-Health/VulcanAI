@@ -1,44 +1,32 @@
 __author__ = 'Caitrin'
 import torch.nn as nn
-import torch.nn.functional as F
-from AbstractNetwork import AbstractNetwork
-import jsonschema
-import schemas
+import BaseNetwork
 
-class CNN(AbstractNetwork):
-    """Class to generate networks and train them."""
-    def __init__(self):
-        pass #TODO: use super init, but with **kwargs?
+#TODO: use setters to enforce types/formats/values!
+#TODO: make this a base class?
+class CNNConfig():
+    def __init__(self, mode, filters, filter_size, stride, pool):
+        self.mode = mode
+        self.filters = filters
+        self.filter_size = filter_size
+        self.stride = stride
+        self.pool = pool
 
+#Where config is of type CNNConfig?
+class CNN(BaseNetwork):
+    def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None, activation=activations.Softmax, pred_activation=activations.Softmax, optimizer=optim.Adam, learning_rate=0.001, lr_scheduler=None, stopping_rule='best_validation_error', criterion=None):
+        super().__init__(name, dimensions, config, save_path, input_network, num_classes, activation, pred_activation, optimizer, learning_rate, lr_scheduler, stopping_rule, criterion)
 
     def create_network(self, config, nonlinearity):
 
-        jsonschema.validate(config, schemas.conv_network)
+        self._network = nn.sequential()
 
-        self.create_conv_network(
-            filters=config.get('filters'),
-            filter_size=config.get('filter_size'),
-            stride=config.get('stride'),
-            pool_mode=config['pool'].get('mode'),
-            pool_stride=config['pool'].get('stride'),
-            nonlinearity=nonlinearity
-        )
+        filters=config.filters
+        filter_size=config.filter_size
+        stride=config.stride
+        pool_mode=config.pool["mode"]
+        pool_stride=config.pool["stride"]
 
-
-    #TODO: don't think you have the final classification layer here?
-    def create_conv_network(self, filters, filter_size, stride,
-                            pool_mode, pool_stride, nonlinearity):
-        """
-        Create a convolutional network (1D, 2D, or 3D).
-        Args:
-            filters: list of int. number of kernels per layer
-            filter_size: list of int list. size of kernels per layer
-            stride: list of int list. stride of kernels
-            pool_mode: string. pooling operation
-            pool_stride: list of int list. down_scaling factor
-            nonlinearity: string. nonlinearity to use for each layer
-        Returns a conv network
-        """
         conv_dim = len(filter_size[0])
         lasagne_pools = ['max', 'average_inc_pad', 'average_exc_pad']
         if not all(len(f) == conv_dim for f in filter_size):
@@ -97,4 +85,8 @@ class CNN(AbstractNetwork):
             self.layers.append(layer)
             print('\t\t{}'.format(layer))
             self.input_dim = layer.out_channels
+
+        self.create_classification_layer(self.network, self.num_classes, self.pred_activation)
+
+
 
