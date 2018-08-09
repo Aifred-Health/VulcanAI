@@ -1,6 +1,9 @@
 __author__ = 'Caitrin'
 import torch.nn as nn
 import BaseNetwork
+import torch.nn.functional as F
+from .AbstractNetwork import AbstractNetwork
+import jsonschema
 
 #TODO: use setters to enforce types/formats/values!
 #TODO: make this a base class?
@@ -87,6 +90,3 @@ class CNN(BaseNetwork):
             self.input_dim = layer.out_channels
 
         self.create_classification_layer(self.network, self.num_classes, self.pred_activation)
-
-
-
