@@ -6,12 +6,12 @@ import torch.nn as nn
 import datetime
 import torch.nn.modules.activation as activations #TODO: want to call it activation but namespace, so what to do best?
 from torch import optim
-import torch.nn.modules.loss as loss
-from layers import * #TODO: blarg
+import torch.nn.modules.loss as Loss
+from .Layers import * #TODO: blarg
 import tqdm
 import time
 
-class BaseNetwork():
+class BaseNetwork(nn.Module):
 
     #TODO: this should be the same for every model, given that you pass a config??
     #TODO: come up with an alternate way to validate config
@@ -115,9 +115,9 @@ class BaseNetwork():
     @criterion.setter
     def criterion(self, value):
         if not value and not self._num_classes:
-            self._criterion = loss.MSELoss
+            self._criterion = Loss.MSELoss()
         elif not value:
-            self._criterion = loss.CrossEntropyLoss
+            self._criterion = Loss.CrossEntropyLoss()
         else:
             self._criterion = value
 
@@ -218,7 +218,7 @@ class BaseNetwork():
                             # Forward + Backward + Optimize
                             optimizer.zero_grad()
                             output = network(data)
-                            loss = nn.CrossEntropyLoss()(output, target)
+                            loss = nn.CrossEntropyLoss(output, target)
                             loss.backward()
                             optimizer.step()
                         print('\tTrain set: Loss: {:.6f}'.format(loss.item()))

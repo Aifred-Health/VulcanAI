@@ -2,7 +2,9 @@ __author__ = 'Caitrin'
 
 import torch.nn as nn
 import torch.nn.functional as F
-from .AbstractNetwork import AbstractNetwork
+import torch.nn.modules.activation as activations
+import torch.optim as optim
+from .BaseNetwork import BaseNetwork
 import jsonschema
 
 class DNNConfig():
@@ -10,8 +12,10 @@ class DNNConfig():
         self.units = units
         self.dropouts = dropouts
 
-class DNN(AbstractNetwork):
-    def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None, activation=activations.Softmax, pred_activation=activations.Softmax, optimizer=optim.Adam, learning_rate=0.001, lr_scheduler=None, stopping_rule='best_validation_error', criterion=None):
+class DNN(BaseNetwork):
+    def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None, 
+                activation=activations.Softmax, pred_activation=activations.Softmax, optimizer=optim.Adam, 
+                learning_rate=0.001, lr_scheduler=None, stopping_rule='best_validation_error', criterion=None):
         super().__init__(name, dimensions, config, save_path, input_network, num_classes, activation, pred_activation, optimizer, learning_rate, lr_scheduler, stopping_rule, criterion)
 
 
