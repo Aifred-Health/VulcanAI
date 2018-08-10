@@ -4,7 +4,6 @@
 *.__pycache__
 data
 
-# TODO: Need to re-check
 /*.egg-info
 *.png
 *.jpg
