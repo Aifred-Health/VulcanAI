@@ -1,14 +1,10 @@
 __author__ = 'Caitrin'
 import torch.nn as nn
-<<<<<<< HEAD
+
 import torch.nn.functional as F
 import torch.nn.modules.activation as activations
 import torch.optim as optim
 from .BaseNetwork import BaseNetwork
-=======
-from .BaseNetwork import BaseNetwork
-import torch.nn.functional as F
->>>>>>> 1c926e4157d6f7ce8c63511c5080ceb821cefe96
 import jsonschema
 
 #TODO: use setters to enforce types/formats/values!

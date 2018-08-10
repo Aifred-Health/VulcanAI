@@ -2,3 +2,17 @@
 *.pyc
 *.DS_Store
 *.__pycache__
+
+# TODO: Need to re-check
+/*.egg-info
+*.png
+*.jpg
+*.pdf
+*.csv
+*.npz
+*.pickle
+*.gz
+*.npy
+*.network
+*.json
+*.zip

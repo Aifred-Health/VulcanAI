@@ -6,13 +6,10 @@ import torch.nn as nn
 import datetime
 import torch.nn.modules.activation as activations #TODO: want to call it activation but namespace, so what to do best?
 from torch import optim
-<<<<<<< HEAD
+
 import torch.nn.modules.loss as Loss
 from .Layers import * #TODO: blarg
-=======
-import torch.nn.modules.loss as loss
-import layers #TODO: I don't know why pycharm keeps rejecting this?
->>>>>>> 1c926e4157d6f7ce8c63511c5080ceb821cefe96
+
 import tqdm
 import time
 from torch.autograd import Variable
