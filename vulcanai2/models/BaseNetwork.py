@@ -6,10 +6,16 @@ import torch.nn as nn
 import datetime
 import torch.nn.modules.activation as activations #TODO: want to call it activation but namespace, so what to do best?
 from torch import optim
+<<<<<<< HEAD
 import torch.nn.modules.loss as Loss
 from .Layers import * #TODO: blarg
+=======
+import torch.nn.modules.loss as loss
+import layers #TODO: I don't know why pycharm keeps rejecting this?
+>>>>>>> 1c926e4157d6f7ce8c63511c5080ceb821cefe96
 import tqdm
 import time
+from torch.autograd import Variable
 
 class BaseNetwork(nn.Module):
 
@@ -18,7 +24,8 @@ class BaseNetwork(nn.Module):
     #TODO: deal with stopping rules
     #TODO: do you have to call any nn.module methods?? do you even actually want to subclass at this point if you have layers that subclass nn.module??
     #TODO: will need to create a wrapper class to use non default keworded parameters for all torch objects
-    def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None, activation=activations.Softmax, pred_activation=activations.Softmax, optimizer=optim.Adam, learning_rate=0.001, lr_scheduler=None, stopping_rule='best_validation_error', criterion=None):
+    #TODO: reorder these?
+    def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None, activation=activations.ReLU(), pred_activation=activations.Softmax(), optimizer=optim.Adam, learning_rate=0.001, lr_scheduler=None, stopping_rule='best_validation_error', criterion=None):
         """
         :param name:
         :param dimensions:
@@ -122,21 +129,21 @@ class BaseNetwork(nn.Module):
             self._criterion = value
 
 
-    #TODO: figure out how this works in conjunction with optimizer
-    #TODO: fix the fact that you copy pasted this
-    def cuda(self, device_id=None):
-        """Moves all model parameters and buffers to the GPU.
-        Arguments:
-            device_id (int, optional): if specified, all parameters will be
-                copied to that device
-        """
-        self.is_cuda = True
-        return self._apply(lambda t: t.cuda(device_id))
-
-    def cpu(self):
-        """Moves all model parameters and buffers to the CPU."""
-        self.is_cuda = False
-        return self._apply(lambda t: t.cpu())
+    # #TODO: figure out how this works in conjunction with optimizer
+    # #TODO: fix the fact that you copy pasted this
+    # def cuda(self, device_id=None):
+    #     """Moves all model parameters and buffers to the GPU.
+    #     Arguments:
+    #         device_id (int, optional): if specified, all parameters will be
+    #             copied to that device
+    #     """
+    #     self.is_cuda = True
+    #     return self._apply(lambda t: t.cuda(device_id))
+    #
+    # def cpu(self):
+    #     """Moves all model parameters and buffers to the CPU."""
+    #     self.is_cuda = False
+    #     return self._apply(lambda t: t.cpu())
 
     #TODO: I think this needs to take into account passing through networks
     #TODO: make this isn't resetting things when you have mulitple networks
@@ -144,14 +151,14 @@ class BaseNetwork(nn.Module):
     def _create_network(self):
         pass
 
-    #TODO: deal with the fact that you copied this
-    #TODO: figure out if you really need this?
-    def prepare_batch(self, batch):
-        if self.is_cuda:
-            batch = self.cuda_tf()(batch)
-        if self.mode == 'eval':
-            batch = self.detach_tf()(batch)
-        return batch
+    # #TODO: deal with the fact that you copied this
+    # #TODO: figure out if you really need this?
+    # def prepare_batch(self, batch):
+    #     if self.is_cuda:
+    #         batch = self.cuda_tf()(batch)
+    #     if self.mode == 'eval':
+    #         batch = self.detach_tf()(batch)
+    #     return batch
 
     def get_all_layers(self):
         layers = []
@@ -176,7 +183,7 @@ class BaseNetwork(nn.Module):
         """
         print('\tOutput Layer:')
         layer_name ="classification_layer"
-        layer = DenseUnit(
+        layer = layers.DenseUnit(
                           in_channels=self.input_dim,
                           out_channels=self.num_classes,
                           bias=True,
@@ -186,20 +193,37 @@ class BaseNetwork(nn.Module):
         self.layers.append(layer)
         print('\t\t{}'.format(layer))
 
-    def fit(self, network, epochs, train_loader, val_loader, criterion, optimizer, change_rate, use_gpu=False):
+    #TODO: this won't work for all of them...
+    def _initialize_optimizer(self):
+        return self.optimizer(self._network.parameters, lr = self._learning_rate)
+
+    def _initialize_scheduler(self, optimizer):
+        return self._scheduler(optimizer)
+
+    #TODO: use_gpu should probably go somewhere else in the future...
+    def fit(self, train_loader, val_loader, epochs):
+
+        #need to do this before constructing an optimizer
+        if torch.cuda.is_available():
+            network = self._network.cuda()
+            criterion = self._criterion.cuda()
+
+        optimizer = self._initialize_optimizer()
+
+        if self._scheduler:
+            scheduler = self._initialize_scheduler(self, optimizer)
 
         try:
-
-            if use_gpu:
-                network = network.cuda()
-                criterion = criterion.cuda()
-
             for epoch in range(epochs):
                 epoch_time = time.time()
                 print("--> Epoch: {}/{}".format(
                     epoch,
                     epochs - 1
                 ))
+
+                if scheduler:
+                    scheduler.step(epoch)
+
                 for mode in ['train', 'val']:
                     if mode == 'train':
                         network.train()  # Set model to training mode
@@ -211,7 +235,7 @@ class BaseNetwork(nn.Module):
                             data = Variable(data.float())
                             target = Variable(target)
 
-                            if use_gpu:
+                            if torch.cuda.is_available():
                                 data = data.cuda()
                                 target = target.cuda()
 
