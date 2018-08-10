@@ -4,4 +4,4 @@ This file will allow for direct imports
 
 """
 
-from .fashion import fashionData
+from .fashion import FashionData

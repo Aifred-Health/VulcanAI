@@ -1,11 +1,14 @@
 __author__ = 'Caitrin'
 
+
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-import torch.nn.modules.activation as activations
 import torch.optim as optim
+
 from .BaseNetwork import BaseNetwork
+from .Layers import InputUnit, DenseUnit, ConvUnit, FlattenUnit
+import jsonschema
 
 class DNNConfig():
     def __init__(self, units, dropouts):
@@ -15,17 +18,19 @@ class DNNConfig():
 class DNN(BaseNetwork):
 
     def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None, 
-                activation=activations.Softmax, pred_activation=activations.Softmax, optimizer=optim.Adam, 
+                activation=nn.Softmax(), pred_activation=nn.Softmax(), optimizer=optim.Adam, 
                 learning_rate=0.001, lr_scheduler=None, stopping_rule='best_validation_error', criterion=None):
+        
+        super(DNN, self).__init__(name, dimensions, config, save_path, input_network, num_classes, 
+                activation, pred_activation, optimizer, 
+                learning_rate, lr_scheduler, stopping_rule, criterion)
 
-                self.activation = activation
+        self._scheduler = None # NOTE: Temporary Assignment - Priya
 
     def _create_network(self):
 
-        self._network = nn.sequential()
-
-        units = self.config.units
-        dropouts = self.config.dropouts
+        units = self._config.get('units')
+        dropouts = self._config.get('dropouts')
 
         if len(units) != len(dropouts):
             raise ValueError(
@@ -33,37 +38,37 @@ class DNN(BaseNetwork):
             )
 
         print("Creating {} Network...".format(self.name))
-        if self.input_network is None:
+        if self._input_network is None:
             print('\tInput Layer:')
-            self.input_dim = self.input_dimensions[1]
-            layer = layers.InputUnit(
+            self.input_dim = self._dimensions[1]
+            layer = InputUnit(
                               in_channels=self.input_dim,
                               out_channels=self.input_dim,
                               bias=True)
             layer_name = "{}_input".format(self.name)
-            self.network.add_module(layer_name, layer)
+            self._network.add_module(layer_name, layer)
             print('\t\t{}'.format(layer))
         else:
-            for l_name, l in self.input_network['network'].network.named_children():
-                self.network.add_module(l_name, l)
+            for l_name, l in self._input_network['network'].network.named_children():
+                self._network.add_module(l_name, l)
             layer = l
             layer_name = l_name
             self.input_dim = layer.out_channels
 
             print('Appending layer {} from {} to {}'.format(
-                self.input_network['layer'],
-                self.input_network['network'].name,
+                self._input_network['layer'],
+                self._input_network['network'].name,
                 self.name))
 
             #To stitch ConvLayer ---> DenseLayer
             if layer.__class__.__name__== "ConvUnit": #Src: https://discuss.pytorch.org/t/flatten-layer-of-pytorch-build-by-sequential-container/5983/3
                 print("Flatening...")
                 layer_name = "flatten"
-                layer = layers.FlattenUnit(
+                layer = FlattenUnit(
                                     out_channels=self.input_dim
                                     )
-                self.network.add_module(layer_name, layer)
-                layer = self.network[-1]
+                self._network.add_module(layer_name, layer)
+                layer = self._network[-1]
                 print('\t\t{}'.format(layer))
                 self.input_dim = layer.out_features
 
@@ -73,17 +78,16 @@ class DNN(BaseNetwork):
         print('\tHidden Layer:')
         for i, (num_units, prob_dropout) in enumerate(zip(units, dropouts)):
             layer_name ="{}_dense_{}".format(self.name, i)
-            layer = layers.DenseUnit(
+            layer = DenseUnit(
                               in_channels=self.input_dim,
                               out_channels=num_units,
-                              bias=True,
                               norm=None,
-                              activation=self.nonlinearity,
+                              activation=self._activation,
                               dp=prob_dropout)
-            self.network.add_module(layer_name, layer)
+            self._network.add_module(layer_name, layer)
             print('\t\t{}'.format(layer))
             self.input_dim = layer.out_channels
 
 
-        if self.num_classes is not None and self.num_classes != 0:
+        if self._num_classes is not None and self._num_classes != 0:
             self.create_classification_layer()

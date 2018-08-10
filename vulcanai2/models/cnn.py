@@ -5,6 +5,7 @@ import torch.nn.functional as F
 import torch.nn.modules.activation as activations
 import torch.optim as optim
 from .BaseNetwork import BaseNetwork
+from .Layers import InputUnit, DenseUnit, ConvUnit, FlattenUnit
 import jsonschema
 
 #TODO: use setters to enforce types/formats/values!
@@ -23,11 +24,11 @@ class CNN(BaseNetwork):
                 activation=activations.Softmax, pred_activation=activations.Softmax, optimizer=optim.Adam, 
                 learning_rate=0.001, lr_scheduler=None, stopping_rule='best_validation_error', criterion=None):
 
-        super().__init__(name, dimensions, config, save_path, input_network, num_classes, activation, pred_activation, optimizer, learning_rate, lr_scheduler, stopping_rule, criterion)
-
+        super(CNN, self).__init__(name, dimensions, config, save_path, input_network, num_classes, 
+                activation, pred_activation, optimizer, 
+                learning_rate, lr_scheduler, stopping_rule, criterion)
+        
     def _create_network(self):
-
-        self._network = nn.sequential()
 
         filters=self.config.filters
         filter_size=self.config.filter_size
@@ -36,7 +37,7 @@ class CNN(BaseNetwork):
         pool_stride=self.config.pool["stride"]
 
         conv_dim = len(filter_size[0])
-        lasagne_pools = ['max', 'average_inc_pad', 'average_exc_pad']
+        pools = ['max', 'average_inc_pad', 'average_exc_pad']
         if not all(len(f) == conv_dim for f in filter_size):
             raise ValueError('Each tuple in filter_size {} must have a '
                              'length of {}'.format(filter_size, conv_dim))
@@ -46,9 +47,9 @@ class CNN(BaseNetwork):
         if not all(len(p) == conv_dim for p in pool_stride):
             raise ValueError('Each tuple in pool_stride {} must have a '
                              'length of {}'.format(pool_stride, conv_dim))
-        if pool_mode not in lasagne_pools:
+        if pool_mode not in pools:
             raise ValueError('{} pooling does not exist. '
-                             'Please use one of: {}'.format(pool_mode, lasagne_pools))
+                             'Please use one of: {}'.format(pool_mode, pools))
 
         print("Creating {} Network...".format(self.name))
         if self.input_network is None:

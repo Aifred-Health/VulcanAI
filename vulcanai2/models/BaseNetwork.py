@@ -1,18 +1,18 @@
 __author__ = 'Caitrin'
 
 import abc
+
 import torch
 import torch.nn as nn
-import datetime
-import torch.nn.modules.activation as activations #TODO: want to call it activation but namespace, so what to do best?
 from torch import optim
+from torch.autograd import Variable
 
 import torch.nn.modules.loss as Loss
 from .Layers import * #TODO: blarg
 
-import tqdm
 import time
-from torch.autograd import Variable
+from tqdm import tqdm
+from datetime import datetime
 
 class BaseNetwork(nn.Module):
 
@@ -22,7 +22,9 @@ class BaseNetwork(nn.Module):
     #TODO: do you have to call any nn.module methods?? do you even actually want to subclass at this point if you have layers that subclass nn.module??
     #TODO: will need to create a wrapper class to use non default keworded parameters for all torch objects
     #TODO: reorder these?
-    def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None, activation=activations.ReLU(), pred_activation=activations.Softmax(), optimizer=optim.Adam, learning_rate=0.001, lr_scheduler=None, stopping_rule='best_validation_error', criterion=None):
+    def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None, 
+                activation=nn.ReLU(), pred_activation=nn.Softmax(), optimizer=optim.Adam, 
+                learning_rate=0.001, lr_scheduler=None, stopping_rule='best_validation_error', criterion=None):
         """
         :param name:
         :param dimensions:
@@ -39,6 +41,7 @@ class BaseNetwork(nn.Module):
         :param criterion:
         :return:
         """
+        super(BaseNetwork, self).__init__()
         self._name = name
         self._dimensions = dimensions
         self._config = config
@@ -54,7 +57,14 @@ class BaseNetwork(nn.Module):
         self._lr_scheduler = lr_scheduler
         self._stopping_rule = stopping_rule
         self._criterion = criterion
-        self._network = None
+        if self._input_network is None:
+            self._network = nn.Sequential()
+        elif isinstance(self._input_network, nn.Sequential):
+            self._network = self._input_network
+        else:
+            raise ValueError(
+                "Input network must be torch.nn.Sequential"
+            )
         self._create_network()
 
 
@@ -168,7 +178,7 @@ class BaseNetwork(nn.Module):
                     self.input_dimensions= param.size(0)
 
 
-    #TODO: do you really want this here....?
+    #TODO: do you really want this here....? 
     def create_classification_layer(self):
         """
         Create a classification layer. Normally used as the last layer.
@@ -180,19 +190,17 @@ class BaseNetwork(nn.Module):
         """
         print('\tOutput Layer:')
         layer_name ="classification_layer"
-        layer = layers.DenseUnit(
+        layer = DenseUnit(
                           in_channels=self.input_dim,
-                          out_channels=self.num_classes,
-                          bias=True,
-                          activation=self.pred_nonlinearity,
+                          out_channels=self._num_classes,
+                          activation=self._pred_activation,
                           norm=None)
-        self.network.add_module(layer_name, layer)
-        self.layers.append(layer)
+        self._network.add_module(layer_name, layer)
         print('\t\t{}'.format(layer))
 
     #TODO: this won't work for all of them...
     def _initialize_optimizer(self):
-        return self.optimizer(self._network.parameters, lr = self._learning_rate)
+        return self.optimizer(self._network.parameters(), lr = self._learning_rate)
 
     def _initialize_scheduler(self, optimizer):
         return self._scheduler(optimizer)
@@ -212,14 +220,13 @@ class BaseNetwork(nn.Module):
 
         try:
             for epoch in range(epochs):
-                epoch_time = time.time()
                 print("--> Epoch: {}/{}".format(
                     epoch,
                     epochs - 1
                 ))
 
-                if scheduler:
-                    scheduler.step(epoch)
+                #if self._scheduler:
+                #    self._scheduler.step(epoch)
 
                 for mode in ['train', 'val']:
                     if mode == 'train':
@@ -239,7 +246,7 @@ class BaseNetwork(nn.Module):
                             # Forward + Backward + Optimize
                             optimizer.zero_grad()
                             output = network(data)
-                            loss = nn.CrossEntropyLoss(output, target)
+                            loss = self._criterion(output, target)
                             loss.backward()
                             optimizer.step()
                         print('\tTrain set: Loss: {:.6f}'.format(loss.item()))

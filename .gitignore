@@ -2,6 +2,7 @@
 *.pyc
 *.DS_Store
 *.__pycache__
+data
 
 # TODO: Need to re-check
 /*.egg-info
