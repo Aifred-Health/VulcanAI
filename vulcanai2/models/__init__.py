@@ -5,10 +5,9 @@ This file will allow for direct imports
 
 """
 
-from .AbstractNetwork import AbstractNetwork
-from .AbstractNetworkTrainer import AbstractNetworkTrainer
+from .BaseNetwork import BaseNetwork
 from .Callbacks import *
-from .Layers import *
+from .layers import *
 from .Metrics import *
 from .cnn import CNN
 from .dnn import DNN

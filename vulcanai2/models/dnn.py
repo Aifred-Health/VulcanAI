@@ -2,15 +2,15 @@ __author__ = 'Caitrin'
 
 import torch.nn as nn
 import torch.nn.functional as F
-from .AbstractNetwork import AbstractNetwork
 import jsonschema
+from .BaseNetwork import BaseNetwork
 
 class DNNConfig():
     def __init__(self, units, dropouts):
         self.units = units
         self.dropouts = dropouts
 
-class DNN(AbstractNetwork):
+class DNN(BaseNetwork):
     def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None, activation=activations.Softmax, pred_activation=activations.Softmax, optimizer=optim.Adam, learning_rate=0.001, lr_scheduler=None, stopping_rule='best_validation_error', criterion=None):
         super().__init__(name, dimensions, config, save_path, input_network, num_classes, activation, pred_activation, optimizer, learning_rate, lr_scheduler, stopping_rule, criterion)
 
@@ -31,14 +31,13 @@ class DNN(AbstractNetwork):
         if self.input_network is None:
             print('\tInput Layer:')
             self.input_dim = self.input_dimensions[1]
-            layer = InputUnit(
+            layer = layers.InputUnit(
                               in_channels=self.input_dim,
                               out_channels=self.input_dim,
                               bias=True)
             layer_name = "{}_input".format(self.name)
             self.network.add_module(layer_name, layer)
             print('\t\t{}'.format(layer))
-            self.layers.append(layer)
         else:
             for l_name, l in self.input_network['network'].network.named_children():
                 self.network.add_module(l_name, l)
@@ -55,12 +54,11 @@ class DNN(AbstractNetwork):
             if layer.__class__.__name__== "ConvUnit": #Src: https://discuss.pytorch.org/t/flatten-layer-of-pytorch-build-by-sequential-container/5983/3
                 print("Flatening...")
                 layer_name = "flatten"
-                layer = FlattenUnit(
+                layer = layers.FlattenUnit(
                                     out_channels=self.input_dim
                                     )
                 self.network.add_module(layer_name, layer)
                 layer = self.network[-1]
-                self.layers.append(layer)
                 print('\t\t{}'.format(layer))
                 self.input_dim = layer.out_features
 
@@ -70,7 +68,7 @@ class DNN(AbstractNetwork):
         print('\tHidden Layer:')
         for i, (num_units, prob_dropout) in enumerate(zip(units, dropouts)):
             layer_name ="{}_dense_{}".format(self.name, i)
-            layer = DenseUnit(
+            layer = layers.DenseUnit(
                               in_channels=self.input_dim,
                               out_channels=num_units,
                               bias=True,
@@ -78,7 +76,6 @@ class DNN(AbstractNetwork):
                               activation=self.nonlinearity,
                               dp=prob_dropout)
             self.network.add_module(layer_name, layer)
-            self.layers.append(layer)
             print('\t\t{}'.format(layer))
             self.input_dim = layer.out_channels
 

@@ -1,8 +1,7 @@
 __author__ = 'Caitrin'
 import torch.nn as nn
-import BaseNetwork
+from .BaseNetwork import BaseNetwork
 import torch.nn.functional as F
-from .AbstractNetwork import AbstractNetwork
 import jsonschema
 
 #TODO: use setters to enforce types/formats/values!
@@ -24,11 +23,11 @@ class CNN(BaseNetwork):
 
         self._network = nn.sequential()
 
-        filters=config.filters
-        filter_size=config.filter_size
-        stride=config.stride
-        pool_mode=config.pool["mode"]
-        pool_stride=config.pool["stride"]
+        filters=self.config.filters
+        filter_size=self.config.filter_size
+        stride=self.config.stride
+        pool_mode=self.config.pool["mode"]
+        pool_stride=self.config.pool["stride"]
 
         conv_dim = len(filter_size[0])
         lasagne_pools = ['max', 'average_inc_pad', 'average_exc_pad']
@@ -49,19 +48,18 @@ class CNN(BaseNetwork):
         if self.input_network is None:
             print('\tInput Layer:')
             self.input_dim = self.input_dimensions[1]
-            layer = InputUnit(
+            layer = layers.InputUnit(
                               in_channels=self.input_dim,
                               out_channels=self.input_dim,
                               bias=True)
             layer_name = "{}_input".format(self.name)
             self.network.add_module(layer_name, layer)
             print('\t\t{}'.format(layer))
-            self.layers.append(layer)
         else:
             for l_name, l in self.input_network['network'].network.named_children():
                 self.network.add_module(l_name, l)
             layer = l
-            layer_name = l_name
+            layer_name = l_name #TODO: priya why isn't this being used??
             self.input_dim = layer.out_channels
 
             print('Appending layer {} from {} to {}'.format(
@@ -76,7 +74,7 @@ class CNN(BaseNetwork):
                                                     pool_stride)):
             layer_name = "{}_conv{}D_{}".format(
                                     self.name, conv_dim, i)
-            layer = ConvUnit(
+            layer = layers.ConvUnit(
                             conv_dim=conv_dim,
                             in_channels=self.input_dim,
                             out_channels=f,
@@ -85,7 +83,6 @@ class CNN(BaseNetwork):
                             pool_size=p_s,
                             activation=self.nonlinearity)
             self.network.add_module(layer_name, layer)
-            self.layers.append(layer)
             print('\t\t{}'.format(layer))
             self.input_dim = layer.out_channels
 
