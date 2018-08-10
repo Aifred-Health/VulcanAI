@@ -50,7 +50,8 @@ class BaseNetwork():
         self._lr_scheduler = lr_scheduler
         self._stopping_rule = stopping_rule
         self._criterion = criterion
-        self._network = self.create_network()
+        self._network = None
+        self._create_network()
 
 
     #TODO: where to do typechecking... just let everything fail?
@@ -140,7 +141,7 @@ class BaseNetwork():
     #TODO: I think this needs to take into account passing through networks
     #TODO: make this isn't resetting things when you have mulitple networks
     @abc.abstractmethod
-    def create_network(self):
+    def _create_network(self):
         pass
 
     #TODO: deal with the fact that you copied this
@@ -164,8 +165,7 @@ class BaseNetwork():
 
 
     #TODO: do you really want this here....?
-    def create_classification_layer(self, num_classes,
-                                    nonlinearity):
+    def create_classification_layer(self):
         """
         Create a classification layer. Normally used as the last layer.
         Args:
@@ -178,9 +178,9 @@ class BaseNetwork():
         layer_name ="classification_layer"
         layer = DenseUnit(
                           in_channels=self.input_dim,
-                          out_channels=num_classes,
+                          out_channels=self.num_classes,
                           bias=True,
-                          activation=nonlinearity,
+                          activation=self.pred_nonlinearity,
                           norm=None)
         self.network.add_module(layer_name, layer)
         self.layers.append(layer)

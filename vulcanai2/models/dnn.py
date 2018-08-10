@@ -5,39 +5,23 @@ import torch.nn.functional as F
 from .AbstractNetwork import AbstractNetwork
 import jsonschema
 
+class DNNConfig():
+    def __init__(self, units, dropouts):
+        self.units = units
+        self.dropouts = dropouts
 
 class DNN(AbstractNetwork):
-    """Class to generate networks and train them."""
     def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None, activation=activations.Softmax, pred_activation=activations.Softmax, optimizer=optim.Adam, learning_rate=0.001, lr_scheduler=None, stopping_rule='best_validation_error', criterion=None):
-        pass #TODO: use super init, but with **kwargs?
+        super().__init__(name, dimensions, config, save_path, input_network, num_classes, activation, pred_activation, optimizer, learning_rate, lr_scheduler, stopping_rule, criterion)
 
 
-    def create_network(self, config, nonlinearity):
+    def _create_network(self):
 
-        jsonschema.validate(config, schemas.dense_network)
+        self._network = nn.sequential()
 
-        self.create_dense_network(
-            units=config.get('units'),
-            dropouts=config.get('dropouts'),
-            nonlinearity=nonlinearity
-        )
+        units = self.config.units
+        dropouts = self.config.dropouts
 
-        if self.num_classes is not None and self.num_classes != 0:
-            self.create_classification_layer(
-                num_classes=self.num_classes,
-                nonlinearity=self.pred_activation
-            )
-
-
-    def create_dense_network(self, units, dropouts, nonlinearity):
-        """
-        Generate a fully connected layer.
-        Args:
-            units: The list of number of nodes to have at each layer
-            dropouts: The list of dropout probabilities for each layer
-            nonlinearity: Nonlinearity from Lasagne.nonlinearities
-        Returns: the output of the network (linked up to all the layers)
-        """
         if len(units) != len(dropouts):
             raise ValueError(
                 "Cannot build network: units and dropouts don't correspond"
@@ -91,9 +75,13 @@ class DNN(AbstractNetwork):
                               out_channels=num_units,
                               bias=True,
                               norm=None,
-                              activation=nonlinearity,
+                              activation=self.nonlinearity,
                               dp=prob_dropout)
             self.network.add_module(layer_name, layer)
             self.layers.append(layer)
             print('\t\t{}'.format(layer))
             self.input_dim = layer.out_channels
+
+
+        if self.num_classes is not None and self.num_classes != 0:
+            self.create_classification_layer()
