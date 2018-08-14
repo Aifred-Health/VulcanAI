@@ -7,6 +7,8 @@ from .BaseNetwork import BaseNetwork
 from .Layers import InputUnit, DenseUnit, ConvUnit, FlattenUnit
 import jsonschema
 
+#TODO: perform typechecking
+
 class DNNConfig():
     def __init__(self, units, dropouts):
         self.units = units
