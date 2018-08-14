@@ -3,8 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import init
 
-
-
 class BaseLayer(nn.Module):
     """The base class of layer
     """
@@ -143,24 +141,6 @@ class ConvUnit(BaseLayer):
             x = self.conv_model(x)
             return x.numel()
 
-class FlattenUnit(BaseLayer):   # TODO: Testing
-    def __init__(self, out_channels):
-        super(FlattenUnit, self).__init__()
-        self.out_features = out_channels
-
-    def forward(self, input):
-        input = input.contiguous().view(input.size(0), -1)
-        self.flatten_layer = nn.Linear(input.size(1), self.out_features, bias=False)
-        if isinstance(input, torch.cuda.FloatTensor):   # TODO: this is to ensure if the GPU is activated on the input, the flatten layer should also incorporate GPU activated
-            self.flatten_layer = self.flatten_layer.cuda()
-        output = self.flatten_layer(input)
-        return output
-
-    def extra_repr(self):
-        return 'in_channels={}, out_features={}'.format(self.out_features,
-                                                        self.out_features
-                                                        )
-
 class InputUnit(BaseLayer):
     def __init__(self, in_channels, out_channels, bias=False):
         super(InputUnit, self).__init__()
@@ -178,7 +158,7 @@ class InputUnit(BaseLayer):
             return output
 
 class View(BaseLayer):
-    """
+    """git status
     Layer to reshape the input # TODO : Testing
     """
     def __init__(self, *shape):

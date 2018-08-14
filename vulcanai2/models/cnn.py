@@ -4,8 +4,8 @@ import torch.nn.functional as F
 import torch.nn.modules.activation as activations
 import torch.optim as optim
 
-from .BaseNetwork import BaseNetwork
-from .Layers import InputUnit, DenseUnit, ConvUnit, FlattenUnit
+from .basenetwork import BaseNetwork
+from .layers import InputUnit, DenseUnit, ConvUnit, FlattenUnit
 
 import numpy as np
 

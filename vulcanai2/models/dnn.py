@@ -3,8 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-from .BaseNetwork import BaseNetwork
-from .Layers import InputUnit, DenseUnit, ConvUnit, FlattenUnit
+from .baseNetwork import BaseNetwork
+from .layers import InputUnit, DenseUnit, ConvUnit, FlattenUnit
 import jsonschema
 
 #TODO: perform typechecking

@@ -6,7 +6,7 @@ from torch import optim
 from torch.autograd import Variable
 
 import torch.nn.modules.loss as Loss
-from .Layers import * 
+from .layers import * 
 
 import time
 import pydash as pdash
