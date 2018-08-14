@@ -1,5 +1,3 @@
-__author__ = 'Caitrin'
-
 import abc
 
 import torch
@@ -8,9 +6,10 @@ from torch import optim
 from torch.autograd import Variable
 
 import torch.nn.modules.loss as Loss
-from .Layers import * #TODO: blarg
+from .Layers import * 
 
 import time
+import pydash as pdash
 from tqdm import tqdm
 from datetime import datetime
 
@@ -23,8 +22,8 @@ class BaseNetwork(nn.Module):
     #TODO: will need to create a wrapper class to use non default keworded parameters for all torch objects
     #TODO: reorder these?
     def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None, 
-                activation=nn.ReLU(), pred_activation=nn.Softmax(), optimizer=optim.Adam, 
-                learning_rate=0.001, lr_scheduler=None, stopping_rule='best_validation_error', criterion=None):
+                activation=nn.ReLU(), pred_activation=nn.Softmax(dim=1), optim_spec={'name': 'Adam', 'lr': 0.001}, 
+                lr_scheduler=None, stopping_rule='best_validation_error', criter_spec=None):
         """
         :param name:
         :param dimensions:
@@ -52,11 +51,10 @@ class BaseNetwork(nn.Module):
         self._num_classes = num_classes
         self._activation = activation
         self._pred_activation = pred_activation
-        self._optimizer = optimizer
-        self._learning_rate = learning_rate
+        self._optim_spec = optim_spec
         self._lr_scheduler = lr_scheduler
         self._stopping_rule = stopping_rule
-        self._criterion = criterion
+        self._criter_spec = criter_spec
         if self._input_network is None:
             self._network = nn.Sequential()
         elif isinstance(self._input_network, nn.Sequential):
@@ -89,14 +87,6 @@ class BaseNetwork(nn.Module):
             self.save_path = "{}_{date:%Y-%m-%d_%H:%M:%S}/".format(self.name, date=datetime.datetime.now())
         else:
             self._save_path = value
-    @property
-    def optimizer(self):
-        return self._optimizer
-
-    @optimizer.setter
-    def optimizer(self, value):
-        #TODO: check type?
-        self._optimizer = value
 
     @property
     def learning_rate(self):
@@ -126,34 +116,22 @@ class BaseNetwork(nn.Module):
     def criterion(self):
         return self._criterion
 
-    @criterion.setter
-    def criterion(self, value):
-        if not value and not self._num_classes:
-            self._criterion = Loss.MSELoss()
-        elif not value:
-            self._criterion = Loss.CrossEntropyLoss()
-        else:
-            self._criterion = value
-
-
     # #TODO: figure out how this works in conjunction with optimizer
     # #TODO: fix the fact that you copy pasted this
-    # def cuda(self, device_id=None):
-    #     """Moves all model parameters and buffers to the GPU.
-    #     Arguments:
-    #         device_id (int, optional): if specified, all parameters will be
-    #             copied to that device
-    #     """
-    #     self.is_cuda = True
-    #     return self._apply(lambda t: t.cuda(device_id))
-    #
-    # def cpu(self):
-    #     """Moves all model parameters and buffers to the CPU."""
-    #     self.is_cuda = False
-    #     return self._apply(lambda t: t.cpu())
+    def cuda(self, device_id=None):
+        """Moves all model parameters and buffers to the GPU.
+        Arguments:
+            device_id (int, optional): if specified, all parameters will be
+                copied to that device
+        """
+        self.is_cuda = True
+        return self._apply(lambda t: t.cuda(device_id))
+    
+    def cpu(self):
+        """Moves all model parameters and buffers to the CPU."""
+        self.is_cuda = False
+        return self._apply(lambda t: t.cpu())
 
-    #TODO: I think this needs to take into account passing through networks
-    #TODO: make this isn't resetting things when you have mulitple networks
     @abc.abstractmethod
     def _create_network(self):
         pass
@@ -178,45 +156,27 @@ class BaseNetwork(nn.Module):
                     self.input_dimensions= param.size(0)
 
 
-    #TODO: do you really want this here....? 
-    def create_classification_layer(self):
-        """
-        Create a classification layer. Normally used as the last layer.
-        Args:
-            network: network you want to append a classification to
-            num_classes: how many classes you want to predict
-            nonlinearity: nonlinearity to use as a string (see DenseLayer)
-        Returns: the classification layer appended to all previous layers
-        """
-        print('\tOutput Layer:')
-        layer_name ="classification_layer"
-        layer = DenseUnit(
-                          in_channels=self.input_dim,
-                          out_channels=self._num_classes,
-                          activation=self._pred_activation,
-                          norm=None)
-        self._network.add_module(layer_name, layer)
-        print('\t\t{}'.format(layer))
+    def _initialize_optimizer(self, optim_spec):
+        OptimClass = getattr(torch.optim, optim_spec["name"])
+        optim_spec = pdash.omit(optim_spec, "name")
+        return OptimClass(self.parameters(), **optim_spec)
 
-    #TODO: this won't work for all of them...
-    def _initialize_optimizer(self):
-        return self.optimizer(self._network.parameters(), lr = self._learning_rate)
+    def _get_criterion(self, criterion_spec):
+        CriterionClass = getattr(Loss, criterion_spec["name"])
+        criterion_spec = pdash.omit(criterion_spec, "name")
+        return CriterionClass(**criterion_spec)
+                
 
     def _initialize_scheduler(self, optimizer):
         return self._scheduler(optimizer)
 
     #TODO: use_gpu should probably go somewhere else in the future...
-    def fit(self, train_loader, val_loader, epochs):
-
-        #need to do this before constructing an optimizer
-        if torch.cuda.is_available():
-            network = self._network.cuda()
-            criterion = self._criterion.cuda()
-
-        optimizer = self._initialize_optimizer()
-
-        if self._scheduler:
-            scheduler = self._initialize_scheduler(self, optimizer)
+    def fit(self, train_loader, val_loader, epochs, retain_graph=False):
+        
+        self.optim = self._initialize_optimizer(self._optim_spec)
+        self.criterion = self._get_criterion(self._criter_spec)
+        #if self._scheduler:
+        #    scheduler = self._initialize_scheduler(self, optimizer)
 
         try:
             for epoch in range(epochs):
@@ -230,13 +190,13 @@ class BaseNetwork(nn.Module):
 
                 for mode in ['train', 'val']:
                     if mode == 'train':
-                        network.train()  # Set model to training mode
+                        self.train()  # Set model to training mode
 
                         loader = tqdm(train_loader, total=len(train_loader))
 
                         for batch_idx, (data, target) in enumerate(loader):
 
-                            data = Variable(data.float())
+                            data = Variable(data)
                             target = Variable(target)
 
                             if torch.cuda.is_available():
@@ -244,28 +204,29 @@ class BaseNetwork(nn.Module):
                                 target = target.cuda()
 
                             # Forward + Backward + Optimize
-                            optimizer.zero_grad()
-                            output = network(data)
-                            loss = self._criterion(output, target)
-                            loss.backward()
-                            optimizer.step()
+                            self.zero_grad()
+                            self.optim.zero_grad()
+                            output = self(data)
+                            loss = self.criterion(output, target)
+                            loss.backward(retain_graph=retain_graph)
+                            self.optim.step()
                         print('\tTrain set: Loss: {:.6f}'.format(loss.item()))
 
                     else:
-                        network.eval()  # Set model to evaluate mode
+                        self.eval()  # Set model to evaluate mode
                         test_loss = 0
                         correct = 0
                         with torch.no_grad():
                             for data, target in val_loader:
 
-                                data = Variable(data.float())
+                                data = Variable(data)
                                 target = Variable(target)
 
                                 if torch.cuda.is_available():
                                     data = data.cuda()
                                     target = target.cuda()
 
-                                output = network(data)
+                                output = self(data)
                                 test_loss += nn.CrossEntropyLoss()(output, target)
                                 _, pred = torch.max(output.data, 1)
                                 #pred = output.max(1)[1] # get the index of the max log-probability

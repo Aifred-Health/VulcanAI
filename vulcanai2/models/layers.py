@@ -1,21 +1,20 @@
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn import init
 
 
 
 class BaseLayer(nn.Module):
     """The base class of layer
     """
-    def __init__(self, in_shape, out_shape, name):
+    def __init__(self):
 
         super(BaseLayer, self).__init__()
         
         self.batch_size = None
-        self.in_shape = [self.batch_size, *in_shape]
-        self.out_shape = [self.batch_size, *out_shape]
-        self.name = name
+        self.in_shape = None #[self.batch_size, *in_shape]
+        self.out_shape = None #[self.batch_size, *out_shape]
         self.in_bound_layers = []
         self.out_bound_layers = []
         
@@ -58,9 +57,8 @@ class DenseUnit(BaseLayer):
             self.dropout = nn.Dropout(self.dp)
 
     def forward(self, input):
-        if input.dim() > 2:
-
-            input = FlattenUnit(input.shape[1]).forward(input)
+        #if input.dim() > 2:
+        #    input = FlattenUnit(input.shape[1]).forward(input)
 
         output = self.kernel(input)
 
@@ -138,6 +136,13 @@ class ConvUnit(BaseLayer):
 
         return output
 
+    def get_conv_output_size(self):
+        '''Helper function to calculate the size of the flattened features after the convolutional layer'''
+        with torch.no_grad():
+            x = torch.ones(1, *self.in_dim)
+            x = self.conv_model(x)
+            return x.numel()
+
 class FlattenUnit(BaseLayer):   # TODO: Testing
     def __init__(self, out_channels):
         super(FlattenUnit, self).__init__()
@@ -164,8 +169,13 @@ class InputUnit(BaseLayer):
         self.kernel = nn.Linear(self.in_channels, self.out_channels, bias=bias)
 
     def forward(self, input):
-        output = self.kernel(input)
-        return output
+        if input.dim() > 2:
+            input = input.transpose(1,3) # NCHW --> NHWC
+            output = self.kernel(input)
+            return output.transpose(1,3) # NHWC --> NCHW
+        else:
+            output = self.kernel(input)
+            return output
 
 class View(BaseLayer):
     """
@@ -176,5 +186,6 @@ class View(BaseLayer):
         self.shape = shape
     def forward(self, input):
         return input.view(*self.shape)
+
 
 

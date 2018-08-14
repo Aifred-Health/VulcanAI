@@ -1,6 +1,3 @@
-__author__ = 'Caitrin'
-
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -15,15 +12,15 @@ class DNNConfig():
         self.units = units
         self.dropouts = dropouts
 
-class DNN(BaseNetwork):
+class DNN(BaseNetwork, nn.Module):
 
     def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None, 
-                activation=nn.Softmax(), pred_activation=nn.Softmax(), optimizer=optim.Adam, 
-                learning_rate=0.001, lr_scheduler=None, stopping_rule='best_validation_error', criterion=None):
+                activation=nn.Softmax(dim=1), pred_activation=nn.Softmax(dim=1), optim_spec={'name': 'Adam', 'lr': 0.001},
+                lr_scheduler=None, stopping_rule='best_validation_error', criter_spec={'name': 'CrossEntropyLoss'}):
         
+        nn.Module.__init__(self)
         super(DNN, self).__init__(name, dimensions, config, save_path, input_network, num_classes, 
-                activation, pred_activation, optimizer, 
-                learning_rate, lr_scheduler, stopping_rule, criterion)
+                activation, pred_activation, optim_spec, lr_scheduler, stopping_rule, criter_spec)
 
         self._scheduler = None # NOTE: Temporary Assignment - Priya
 
