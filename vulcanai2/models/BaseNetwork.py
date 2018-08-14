@@ -205,6 +205,9 @@ class BaseNetwork(nn.Module):
     def _initialize_scheduler(self, optimizer):
         return self._scheduler(optimizer)
 
+
+    #TODO: include plot as parameter
+    #TODO: include stopping rules
     #TODO: use_gpu should probably go somewhere else in the future...
     def fit(self, train_loader, val_loader, epochs):
 
@@ -282,8 +285,64 @@ class BaseNetwork(nn.Module):
 
     #THIS IS FOR INFERENCE
     def predict(self):
+
+        """
+        Allow the implementer to quickly get outputs from the network.
+        Args:
+            input_data: Numpy matrix to make the predictions on
+            convert_to_class: If true, output the class
+                             with highest probability
+        Returns: Numpy matrix with the output probabilities
+                 with each class unless otherwise specified.
+        """
+
         pass
 
     #TODO: this is for the test data
     def evaluate(self):
+        pass
+
+    #TODO: this is copy pasted - edit as appropriate
+    def save_model(self, save_path='models'):
+        """
+        Will save the model parameters to a npz file.
+        Args:
+            save_path: the location where you want to save the params
+        """
+        if self.input_network is not None:
+            if not hasattr(self.input_network['network'], 'save_name'):
+                self.input_network['network'].save_model()
+
+        if not os.path.exists(save_path):
+            print('Path not found, creating {}'.format(save_path))
+            os.makedirs(save_path)
+        file_path = os.path.join(save_path, "{}{}".format(self.timestamp,
+                                                          self.name))
+        self.save_name = '{}.network'.format(file_path)
+        print('Saving model as: {}'.format(self.save_name))
+
+        with open(self.save_name, 'wb') as f:
+            pickle.dump(self, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+        self.save_metadata(file_path)
+
+
+
+    @classmethod
+    def load_model(cls, load_path):
+        """
+        Will load the model parameters from npz file.
+        Args:
+            load_path: the exact location where the model has been saved.
+        """
+        print('Loading model from: {}'.format(load_path))
+        with open(load_path, 'rb') as f:
+            instance = pickle.load(f)
+        return instance
+
+    def save_record(self):
+        pass
+
+
+    def save_metadata(self):
         pass
