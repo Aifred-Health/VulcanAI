@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-from .baseNetwork import BaseNetwork
+from .basenetwork import BaseNetwork
 from .layers import InputUnit, DenseUnit, ConvUnit, FlattenUnit
 import jsonschema
 

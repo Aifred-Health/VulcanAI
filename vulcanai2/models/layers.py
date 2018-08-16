@@ -158,7 +158,7 @@ class InputUnit(BaseLayer):
             return output
 
 class View(BaseLayer):
-    """git status
+    """
     Layer to reshape the input # TODO : Testing
     """
     def __init__(self, *shape):
