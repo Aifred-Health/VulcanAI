@@ -55,8 +55,6 @@ class DenseUnit(BaseLayer):
             self.dropout = nn.Dropout(self.dp)
 
     def forward(self, input):
-        #if input.dim() > 2:
-        #    input = FlattenUnit(input.shape[1]).forward(input)
 
         output = self.kernel(input)
 
@@ -141,6 +139,9 @@ class ConvUnit(BaseLayer):
             x = self.conv_model(x)
             return x.numel()
 
+
+
+####### TODO: Will work on these classes below later during Vulcan2 deployment
 class InputUnit(BaseLayer):
     def __init__(self, in_channels, out_channels, bias=False):
         super(InputUnit, self).__init__()
@@ -158,7 +159,7 @@ class InputUnit(BaseLayer):
             return output
 
 class View(BaseLayer):
-    """git status
+    """
     Layer to reshape the input # TODO : Testing
     """
     def __init__(self, *shape):

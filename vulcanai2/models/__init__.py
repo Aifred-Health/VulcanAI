@@ -9,7 +9,7 @@ from .basenetwork import BaseNetwork
 from .callbacks import *
 from .layers import *
 from .metrics import *
-from .cnn import CNN
-from .dnn import DNN
+from .cnn import ConvNet
+from .dnn import DenseNet
 
 #__all__ = ['CNN'] #pretty sure this will be useful later

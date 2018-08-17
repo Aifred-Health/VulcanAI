@@ -116,6 +116,48 @@ class BaseNetwork(nn.Module):
     def criterion(self):
         return self._criterion
 
+    def get_conv_output_size(self):
+        """
+        Helper function to calculate the size of the flattened 
+        features after the last conv layer
+        """
+        with torch.no_grad():
+            x = torch.ones(1, *self.in_dim)
+            x = self.conv_network(x)
+            return x.numel()
+
+    def build_conv_network(self, conv_hid_layers):
+        conv_dim = len(conv_hid_layers[0][2])
+        conv_layers = []
+        for i, layer_param in enumerate(conv_hid_layers):
+            conv_layers.append(ConvUnit(
+                                        conv_dim=conv_dim,
+                                        in_channels=layer_param[0],         
+                                        out_channels=layer_param[1],        
+                                        kernel_size=tuple(layer_param[2]), 
+                                        stride=layer_param[3],
+                                        padding=layer_param[4],
+                                        activation=self._activation))
+            #conv_layers.append(net_util.get_activation_fn(self.hid_layers_activation))
+            # Don't include batch norm in the first layer
+            #if self.batch_norm and i != 0:
+            #    conv_layers.append(nn.BatchNorm2d(hid_layer[1]))
+        conv_network = nn.Sequential(*conv_layers)
+        return conv_network
+
+    def build_dense_network(self, dims):
+
+        dim_pairs = list(zip(dims[:-1], dims[1:]))
+        dense_layers = []
+        for in_d, out_d in dim_pairs:
+            dense_layers.append(DenseUnit(
+                                          in_channels=in_d,
+                                          out_channels=out_d,
+                                          activation=self._activation))
+        dense_network = nn.Sequential(*dense_layers)
+        return dense_network
+
+
     # #TODO: figure out how this works in conjunction with optimizer
     # #TODO: fix the fact that you copy pasted this
     def cuda(self, device_id=None):
@@ -154,6 +196,22 @@ class BaseNetwork(nn.Module):
             else:
                 for param in l.parameters():
                     self.input_dimensions= param.size(0)
+
+    def init_layers(self, layers):
+        '''
+        Initializes all of the layers 
+        '''
+        bias_init = 0.01
+        for layer in layers:
+            classname = layer.__class__.__name__
+            if 'BatchNorm' in classname:
+                torch.nn.init.uniform_(layer.weight.data)
+                torch.nn.init.constant_(layer.bias.data, bias_init)
+            elif 'Linear' in classname:
+                torch.nn.init.xavier_uniform_(layer.weight.data)
+                torch.nn.init.constant_(layer.bias.data, bias_init)
+            else:
+                pass
 
 
     def _initialize_optimizer(self, optim_spec):
