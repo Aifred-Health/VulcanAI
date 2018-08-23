@@ -6,7 +6,6 @@ This file will allow for direct imports
 """
 
 from .basenetwork import BaseNetwork
-from .callbacks import *
 from .layers import *
 from .metrics import *
 from .cnn import ConvNet
