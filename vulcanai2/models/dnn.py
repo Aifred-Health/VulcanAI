@@ -47,3 +47,14 @@ class DenseNet(BaseNetwork, nn.Module):
 
     def __str__(self):
         return super(DenseNet, self).__str__() + f'\noptim: {self.optim}'
+
+    def build_dense_network(self, dims):
+        dim_pairs = list(zip(dims[:-1], dims[1:]))
+        dense_layers = []
+        for in_d, out_d in dim_pairs:
+            dense_layers.append(DenseUnit(
+                                          in_channels=in_d,
+                                          out_channels=out_d,
+                                          activation=self._activation))
+        dense_network = nn.Sequential(*dense_layers)
+        return dense_network
