@@ -1,9 +1,8 @@
 __author__ = 'Caitrin'
 from torch.utils.data import Dataset
 import numpy as np
-from .utils import *
-
-
+import pandas as pd
+from . import utils as utils
 
 
 class TabularDataset(Dataset):
@@ -21,7 +20,7 @@ class TabularDataset(Dataset):
             if not joinColumn:
                 raise RuntimeError("You need to provide a joinColumn if a list of csvs are provided")
             dfs = [pd.read_csv(f) for f in data]
-            self.df = stitch_datasets(dfs, joinColumn, indexList)
+            self.df = utils.stitch_datasets(dfs, joinColumn, indexList)
         elif isinstance(data, pd.DataFrame):
             self.df = data
         else:
@@ -102,10 +101,11 @@ class TabularDataset(Dataset):
             if len(self.df[col].unique()) <= threshold:
                 self.df = self.df.drop(col,axis=1)
 
+    #TODO: implement variance thresholding
     def remove_unbalanced_columns(self, threshold, non_numeric=True):
         raise NotImplementedError
 
-    def remove_highly_correlated(self, threshold):
+    def remove_highly_correlated(self, threshold, non_numberic=True):
         raise NotImplementedError
 
     #TODO: edit this method that creates a split given different filepaths or objects so that the params match
@@ -167,7 +167,7 @@ class TabularDataset(Dataset):
         if stratified:
             raise NotImplementedError("We need to do this!")
 
-        train_ratio, test_ratio, val_ratio = check_split_ratio(split_ratio)
+        train_ratio, test_ratio, val_ratio = utils.check_split_ratio(split_ratio)
 
         np.random.seed(random_state)
         perm = np.random.permutation(self.df.index)

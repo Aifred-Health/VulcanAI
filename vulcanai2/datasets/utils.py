@@ -6,11 +6,10 @@ from copy import deepcopy
 import pandas as pd
 
 
-
 #TODO: variance thresholding
 
 
-#TODO: these were all copy-pasted because torchtext is not yet packaged for anaconda - therefore not yet a reasonable dependency
+#TODO: these were all copy-pasted from torchtext because torchtext is not yet packaged for anaconda - therefore not yet a reasonable dependency
 #https://github.com/pytorch/text/blob/master/torchtext/data/dataset.py
 
 def check_split_ratio(split_ratio):
