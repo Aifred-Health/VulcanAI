@@ -16,7 +16,7 @@ setup(
                       'matplotlib>=1.5.3',
                       'scikit-learn>=0.18',
                       'jsonschema>=2.6.0',
-                      'torch == 0.4.1'],
+                      'torch>=0.4.1'],
     packages=['vulcanai'],
     classifiers=['Development Status :: 3 - Alpha',
                  'Intended Audience :: Developers',
