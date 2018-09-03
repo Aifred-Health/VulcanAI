@@ -4,6 +4,9 @@ import random
 from contextlib import contextmanager
 from copy import deepcopy
 import pandas as pd
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 #TODO: variance thresholding

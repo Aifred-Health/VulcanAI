@@ -8,6 +8,8 @@ from .basenetwork import BaseNetwork
 from .layers import DenseUnit, ConvUnit
 
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 #TODO: use setters to enforce types/formats/values!
 #TODO: make this a base class?

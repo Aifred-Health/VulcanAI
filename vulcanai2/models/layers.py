@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import init
+import logging
+logger = logging.getLogger(__name__)
 
 class BaseLayer(nn.Module):
     """The base class of layer

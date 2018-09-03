@@ -3,7 +3,9 @@ from torch.utils.data import Dataset
 import numpy as np
 import pandas as pd
 from . import utils as utils
+import logging
 
+logger = logging.getLogger(__name__)
 
 class TabularDataset(Dataset):
     def __init__(self, data, labelColumn="label", joinColumn=None, indexList=None):

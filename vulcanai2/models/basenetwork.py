@@ -12,6 +12,8 @@ import time
 import pydash as pdash
 from tqdm import tqdm
 from datetime import datetime
+import logging
+logger = logging.getLogger(__name__)
 
 class BaseNetwork(nn.Module):
 

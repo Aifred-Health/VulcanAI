@@ -8,6 +8,8 @@ import torch
 import torch.nn.functional as F
 from torch.autograd import Variable
 from sklearn import metrics as scipy_metrics
+import logging
+logger = logging.getLogger(__name__)
 
 class Metrics(object):
 
