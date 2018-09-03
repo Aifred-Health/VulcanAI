@@ -1,7 +1,3 @@
-#FROM ORIGINAL VULCAN
-#FROM ORIGINAL VULCAN
-author = Robert Fratila
-
 #TODO: all methods need to be updated to work with new dataset
 __author__="RobertFratila"
 
@@ -33,6 +29,8 @@ else:
     matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
+import logging
+logger = logging.getLogger(__name__)
 
 
 #TODO: update to work with pytorch
