@@ -1,5 +1,2 @@
-__author__ = 'Caitrin'
-
-from .datasets import *
-from .models import *
-from .plotters import *
+import logging
+logging.getLogger(__name__).addHandler(logging.NullHandler()) #to use logging you need to set your own handler

@@ -6,6 +6,9 @@ It is quite possible that we do not want this to be an abstract base class, as w
 """
 
 import abc
+import logging
+logger = logging.getLogger(__name__)
+
 
 class Plotter(object):
     __metaclass__ = abc.ABCMeta

@@ -8,6 +8,8 @@ from .basenetwork import BaseNetwork
 from .layers import DenseUnit, ConvUnit
 
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 #TODO: use setters to enforce types/formats/values!
 #TODO: make this a base class?
@@ -68,3 +70,29 @@ class ConvNet(BaseNetwork, nn.Module):
 
     def __str__(self):
         return super(ConvNet, self).__str__() + f'\noptim: {self.optim}'
+
+    def build_conv_network(self, conv_hid_layers):
+        conv_dim = len(conv_hid_layers[0][2])
+        conv_layers = []
+        for i, layer_param in enumerate(conv_hid_layers):
+            conv_layers.append(ConvUnit(
+                                        conv_dim=conv_dim,
+                                        in_channels=layer_param[0],         
+                                        out_channels=layer_param[1],        
+                                        kernel_size=tuple(layer_param[2]), 
+                                        stride=layer_param[3],
+                                        padding=layer_param[4],
+                                        activation=self._activation))
+        conv_network = nn.Sequential(*conv_layers)
+        return conv_network
+
+    def build_dense_network(self, dims):
+        dim_pairs = list(zip(dims[:-1], dims[1:]))
+        dense_layers = []
+        for in_d, out_d in dim_pairs:
+            dense_layers.append(DenseUnit(
+                                          in_channels=in_d,
+                                          out_channels=out_d,
+                                          activation=self._activation))
+        dense_network = nn.Sequential(*dense_layers)
+        return dense_network

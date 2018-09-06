@@ -3,8 +3,16 @@ __author__ = 'Caitrin'
 import random
 from contextlib import contextmanager
 from copy import deepcopy
+import pandas as pd
+import logging
 
-#TODO: this was taken from pytorch code.... but needs to be adapted to work with pytorch data
+logger = logging.getLogger(__name__)
+
+
+#TODO: variance thresholding
+
+
+#TODO: these were all copy-pasted from torchtext because torchtext is not yet packaged for anaconda - therefore not yet a reasonable dependency
 #https://github.com/pytorch/text/blob/master/torchtext/data/dataset.py
 
 def check_split_ratio(split_ratio):
@@ -70,9 +78,6 @@ def rationed_split(examples, train_ratio, test_ratio, val_ratio, rnd):
 
     return data
 
-
-
-
 class RandomShuffler(object):
     """Use random functions while keeping track of the random state to make it
     reproducible and deterministic."""
@@ -107,6 +112,15 @@ class RandomShuffler(object):
 
 #THIS IS FROM SNEHA  https://github.com/sneha-desai
 def stitch_datasets(df_list, on, index_list=None):
+    """
+    Args:
+    df_list: list of dataframes to stitch together
+    on: key that specifies which features column to use in each dataset to identify the specific examples of all datasets
+    index_list: list of feature columns to add present bit (default None)
+
+    Returns: concatenated dataframe
+
+    """
     print(index_list)
     # change column names to all caps
     for i in range(len(df_list)):
