@@ -6,7 +6,9 @@ import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
+from torchviz import make_dot
 
+import numpy as np
 
 sys.path.append('../')
 normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
@@ -15,20 +17,19 @@ normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
 transform = transforms.Compose([transforms.ToTensor(),
                                 transforms.Normalize((0.1307,), (0.3081,))])
 
-train_dataset = datasets.FashionData(root='C:\WORK\Aifred\Vulcan2\master\Vulcan2\data', 
+train_dataset = datasets.FashionData(root=r'C:\WORK\Aifred\Vulcan2\master\Vulcan2\data', 
                             train=True, 
                             transform=transform,
                             download=True
                            )
 
-val_dataset = datasets.FashionData(root='C:\WORK\Aifred\Vulcan2\master\Vulcan2\data', 
+val_dataset = datasets.FashionData(root=r'C:\WORK\Aifred\Vulcan2\master\Vulcan2\data', 
                             train=False, 
                             transform=transform,
                            )
 
 
 batch_size = 100
-n_iters = 5500
 
 train_loader = DataLoader(dataset=train_dataset, 
                                            batch_size=batch_size,            
@@ -39,20 +40,51 @@ val_loader = DataLoader(dataset=val_dataset,
                                           shuffle=False)
 
 
-network_conv_config = {
-    'mode': 'conv',
-    'units': ([ [1, 16, (5, 5), 2, 0],
-                [16, 32, (5, 5), 1, 0],
-                [32, 64, (5, 5), 1, 0] ],
-              [ 100 ]),
-    'dropouts': [0.2],
+conv_net_config = {
+    'conv_units': [
+                    dict(
+                        in_ch=1,
+                        out_ch=16,
+                        k_size=(5, 5),
+                        stride=2,
+                        padding=0
+                    ),
+                    dict(
+                        in_ch=16,
+                        out_ch=32,
+                        k_size=(5, 5),
+                        stride=1,
+                        padding=0
+                    ),
+                    dict(
+                        in_ch=32,
+                        out_ch=64,
+                        k_size=(5, 5),
+                        stride=1,
+                        padding=0
+                        )
+    ],
+}
+dense_net_config = {
+    'dense_units': [100],
+    'dropouts': [0.3],
 }
 
 model = models.ConvNet(
     name='conv_net_test',
+    input_network=None,
     dimensions=(1, 28, 28),
-    config=network_conv_config,
+    config=conv_net_config
+)
+
+model1 = models.DenseNet(
+    name='dense_net_test',
+    input_network=model,
+    dimensions=model.conv_flat_dim,
+    config=dense_net_config,
     num_classes=10
 )
 
-model.fit(train_loader, val_loader, 10)
+model1.fit(train_loader, val_loader, 10)
+
+print(model1.run_test(np.expand_dims(val_dataset.test_data, axis=1), np.expand_dims(val_dataset.test_labels, axis=1)))
