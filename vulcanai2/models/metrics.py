@@ -1,57 +1,107 @@
 import numpy as np
+
 import torch
 import torch.nn.functional as F
 from torch.autograd import Variable
-from sklearn import metrics as scipy_metrics
+
+import math
+import numpy as np
+from sklearn import metrics as skl_metrics
+from sklearn.metrics import confusion_matrix
+from sklearn.preprocessing import LabelBinarizer
+from sklearn.manifold import TSNE
+from sklearn.decomposition import PCA
+
+from copy import deepcopy
+
+from collections import Counter
+
 import logging
 logger = logging.getLogger(__name__)
 
 class Metrics(object):
 
-    def __init__(self, num_class):
+    def __init__(self, num_class, use_unlabeled=False):
+        self.mat = np.zeros((num_class, num_class), dtype=np.float)
+        self.valids = np.zeros((num_class), dtype=np.float)
+        self.IoU = np.zeros((num_class), dtype=np.float)
+        self.mIoU = 0
+
         self.num_class = num_class
-        self.confusion_matrix = np.zeros((num_class, num_class))
-
-    def _fast_hist(self, prediction, target, num_class):
-        mask = (target >= 0) & (target < num_class)
-        hist = np.bincount(
-                            num_class * target[mask].astype(int) + prediction[mask],
-                            minlength=num_class ** 2,
-                            ).reshape(num_class, num_class)
-        return hist
-    def update(self, predictions, targets):
-        for prediction, target in zip(predictions, targets):
-            self.confusion_matrix += self._fast_hist(
-                prediction.flatten(), target.flatten(), self.num_class)
-
-    def get_scores(self):
-        """Returns accuracy score evaluation result.
-            - overall accuracy
-            - mean accuracy
-            - mean IU
-        """
-        hist = self.confusion_matrix
-        acc = np.diag(hist).sum() / hist.sum()
-        acc_cls = np.diag(hist) / hist.sum(axis=1)
-        acc_cls = np.nanmean(acc_cls)
-        iu = np.diag(hist) / (hist.sum(axis=1) + hist.sum(axis=0) - np.diag(hist))
-        mean_iu = np.nanmean(iu)
-        cls_iu = dict(zip(range(self.num_class), iu))
-
-        return (
-            {
-                "Overall Acc: \t": acc,
-                "Mean Acc : \t": acc_cls,
-                "Mean IoU : \t": mean_iu,
-            },
-            cls_iu,
-            )  
+        self.list_classes = list(range(num_class))
+        self.use_unlabeled = use_unlabeled
+        self.mat_start_idx = 1 if not self.use_unlabeled else 0
 
     def reset(self):
-        self.confusion_matrix = np.zeros((self.n_classes, self.n_classes))
+        self.mat = np.zeros((self.num_class, self.num_class), dtype=float)
+        self.valids = np.zeros((self.num_class), dtype=float)
+        self.IoU = np.zeros((self.num_class), dtype=float)
+        self.mIoU = 0
+    
+    def update(self, predictions, targets):
+        if not(isinstance(predictions, np.ndarray)) or not(isinstance(targets, np.ndarray)):
+            print("Expected ndarray")
 
-    def average(self):
-        pass
+        elif len(targets.shape) == 3:        # batched spatial target
+            if len(predictions.shape) == 4:  # prediction is 1 hot encoded
+                temp_predictions = np.argmax(predictions, axis=1).flatten()
+            elif len(predictions.shape) == 3:
+                temp_predictions = predictions.flatten()
+            else:
+                print("Predictions and Targets does not match")
+            temp_targets = targets.flatten()
+
+        elif len(targets.shape) == 2:        # spatial target
+            if len(predictions.shape) == 3:  # prediction is 1 hot encoded
+                temp_predictions = np.argmax(predictions, axis=1).flatten()
+            elif len(predictions.shape) == 2:
+                temp_predictions = predictions.flatten()
+            else:
+                print("Predictions and Targets does not match")
+            temp_targets = targets.flatten()
+
+        elif len(targets.shape) == 1:
+            if len(predictions.shape) == 2:  # prediction is 1 hot encoded
+                temp_predictions = np.argmax(predictions, axis=1).flatten()
+            elif len(predictions.shape) == 1:
+                temp_predictions = predictions
+            else:
+                print("Predictions and Targets does not match")
+            temp_targets = targets
+        else:
+            print("Data with this dimension cannot be handled")
+
+        self.mat += confusion_matrix(temp_targets, temp_predictions, labels=self.list_classes)
+
+    def get_scores(self):
+        tp = 0
+        fp = 0
+        tn = 0
+        fn = 0
+        total = 0   # Total true positives
+        N = 0       # Total samples
+        for i in range(self.mat_start_idx, self.num_class):
+            N += sum(self.mat[:, i])
+            tp = self.mat[i][i]
+            fp = sum(self.mat[self.mat_start_idx:, i]) - tp
+            fn = sum(self.mat[i,self.mat_start_idx:]) - tp
+
+            if (tp+fp) == 0:
+                self.valids[i] = 0
+            else:
+                self.valids[i] = tp/(tp + fp)
+
+            if (tp+fp+fn) == 0:
+                self.IoU[i] = 0
+            else:
+                self.IoU[i] = tp/(tp + fp + fn)
+
+            total += tp
+
+        self.mIoU = sum(self.IoU[self.mat_start_idx:])/(self.num_class - self.mat_start_idx)
+        self.acc = total/(sum(sum(self.mat[self.mat_start_idx:, self.mat_start_idx:])))
+
+        return self.valids, self.acc, self.IoU, self.mIoU, self.mat           
 
     def get_accuracy(self, predictions, targets):
         max_index = predictions.max(dim=1)[1]
@@ -59,8 +109,263 @@ class Metrics(object):
         accuracy = int(correct.data) / len(targets)
         return correct, accuracy
 
-    def get_precision(predictions, targets):
-        return scipy_metrics.precision_score(targets.flatten(), predictions.flatten())
+    def get_precision(self, predictions, targets):
+        return skl_metrics.precision_score(targets.flatten(), predictions.flatten())
 
-    def get_roc_score(predictions, targets):
-        return scipy_metrics.roc_auc_score(targets.flatten(), predictions.flatten())
+    def get_roc_score(self, predictions, targets):
+        return skl_metrics.roc_auc_score(targets.flatten(), predictions.flatten())
+
+
+    def get_notable_indices(self, matrix, top_k=5):
+        """
+        Return dict of top k and bottom k features useful from matrix.
+
+        Args:
+            matrix: 1d numpy array
+            top_k: defaults to top and bottom 5 indices
+        """
+        important_features = matrix.argsort()[-top_k:][::-1]
+        unimportant_features = matrix.argsort()[:-1][:top_k]
+        return {'important_indices': important_features,
+                'unimportant_indices': unimportant_features}
+
+    def round_list(self, raw_list, decimals=4):
+        """
+        Return the same list with each item rounded off.
+
+        Args:
+            raw_list: float list
+            decimals: how many decimal points to round to
+
+        Returns: the rounded list
+        """
+        return [round(item, decimals) for item in raw_list]
+
+    def get_confusion_matrix(self, predictions, targets):
+        """
+        Calculate the confusion matrix for classification network predictions.
+
+        Args:
+            predictions: the class matrix predicted by the network.
+                    Does not take one hot vectors.
+            targets: the class matrix of the ground truth
+                    Does not take one hot vectors.
+
+        Returns: the confusion matrix
+        """
+        print(type(predictions))
+        if len(predictions.shape) == 2:
+            predictions = predictions[:, 0]
+        if len(targets.shape) == 2:
+            targets = targets[:, 0]
+        return confusion_matrix(y_true=targets,
+                                y_pred=predictions)
+
+    def get_one_hot(self, in_matrix):
+        """
+        Reformat truth matrix to same size as the output of the dense network.
+
+        Args:
+            in_matrix: the categorized 1D matrix
+
+        Returns: a one-hot matrix representing the categorized matrix
+        """
+        if in_matrix.dtype.name == 'category':
+            custum_array = in_matrix.cat.codes
+
+        elif isinstance(in_matrix, np.ndarray):
+            custum_array = in_matrix
+
+        else:
+            raise ValueError("Input matrix cannot be converted.")
+
+        lb = LabelBinarizer()
+        return np.array(lb.fit_transform(custum_array), dtype='float32')
+
+    def get_class(self, in_matrix):
+        """
+        Reformat truth matrix to be the classes in a 1D array.
+
+        Args:
+            in_matrix: one-hot matrix
+
+        Returns: Class array
+        """
+        in_matrix= in_matrix.detach()
+        if in_matrix.shape[1] > 1:
+            return np.expand_dims(np.argmax(in_matrix, axis=1), axis=1)
+        elif in_matrix.shape[1] == 1:
+            return np.around(in_matrix)
+
+    def run_test(self, model, test_x, test_y, figure_path=None, plot=False):
+        """
+        Will conduct the test suite to determine model strength.
+
+        Args:
+            test_x: data the model has not yet seen to predict
+            test_y: corresponding truth vectors
+            figure_path: string, folder to place images in.
+            plot: bool, determines if graphs should be plotted when ran.
+        """
+        if model._num_classes is None or model._num_classes == 0:
+            raise ValueError('There\'s no classification layer')
+
+        if test_y.shape[1] > 1:
+            test_y = self.get_class(test_y)  # Y is in one hot representation
+
+        raw_prediction = model.forward_pass(input_data=test_x,
+                                            convert_to_class=False)
+        class_prediction = self.get_class(raw_prediction)
+
+        confusion_matrix = self.get_confusion_matrix(
+            predictions=class_prediction,
+            targets=test_y
+        )
+
+        tp = np.diagonal(confusion_matrix).astype('float32')
+        tn = (np.array([np.sum(confusion_matrix)] *
+                    confusion_matrix.shape[0]) -
+            confusion_matrix.sum(axis=0) -
+            confusion_matrix.sum(axis=1) + tp).astype('float32')
+        # sum each column and remove diagonal
+        fp = (confusion_matrix.sum(axis=0) - tp).astype('float32')
+        # sum each row and remove diagonal
+        fn = (confusion_matrix.sum(axis=1) - tp).astype('float32')
+
+        sens = np.nan_to_num(tp / (tp + fn))  # recall
+        spec = np.nan_to_num(tn / (tn + fp))
+        sens_macro = np.nan_to_num(sum(tp) / (sum(tp) + sum(fn)))
+        spec_macro = np.nan_to_num(sum(tn) / (sum(tn) + sum(fp)))
+        dice = 2 * tp / (2 * tp + fp + fn)
+        ppv = np.nan_to_num(tp / (tp + fp))  # precision
+        ppv_macro = np.nan_to_num(sum(tp) / (sum(tp) + sum(fp)))
+        npv = np.nan_to_num(tn / (tn + fn))
+        npv_macro = np.nan_to_num(sum(tn) / (sum(tn) + sum(fn)))
+        accuracy = np.sum(tp) / np.sum(confusion_matrix)
+        f1 = np.nan_to_num(2 * (ppv * sens) / (ppv + sens))
+        f1_macro = np.average(np.nan_to_num(2 * sens * ppv / (sens + ppv)))
+
+        print ('{} test\'s results'.format(model.name))
+
+        print ('TP:'),
+        print (tp)
+        print ('FP:'),
+        print (fp)
+        print ('TN:'),
+        print (tn)
+        print ('FN:'),
+        print (fn)
+
+        print ('\nAccuracy: {}'.format(accuracy))
+
+        print ('Sensitivity:'),
+        print(self.round_list(sens, decimals=3))
+        print ('\tMacro Sensitivity: {:.4f}'.format(sens_macro))
+
+        print ('Specificity:'),
+        print(self.round_list(spec, decimals=3))
+        print ('\tMacro Specificity: {:.4f}'.format(spec_macro))
+
+        print ('DICE:'),
+        print(self.round_list(dice, decimals=3))
+        print ('\tAvg. DICE: {:.4f}'.format(np.average(dice)))
+
+        print ('Positive Predictive Value:'),
+        print(self.round_list(ppv, decimals=3))
+        print ('\tMacro Positive Predictive Value: {:.4f}'.format
+            (ppv_macro))
+
+        print ('Negative Predictive Value:'),
+        print(self.round_list(npv, decimals=3))
+        print ('\tMacro Negative Predictive Value: {:.4f}'.format
+            (npv_macro))
+
+        print ('F1-score:'),
+        print(self.round_list(f1, decimals=3))
+        print ('\tMacro f1-score: {:.4f}'.format(f1_macro))
+        print('')
+
+        all_class_auc = []
+        for i in range(model._num_classes):
+            if model._num_classes == 1:      
+                fpr, tpr, thresholds = skl_metrics.roc_curve(test_y,
+                                                        raw_prediction.detach(),
+                                                        pos_label=1)
+            else:
+                fpr, tpr, thresholds = skl_metrics.roc_curve(test_y,
+                                                        raw_prediction[:, i].detach(),
+                                                        pos_label=i)
+
+            auc = skl_metrics.auc(fpr, tpr)
+            all_class_auc += [auc]
+
+        return {
+            'accuracy': accuracy,
+            'macro_sensitivity': sens_macro,
+            'macro_specificity': spec_macro,
+            'avg_dice': np.average(dice),
+            'macro_ppv': ppv_macro,
+            'macro_npv': npv_macro,
+            'macro_f1': f1_macro,
+            'macro_auc': np.average(all_class_auc)
+        }
+
+    def k_fold_validation(self, model, train_x, train_y, k=5, epochs=10,
+                        batch_ratio=1.0, plot=False):
+        """
+        Conduct k fold cross validation on a network.
+
+        Args:
+            model: BaseNetwork object you want to cross validate
+            train_x: ndarray of shape (batch, features), train samples
+            train_y: ndarray of shape(batch, classes), train labels
+            k: int, how many folds to run
+            batch_ratio: float, 0-1 for % of total to allocate for a batch
+            epochs: int, number of epochs to train each fold
+
+        Returns final metric dictionary
+        """
+        try:
+            model.save_name
+        except:
+            model.save_model()
+        chunk_size = int((train_x.shape[0]) / k)
+        results = []
+        timestamp = get_timestamp()
+        for i in range(k):
+            val_x = train_x[i * chunk_size:(i + 1) * chunk_size]
+            val_y = train_y[i * chunk_size:(i + 1) * chunk_size]
+            tra_x = np.concatenate(
+                (train_x[:i * chunk_size], train_x[(i + 1) * chunk_size:]),
+                axis=0
+            )
+            tra_y = np.concatenate(
+                (train_y[:i * chunk_size], train_y[(i + 1) * chunk_size:]),
+                axis=0
+            )
+            net = deepcopy(model)
+            net.train(
+                epochs=epochs,
+                train_x=tra_x,
+                train_y=tra_y,
+                val_x=val_x,
+                val_y=val_y,
+                batch_ratio=batch_ratio,
+                plot=plot
+            )
+            results += [Counter(run_test(
+                net,
+                val_x,
+                val_y,
+                figure_path='figures/kfold_{}{}'.format(timestamp, model.name),
+                plot=plot))]
+            del net
+        aggregate_results = reduce(lambda x, y: x + y, results)
+
+        print ('\nFinal Cross validated results')
+        print ('-----------------------------')
+        for metric_key in aggregate_results.keys():
+            aggregate_results[metric_key] /= float(k)
+            print ('{}: {:.4f}'.format(metric_key, aggregate_results[metric_key]))
+
+        return aggregate_results
