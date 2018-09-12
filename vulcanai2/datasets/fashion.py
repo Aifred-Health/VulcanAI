@@ -99,6 +99,7 @@ class FashionData(data.Dataset):
         return os.path.exists(os.path.join(self.root, self.processed_folder, self.training_file)) and \
             os.path.exists(os.path.join(self.root, self.processed_folder, self.test_file))
 
+    # TODO: Need to fix. File not found error before it downloads
     def download(self):
         """Download the MNIST data if it doesn't exist in processed_folder already."""
         from six.moves import urllib

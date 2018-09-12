@@ -112,6 +112,8 @@ class ConvUnit(BaseLayer):
             self.weight_init(self.kernel.weight)
         nn.init.constant_(self.kernel.bias, self.bias_init)
 
+        # TODO: Why don't we also have instance norm here too? I think this is something we can bring up to the base class
+        #       since the two classes will share norms
         if self.norm:
             self.batch_norm = self.batch_norm(num_features=out_channels)
         self.activation = activation
