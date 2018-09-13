@@ -289,6 +289,7 @@ class BaseNetwork(nn.Module):
         """
         return self.metrics.run_test(self, test_x, test_y, figure_path, plot)
 
+    # TODO: Instead of self.cpu(), use is_cuda to know if you can use gpu
     def forward_pass(self, input_data, convert_to_class=False):
         """
         Allow the implementer to quickly get outputs from the network.
