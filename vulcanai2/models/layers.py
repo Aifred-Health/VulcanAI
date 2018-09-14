@@ -5,6 +5,8 @@ from torch.nn import init
 import logging
 logger = logging.getLogger(__name__)
 
+
+# TODO: Should call this BaseUnit or call the others DenseLayer, etc.
 class BaseLayer(nn.Sequential):
     """The base class of layer
     """
@@ -137,7 +139,6 @@ class ConvUnit(BaseLayer):
             x = torch.ones(1, *self.in_dim)
             x = self.conv_model(x)
             return x.numel()
-
 
 
 ####### TODO: Will work on these classes below later during Vulcan2 deployment

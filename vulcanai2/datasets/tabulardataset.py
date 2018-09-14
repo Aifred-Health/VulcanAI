@@ -4,8 +4,11 @@ import numpy as np
 import pandas as pd
 from . import utils as utils
 import logging
+from itertools import groupby
 
 logger = logging.getLogger(__name__)
+
+#TODO: user class torch.utils.data.ConcatDataset(datasets)[source] to concat datasets instead?
 
 class TabularDataset(Dataset):
     def __init__(self, data, labelColumn="label", joinColumn=None, indexList=None):
@@ -22,27 +25,27 @@ class TabularDataset(Dataset):
             if not joinColumn:
                 raise RuntimeError("You need to provide a joinColumn if a list of csvs are provided")
             dfs = [pd.read_csv(f) for f in data]
-            self.df = utils.stitch_datasets(dfs, joinColumn, indexList)
+            self.df = utils.stitch_datasets(dfs, joinColumn, indexList) #TODO: switch this to joining multiple datasets??
         elif isinstance(data, pd.DataFrame):
             self.df = data
         else:
             self.df = pd.read_csv(data)
 
         self.labelColumn = labelColumn
-        self.n = self.df.shape([0]) #TODO: delete this cause it won't update and that's dumb cause you're letting people access the dataframe object
+
 
     def __len__(self):
         """
         Denotes the total number of samples.
         """
-        return self.n
+        return self.df.shape[0]
 
     def __getitem__(self, idx):
         """
         Generates one sample of data
         """
-        #TODO: check types, possibly wrong
-        return list(self.df.drop(self.labelColumn, axis=1)[[idx]]), list(self.df[[self.labelColumn]].iloc[[idx]])[0]
+        #TODO: check types
+        return self.df.drop(self.labelColumn, axis=1).iloc[[2]].values.tolist()[0], self.df[[self.labelColumn]].iloc[[idx]].values.tolist()[0]
 
     def save_dataframe(self, file_path):
         """
@@ -56,9 +59,47 @@ class TabularDataset(Dataset):
     def delete_columns(self, columnList):
         self.df = self.df.drop([columnList])
 
-    #TODO: this operates on categorical, as necessary. need to figure out where in the pipeline this happens...
-    def create_dummies(self):
-        pass
+    def create_dummies(self, columnNames=None):
+        """
+        Create one-hot encoding for all categorical features.
+        :param columnNames: All columns that you want to one-hot encode. You should probably use this if you have columns like patientID
+        :return:
+        """
+        self.df = pd.get_dummies(self.df, dummy_na=True, columns=columnNames)
+
+    #TODO: check cause this may cause problems with vars originally containing underscores
+    #taken from https://stackoverflow.com/questions/34523111/the-most-elegant-way-to-get-back-from-pandas-df-dummies
+    def reverse_create_dummies(self):
+        """
+        Undoes the process of creating dummies
+        :return:
+        """
+
+        result_series = {}
+
+        # Find dummy columns and build pairs (category, category_value)
+        dummmy_tuples = [(col.split("_")[0], col) for col in self.df.columns if "_" in col]
+
+        # Find non-dummy columns that do not have a _
+        non_dummy_cols = [col for col in self.df.columns if "_" not in col]
+
+        # For each category column group use idxmax to find the value.
+        for dummy, cols in groupby(dummmy_tuples, lambda item: item[0]):
+            # Select columns for each category
+            dummy_df = self.df[[col[1] for col in cols]]
+
+            # Find max value among columns
+            max_columns = dummy_df.idxmax(axis=1)
+
+            # Remove category_ prefix
+            result_series[dummy] = max_columns.apply(lambda item: item.split("_")[1])
+
+        # Copy non-dummy columns over.
+        for col in non_dummy_cols:
+            result_series[col] = self.df[col]
+
+        # Return dataframe of the resulting series
+        self.df = pd.DataFrame(result_series)
 
     def list_all_features(self):
         """
@@ -67,41 +108,51 @@ class TabularDataset(Dataset):
         """
         return list(self.df)
 
-    def get_all_numeric_features(self):
+    def list_all_numeric_features(self):
         """
         Returns all columns that contain numeric values
         :return: all columns that contain numeric values
         """
-        return [key for key in dict(self.df.dtypes) if dict(self.df.dtypes)[key] in ['float64', 'int64']]
+        return [key for key in dict(self.df.dtypes) if dict(self.df.dtypes)[key] in ['float64', 'int64', 'float32', 'int32']]
 
-    def get_all_categorical_features(self):
+    def list_all_categorical_features(self):
         """
         Returns all columns that contain categorical values
         :return: all columns that contain categorical values
         """
-        return [key for key in dict(self.df.dtypes) if dict(self.df.dtypes)[key] not in ['float64', 'int64']]
+        return [key for key in dict(self.df.dtypes) if dict(self.df.dtypes)[key] not in ['float64', 'int64', 'float32', 'int32']]
 
     #TODO: check this doesn't operate in place... damn
     def remove_majority_null(self, threshold):
         """
-        Remove columns where the majority of values as determined by the threshold are numm
-        :param threshold: A number between 0 and 1
+        Remove columns where the number of values as determined by the threshold are null
+        :param threshold: A number between 0 and 1, representing proportion needed to drop
         :return:
         """
         if threshold >= 1 or threshold <= 0:
             raise ValueError("Threshold needs to be a proportion between 0 and 1")
-        num_threshold = threshold* self.n
-        self. df = self.df.dropna(thresh = num_threshold, axis=1)
+        num_threshold = threshold* self.__len__()
+        prior = self.__len__() #TODO: probably bad to use this?
+        self.df = self.df.dropna(thresh=num_threshold, axis=1)
+        after = self.__len__()
+        res = prior-after
+        print("Removed %d columns"%res)
 
+    #TODO: turn this into a percentage too? currently it's not
     def remove_unique(self, threshold):
         """
         Removes columns that have less than threshold number of unique values
         :param threshold: All columns that have threshold or less unique values will be removed.
         :return:
         """
+        prior = self.__len__() #TODO: probably bad to use this?
+
         for col in self.df.columns:
             if len(self.df[col].unique()) <= threshold:
                 self.df = self.df.drop(col,axis=1)
+        after = self.__len__()
+        res = prior - after
+        print("Removed %d columns" % res)
 
     #TODO: implement variance thresholding
     def remove_unbalanced_columns(self, threshold, non_numeric=True):

@@ -24,7 +24,7 @@ class CNNConfig():
 #Where config is of type CNNConfig?
 class ConvNet(BaseNetwork, nn.Module):
     def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None, 
-                activation=activations.Softmax(dim=1), pred_activation=activations.Softmax(dim=1), optim_spec={'name': 'Adam', 'lr': 0.001},
+                activation=nn.ReLU(), pred_activation=nn.Softmax(dim=1), optim_spec={'name': 'Adam', 'lr': 0.001},
                 lr_scheduler=None, stopping_rule='best_validation_error', criter_spec={'name': 'CrossEntropyLoss'}):
         
         nn.Module.__init__(self)
@@ -89,6 +89,7 @@ class ConvNet(BaseNetwork, nn.Module):
         else:
             return x
 
+    # TODO: Automatically calculate padding to be the same as input shape.
     def build_conv_network(self, conv_hid_layers):
         conv_layers = []
         for conv_layer in conv_hid_layers:

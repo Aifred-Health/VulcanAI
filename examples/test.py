@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
-from torchviz import make_dot
+# from torchviz import make_dot
 
 import numpy as np
 
@@ -17,13 +17,17 @@ normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
 transform = transforms.Compose([transforms.ToTensor(),
                                 transforms.Normalize((0.1307,), (0.3081,))])
 
-train_dataset = datasets.FashionData(root=r'C:\WORK\Aifred\Vulcan2\master\Vulcan2\data', 
+
+data_path = r'C:\WORK\Aifred\Vulcan2\master\Vulcan2\data'
+data_path = r'/Users/robertfratila/Code/Aifred_Health/Vulcan2/data'
+
+train_dataset = datasets.FashionData(root=data_path, 
                             train=True, 
                             transform=transform,
                             download=True
                            )
 
-val_dataset = datasets.FashionData(root=r'C:\WORK\Aifred\Vulcan2\master\Vulcan2\data', 
+val_dataset = datasets.FashionData(root=data_path, 
                             train=False, 
                             transform=transform,
                            )
