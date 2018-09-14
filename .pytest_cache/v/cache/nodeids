@@ -1,0 +1,10 @@
+[
+  "vulcanai2/tests/models/test_basenetwork.py::TestBaseNetwork::()::test_name",
+  "vulcanai2/tests/models/test_basenetwork.py::TestBaseNetwork::()::test_learning_rate",
+  "vulcanai2/tests/models/test_cnn.py::TestConvNet::()::test_forward_not_nan",
+  "vulcanai2/tests/models/test_cnn.py::TestConvNet::()::test_forward_class_not_nan",
+  "vulcanai2/tests/models/test_dnn.py::TestDenseNet::()::test_forward_not_nan",
+  "vulcanai2/tests/models/test_dnn.py::TestDenseNet::()::test_forward_class_not_nan",
+  "vulcanai2/tests/models/test_layers.py::TestDenseUnit::()::test_forward",
+  "vulcanai2/tests/models/test_layers.py::TestConvUnit::()::test_forward"
+]

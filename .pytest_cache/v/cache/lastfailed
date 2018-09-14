@@ -1,0 +1,3 @@
+{
+  "vulcanai2/tests/models/test_layers.py::TestBaseLayer::()::test_update_batch_size": true
+}
