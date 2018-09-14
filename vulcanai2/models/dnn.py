@@ -80,8 +80,8 @@ class DenseNet(BaseNetwork, nn.Module):
         dense_layers = []
         for in_d, out_d in dim_pairs:
             dense_layers.append(DenseUnit(
-                                          in_channels=in_d,
-                                          out_channels=out_d,
+                                          in_features=in_d,
+                                          out_features=out_d,
                                           activation=self._activation))
         dense_network = nn.Sequential(*dense_layers)
         return dense_network
