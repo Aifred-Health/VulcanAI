@@ -186,7 +186,6 @@ class Metrics(object):
         lb = LabelBinarizer()
         return np.array(lb.fit_transform(custum_array), dtype='float32')
 
-    # TODO: class # should correspond with self.num_class
     def get_class(self, in_matrix):
         """
         Reformat truth matrix to be the classes in a 1D array.
@@ -194,7 +193,7 @@ class Metrics(object):
         Args:
             in_matrix: one-hot matrix
 
-        Returns: 2D Class array
+        Returns: Class array
         """
         in_matrix= in_matrix.detach()
         if in_matrix.shape[1] > 1:

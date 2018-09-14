@@ -5,7 +5,6 @@ from torch.nn import init
 import logging
 logger = logging.getLogger(__name__)
 
-# TODO: Should call this BaseUnit or call the others DenseLayer, etc.
 class BaseLayer(nn.Module):
     """The base class of layer
     """
