@@ -89,6 +89,7 @@ class ConvNet(BaseNetwork, nn.Module):
         else:
             return x
 
+    # TODO: Automatically calculate padding to be the same as input shape.
     def build_conv_network(self, conv_hid_layers):
         conv_layers = []
         for conv_layer in conv_hid_layers:
