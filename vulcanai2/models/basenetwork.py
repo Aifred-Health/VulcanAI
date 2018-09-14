@@ -157,15 +157,15 @@ class BaseNetwork(nn.Module):
     def _create_network(self, activation, pred_activation):
         pass
 
-
     def get_all_layers(self, network=None):
+        layers = []
         if not network:
             network = self
         for key, module in network._modules.items():
             if isinstance(module, (nn.Sequential, ConvUnit, DenseUnit)):
                 self.get_all_layers(module)
             else:
-                print(key, module, type(module))
+                layers.append(module)
 
     def get_layers(self):
         return self._modules

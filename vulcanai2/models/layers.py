@@ -6,14 +6,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-# TODO: Should call this BaseUnit or call the others DenseLayer, etc.
-class BaseLayer(nn.Sequential):
+class BaseUnit(nn.Sequential):
     """The base class of layer
     """
     def __init__(self, weight_init=None, bias_init=0,
                  norm=None, activation=None, dp=None):
 
-        super(BaseLayer, self).__init__()
+        super(BaseUnit, self).__init__()
         
         self.weight_init = weight_init
         self.bias_init = bias_init
@@ -36,7 +35,7 @@ class BaseLayer(nn.Sequential):
         nn.init.constant_(self.kernel.bias, self.bias_init)
   
 
-class DenseUnit(BaseLayer):
+class DenseUnit(BaseUnit):
     def __init__(self, in_features , out_features , weight_init=None, bias_init=0,
                  norm=None, activation=None, dp=None):
         super(DenseUnit, self).__init__(weight_init, bias_init,
@@ -74,7 +73,7 @@ class DenseUnit(BaseLayer):
 
         self.init_weights()
 
-class ConvUnit(BaseLayer):
+class ConvUnit(BaseUnit):
     def __init__(self, conv_dim, in_channels, out_channels, kernel_size=3,
                  weight_init=nn.init.xavier_uniform_, bias_init=0,
                  stride=1, padding=2, norm=None,
@@ -142,7 +141,7 @@ class ConvUnit(BaseLayer):
 
 
 ####### TODO: Will work on these classes below later during Vulcan2 deployment
-class InputUnit(BaseLayer):
+class InputUnit(BaseUnit):
     def __init__(self, in_channels, out_channels, bias=False):
         super(InputUnit, self).__init__()
         self.in_channels = in_channels
@@ -158,7 +157,7 @@ class InputUnit(BaseLayer):
             output = self.kernel(input)
             return output
 
-class View(BaseLayer):
+class View(BaseUnit):
     """
     Layer to reshape the input # TODO : Testing
     """
