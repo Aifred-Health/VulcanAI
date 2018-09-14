@@ -157,15 +157,15 @@ class BaseNetwork(nn.Module):
     def _create_network(self):
         pass
 
-    def get_all_layers(self):
-        layers = []
-        for l_name, l in self.input_network['network'].network.named_children():
-            if isinstance(l, nn.Sequential):
-                for subl_name, subl in l.named_children():
-                    layers.append(subl)
+    def get_all_layers(self, network=None):
+        if not network:
+            network = self
+        for key, module in network._modules.items():
+            if isinstance(module, (nn.Sequential, ConvUnit, DenseUnit)):
+                self.get_all_layers(module)
             else:
-                for param in l.parameters():
-                    self.input_dimensions= param.size(0)
+                print(key, module, type(module))
+
 
     def init_layers(self, layers):
         '''
