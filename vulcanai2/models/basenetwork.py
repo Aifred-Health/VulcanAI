@@ -122,13 +122,13 @@ class BaseNetwork(nn.Module):
             x = network(x)
             return x.numel()
     
-    def get_size(self):
+    def get_size(self, network):
         """
         Returns the output size of the network's last layer
         """
         with torch.no_grad():
             x = torch.ones(1, self.in_dim)
-            x = self(x)# x = network(x)
+            x = network(x)
             return x.size()[1]
 
     def get_weights(self):
@@ -154,11 +154,18 @@ class BaseNetwork(nn.Module):
         return self._apply(lambda t: t.cpu())
 
     @abc.abstractmethod
-    def _create_network(self, activation, pred_activation):
+    def _create_network(self):
         pass
 
-    def get_layers(self):
-        return self._modules
+    def get_all_layers(self):
+        layers = []
+        for l_name, l in self.input_network['network'].network.named_children():
+            if isinstance(l, nn.Sequential):
+                for subl_name, subl in l.named_children():
+                    layers.append(subl)
+            else:
+                for param in l.parameters():
+                    self.input_dimensions= param.size(0)
 
     def init_layers(self, layers):
         '''
@@ -282,7 +289,6 @@ class BaseNetwork(nn.Module):
         """
         return self.metrics.run_test(self, test_x, test_y, figure_path, plot)
 
-    # TODO: Instead of self.cpu(), use is_cuda to know if you can use gpu
     def forward_pass(self, input_data, convert_to_class=False):
         """
         Allow the implementer to quickly get outputs from the network.
@@ -295,15 +301,10 @@ class BaseNetwork(nn.Module):
         Returns: Numpy matrix with the output probabilities
                  with each class unless otherwise specified.
         """
-        output = self.cpu()(torch.Tensor(input_data)).data
         if convert_to_class:
-            return self.metrics.get_class(output)
+            return self.cpu().metrics.get_class(self(torch.Tensor(input_data)))
         else:
-            return output
-        # if convert_to_class:
-        #     return self.cpu().metrics.get_class(self(torch.Tensor(input_data)))
-        # else:
-        #     return self.cpu()(torch.Tensor(input_data))
+            return self.cpu()(torch.Tensor(input_data))
 
     #TODO: this is copy pasted - edit as appropriate
     def save_model(self, save_path='models'):
