@@ -3,25 +3,17 @@ import numpy as np
 import torch
 from vulcanai2.models.layers import *
 
-class TestBaseLayer:
+class TestBaseUnit:
     @pytest.fixture
-    def baselayer(self): 
-        return BaseLayer()
-
-    # TODO: Needs fixing assigning values to NoneType
-    # def test_update_batch_size(self, baselayer):
-    #     """Confirm out is non nan."""
-    #     baselayer.update_batch_size(31)
-    #     assert baselayer.batch_size == 31
-    #     assert baselayer.in_shape[0] == 31
-    #     assert baselayer.out_shape[0] == 31
+    def baseunit(self): 
+        return BaseUnit()
 
 class TestDenseUnit:
     @pytest.fixture
     def dense_unit(self):
         return DenseUnit(
-            in_channels=10,
-            out_channels=10
+            in_features=10,
+            out_features=10
         )
     
     def test_forward(self, dense_unit):
