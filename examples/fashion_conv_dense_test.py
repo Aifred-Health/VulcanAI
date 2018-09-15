@@ -9,6 +9,8 @@ from torch.utils.data import DataLoader
 # from torchviz import make_dot
 
 import numpy as np
+import json
+from collections import OrderedDict
 
 sys.path.append('../')
 normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
@@ -19,7 +21,7 @@ transform = transforms.Compose([transforms.ToTensor(),
 
 
 data_path = r'C:\WORK\Aifred\Vulcan2\master\Vulcan2\data'
-data_path = r'/Users/robertfratila/Code/Aifred_Health/Vulcan2/data'
+#data_path = r'/Users/robertfratila/Code/Aifred_Health/Vulcan2/data'
 
 train_dataset = datasets.FashionData(root=data_path, 
                             train=True, 
@@ -89,6 +91,13 @@ model1 = models.DenseNet(
     num_classes=10
 )
 
-model1.fit(train_loader, val_loader, 10)
+#model1.fit(train_loader, val_loader, 10)
 
-print(model1.run_test(np.expand_dims(val_dataset.test_data, axis=1), np.expand_dims(val_dataset.test_labels, axis=1)))
+#print(model1.run_test(np.expand_dims(val_dataset.test_data, axis=1), np.expand_dims(val_dataset.test_labels, axis=1)))
+
+params = model1.get_output_shapes((1,28,28))
+for k, v in params.items() :
+    print('{}:'.format(k))
+    if isinstance(v, OrderedDict):
+        for k2, v2 in v.items():
+            print('\t {}: {}'.format(k2, v2))
