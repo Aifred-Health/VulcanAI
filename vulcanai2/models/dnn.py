@@ -22,16 +22,14 @@ class DNNConfig():
 class DenseNet(BaseNetwork, nn.Module):
 
     def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None, 
-                activation=nn.Softmax(dim=1), pred_activation=nn.Softmax(dim=1), optim_spec={'name': 'Adam', 'lr': 0.001},
+                activation=nn.ReLU(), pred_activation=nn.Softmax(dim=1), optim_spec={'name': 'Adam', 'lr': 0.001},
                 lr_scheduler=None, stopping_rule='best_validation_error', criter_spec={'name': 'CrossEntropyLoss'}):
         
         nn.Module.__init__(self)
         super(DenseNet, self).__init__(name, dimensions, config, save_path, input_network, num_classes, 
                 activation, pred_activation, optim_spec, lr_scheduler, stopping_rule, criter_spec)
 
-    def _create_network(self, activation, pred_activation):
-        self._activation = activation
-        self._pred_activation = pred_activation
+    def _create_network(self):
         self.in_dim = self._dimensions
 
         if self._input_network and isinstance(self._input_network, ConvNet):
@@ -80,8 +78,8 @@ class DenseNet(BaseNetwork, nn.Module):
         dense_layers = []
         for in_d, out_d in dim_pairs:
             dense_layers.append(DenseUnit(
-                                          in_channels=in_d,
-                                          out_channels=out_d,
+                                          in_features=in_d,
+                                          out_features=out_d,
                                           activation=self._activation))
         dense_network = nn.Sequential(*dense_layers)
         return dense_network

@@ -1,46 +1,48 @@
+# -*- coding: utf-8 -*-
+"""Defines the basenetwork class"""
 import abc
-
-import torch
-import torch.nn as nn
-from torch import optim
 from torch.autograd import Variable
-import torch.nn.modules.loss as Loss
-
+import torch.nn.modules.loss as loss
 from .layers import *
 from .metrics import Metrics
-
-import time
 import pydash as pdash
-from tqdm import tqdm, trange, tnrange, tgrange
+from tqdm import tqdm, trange
 from datetime import datetime
 import logging
-logger = logging.getLogger(__name__)
-import numpy as np
 import os
 import pickle
+from collections import OrderedDict
 
+logger = logging.getLogger(__name__)
+
+
+# noinspection PyDefaultArgument
 class BaseNetwork(nn.Module):
-
+    """
+    Base class upon which all Vulcan NNs will be based.
+    """
+    # TODO: not great to use mutables as arguments.
+    # TODO: reorganize these.
     def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None, 
-                activation=nn.ReLU(), pred_activation=nn.Softmax(dim=1), optim_spec={'name': 'Adam', 'lr': 0.001}, 
-                lr_scheduler=None, stopping_rule='best_validation_error', criter_spec=None):
+                 activation=nn.ReLU(), pred_activation=nn.Softmax(dim=1), optim_spec={'name': 'Adam', 'lr': 0.001},
+                 lr_scheduler=None, stopping_rule='best_validation_error', criter_spec=None):
         """
-        :param name:
-        :param dimensions:
-        :param config:
-        :param save_path:
-        :param input_network:
-        :param num_classes:
-        :param activation:
-        :param pred_activation:
-        :param optimizer:
-        :param learning_rate:
-        :param lr_scheduler:
-        :param stopping_rule:
-        :param criterion:
-        :return:
+        Defines the network object.
+        :param name: The name of the network. Used when saving the file.
+        :param dimensions: The dimensions of the network.
+        :param config: The config, as a dict.
+        :param save_path: The name of the file to which you would like to save this network.
+        :param input_network: A network object provided as input
+        :param num_classes: The number of classes to predict.
+        :param activation: The desired activation function for use in the network. Of type torch.nn.Module.
+        :param pred_activation: The desired activation function for use in the prediction layer. Of type torch.nn.Module
+        :param optim_spec: A dictionary of parameters for the desired optimizer.
+        :param lr_scheduler: A callable torch.optim.lr_scheduler
+        :param stopping_rule: A string. So far just 'best_validation_error' is implemented.
+        :param criter_spec: criterion specification dictionary with name of criterion and all parameters necessary.
         """
         super(BaseNetwork, self).__init__()
+
         self._name = name
         self._dimensions = dimensions
         self._config = config
@@ -54,20 +56,26 @@ class BaseNetwork(nn.Module):
         self._lr_scheduler = lr_scheduler
         self._stopping_rule = stopping_rule
         self._criter_spec = criter_spec
+
+        self._activation = activation
+        self._pred_activation = pred_activation
         
-        self._create_network(activation, pred_activation)
+        self._create_network(self._activation, self._pred_activation)
+
         if self._num_classes:
             self.metrics = Metrics(self._num_classes)
         
         self.optim = None
         self._itr = 0
 
-
-    #TODO: where to do typechecking... just let everything fail?
-    #TODO: add on additional if you want to be able to re-create a network?
+    # TODO: where to do typechecking... just let everything fail?
 
     @property
     def name(self):
+        """
+        Returns the name.
+        :return: the name of the network.
+        """
         return self._name
 
     @name.setter
@@ -76,22 +84,18 @@ class BaseNetwork(nn.Module):
 
     @property
     def save_path(self):
+        """
+        Returns the save path
+        :return: the save path of the network
+        """
         return self._save_path
 
     @save_path.setter
     def save_path(self, value):
         if not value:
-            self.save_path = "{}_{date:%Y-%m-%d_%H:%M:%S}/".format(self.name, date=datetime.datetime.now())
+            self._save_path = "{}_{date:%Y-%m-%d_%H:%M:%S}/".format(self.name, date=datetime.datetime.now())
         else:
             self._save_path = value
-
-    @property
-    def learning_rate(self):
-        return self._learning_rate
-
-    @learning_rate.setter
-    def learning_rate(self, value):
-        self._learning_rate = value
 
     @property
     def lr_scheduler(self):
@@ -103,6 +107,10 @@ class BaseNetwork(nn.Module):
 
     @property
     def stopping_rule(self):
+        """
+        Returns the stopping rule
+        :return: The stoping rule
+        """
         return self._stopping_rule
 
     @stopping_rule.setter
@@ -110,26 +118,107 @@ class BaseNetwork(nn.Module):
         self._stopping_rule = value
 
     @property
-    def criterion(self):
-        return self._criterion
+    def criter_spec(self):
+        """
+        Returns the criterion spec.
+        :return: The criterion spec.
+        """
+        return self._stopping_rule
+
+    @criter_spec.setter
+    def criter_spec(self, value):
+        self._criter_spec = value
+
+    @abc.abstractmethod
+    def _create_network(self, activation, pred_activation):
+        pass
 
     def get_flattened_size(self, network):
         """
-        Returns the flattened output size of the conv network's last layer
+        Returns the flattened output size of the conv network's last layer.
+        :param network: The network to flatten
+        :return: The flattened output size of the conv network's last layer.
         """
         with torch.no_grad():
             x = torch.ones(1, *self.in_dim)
             x = network(x)
             return x.numel()
     
-    def get_size(self, network):
+    def get_output_size(self):
         """
         Returns the output size of the network's last layer
+        :param network: The input network
+        :return: The output size of the network's last layer
         """
         with torch.no_grad():
             x = torch.ones(1, self.in_dim)
-            x = network(x)
+            x = self(x)# x = network(x)
             return x.size()[1]
+
+    def get_size(self, summary_dict, output):
+        """
+        Helper function for the function get_output_shapes
+        """
+        if isinstance(output, tuple):
+            for i in range(len(output)):
+                summary_dict[i] = OrderedDict()
+                summary_dict[i] = self.get_size(summary_dict[i],output[i])
+        else:
+            summary_dict['output_shape'] = list(output.size())
+        return summary_dict
+    
+    def get_output_shapes(self, input_size):
+        """
+        Returns the summary of shapes of all layers in the network
+        """
+        def register_hook(module):
+            def hook(module, input, output):
+                class_name = str(module.__class__).split('.')[-1].split("'")[0]
+                module_idx = len(summary)
+            
+                m_key = '%s-%i' % (class_name, module_idx+1)
+                summary[m_key] = OrderedDict()
+                summary[m_key]['input_shape'] = list(input[0].size())
+                summary[m_key] = self.get_size(summary[m_key], output)
+            
+                params = 0
+                if hasattr(module, 'weight'):
+                    params += torch.prod(torch.LongTensor(list(module.weight.size())))
+                    if module.weight.requires_grad:
+                        summary[m_key]['trainable'] = True
+                    else:
+                        summary[m_key]['trainable'] = False
+                if hasattr(module, 'bias'):
+                    params +=  torch.prod(torch.LongTensor(list(module.bias.size())))
+            
+                summary[m_key]['nb_params'] = params
+                
+            if not isinstance(module, nn.Sequential) and \
+                not isinstance(module, nn.ModuleList) and \
+                not (module == self):
+                hooks.append(module.register_forward_hook(hook))
+        
+        # check if there are multiple inputs to the network
+        if isinstance(input_size[0], (list, tuple)):
+            x = [Variable(torch.rand(1,*in_size)) for in_size in input_size]
+        else:
+            x = Variable(torch.rand(1,*input_size))
+        
+        # create properties
+        summary = OrderedDict()
+        hooks = []
+        # register hook
+        self.apply(register_hook)
+        # make a forward pass
+        self.cpu()(x)
+        # remove these hooks
+        for h in hooks:
+            h.remove()
+        
+        return summary
+    
+    def get_layers(self):
+        return self._modules
 
     def get_weights(self):
         """
@@ -154,18 +243,8 @@ class BaseNetwork(nn.Module):
         return self._apply(lambda t: t.cpu())
 
     @abc.abstractmethod
-    def _create_network(self):
+    def _create_network(self, activation, pred_activation):
         pass
-
-    def get_all_layers(self):
-        layers = []
-        for l_name, l in self.input_network['network'].network.named_children():
-            if isinstance(l, nn.Sequential):
-                for subl_name, subl in l.named_children():
-                    layers.append(subl)
-            else:
-                for param in l.parameters():
-                    self.input_dimensions= param.size(0)
 
     def init_layers(self, layers):
         '''
@@ -183,14 +262,13 @@ class BaseNetwork(nn.Module):
             else:
                 pass
 
-
     def _init_optimizer(self, optim_spec):
         OptimClass = getattr(torch.optim, optim_spec["name"])
         optim_spec = pdash.omit(optim_spec, "name")
         return OptimClass(self.parameters(), **optim_spec)
 
     def _get_criterion(self, criterion_spec):
-        CriterionClass = getattr(Loss, criterion_spec["name"])
+        CriterionClass = getattr(loss, criterion_spec["name"])
         criterion_spec = pdash.omit(criterion_spec, "name")
         return CriterionClass(**criterion_spec)
 
@@ -213,10 +291,14 @@ class BaseNetwork(nn.Module):
 
         self._init_trainer()
 
-        for epoch in trange(self.epoch, epochs, desc='Epoch: ', ncols=80):
-            train_loss, train_acc= self.train_epoch()
-            valid_loss, acc, avg_acc, iou, miou, conf_mat = self.validate()
-            tqdm.write("\n Epoch {}:\nTrain Loss: {:.6f} | Test Loss: {:.6f} | Train Acc: {:.2f}% | Test Acc: {:.2f}%".format(epoch, train_loss, valid_loss, train_acc*100, avg_acc*100))            
+        try:
+            for epoch in trange(self.epoch, epochs, desc='Epoch: ', ncols=80):
+                train_loss, train_acc= self.train_epoch()
+                valid_loss, acc, avg_acc, iou, miou, conf_mat = self.validate()
+                tqdm.write("\n Epoch {}:\nTrain Loss: {:.6f} | Test Loss: {:.6f} | Train Acc: {:.2f} | Test Acc: {:.2f}".format(epoch, train_loss, valid_loss, train_acc, avg_acc))
+        
+        except KeyboardInterrupt:
+            print("\n\n**********Training stopped prematurely.**********\n\n")       
 
 
     def train_epoch(self):
@@ -289,6 +371,7 @@ class BaseNetwork(nn.Module):
         """
         return self.metrics.run_test(self, test_x, test_y, figure_path, plot)
 
+    # TODO: Instead of self.cpu(), use is_cuda to know if you can use gpu
     def forward_pass(self, input_data, convert_to_class=False):
         """
         Allow the implementer to quickly get outputs from the network.
@@ -301,10 +384,15 @@ class BaseNetwork(nn.Module):
         Returns: Numpy matrix with the output probabilities
                  with each class unless otherwise specified.
         """
+        output = self.cpu()(torch.Tensor(input_data)).data
         if convert_to_class:
-            return self.cpu().metrics.get_class(self(torch.Tensor(input_data)))
+            return self.metrics.get_class(output)
         else:
-            return self.cpu()(torch.Tensor(input_data))
+            return output
+        # if convert_to_class:
+        #     return self.cpu().metrics.get_class(self(torch.Tensor(input_data)))
+        # else:
+        #     return self.cpu()(torch.Tensor(input_data))
 
     #TODO: this is copy pasted - edit as appropriate
     def save_model(self, save_path='models'):
@@ -348,7 +436,7 @@ class BaseNetwork(nn.Module):
         pass
 
 
-    def save_metadata(self):
+    def save_metadata(self, file_path):
         pass
 
     def _transfer_optimizer_state_to_right_device(self):
