@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 import numpy as np
 import os
 import pickle
+from collections import OrderedDict
 
 class BaseNetwork(nn.Module):
 
@@ -122,7 +123,7 @@ class BaseNetwork(nn.Module):
             x = network(x)
             return x.numel()
     
-    def get_size(self):
+    def get_output_size(self):
         """
         Returns the output size of the network's last layer
         """
@@ -130,6 +131,71 @@ class BaseNetwork(nn.Module):
             x = torch.ones(1, self.in_dim)
             x = self(x)# x = network(x)
             return x.size()[1]
+
+    def get_size(self, summary_dict, output):
+        """
+        Helper function for the function get_output_shapes
+        """
+        if isinstance(output, tuple):
+            for i in xrange(len(output)):
+                summary_dict[i] = OrderedDict()
+                summary_dict[i] = get_size(summary_dict[i],output[i])
+        else:
+            summary_dict['output_shape'] = list(output.size())
+        return summary_dict
+    
+    def get_output_shapes(self, input_size):
+        """
+        Returns the summary of shapes of all layers in the network
+        """
+        def register_hook(module):
+            def hook(module, input, output):
+                class_name = str(module.__class__).split('.')[-1].split("'")[0]
+                module_idx = len(summary)
+            
+                m_key = '%s-%i' % (class_name, module_idx+1)
+                summary[m_key] = OrderedDict()
+                summary[m_key]['input_shape'] = list(input[0].size())
+                summary[m_key] = self.get_size(summary[m_key], output)
+            
+                params = 0
+                if hasattr(module, 'weight'):
+                    params += torch.prod(torch.LongTensor(list(module.weight.size())))
+                    if module.weight.requires_grad:
+                        summary[m_key]['trainable'] = True
+                    else:
+                        summary[m_key]['trainable'] = False
+                if hasattr(module, 'bias'):
+                    params +=  torch.prod(torch.LongTensor(list(module.bias.size())))
+            
+                summary[m_key]['nb_params'] = params
+                
+            if not isinstance(module, nn.Sequential) and \
+                not isinstance(module, nn.ModuleList) and \
+                not (module == self):
+                hooks.append(module.register_forward_hook(hook))
+        
+        # check if there are multiple inputs to the network
+        if isinstance(input_size[0], (list, tuple)):
+            x = [Variable(torch.rand(1,*in_size)) for in_size in input_size]
+        else:
+            x = Variable(torch.rand(1,*input_size))
+        
+        # create properties
+        summary = OrderedDict()
+        hooks = []
+        # register hook
+        self.apply(register_hook)
+        # make a forward pass
+        self.cpu()(x)
+        # remove these hooks
+        for h in hooks:
+            h.remove()
+        
+        return summary
+    
+    def get_layers(self):
+        return self._modules
 
     def get_weights(self):
         """
@@ -156,19 +222,6 @@ class BaseNetwork(nn.Module):
     @abc.abstractmethod
     def _create_network(self, activation, pred_activation):
         pass
-
-    def get_all_layers(self, network=None):
-        layers = []
-        if not network:
-            network = self
-        for key, module in network._modules.items():
-            if isinstance(module, (nn.Sequential, ConvUnit, DenseUnit)):
-                self.get_all_layers(module)
-            else:
-                layers.append(module)
-
-    def get_layers(self):
-        return self._modules
 
     def init_layers(self, layers):
         '''
@@ -215,11 +268,14 @@ class BaseNetwork(nn.Module):
             self.valid_interv = valid_interv
 
         self._init_trainer()
-
-        for epoch in trange(self.epoch, epochs, desc='Epoch: ', ncols=80):
-            train_loss, train_acc= self.train_epoch()
-            valid_loss, acc, avg_acc, iou, miou, conf_mat = self.validate()
-            tqdm.write("\n Epoch {}:\nTrain Loss: {:.6f} | Test Loss: {:.6f} | Train Acc: {:.2f}% | Test Acc: {:.2f}%".format(epoch, train_loss, valid_loss, train_acc*100, avg_acc*100))            
+        try:
+            for epoch in trange(self.epoch, epochs, desc='Epoch: ', ncols=80):
+                train_loss, train_acc= self.train_epoch()
+                valid_loss, acc, avg_acc, iou, miou, conf_mat = self.validate()
+                tqdm.write("\n Epoch {}:\nTrain Loss: {:.6f} | Test Loss: {:.6f} | Train Acc: {:.2f} | Test Acc: {:.2f}".format(epoch, train_loss, valid_loss, train_acc, avg_acc))
+        
+        except KeyboardInterrupt:
+            print("\n\n**********Training stopped prematurely.**********\n\n")       
 
 
     def train_epoch(self):

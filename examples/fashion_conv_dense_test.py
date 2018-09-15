@@ -10,6 +10,7 @@ from torch.utils.data import DataLoader
 
 import numpy as np
 import json
+from collections import OrderedDict
 
 sys.path.append('../')
 normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
@@ -94,8 +95,9 @@ model1 = models.DenseNet(
 
 #print(model1.run_test(np.expand_dims(val_dataset.test_data, axis=1), np.expand_dims(val_dataset.test_labels, axis=1)))
 
-params = models.utils.get_output_shapes((1,28,28), model1)
+params = model1.get_output_shapes((1,28,28))
 for k, v in params.items() :
     print('{}:'.format(k))
-    for k2, v2 in v.items():
-        print('\t {}: {}'.format(k2, v2))
+    if isinstance(v, OrderedDict):
+        for k2, v2 in v.items():
+            print('\t {}: {}'.format(k2, v2))
