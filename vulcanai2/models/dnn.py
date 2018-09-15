@@ -29,9 +29,7 @@ class DenseNet(BaseNetwork, nn.Module):
         super(DenseNet, self).__init__(name, dimensions, config, save_path, input_network, num_classes, 
                 activation, pred_activation, optim_spec, lr_scheduler, stopping_rule, criter_spec)
 
-    def _create_network(self, activation, pred_activation):
-        self._activation = activation
-        self._pred_activation = pred_activation
+    def _create_network(self):
         self.in_dim = self._dimensions
 
         if self._input_network and isinstance(self._input_network, ConvNet):

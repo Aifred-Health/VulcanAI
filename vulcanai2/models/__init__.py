@@ -1,5 +1,4 @@
-from .basenetwork import BaseNetwork
+# -*- coding: utf-8 -*-
+""" Imports network classes so they can be used directly"""
 from .cnn import ConvNet
 from .dnn import DenseNet
-
-#__all__ = ['CNN'] #pretty sure this will be useful later
