@@ -106,11 +106,14 @@ class Metrics(object):
         return self.valids, self.acc, self.IoU, self.mIoU, self.mat           
 
     #TODO: Remove since it can be found in run_test
-    def get_accuracy(self, predictions, targets):
-        max_index = predictions.max(dim=1)[1]
-        correct = (max_index == targets).sum()
-        accuracy = int(correct.data) / len(targets)
-        return correct, accuracy
+    def get_score(self, predictions, targets, metric='accuracy'):
+        if metric == 'accuracy':
+            max_index = predictions.max(dim=1)[1]
+            correct = (max_index == targets).sum()
+            accuracy = int(correct.data) / len(targets)
+            return accuracy
+        else:
+            raise NotImplementedError('Metric not available.')
 
     #TODO: Remove since it can be found in run_test
     def get_precision(self, predictions, targets):

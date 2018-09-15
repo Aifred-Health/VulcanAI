@@ -270,9 +270,9 @@ class BaseNetwork(nn.Module):
         self._init_trainer()
         try:
             for epoch in trange(self.epoch, epochs, desc='Epoch: ', ncols=80):
-                train_loss, train_acc= self.train_epoch()
-                valid_loss, acc, avg_acc, iou, miou, conf_mat = self.validate()
-                tqdm.write("\n Epoch {}:\nTrain Loss: {:.6f} | Test Loss: {:.6f} | Train Acc: {:.2f} | Test Acc: {:.2f}".format(epoch, train_loss, valid_loss, train_acc, avg_acc))
+                train_loss, train_acc = self.train_epoch()
+                valid_loss, valid_acc = self.validate()
+                tqdm.write("\n Epoch {}:\nTrain Loss: {:.6f} | Test Loss: {:.6f} | Train Acc: {:.2f} | Test Acc: {:.2f}".format(epoch, train_loss, valid_loss, train_acc, valid_acc))
         
         except KeyboardInterrupt:
             print("\n\n**********Training stopped prematurely.**********\n\n")       
@@ -307,10 +307,10 @@ class BaseNetwork(nn.Module):
                 else:
                     pbar.update(len(self.train_loader.dataset) - int(batch_idx*len(data)))
 
-            _, acc = self.metrics.get_accuracy(predictions, targets)
+            train_accuracy = self.metrics.get_score(predictions, targets, metric='accuracy')
 
         pbar.close()
-        return (train_loss*len(data)/len(self.train_loader.dataset), acc)
+        return (train_loss*len(data)/len(self.train_loader.dataset), train_accuracy)
             
     def validate(self):
         self.eval()  # Set model to evaluate mode
@@ -336,11 +336,13 @@ class BaseNetwork(nn.Module):
                     pbar.update(10 * len(data))
                 else:
                     pbar.update(len(self.val_loader.dataset) - int(batch_idx*len(data)))
+            validation_accuracy = self.metrics.get_score(predictions, targets, metric='accuracy')
 
-        accuracy, avg_accuracy, IoU, mIoU, conf_mat = self.metrics.get_scores()
+        # accuracy, avg_accuracy, IoU, mIoU, conf_mat = self.metrics.get_scores()
+            
         self.metrics.reset()
         pbar.close()
-        return (val_loss, accuracy, avg_accuracy, IoU, mIoU, conf_mat)
+        return (val_loss*len(data)/len(self.val_loader.dataset)), validation_accuracy
     
     def run_test(self, test_x, test_y, figure_path=None, plot=False):
         """
