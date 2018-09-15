@@ -1,4 +1,4 @@
-#FROM https://raw.githubusercontent.com/mayurbhangale/fashion-mnist-pytorch/master/fashion.py
+# -*- coding: utf-8 -*-
 
 from __future__ import print_function
 import torch.utils.data as data
@@ -11,6 +11,7 @@ import codecs
 import torchvision.transforms as transforms
 
 
+# FROM https://raw.githubusercontent.com/mayurbhangale/fashion-mnist-pytorch/master/fashion.py
 class FashionData(data.Dataset):
     """`MNIST <http://yann.lecun.com/exdb/mnist/>`_ Dataset.
 
@@ -44,12 +45,8 @@ class FashionData(data.Dataset):
         self.target_transform = target_transform
         self.train = train  # training set or test set
 
-
-        normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
-                                     std=[x/255.0 for x in [63.0, 62.1, 66.7]])
-
         self.transform = transforms.Compose([transforms.ToTensor(),
-                                transforms.Normalize((0.1307,), (0.3081,))])
+                                            transforms.Normalize((0.1307,), (0.3081,))])
 
         if download:
             self.download()
@@ -101,7 +98,6 @@ class FashionData(data.Dataset):
 
     def download(self):
         """Download the MNIST data if it doesn't exist in processed_folder already."""
-        from six.moves import urllib
         import gzip
 
         if self._check_exists():
@@ -157,21 +153,21 @@ def parse_byte(b):
 
 def read_label_file(path):
     with open(path, 'rb') as f:
-        data = f.read()
-        assert get_int(data[:4]) == 2049
-        length = get_int(data[4:8])
-        labels = [parse_byte(b) for b in data[8:]]
+        data_in = f.read()
+        assert get_int(data_in[:4]) == 2049
+        length = get_int(data_in[4:8])
+        labels = [parse_byte(b) for b in data_in[8:]]
         assert len(labels) == length
         return torch.LongTensor(labels)
 
 
 def read_image_file(path):
     with open(path, 'rb') as f:
-        data = f.read()
-        assert get_int(data[:4]) == 2051
-        length = get_int(data[4:8])
-        num_rows = get_int(data[8:12])
-        num_cols = get_int(data[12:16])
+        data_in = f.read()
+        assert get_int(data_in[:4]) == 2051
+        length = get_int(data_in[4:8])
+        num_rows = get_int(data_in[8:12])
+        num_cols = get_int(data_in[12:16])
         images = []
         idx = 16
         for l in range(length):
@@ -181,7 +177,7 @@ def read_image_file(path):
                 row = []
                 img.append(row)
                 for c in range(num_cols):
-                    row.append(parse_byte(data[idx]))
+                    row.append(parse_byte(data_in[idx]))
                     idx += 1
         assert len(images) == length
         return torch.ByteTensor(images).view(-1, 28, 28)
