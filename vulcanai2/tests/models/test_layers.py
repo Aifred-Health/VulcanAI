@@ -18,9 +18,9 @@ class TestDenseUnit:
     
     def test_forward(self, dense_unit):
         """Confirm size is expected after forward."""
-        test_input = torch.ones([1, dense_unit.in_channels])
+        test_input = torch.ones([1, dense_unit.in_features])
         output = dense_unit.forward(test_input)
-        assert output.size() == torch.ones([1, dense_unit.out_channels]).size()
+        assert output.size() == torch.ones([1, dense_unit.out_features]).size()
     
 
 class TestConvUnit:
