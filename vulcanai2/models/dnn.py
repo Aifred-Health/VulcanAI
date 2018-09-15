@@ -22,7 +22,7 @@ class DNNConfig():
 class DenseNet(BaseNetwork, nn.Module):
 
     def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None, 
-                activation=nn.Softmax(dim=1), pred_activation=nn.Softmax(dim=1), optim_spec={'name': 'Adam', 'lr': 0.001},
+                activation=nn.ReLU(), pred_activation=nn.Softmax(dim=1), optim_spec={'name': 'Adam', 'lr': 0.001},
                 lr_scheduler=None, stopping_rule='best_validation_error', criter_spec={'name': 'CrossEntropyLoss'}):
         
         nn.Module.__init__(self)
@@ -78,8 +78,8 @@ class DenseNet(BaseNetwork, nn.Module):
         dense_layers = []
         for in_d, out_d in dim_pairs:
             dense_layers.append(DenseUnit(
-                                          in_channels=in_d,
-                                          out_channels=out_d,
+                                          in_features=in_d,
+                                          out_features=out_d,
                                           activation=self._activation))
         dense_network = nn.Sequential(*dense_layers)
         return dense_network

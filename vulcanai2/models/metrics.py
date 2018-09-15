@@ -13,6 +13,7 @@ from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 
 from copy import deepcopy
+import datetime
 
 from collections import Counter
 
@@ -73,6 +74,7 @@ class Metrics(object):
 
         self.mat += confusion_matrix(temp_targets, temp_predictions, labels=self.list_classes)
 
+    #TODO: Move components into run_test since a majority of things calculated are already there
     def get_scores(self):
         tp = 0
         fp = 0
@@ -103,18 +105,20 @@ class Metrics(object):
 
         return self.valids, self.acc, self.IoU, self.mIoU, self.mat           
 
+    #TODO: Remove since it can be found in run_test
     def get_accuracy(self, predictions, targets):
         max_index = predictions.max(dim=1)[1]
         correct = (max_index == targets).sum()
         accuracy = int(correct.data) / len(targets)
         return correct, accuracy
 
+    #TODO: Remove since it can be found in run_test
     def get_precision(self, predictions, targets):
         return skl_metrics.precision_score(targets.flatten(), predictions.flatten())
 
+    #TODO: Remove since it can be found in run_test
     def get_roc_score(self, predictions, targets):
         return skl_metrics.roc_auc_score(targets.flatten(), predictions.flatten())
-
 
     def get_notable_indices(self, matrix, top_k=5):
         """
@@ -182,6 +186,7 @@ class Metrics(object):
         lb = LabelBinarizer()
         return np.array(lb.fit_transform(custum_array), dtype='float32')
 
+    # TODO: class # should correspond with self.num_class
     def get_class(self, in_matrix):
         """
         Reformat truth matrix to be the classes in a 1D array.
@@ -189,7 +194,7 @@ class Metrics(object):
         Args:
             in_matrix: one-hot matrix
 
-        Returns: Class array
+        Returns: 2D Class array
         """
         in_matrix= in_matrix.detach()
         if in_matrix.shape[1] > 1:
@@ -197,6 +202,7 @@ class Metrics(object):
         elif in_matrix.shape[1] == 1:
             return np.around(in_matrix)
 
+    # TODO: Modify to use val loader
     def run_test(self, model, test_x, test_y, figure_path=None, plot=False):
         """
         Will conduct the test suite to determine model strength.
@@ -234,27 +240,23 @@ class Metrics(object):
 
         sens = np.nan_to_num(tp / (tp + fn))  # recall
         spec = np.nan_to_num(tn / (tn + fp))
-        sens_macro = np.nan_to_num(sum(tp) / (sum(tp) + sum(fn)))
-        spec_macro = np.nan_to_num(sum(tn) / (sum(tn) + sum(fp)))
+        sens_macro = np.average(sens)  # sens_micro = np.nan_to_num(sum(tp) / (sum(tp) + sum(fn)))
+        spec_macro = np.average(spec)  # sens_micro = np.nan_to_num(sum(tn) / (sum(tn) + sum(fp)))
         dice = 2 * tp / (2 * tp + fp + fn)
         ppv = np.nan_to_num(tp / (tp + fp))  # precision
-        ppv_macro = np.nan_to_num(sum(tp) / (sum(tp) + sum(fp)))
+        ppv_macro = np.average(ppv)    # ppv_micro = np.nan_to_num(sum(tp) / (sum(tp) + sum(fp)))
         npv = np.nan_to_num(tn / (tn + fn))
-        npv_macro = np.nan_to_num(sum(tn) / (sum(tn) + sum(fn)))
+        npv_macro = np.average(npv)    # npv_micro = np.nan_to_num(sum(tn) / (sum(tn) + sum(fn)))
         accuracy = np.sum(tp) / np.sum(confusion_matrix)
         f1 = np.nan_to_num(2 * (ppv * sens) / (ppv + sens))
         f1_macro = np.average(np.nan_to_num(2 * sens * ppv / (sens + ppv)))
 
         print ('{} test\'s results'.format(model.name))
 
-        print ('TP:'),
-        print (tp)
-        print ('FP:'),
-        print (fp)
-        print ('TN:'),
-        print (tn)
-        print ('FN:'),
-        print (fn)
+        print ('TP: {}'.format(tp)),
+        print ('FP: {}'.format(fp)),
+        print ('TN: {}'.format(tn)),
+        print ('FN: {}'.format(fn))
 
         print ('\nAccuracy: {}'.format(accuracy))
 
@@ -288,11 +290,11 @@ class Metrics(object):
         all_class_auc = []
         for i in range(model._num_classes):
             if model._num_classes == 1:      
-                fpr, tpr, thresholds = skl_metrics.roc_curve(test_y,
+                fpr, tpr, _ = skl_metrics.roc_curve(test_y,
                                                         raw_prediction.detach(),
                                                         pos_label=1)
             else:
-                fpr, tpr, thresholds = skl_metrics.roc_curve(test_y,
+                fpr, tpr, _ = skl_metrics.roc_curve(test_y,
                                                         raw_prediction[:, i].detach(),
                                                         pos_label=i)
 
@@ -310,8 +312,9 @@ class Metrics(object):
             'macro_auc': np.average(all_class_auc)
         }
 
+    # TODO:  Needs to be updated to use train loader
     def k_fold_validation(self, model, train_x, train_y, k=5, epochs=10,
-                        batch_ratio=1.0, plot=False):
+                          batch_ratio=1.0, plot=False):
         """
         Conduct k fold cross validation on a network.
 
@@ -331,7 +334,7 @@ class Metrics(object):
             model.save_model()
         chunk_size = int((train_x.shape[0]) / k)
         results = []
-        timestamp = get_timestamp()
+        timestamp = "{date:%Y-%m-%d_%H:%M:%S}".format(date=datetime.datetime.now())
         for i in range(k):
             val_x = train_x[i * chunk_size:(i + 1) * chunk_size]
             val_y = train_y[i * chunk_size:(i + 1) * chunk_size]
@@ -344,7 +347,7 @@ class Metrics(object):
                 axis=0
             )
             net = deepcopy(model)
-            net.train(
+            net.fit(
                 epochs=epochs,
                 train_x=tra_x,
                 train_y=tra_y,
@@ -353,11 +356,11 @@ class Metrics(object):
                 batch_ratio=batch_ratio,
                 plot=plot
             )
-            results += [Counter(run_test(
+            results += [Counter(self.run_test(
                 net,
                 val_x,
                 val_y,
-                figure_path='figures/kfold_{}{}'.format(timestamp, model.name),
+                figure_path='figures/kfold_{}_{}'.format(model.name, timestamp),
                 plot=plot))]
             del net
         aggregate_results = reduce(lambda x, y: x + y, results)

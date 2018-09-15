@@ -11,6 +11,7 @@ from datetime import datetime
 import logging
 import os
 import pickle
+from collections import OrderedDict
 
 logger = logging.getLogger(__name__)
 
@@ -143,7 +144,7 @@ class BaseNetwork(nn.Module):
             x = network(x)
             return x.numel()
     
-    def get_size(self, network):
+    def get_output_size(self):
         """
         Returns the output size of the network's last layer
         :param network: The input network
@@ -151,24 +152,99 @@ class BaseNetwork(nn.Module):
         """
         with torch.no_grad():
             x = torch.ones(1, self.in_dim)
-            x = network(x)
+            x = self(x)# x = network(x)
             return x.size()[1]
 
-    # def get_weights(self):
-    #     """
-    #     Returns a dict containing the parameters of the network.
-    #     """
-    #     return self.state_dict()
+    def get_size(self, summary_dict, output):
+        """
+        Helper function for the function get_output_shapes
+        """
+        if isinstance(output, tuple):
+            for i in range(len(output)):
+                summary_dict[i] = OrderedDict()
+                summary_dict[i] = self.get_size(summary_dict[i],output[i])
+        else:
+            summary_dict['output_shape'] = list(output.size())
+        return summary_dict
+    
+    def get_output_shapes(self, input_size):
+        """
+        Returns the summary of shapes of all layers in the network
+        """
+        def register_hook(module):
+            def hook(module, input, output):
+                class_name = str(module.__class__).split('.')[-1].split("'")[0]
+                module_idx = len(summary)
+            
+                m_key = '%s-%i' % (class_name, module_idx+1)
+                summary[m_key] = OrderedDict()
+                summary[m_key]['input_shape'] = list(input[0].size())
+                summary[m_key] = self.get_size(summary[m_key], output)
+            
+                params = 0
+                if hasattr(module, 'weight'):
+                    params += torch.prod(torch.LongTensor(list(module.weight.size())))
+                    if module.weight.requires_grad:
+                        summary[m_key]['trainable'] = True
+                    else:
+                        summary[m_key]['trainable'] = False
+                if hasattr(module, 'bias'):
+                    params +=  torch.prod(torch.LongTensor(list(module.bias.size())))
+            
+                summary[m_key]['nb_params'] = params
+                
+            if not isinstance(module, nn.Sequential) and \
+                not isinstance(module, nn.ModuleList) and \
+                not (module == self):
+                hooks.append(module.register_forward_hook(hook))
+        
+        # check if there are multiple inputs to the network
+        if isinstance(input_size[0], (list, tuple)):
+            x = [Variable(torch.rand(1,*in_size)) for in_size in input_size]
+        else:
+            x = Variable(torch.rand(1,*input_size))
+        
+        # create properties
+        summary = OrderedDict()
+        hooks = []
+        # register hook
+        self.apply(register_hook)
+        # make a forward pass
+        self.cpu()(x)
+        # remove these hooks
+        for h in hooks:
+            h.remove()
+        
+        return summary
+    
+    def get_layers(self):
+        return self._modules
 
-    def get_all_layers(self):
-        layers = []
-        for l_name, l in self.input_network['network'].network.named_children():
-            if isinstance(l, nn.Sequential):
-                for subl_name, subl in l.named_children():
-                    layers.append(subl)
-            else:
-                for param in l.parameters():
-                    self.input_dimensions= param.size(0)
+    def get_weights(self):
+        """
+        Returns a dict containing the parameters of the network. 
+        """
+        return self.state_dict()
+
+    # #TODO: figure out how this works in conjunction with optimizer
+    # #TODO: fix the fact that you copy pasted this
+    def cuda(self, device_id=None):
+        """Moves all model parameters and buffers to the GPU.
+        Arguments:
+            device_id (int, optional): if specified, all parameters will be
+                copied to that device
+        """
+        self.is_cuda = True
+        return self._apply(lambda t: t.cuda(device_id))
+    
+    def cpu(self):
+        """Moves all model parameters and buffers to the CPU."""
+        self.is_cuda = False
+        return self._apply(lambda t: t.cpu())
+
+    @abc.abstractmethod
+    def _create_network(self, activation, pred_activation):
+        pass
 
     def init_layers(self, layers):
         '''
@@ -215,10 +291,14 @@ class BaseNetwork(nn.Module):
 
         self._init_trainer()
 
-        for epoch in trange(self.epoch, epochs, desc='Epoch: ', ncols=80):
-            train_loss, train_acc= self.train_epoch()
-            valid_loss, acc, avg_acc, iou, miou, conf_mat = self.validate()
-            tqdm.write("\n Epoch {}:\nTrain loss: {:.6f} | Test loss: {:.6f} | Train Acc: {:.2f}% | Test Acc: {:.2f}%".format(epoch, train_loss, valid_loss, train_acc*100, avg_acc*100))
+        try:
+            for epoch in trange(self.epoch, epochs, desc='Epoch: ', ncols=80):
+                train_loss, train_acc= self.train_epoch()
+                valid_loss, acc, avg_acc, iou, miou, conf_mat = self.validate()
+                tqdm.write("\n Epoch {}:\nTrain Loss: {:.6f} | Test Loss: {:.6f} | Train Acc: {:.2f} | Test Acc: {:.2f}".format(epoch, train_loss, valid_loss, train_acc, avg_acc))
+        
+        except KeyboardInterrupt:
+            print("\n\n**********Training stopped prematurely.**********\n\n")       
 
 
     def train_epoch(self):
@@ -291,6 +371,7 @@ class BaseNetwork(nn.Module):
         """
         return self.metrics.run_test(self, test_x, test_y, figure_path, plot)
 
+    # TODO: Instead of self.cpu(), use is_cuda to know if you can use gpu
     def forward_pass(self, input_data, convert_to_class=False):
         """
         Allow the implementer to quickly get outputs from the network.
@@ -303,10 +384,15 @@ class BaseNetwork(nn.Module):
         Returns: Numpy matrix with the output probabilities
                  with each class unless otherwise specified.
         """
+        output = self.cpu()(torch.Tensor(input_data)).data
         if convert_to_class:
-            return self.cpu().metrics.get_class(self(torch.Tensor(input_data)))
+            return self.metrics.get_class(output)
         else:
-            return self.cpu()(torch.Tensor(input_data))
+            return output
+        # if convert_to_class:
+        #     return self.cpu().metrics.get_class(self(torch.Tensor(input_data)))
+        # else:
+        #     return self.cpu()(torch.Tensor(input_data))
 
     #TODO: this is copy pasted - edit as appropriate
     def save_model(self, save_path='models'):

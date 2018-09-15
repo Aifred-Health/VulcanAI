@@ -12,6 +12,7 @@ from itertools import groupby
 logger = logging.getLogger(__name__)
 
 
+# TODO: add more logging statements as appropriate
 class TabularDataset(Dataset):
     """
     This defines a dataset, subclassed from torch.utils.data.Dataset. It uses pd.dataframe as the backend, with utility
@@ -37,6 +38,9 @@ class TabularDataset(Dataset):
             self.df = pd.read_csv(data)
         self.labelColumn = label_column
 
+        dataset_length = self.__len__()
+        logger.info(f"You have created a new dataset with {dataset_length} rows")
+
     def __len__(self):
         """
         Denotes the total number of samples.
@@ -48,10 +52,13 @@ class TabularDataset(Dataset):
         """
         Generates one sample of data
         :param idx: The index of the data
-        :return: None
+        :return: The values of the row and the value of the label columns. Xs and y.
         """
-        return (self.df.drop(self.labelColumn, axis=1).iloc[[2]].values.tolist()[0],
-                self.df[[self.labelColumn]].iloc[[idx]].values.tolist()[0])
+        # Where df.drop is used to access the dataframe without the label column, iloc gets the row, then access values
+        # and convert
+        xs = self.df.drop(self.labelColumn, axis=1).iloc[[2]].values.tolist()[0]
+        y = self.df[[self.labelColumn]].iloc[[idx]].values.tolist()[0]
+        return xs, y
 
     def save_dataframe(self, file_path):
         """
@@ -60,7 +67,7 @@ class TabularDataset(Dataset):
         :return: Noneff
         """
         self.df.to_csv(file_path, encoding='utf-8', index=True)
-        # TODO: insert logging statements.
+        logger.info(f"You have saved the dataframe as a csv to {file_path}")
 
     def delete_columns(self, column_list):
         """
@@ -68,8 +75,10 @@ class TabularDataset(Dataset):
         :param column_list: List of columns to be deleted
         :return: None
         """
+        prior_length = self.__len__()
         self.df = self.df.drop([column_list])
-        # TODO: insert logging statements.
+        cur_length = self.__len__()
+        logger.info(f"You have dropped {prior_length - cur_length} columns")
 
     def create_dummies(self, column_names=None):
         """
@@ -92,13 +101,13 @@ class TabularDataset(Dataset):
         result_series = {}
 
         # Find dummy columns and build pairs (category, category_value)
-        dummmy_tuples = [(col.split("_")[0], col) for col in self.df.columns if "_" in col]
+        dummy_tuples = [(col.split("_")[0], col) for col in self.df.columns if "_" in col]
 
         # Find non-dummy columns that do not have a _
         non_dummy_cols = [col for col in self.df.columns if "_" not in col]
 
         # For each category column group use idxmax to find the value.
-        for dummy, cols in groupby(dummmy_tuples, lambda item: item[0]):
+        for dummy, cols in groupby(dummy_tuples, lambda item: item[0]):
             # Select columns for each category
             dummy_df = self.df[[col[1] for col in cols]]
 
@@ -114,7 +123,9 @@ class TabularDataset(Dataset):
 
         self.df = pd.DataFrame(result_series)
 
-        # TODO: insert logging statements
+        logger.info(f"Successfully converted {len(dummy_tuples)} columns back from dummy format.")
+
+        # TODO: insert other logging statements
 
     def list_all_features(self):
         """
@@ -146,16 +157,16 @@ class TabularDataset(Dataset):
         """
         Remove columns where the number of values as determined by the threshold are null
         :param threshold: A number between 0 and 1, representing proportion needed to drop
-        :return:
+        :return: None
         """
         if threshold >= 1 or threshold <= 0:
             raise ValueError("Threshold needs to be a proportion between 0 and 1")
         num_threshold = threshold * self.__len__()
-        prior = self.__len__()  # TODO: probably bad to use this?
+        prior = self.__len__()
         self.df = self.df.dropna(thresh=num_threshold, axis=1)
         after = self.__len__()
         res = prior-after
-        print("Removed %d columns" % res)
+        logger.info(f"Removed {res} columns")
 
     # TODO: turn this into a percentage too? currently it's not
     def remove_unique(self, threshold):
@@ -171,7 +182,7 @@ class TabularDataset(Dataset):
                 self.df = self.df.drop(col, axis=1)
         after = self.__len__()
         res = prior - after
-        print("Removed %d columns" % res)
+        logger.info(f"Removed {res} columns")
 
     def remove_unbalanced_columns(self, threshold, non_numeric=True):
         """
