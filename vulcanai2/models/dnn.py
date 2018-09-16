@@ -47,7 +47,7 @@ class DenseNet(BaseNetwork, nn.Module):
 
         if self._input_network and isinstance(self._input_network, DenseNet):
             if self._input_network.dims[-1] != self.in_dim:
-                self.in_dim = self.dims[-1]
+                self.in_dim = self._input_network.dims[-1]
             else:
                 pass
 

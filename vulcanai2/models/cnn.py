@@ -2,9 +2,11 @@
 """Defines the ConvNet class"""
 import torch
 import torch.nn as nn
-from . import DenseNet
+
 from .basenetwork import BaseNetwork
+from .dnn import DenseNet
 from .layers import DenseUnit, ConvUnit
+
 import numpy as np
 import logging
 
