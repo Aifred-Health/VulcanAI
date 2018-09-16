@@ -247,23 +247,19 @@ class BaseNetwork(nn.Module):
         
         return summary
     
-    # def get_layers(self):
-    #     # TODO: priya define.
-    #     # TODO: this param doesn't actually exist
-    #     """
-    #     Returns the layers as a list of modules
-    #     :return: The layers as a list
-    #     """
-    #     return self._modules
+    def get_layers(self):
+        """
+        Returns an ordered dict of all modules contained in this module (layers).
+        :return: OrderedDict() of all modules.
+        """
+        return self._modules
 
-    # def get_weights(self):
-    #     # TODO: this doesn't actually exist
-    #     """
-    #     Returns a dict containing the parameters of the network.
-    #     :return: Returns a dictionary of network parameters.
-    #     """
-    #     raise NotImplementedError
-    #     # return self.state_dict()
+    def get_weights(self):
+        """
+        Returns a dictionary containing a whole state of the module
+        :return: A dictionary containing a whole state of the module
+        """
+        return self.state_dict()
 
     # TODO: Priya: why do we need activation and pred_activation as parameters here?
     @abc.abstractmethod
