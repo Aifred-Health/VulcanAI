@@ -1,17 +1,26 @@
 # -*- coding: utf-8 -*-
 """Defines the basenetwork class"""
+# Core imports
 import abc
 from torch.autograd import Variable
 import torch.nn.modules.loss as loss
+
+# Vulcan imports
 from .layers import *
 from .metrics import Metrics
+from vulcanai2.plotters.visualization import display_record
+
+# Generic imports
 import pydash as pdash
 from tqdm import tqdm, trange
 from datetime import datetime
 import logging
 import os
 import pickle
+import time
 from collections import OrderedDict
+import matplotlib
+import matplotlib.pyplot as plt
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +81,7 @@ class BaseNetwork(nn.Module):
         self.epochs = None
         self.retain_graph = False
         self.valid_interv = None
+        self.record = None
 
         self._create_network()
 
@@ -261,6 +271,14 @@ class BaseNetwork(nn.Module):
         """
         return self.state_dict()
 
+    def print_model_structure(self, input_dim=((1, 28, 28))):
+        shapes = self.get_output_shapes(input_dim)
+        for k, v in shapes.items() :
+            print('{}:'.format(k))
+            if isinstance(v, OrderedDict):
+                for k2, v2 in v.items():
+                    print('\t {}: {}'.format(k2, v2))
+
     @abc.abstractmethod
     def _create_network(self):
         """
@@ -287,7 +305,8 @@ class BaseNetwork(nn.Module):
         self.valid_interv = 2*len(self.train_loader)
         self.epoch = 0
 
-    def fit(self, train_loader, val_loader, epochs, retain_graph=None, valid_interv=None):
+    def fit(self, train_loader, val_loader, epochs, 
+            retain_graph=None, valid_interv=None, plot=False):
         """
         Trains the network on the provided data.
         :param train_loader: The DataLoader object containing the training data
@@ -307,18 +326,49 @@ class BaseNetwork(nn.Module):
 
         self._init_trainer()
 
+        self.record = dict(
+            epoch=[],
+            train_error=[],
+            train_accuracy=[],
+            validation_error=[],
+            validation_accuracy=[]
+        )
+
         try:
+            if plot is True:
+                fig_number = plt.gcf().number + 1 if plt.fignum_exists(1) else 1
+
             for epoch in trange(self.epoch, epochs, desc='Epoch: ', ncols=80):
+                epoch_time = time.time()
+
                 train_loss, train_acc = self._train_epoch()
+                train_epoch_time = time.time() - epoch_time
+
                 valid_loss, valid_acc = self._validate()
+                valid_epoch_time = time.time() - epoch_time
+
                 tqdm.write("\n Epoch {}:\n"
-                           "Train Loss: {:.6f} | Test Loss: {:.6f} | "
-                           "Train Acc: {:.4f} | Test Acc: {:.4f}".format(
+                           "Train Loss: {:.6f} | Train Acc: {:.4f} in {:.2f}s \n"
+                           "Test Loss: {:.6f} | Test Acc: {:.4f} in {:.2f}s".format(
                                 epoch,
                                 train_loss,
-                                valid_loss,
                                 train_acc,
-                                valid_acc))
+                                train_epoch_time,
+                                valid_loss,
+                                valid_acc,
+                                valid_epoch_time
+                                ))
+
+                self.record['epoch'].append(epoch)
+                self.record['train_error'].append(train_loss)
+                self.record['train_accuracy'].append(train_acc)
+                self.record['validation_error'].append(valid_loss)
+                self.record['validation_accuracy'].append(valid_acc)
+
+                if plot is True:
+                    plt.ion()
+                    plt.figure(fig_number)
+                    display_record(record=self.record)
         except KeyboardInterrupt:
             print("\n\n**********KeyboardInterrupt: Training stopped prematurely.**********\n\n")
 

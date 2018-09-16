@@ -92,12 +92,6 @@ model1 = models.DenseNet(
 )
 
 model1.fit(train_loader, val_loader, 10)
+#model1.fit(train_loader, val_loader, 10, plot=True)
 
-#print(model1.run_test(np.expand_dims(val_dataset.test_data, axis=1), np.expand_dims(val_dataset.test_labels, axis=1)))
-
-params = model1.get_output_shapes((1,28,28))
-for k, v in params.items() :
-    print('{}:'.format(k))
-    if isinstance(v, OrderedDict):
-        for k2, v2 in v.items():
-            print('\t {}: {}'.format(k2, v2))
+model1.print_model_structure((1, 28, 28))
