@@ -2,7 +2,7 @@
 from setuptools import setup
 
 setup(
-    name='vulcanai',
+    name='vulcanai2',
     version='2.0rc1',
     description='A high-level framework built on top of Pytorch'
                 ' using added functionality from Scikit-learn to provide '
@@ -16,16 +16,15 @@ setup(
                       'matplotlib>=1.5.3',
                       'scikit-learn>=0.18',
                       'jsonschema>=2.6.0',
-                      'torch>=0.4.1',
+                      'torch>=0.4',
                       'pydash>=4.7.3',
                       'tqdm>=4.25.0'],
-    packages=['vulcanai'],
+    packages=['vulcanai2'],
     classifiers=['Development Status :: 3 - Alpha',
                  'Intended Audience :: Developers',
                  'Intended Audience :: Science/Research',
                  'Intended Audience :: Education',
                  'Topic :: Software Development :: Build Tools',
-                 'Programming Language :: Python :: 2.7', #TODO: backport
                  'Programming Language :: Python :: 3.6',
                  'Operating System :: Unix',
                  'Operating System :: POSIX :: Linux',
