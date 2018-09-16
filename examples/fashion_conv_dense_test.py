@@ -91,7 +91,7 @@ model1 = models.DenseNet(
     num_classes=10
 )
 
-#model1.fit(train_loader, val_loader, 10)
+model1.fit(train_loader, val_loader, 10)
 
 #print(model1.run_test(np.expand_dims(val_dataset.test_data, axis=1), np.expand_dims(val_dataset.test_labels, axis=1)))
 

@@ -59,7 +59,7 @@ class ConvNet(BaseNetwork, nn.Module):
 
         # Build Network
         self.network = self._build_conv_network(self.conv_hid_layers)
-        
+
         self.conv_flat_dim = self.get_flattened_size(self.network)
 
         if self._num_classes:

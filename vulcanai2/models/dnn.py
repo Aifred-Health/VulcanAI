@@ -82,6 +82,7 @@ class DenseNet(BaseNetwork, nn.Module):
             x = x.view(-1, self._input_network.conv_flat_dim)
 
         network_output = self.network(x)
+
         if self._num_classes:
             output = self.network_tail(network_output)
             return output
