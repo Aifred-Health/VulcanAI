@@ -310,28 +310,28 @@ class BaseNetwork(nn.Module):
                     pbar.update(10 * len(data))
                 else:
                     pbar.update(len(self.train_loader.dataset) - int(batch_idx*len(data)))
-            # import pudb; pu.db
+
             train_accuracy_accumulator += self.metrics.get_score(predictions, targets, metric='accuracy')
 
         pbar.close()
         train_loss = train_loss_accumulator*len(data)/len(self.train_loader.dataset)
         train_accuracy = train_accuracy_accumulator*len(data)/len(self.train_loader.dataset)
-        
+
         return train_loss, train_accuracy
-            
+
     def validate(self):
         self.eval()  # Set model to evaluate mode
-        
+
         val_loss_accumulator = 0.0
         val_accuracy_accumulator = 0.0
         pbar = trange(len(self.val_loader.dataset), desc ='Validating.. ')
         for batch_idx, (data, targets) in enumerate(self.val_loader):
-                                            
+
             data, targets = Variable(data, requires_grad=False), Variable(targets, requires_grad=False)
 
             if torch.cuda.is_available():
                 data, targets = data.cuda(), targets.cuda()
-            
+
             predictions = self(data)
             loss = self.criterion(predictions, targets)
             val_loss_accumulator += loss.item() # / len(self.val_loader.dataset) # @priya, why was this being divided to begin with?
