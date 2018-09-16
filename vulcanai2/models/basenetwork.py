@@ -246,22 +246,6 @@ class BaseNetwork(nn.Module):
     def _create_network(self, activation, pred_activation):
         pass
 
-    def init_layers(self, layers):
-        '''
-        Initializes all of the layers 
-        '''
-        bias_init = 0.01
-        for layer in layers:
-            classname = layer.__class__.__name__
-            if 'BatchNorm' in classname:
-                torch.nn.init.uniform_(layer.weight.data)
-                torch.nn.init.constant_(layer.bias.data, bias_init)
-            elif 'Linear' in classname:
-                torch.nn.init.xavier_uniform_(layer.weight.data)
-                torch.nn.init.constant_(layer.bias.data, bias_init)
-            else:
-                pass
-
     def _init_optimizer(self, optim_spec):
         OptimClass = getattr(torch.optim, optim_spec["name"])
         optim_spec = pdash.omit(optim_spec, "name")

@@ -45,7 +45,7 @@ class DenseNet(BaseNetwork, nn.Module):
                 pass
 
         self.dims = [self.in_dim] + self._config["dense_units"]
-        self.dense_network = self.build_dense_network(self.dims)
+        self.network = self.build_dense_network(self.dims)
         
         if self._num_classes:
             self.out_dim = self._num_classes
@@ -66,7 +66,7 @@ class DenseNet(BaseNetwork, nn.Module):
         if isinstance(self._input_network, ConvNet):
             x = x.view(-1, self._input_network.conv_flat_dim)
 
-        x = self.dense_network(x)
+        x = self.network(x)
         if self._num_classes:
             output = self.network_tail(x)
             return output
