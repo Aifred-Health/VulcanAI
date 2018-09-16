@@ -4,7 +4,6 @@ import torch
 import torch.nn as nn
 
 from .basenetwork import BaseNetwork
-from .dnn import DenseNet
 from .layers import DenseUnit, ConvUnit
 
 import numpy as np
@@ -46,13 +45,13 @@ class ConvNet(BaseNetwork, nn.Module):
 
         self.in_dim = self._dimensions
 
-        if self._input_network and isinstance(self._input_network, ConvNet):
+        if self._input_network and self._input_network.__class__.__name__ == "ConvNet":
             if self._input_network.conv_flat_dim != self.in_dim:
                 self.in_dim = self.get_flattened_size(self._input_network)
             else:
                 pass
 
-        if self._input_network and isinstance(self._input_network, DenseNet):
+        if self._input_network and self._input_network.__class__.__name__ == "DenseNet":
             if self._input_network.dims[-1] != self.in_dim:
                 self.in_dim = self.dims[-1]
             else:
