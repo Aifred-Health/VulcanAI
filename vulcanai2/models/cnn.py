@@ -31,9 +31,8 @@ class ConvNet(BaseNetwork, nn.Module):
         super(ConvNet, self).__init__(name, dimensions, config, save_path, input_network, num_classes, 
                 activation, pred_activation, optim_spec, lr_scheduler, stopping_rule, criter_spec)
 
-    def _create_network(self, activation, pred_activation):
-        self._activation = activation
-        self._pred_activation = pred_activation
+    def _create_network(self):
+
         self.in_dim = self._dimensions
 
         if self._input_network and isinstance(self._input_network, ConvNet):
@@ -52,9 +51,9 @@ class ConvNet(BaseNetwork, nn.Module):
         self.conv_hid_layers = self._config["conv_units"]
 
         # Build Network
-        self.conv_network = self.build_conv_network(self.conv_hid_layers)
+        self.network = self.build_conv_network(self.conv_hid_layers)
         
-        self.conv_flat_dim = self.get_flattened_size(self.conv_network)
+        self.conv_flat_dim = self.get_flattened_size(self.network)
 
         if self._num_classes:
             self.out_dim = np.reshape(self._num_classes, -1).tolist()
@@ -74,7 +73,7 @@ class ConvNet(BaseNetwork, nn.Module):
         if self._input_network: 
             x = self._input_network(x)
         
-        x = self.conv_network(x)
+        x = self.network(x)
 
         if self._num_classes:
             x = x.view(-1, self.conv_flat_dim)

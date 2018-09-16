@@ -29,9 +29,7 @@ class DenseNet(BaseNetwork, nn.Module):
         super(DenseNet, self).__init__(name, dimensions, config, save_path, input_network, num_classes, 
                 activation, pred_activation, optim_spec, lr_scheduler, stopping_rule, criter_spec)
 
-    def _create_network(self, activation, pred_activation):
-        self._activation = activation
-        self._pred_activation = pred_activation
+    def _create_network(self):
         self.in_dim = self._dimensions
 
         if self._input_network and isinstance(self._input_network, ConvNet):
@@ -47,7 +45,7 @@ class DenseNet(BaseNetwork, nn.Module):
                 pass
 
         self.dims = [self.in_dim] + self._config["dense_units"]
-        self.dense_network = self.build_dense_network(self.dims)
+        self.network = self.build_dense_network(self.dims)
         
         if self._num_classes:
             self.out_dim = self._num_classes
@@ -68,7 +66,7 @@ class DenseNet(BaseNetwork, nn.Module):
         if isinstance(self._input_network, ConvNet):
             x = x.view(-1, self._input_network.conv_flat_dim)
 
-        x = self.dense_network(x)
+        x = self.network(x)
         if self._num_classes:
             output = self.network_tail(x)
             return output
