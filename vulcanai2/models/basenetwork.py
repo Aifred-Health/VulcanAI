@@ -261,7 +261,6 @@ class BaseNetwork(nn.Module):
         """
         return self.state_dict()
 
-    # TODO: Priya: why do we need activation and pred_activation as parameters here?
     @abc.abstractmethod
     def _create_network(self):
         """
