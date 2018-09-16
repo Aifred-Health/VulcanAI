@@ -263,7 +263,6 @@ class BaseNetwork(nn.Module):
         self.valid_interv = 2*len(self.train_loader)
         self.epoch = 0
 
-
     def fit(self, train_loader, val_loader, epochs, retain_graph=False, valid_interv=None):
         
         self.train_loader = train_loader
@@ -277,18 +276,25 @@ class BaseNetwork(nn.Module):
 
         try:
             for epoch in trange(self.epoch, epochs, desc='Epoch: ', ncols=80):
-                train_loss, train_acc= self.train_epoch()
-                valid_loss, acc, avg_acc, iou, miou, conf_mat = self.validate()
-                tqdm.write("\n Epoch {}:\nTrain Loss: {:.6f} | Test Loss: {:.6f} | Train Acc: {:.2f} | Test Acc: {:.2f}".format(epoch, train_loss, valid_loss, train_acc, avg_acc))
-        
+                train_loss, train_acc = self.train_epoch()
+                valid_loss, valid_acc = self.validate()
+                tqdm.write("\n Epoch {}:\n"
+                            "Train Loss: {:.6f} | Test Loss: {:.6f} | "
+                            "Train Acc: {:.4f} | Test Acc: {:.4f}".format(
+                                epoch,
+                                train_loss,
+                                valid_loss,
+                                train_acc,
+                                valid_acc))
         except KeyboardInterrupt:
-            print("\n\n**********Training stopped prematurely.**********\n\n")       
-
+            print("\n\n**********KeyboardInterrupt: Training stopped prematurely.**********\n\n")
 
     def train_epoch(self):
+
         self.train()  # Set model to training mode
 
-        train_loss = 0
+        train_loss_accumulator = 0.0
+        train_accuracy_accumulator = 0.0
         pbar = trange(len(self.train_loader.dataset), desc ='Training.. ')
         for batch_idx, (data, targets) in enumerate(self.train_loader):
 
@@ -300,8 +306,7 @@ class BaseNetwork(nn.Module):
             # Forward + Backward + Optimize
             predictions = self(data)
             loss = self.criterion(predictions, targets)
-            
-            train_loss += loss.item()
+            train_loss_accumulator += loss.item()
 
             self.optim.zero_grad()
             loss.backward(retain_graph=self.retain_graph)
@@ -314,27 +319,30 @@ class BaseNetwork(nn.Module):
                 else:
                     pbar.update(len(self.train_loader.dataset) - int(batch_idx*len(data)))
 
-            _, acc = self.metrics.get_accuracy(predictions, targets)
+            train_accuracy_accumulator += self.metrics.get_score(predictions, targets, metric='accuracy')
 
         pbar.close()
-        return (train_loss*len(data)/len(self.train_loader.dataset), acc)
-            
+        train_loss = train_loss_accumulator*len(data)/len(self.train_loader.dataset)
+        train_accuracy = train_accuracy_accumulator*len(data)/len(self.train_loader.dataset)
+
+        return train_loss, train_accuracy
+
     def validate(self):
         self.eval()  # Set model to evaluate mode
-        
-        val_loss = 0
+
+        val_loss_accumulator = 0.0
+        val_accuracy_accumulator = 0.0
         pbar = trange(len(self.val_loader.dataset), desc ='Validating.. ')
         for batch_idx, (data, targets) in enumerate(self.val_loader):
-                                            
+
             data, targets = Variable(data, requires_grad=False), Variable(targets, requires_grad=False)
 
             if torch.cuda.is_available():
                 data, targets = data.cuda(), targets.cuda()
-            
+
             predictions = self(data)
             loss = self.criterion(predictions, targets)
-            loss_data = float(loss.item())
-            val_loss += loss_data / len(self.val_loader.dataset)
+            val_loss_accumulator += loss.item() # / len(self.val_loader.dataset) # @priya, why was this being divided to begin with?
 
             self.metrics.update(predictions.data.cpu().numpy(), targets.cpu().numpy())
             if batch_idx % 10 == 0:
@@ -343,11 +351,14 @@ class BaseNetwork(nn.Module):
                     pbar.update(10 * len(data))
                 else:
                     pbar.update(len(self.val_loader.dataset) - int(batch_idx*len(data)))
+            val_accuracy_accumulator += self.metrics.get_score(predictions, targets, metric='accuracy')
 
-        accuracy, avg_accuracy, IoU, mIoU, conf_mat = self.metrics.get_scores()
         self.metrics.reset()
         pbar.close()
-        return (val_loss, accuracy, avg_accuracy, IoU, mIoU, conf_mat)
+        validation_loss = val_loss_accumulator*len(data)/len(self.val_loader.dataset)
+        validation_accuracy = val_accuracy_accumulator*len(data)/len(self.val_loader.dataset)
+
+        return validation_loss, validation_accuracy
     
     def run_test(self, test_x, test_y, figure_path=None, plot=False):
         """
@@ -373,10 +384,6 @@ class BaseNetwork(nn.Module):
             return self.metrics.get_class(output)
         else:
             return output
-        # if convert_to_class:
-        #     return self.cpu().metrics.get_class(self(torch.Tensor(input_data)))
-        # else:
-        #     return self.cpu()(torch.Tensor(input_data))
 
     #TODO: this is copy pasted - edit as appropriate
     def save_model(self, save_path='models'):
