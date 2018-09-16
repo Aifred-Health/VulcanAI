@@ -329,7 +329,7 @@ class BaseNetwork(nn.Module):
         try:
             for epoch in trange(self.epoch, epochs, desc='Epoch: ', ncols=80):
                 train_loss, train_acc = self._train_epoch()
-                valid_loss, valid_acc = self.validate()
+                valid_loss, valid_acc = self._validate()
                 tqdm.write("\n Epoch {}:\n"
                            "Train Loss: {:.6f} | Test Loss: {:.6f} | "
                            "Train Acc: {:.4f} | Test Acc: {:.4f}".format(
@@ -358,11 +358,11 @@ class BaseNetwork(nn.Module):
             # Forward + Backward + Optimize
             predictions = self(data)
 
-            cur_loss = self.criterion(predictions, targets)
-            train_loss_accumulator += cur_loss.item()
+            train_loss = self.criterion(predictions, targets)
+            train_loss_accumulator += train_loss.item()
 
             self.optim.zero_grad()
-            cur_loss.backward(retain_graph=self.retain_graph)
+            train_loss.backward(retain_graph=self.retain_graph)
             self.optim.step()
 
             if batch_idx % 10 == 0:
@@ -383,7 +383,7 @@ class BaseNetwork(nn.Module):
         return train_loss, train_accuracy
 
     # noinspection PyUnboundLocalVariable
-    def validate(self):
+    def _validate(self):
         """
         Validates the network on the validation data
         :return: (val_loss, accuracy, avg_accuracy, IoU, mIoU, conf_mat) # TODO: update this
@@ -403,9 +403,9 @@ class BaseNetwork(nn.Module):
 
             predictions = self(data)
 
-            cur_loss = self.criterion(predictions, targets)
+            validation_loss = self.criterion(predictions, targets)
             # / len(self.val_loader.dataset) # @priya, why was this being divided to begin with?
-            val_loss_accumulator += cur_loss.item()
+            val_loss_accumulator += validation_loss.item()
 
             self.metrics.update(predictions.data.cpu().numpy(), targets.cpu().numpy())
             if batch_idx % 10 == 0:
