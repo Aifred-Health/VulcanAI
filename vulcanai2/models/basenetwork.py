@@ -271,19 +271,18 @@ class BaseNetwork(nn.Module):
                 train_loss, train_acc = self.train_epoch()
                 valid_loss, valid_acc = self.validate()
                 tqdm.write("\n Epoch {}:\n"
-                           "Train Loss: {:.6f} | Test Loss: {:.6f} | "
-                           "Train Acc: {:.4f} | Test Acc: {:.4f}".format(
-                               epoch,
-                               train_loss,
-                               valid_loss,
-                               train_acc,
-                               valid_acc))
-
+                            "Train Loss: {:.6f} | Test Loss: {:.6f} | "
+                            "Train Acc: {:.4f} | Test Acc: {:.4f}".format(
+                                epoch,
+                                train_loss,
+                                valid_loss,
+                                train_acc,
+                                valid_acc))
         except KeyboardInterrupt:
-            print("\n\n**********Training stopped prematurely.**********\n\n")       
-
+            print("\n\n**********KeyboardInterrupt: Training stopped prematurely.**********\n\n")
 
     def train_epoch(self):
+
         self.train()  # Set model to training mode
 
         train_loss_accumulator = 0.0
@@ -299,7 +298,6 @@ class BaseNetwork(nn.Module):
             # Forward + Backward + Optimize
             predictions = self(data)
             loss = self.criterion(predictions, targets)
-            
             train_loss_accumulator += loss.item()
 
             self.optim.zero_grad()
@@ -314,11 +312,11 @@ class BaseNetwork(nn.Module):
                     pbar.update(len(self.train_loader.dataset) - int(batch_idx*len(data)))
             # import pudb; pu.db
             train_accuracy_accumulator += self.metrics.get_score(predictions, targets, metric='accuracy')
-        
+
         pbar.close()
         train_loss = train_loss_accumulator*len(data)/len(self.train_loader.dataset)
         train_accuracy = train_accuracy_accumulator*len(data)/len(self.train_loader.dataset)
-
+        
         return train_loss, train_accuracy
             
     def validate(self):
