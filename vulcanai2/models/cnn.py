@@ -51,9 +51,9 @@ class ConvNet(BaseNetwork, nn.Module):
         self.conv_hid_layers = self._config["conv_units"]
 
         # Build Network
-        self.conv_network = self.build_conv_network(self.conv_hid_layers)
+        self.network = self.build_conv_network(self.conv_hid_layers)
         
-        self.conv_flat_dim = self.get_flattened_size(self.conv_network)
+        self.conv_flat_dim = self.get_flattened_size(self.network)
 
         if self._num_classes:
             self.out_dim = np.reshape(self._num_classes, -1).tolist()
@@ -73,7 +73,7 @@ class ConvNet(BaseNetwork, nn.Module):
         if self._input_network: 
             x = self._input_network(x)
         
-        x = self.conv_network(x)
+        x = self.network(x)
 
         if self._num_classes:
             x = x.view(-1, self.conv_flat_dim)
