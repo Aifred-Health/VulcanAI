@@ -52,7 +52,7 @@ class DenseNet(BaseNetwork, nn.Module):
                 pass
 
         self.dims = [self.in_dim] + self._config["dense_units"]
-        self.network = self.build_dense_network(self.dims)
+        self.network = self._build_dense_network(self.dims)
         
         if self._num_classes:
             self.out_dim = self._num_classes
