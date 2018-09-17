@@ -337,15 +337,12 @@ class BaseNetwork(nn.Module):
         try:
             if plot is True:
                 fig_number = plt.gcf().number + 1 if plt.fignum_exists(1) else 1
-
+                plt.show()
+                
             for epoch in trange(self.epoch, epochs, desc='Epoch: ', ncols=80):
-                epoch_time = time.time()
 
                 train_loss, train_acc = self._train_epoch()
-                train_epoch_time = time.time() - epoch_time
-
                 valid_loss, valid_acc = self._validate()
-                valid_epoch_time = time.time() - epoch_time
 
                 tqdm.write("\n Epoch {}:\n"
                            "Train Loss: {:.6f} | Test Loss: {:.6f} |"
@@ -367,6 +364,7 @@ class BaseNetwork(nn.Module):
                     plt.ion()
                     plt.figure(fig_number)
                     display_record(record=self.record)
+
         except KeyboardInterrupt:
             print("\n\n**********KeyboardInterrupt: Training stopped prematurely.**********\n\n")
 

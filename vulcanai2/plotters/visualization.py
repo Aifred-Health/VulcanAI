@@ -26,7 +26,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def display_record(record=None, load_path=None):
+def display_record(record=None, load_path=None, interactive=True):
     """
     Display the training curve for a network training session.
 
@@ -86,8 +86,9 @@ def display_record(record=None, load_path=None):
                         validation_accuracy],
                loc=0)
 
-    plt.show(False)
-    plt.pause(0.0001)
+    if interactive is True:
+        plt.draw()
+        plt.pause(1e-17)
 
 #TODO: update to work with pytorch
 # def display_pca(train_x, train_y, label_map=None):
