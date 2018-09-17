@@ -8,7 +8,7 @@ import torch.nn.modules.loss as loss
 # Vulcan imports
 from .layers import *
 from .metrics import Metrics
-from vulcanai2.plotters.visualization import display_record
+from ..plotters.visualization import display_record
 
 # Generic imports
 import pydash as pdash
@@ -271,7 +271,7 @@ class BaseNetwork(nn.Module):
         """
         return self.state_dict()
 
-    def print_model_structure(self, input_dim=((1, 28, 28))):
+    def print_model_structure(self, input_dim):
         shapes = self.get_output_shapes(input_dim)
         for k, v in shapes.items() :
             print('{}:'.format(k))
@@ -348,15 +348,13 @@ class BaseNetwork(nn.Module):
                 valid_epoch_time = time.time() - epoch_time
 
                 tqdm.write("\n Epoch {}:\n"
-                           "Train Loss: {:.6f} | Train Acc: {:.4f} in {:.2f}s \n"
-                           "Test Loss: {:.6f} | Test Acc: {:.4f} in {:.2f}s".format(
+                           "Train Loss: {:.6f} | Test Loss: {:.6f} |"
+                           "Train Acc: {:.4f} | Test Acc: {:.4f}".format(
                                 epoch,
                                 train_loss,
-                                train_acc,
-                                train_epoch_time,
                                 valid_loss,
-                                valid_acc,
-                                valid_epoch_time
+                                train_acc,
+                                valid_acc
                                 ))
 
                 self.record['epoch'].append(epoch)
