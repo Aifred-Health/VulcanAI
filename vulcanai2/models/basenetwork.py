@@ -19,9 +19,12 @@ import os
 import pickle
 import time
 from collections import OrderedDict
+
 import matplotlib
 import matplotlib.pyplot as plt
+import seaborn as sns
 
+sns.set()
 logger = logging.getLogger(__name__)
 
 
@@ -137,18 +140,6 @@ class BaseNetwork(nn.Module):
     @stopping_rule.setter
     def stopping_rule(self, value):
         self._stopping_rule = value
-
-    @property
-    def criter_spec(self):
-        """
-        Returns the criterion spec.
-        :return: The criterion spec.
-        """
-        return self._stopping_rule
-
-    @criter_spec.setter
-    def criter_spec(self, value):
-        self._criter_spec = value
 
     def get_flattened_size(self, network):
         """
