@@ -184,12 +184,17 @@ class BaseNetwork(nn.Module):
             summary_dict['output_shape'] = list(output.size())
         return summary_dict
     
-    def get_output_shapes(self, input_size):
+    def get_output_shapes(self, input_size=None):
         """
         Returns the summary of shapes of all layers in the network
-        :param input_size:
         :return: OrderedDict of shape of each layer in the network
         """
+        if not input_size:
+            if self._input_network:
+                input_size = self._input_network._dimensions
+            else:
+                input_size = self._dimensions
+
         def register_hook(module):
             """
             Registers a backward hook
@@ -257,8 +262,8 @@ class BaseNetwork(nn.Module):
         """
         return self.state_dict()
 
-    def print_model_structure(self, input_dim):
-        shapes = self.get_output_shapes(input_dim)
+    def print_model_structure(self):
+        shapes = self.get_output_shapes()
         for k, v in shapes.items() :
             print('{}:'.format(k))
             if isinstance(v, OrderedDict):

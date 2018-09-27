@@ -95,7 +95,8 @@ model1 = models.DenseNet(
 #model1.fit(train_loader, val_loader, 10)
 model1.fit(train_loader, val_loader, 10, plot=True)
 
-plotters.visualization.display_record(record=model1.record, interactive=False)
-plt.show()
+# TODO: need to revisit this to be able to plot after training, interactive plotting is messing up
+#plotters.visualization.display_record(record=model1.record, interactive=False)
+#plt.show()
 
-model1.print_model_structure((1, 28, 28))
+model1.print_model_structure()
