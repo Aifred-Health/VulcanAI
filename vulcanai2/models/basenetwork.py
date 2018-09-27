@@ -141,6 +141,17 @@ class BaseNetwork(nn.Module):
     def stopping_rule(self, value):
         self._stopping_rule = value
 
+    @property
+    def criter_spec(self):
+        """
+        Returns the criterion spec.
+        :return: The criterion spec.
+        """
+        return self._stopping_rule
+    @criter_spec.setter
+    def criter_spec(self, value):
+        self._criter_spec = value
+
     def get_flattened_size(self, network):
         """
         Returns the flattened output size of the conv network's last layer.

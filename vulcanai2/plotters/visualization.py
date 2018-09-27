@@ -14,6 +14,9 @@ import pickle
 
 from datetime import datetime
 
+import torch
+from torch.autograd import Variable
+
 from sklearn.metrics import confusion_matrix
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.manifold import TSNE
@@ -145,6 +148,60 @@ def _plot_reduction(x_transform, train_y, label_map, title='Dim Reduction'):
     plt.title(title)
     plt.show(False)
 
+def display_saliency_overlay(image, saliency_map, shape=(28, 28)):
+    """
+    Plot overlay saliency map over image.
+
+    Args:
+        image: numpy array (1d vector) for single image
+        saliency_map: numpy array (1d vector) for image
+        shape: the dimensions of the image. defaults to mnist.
+    """
+    if len(image.shape) == 3 or len(saliency_map.shape) == 3:
+        image = image[0]
+        saliency_map = saliency_map[0]
+    elif len(image.shape) == 1 or len(saliency_map.shape) == 1:
+        image = np.reshape(image, shape)
+        saliency_map = np.reshape(saliency_map, shape)
+
+    fig = plt.figure()
+    fig.add_subplot(1, 2, 1)
+    plt.imshow(image, cmap='gray')
+    fig.add_subplot(1, 2, 2)
+    plt.imshow(image, cmap='binary')
+    plt.imshow(abs(saliency_map), cmap='hot_r', alpha=0.7)
+    plt.colorbar()
+    plt.show(False)
+
+def compute_saliency_map(model, input_x, input_y):
+    
+    if not isinstance(input_x, Variable):
+        input_x = Variable(input_x, requires_grad=True)
+    elif not input_x.requires_grad:
+        input_x.requires_grad = True
+
+    # Freeze params, no need to update weights
+    for p in model.parameters():
+        p.requires_grad = False
+
+    # forward pass
+    try:
+        scores = model(input_x)
+    except RuntimeError:
+        model = model.cuda()
+        scores = model(input_x.cuda())
+
+    scores = scores.gather(1, input_y.view(-1, 1)).squeeze()
+
+    # backward pass
+    scores.backward(torch.ones(scores.shape))
+
+    sal_map = input_x.grad.data
+    sal_map = sal_map.abs()
+    sal_map, _ = torch.max(sal_map, dim = 1) # get max abs from all (3) channels 
+
+    return sal_map
+
 # def display_receptive_fields(network, layer_list=None, top_k=5):
 #     """
 #     Display receptive fields of layers from a network [1].
@@ -193,84 +250,3 @@ def _plot_reduction(x_transform, train_y, label_map, title='Dim Reduction'):
 #         plt.colorbar()
 #     plt.show(False)
 #     return feature_importance
-#
-#
-# def display_saliency_overlay(image, saliency_map, shape=(28, 28)):
-#     """
-#     Plot overlay saliency map over image.
-#
-#     Args:
-#         image: numpy array (1d vector) for single image
-#         saliency_map: numpy array (1d vector) for image
-#         shape: the dimensions of the image. defaults to mnist.
-#     """
-#     if len(image.shape) == 3 or len(saliency_map.shape) == 3:
-#         image = image[0]
-#         saliency_map = saliency_map[0]
-#     elif len(image.shape) == 1 or len(saliency_map.shape) == 1:
-#         image = np.reshape(image, shape)
-#         saliency_map = np.reshape(saliency_map, shape)
-#
-#     fig = plt.figure()
-#     fig.add_subplot(1, 2, 1)
-#     plt.imshow(image, cmap='gray')
-#     fig.add_subplot(1, 2, 2)
-#     plt.imshow(image, cmap='binary')
-#     plt.imshow(abs(saliency_map), cmap='hot_r', alpha=0.7)
-#     plt.colorbar()
-#     plt.show(False)
-#
-#
-# def get_saliency_map(network, input_data):
-#     """
-#     Calculate the saliency map for all input samples.
-#
-#     Calculates the derivative of the score w.r.t the input.
-#     Helps with getting the 'why' from a prediction.
-#
-#     Args:
-#         network: Network type to get saliency from
-#         input_data: ndarray(2D), batch of samples
-#
-#     Returns saliency map for all given samples
-#     """
-#     output = lasagne.layers.get_output(
-#         network.layers[-2],
-#         deterministic=True
-#     )
-#     max_out = T.max(output, axis=1)
-#     sal_fun = theano.function(
-#         [network.input_var],
-#         T.grad(max_out.sum(), wrt=network.input_var)
-#     )
-#     sal_map = sal_fun(input_data)
-#     if sal_map.shape != input_data.shape:
-#         raise ValueError('Shape mismatch')
-#     return sal_map
-
-def Saliency_map(image,model,preprocess,ground_truth,use_gpu=False,method=util.GradType.GUIDED):
-    
-    vis_param_dict, reset_state, remove_handles = util.augment_module(model)
-    vis_param_dict['method'] = method
-    img_tensor = preprocess(image)
-    img_tensor.unsqueeze_(0)
-    if use_gpu:
-        img_tensor=img_tensor.cuda()
-    input = Variable(img_tensor,requires_grad=True)
-    
-    if  input.grad is not None:
-        input.grad.data.zero_()
-    
-    model.zero_grad()
-    output = model(input)
-    ind=torch.LongTensor(1)
-    if(isinstance(ground_truth,np.int64)):
-        ground_truth=np.asscalar(ground_truth)
-    ind[0]=ground_truth
-    ind=Variable(ind)
-    energy=output[0,ground_truth]
-    energy.backward() 
-    grad=input.grad
-    if use_gpu:
-        return np.abs(grad.data.cpu().numpy()[0]).max(axis=0)
-    return np.abs(grad.data.numpy()[0]).max(axis=0)
