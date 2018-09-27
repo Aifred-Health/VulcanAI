@@ -1,23 +1,33 @@
 # -*- coding: utf-8 -*-
 """Defines the basenetwork class"""
+# Core imports
 import abc
 from torch.autograd import Variable
 import torch.nn.modules.loss as loss
+
+# Vulcan imports
 from .layers import *
 from .metrics import Metrics
+from ..plotters.visualization import display_record
+
+# Generic imports
 import pydash as pdash
 from tqdm import tqdm, trange
 from datetime import datetime
 import logging
 import os
 import pickle
+import time
 from collections import OrderedDict
 
+import matplotlib
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+sns.set()
 logger = logging.getLogger(__name__)
 
 
-# TODO: fix this to be just for torch cause they have some bug
-# noinspection PyDefaultArgument,PyUnresolvedReferences
 class BaseNetwork(nn.Module):
     """
     Base class upon which all Vulcan NNs will be based.
@@ -72,6 +82,7 @@ class BaseNetwork(nn.Module):
         self.epochs = None
         self.retain_graph = False
         self.valid_interv = None
+        self.record = None
 
         self._create_network()
 
@@ -108,7 +119,7 @@ class BaseNetwork(nn.Module):
     def lr_scheduler(self):
         """
         Returns the lr_scheduler
-        :return: The lr_scheduler
+        :return: the lr_scheduler
         """
         return self._lr_scheduler
 
@@ -132,7 +143,7 @@ class BaseNetwork(nn.Module):
     def criter_spec(self):
         """
         Returns the criterion spec.
-        :return: The criterion spec.
+        :return: the criterion spec.
         """
         return self._stopping_rule
 
@@ -162,12 +173,8 @@ class BaseNetwork(nn.Module):
             return x.size()[1]
 
     def get_size(self, summary_dict, output):
-        # TODO: Priya. Define parameters. I don't know what the data types are for this.
         """
         Helper function for the function get_output_shapes
-        :param summary_dict:
-        :param output:
-        :return:
         """
         if isinstance(output, tuple):
             for i in range(len(output)):
@@ -177,31 +184,25 @@ class BaseNetwork(nn.Module):
             summary_dict['output_shape'] = list(output.size())
         return summary_dict
     
-    def get_output_shapes(self, input_size):
-        # TODO: Priya Please define parameters.
+    def get_output_shapes(self, input_size=None):
         """
         Returns the summary of shapes of all layers in the network
-        :param input_size:
-        :return:
+        :return: OrderedDict of shape of each layer in the network
         """
+        if not input_size:
+            if self._input_network:
+                input_size = self._input_network._dimensions
+            else:
+                input_size = self._dimensions
+
         def register_hook(module):
-            # TODO: Priya I don't know what this is
             """
-
-            :param module:
-            :return:
+            Registers a backward hook
+            For more info: https://pytorch.org/docs/stable/_modules/torch/tensor.html#Tensor.register_hook
             """
-
-            # TODO: I hope that's ok
-            # noinspection PyShadowingBuiltins, PyShadowingNames
             def hook(module, input, output):
-                # TODO: Priya also this
                 """
-
-                :param module:
-                :param input:
-                :param output:
-                :return:
+                https://github.com/pytorch/tutorials/blob/8afce8a213cb3712aa7de1e1cf158da765f029a7/beginner_source/former_torchies/nn_tutorial.py#L146
                 """
                 class_name = str(module.__class__).split('.')[-1].split("'")[0]
                 module_idx = len(summary)
@@ -261,6 +262,14 @@ class BaseNetwork(nn.Module):
         """
         return self.state_dict()
 
+    def print_model_structure(self):
+        shapes = self.get_output_shapes()
+        for k, v in shapes.items() :
+            print('{}:'.format(k))
+            if isinstance(v, OrderedDict):
+                for k2, v2 in v.items():
+                    print('\t {}: {}'.format(k2, v2))
+
     @abc.abstractmethod
     def _create_network(self):
         """
@@ -287,7 +296,8 @@ class BaseNetwork(nn.Module):
         self.valid_interv = 2*len(self.train_loader)
         self.epoch = 0
 
-    def fit(self, train_loader, val_loader, epochs, retain_graph=None, valid_interv=None):
+    def fit(self, train_loader, val_loader, epochs, 
+            retain_graph=None, valid_interv=None, plot=False):
         """
         Trains the network on the provided data.
         :param train_loader: The DataLoader object containing the training data
@@ -307,18 +317,45 @@ class BaseNetwork(nn.Module):
 
         self._init_trainer()
 
+        self.record = dict(
+            epoch=[],
+            train_error=[],
+            train_accuracy=[],
+            validation_error=[],
+            validation_accuracy=[]
+        )
+
         try:
+            if plot is True:
+                fig_number = plt.gcf().number + 1 if plt.fignum_exists(1) else 1
+                plt.show()
+                
             for epoch in trange(self.epoch, epochs, desc='Epoch: ', ncols=80):
+
                 train_loss, train_acc = self._train_epoch()
                 valid_loss, valid_acc = self._validate()
+
                 tqdm.write("\n Epoch {}:\n"
-                           "Train Loss: {:.6f} | Test Loss: {:.6f} | "
+                           "Train Loss: {:.6f} | Test Loss: {:.6f} |"
                            "Train Acc: {:.4f} | Test Acc: {:.4f}".format(
                                 epoch,
                                 train_loss,
                                 valid_loss,
                                 train_acc,
-                                valid_acc))
+                                valid_acc
+                                ))
+
+                self.record['epoch'].append(epoch)
+                self.record['train_error'].append(train_loss)
+                self.record['train_accuracy'].append(train_acc)
+                self.record['validation_error'].append(valid_loss)
+                self.record['validation_accuracy'].append(valid_acc)
+
+                if plot is True:
+                    plt.ion()
+                    plt.figure(fig_number)
+                    display_record(record=self.record)
+
         except KeyboardInterrupt:
             print("\n\n**********KeyboardInterrupt: Training stopped prematurely.**********\n\n")
 
@@ -385,7 +422,6 @@ class BaseNetwork(nn.Module):
             predictions = self(data)
 
             validation_loss = self.criterion(predictions, targets)
-            # / len(self.val_loader.dataset) # @priya, why was this being divided to begin with?
             val_loss_accumulator += validation_loss.item()
 
             self.metrics.update(predictions.data.cpu().numpy(), targets.cpu().numpy())

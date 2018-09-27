@@ -1,6 +1,6 @@
 import sys
 sys.path.append('../')
-from vulcanai2 import models, datasets
+from vulcanai2 import models, datasets, plotters
 
 import torch
 import torch.nn as nn
@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader
 import numpy as np
 import json
 from collections import OrderedDict
+import matplotlib.pyplot as plt
 
 sys.path.append('../')
 normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
@@ -91,13 +92,11 @@ model1 = models.DenseNet(
     num_classes=10
 )
 
-model1.fit(train_loader, val_loader, 10)
+#model1.fit(train_loader, val_loader, 10)
+model1.fit(train_loader, val_loader, 10, plot=True)
 
-#print(model1.run_test(np.expand_dims(val_dataset.test_data, axis=1), np.expand_dims(val_dataset.test_labels, axis=1)))
+# TODO: need to revisit this to be able to plot after training, interactive plotting is messing up
+#plotters.visualization.display_record(record=model1.record, interactive=False)
+#plt.show()
 
-params = model1.get_output_shapes((1,28,28))
-for k, v in params.items() :
-    print('{}:'.format(k))
-    if isinstance(v, OrderedDict):
-        for k2, v2 in v.items():
-            print('\t {}: {}'.format(k2, v2))
+model1.print_model_structure()
