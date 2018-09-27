@@ -28,8 +28,6 @@ sns.set()
 logger = logging.getLogger(__name__)
 
 
-# TODO: fix this to be just for torch cause they have some bug
-# noinspection PyDefaultArgument,PyUnresolvedReferences
 class BaseNetwork(nn.Module):
     """
     Base class upon which all Vulcan NNs will be based.
@@ -121,7 +119,7 @@ class BaseNetwork(nn.Module):
     def lr_scheduler(self):
         """
         Returns the lr_scheduler
-        :return: The lr_scheduler
+        :return: the lr_scheduler
         """
         return self._lr_scheduler
 
@@ -145,9 +143,10 @@ class BaseNetwork(nn.Module):
     def criter_spec(self):
         """
         Returns the criterion spec.
-        :return: The criterion spec.
+        :return: the criterion spec.
         """
         return self._stopping_rule
+
     @criter_spec.setter
     def criter_spec(self, value):
         self._criter_spec = value
@@ -174,12 +173,8 @@ class BaseNetwork(nn.Module):
             return x.size()[1]
 
     def get_size(self, summary_dict, output):
-        # TODO: Priya. Define parameters. I don't know what the data types are for this.
         """
         Helper function for the function get_output_shapes
-        :param summary_dict:
-        :param output:
-        :return:
         """
         if isinstance(output, tuple):
             for i in range(len(output)):
@@ -190,30 +185,19 @@ class BaseNetwork(nn.Module):
         return summary_dict
     
     def get_output_shapes(self, input_size):
-        # TODO: Priya Please define parameters.
         """
         Returns the summary of shapes of all layers in the network
         :param input_size:
-        :return:
+        :return: OrderedDict of shape of each layer in the network
         """
         def register_hook(module):
-            # TODO: Priya I don't know what this is
             """
-
-            :param module:
-            :return:
+            Registers a backward hook
+            For more info: https://pytorch.org/docs/stable/_modules/torch/tensor.html#Tensor.register_hook
             """
-
-            # TODO: I hope that's ok
-            # noinspection PyShadowingBuiltins, PyShadowingNames
             def hook(module, input, output):
-                # TODO: Priya also this
                 """
-
-                :param module:
-                :param input:
-                :param output:
-                :return:
+                https://github.com/pytorch/tutorials/blob/8afce8a213cb3712aa7de1e1cf158da765f029a7/beginner_source/former_torchies/nn_tutorial.py#L146
                 """
                 class_name = str(module.__class__).split('.')[-1].split("'")[0]
                 module_idx = len(summary)
@@ -433,7 +417,6 @@ class BaseNetwork(nn.Module):
             predictions = self(data)
 
             validation_loss = self.criterion(predictions, targets)
-            # / len(self.val_loader.dataset) # @priya, why was this being divided to begin with?
             val_loss_accumulator += validation_loss.item()
 
             self.metrics.update(predictions.data.cpu().numpy(), targets.cpu().numpy())
