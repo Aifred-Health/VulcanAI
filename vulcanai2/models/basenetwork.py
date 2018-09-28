@@ -62,27 +62,21 @@ class BaseNetwork(nn.Module):
 
         self._input_network = input_network
         self._num_classes = num_classes
-        
+
+        self._activation = activation
+        self._pred_activation = pred_activation
+
         self._optim_spec = optim_spec
         self._lr_scheduler = lr_scheduler
         self._stopping_rule = stopping_rule
         self._criter_spec = criter_spec
 
-        self._activation = activation
-        self._pred_activation = pred_activation
-
         if self._num_classes:
             self.metrics = Metrics(self._num_classes)
         
         self.optim = None
-        self._itr = 0
-
-        self.train_loader = None
-        self.val_loader = None
-        self.epochs = None
-        self.retain_graph = False
-        self.valid_interv = None
-        self.record = None
+        self.criterion = None
+        #self._itr = 0 #TODO: ?
 
         self._create_network()
 
@@ -241,7 +235,7 @@ class BaseNetwork(nn.Module):
         # register hook
         self.apply(register_hook)
         # make a forward pass
-        self.cpu()(x)
+        self.cpu()(x) #TODO: why is this .cpu?
         # remove these hooks
         for h in hooks:
             h.remove()
@@ -292,9 +286,7 @@ class BaseNetwork(nn.Module):
     def _init_trainer(self):
         self.optim = self._init_optimizer(self._optim_spec)
         self.criterion = self._get_criterion(self._criter_spec)
-
         self.valid_interv = 2*len(self.train_loader)
-        self.epoch = 0
 
     def fit(self, train_loader, val_loader, epochs, 
             retain_graph=None, valid_interv=None, plot=False):
@@ -304,20 +296,15 @@ class BaseNetwork(nn.Module):
         :param val_loader: The DataLoader object containing the validation data
         :param epochs: The number of epochs
         :param retain_graph: Specifies whether retain_graph will be true when .backwards is called.
-        :param valid_interv:
+        :param valid_interv: Specifies when validation should occur. Not yet implemented.
         :return: None
         """
 
-        self.train_loader = train_loader
-        self.val_loader = val_loader
-        self.epochs = epochs
-        self.retain_graph = retain_graph
-        if valid_interv:
-            self.valid_interv = valid_interv
-
         self._init_trainer()
 
-        self.record = dict(
+        epoch = 0
+
+        record = dict(
             epoch=[],
             train_error=[],
             train_accuracy=[],
@@ -330,10 +317,10 @@ class BaseNetwork(nn.Module):
                 fig_number = plt.gcf().number + 1 if plt.fignum_exists(1) else 1
                 plt.show()
                 
-            for epoch in trange(self.epoch, epochs, desc='Epoch: ', ncols=80):
+            for epoch in trange(epoch, epochs, desc='Epoch: ', ncols=80):
 
-                train_loss, train_acc = self._train_epoch()
-                valid_loss, valid_acc = self._validate()
+                train_loss, train_acc = self._train_epoch(train_loader, retain_graph)
+                valid_loss, valid_acc = self._validate(val_loader, retain_graph)
 
                 tqdm.write("\n Epoch {}:\n"
                            "Train Loss: {:.6f} | Test Loss: {:.6f} |"
@@ -345,28 +332,28 @@ class BaseNetwork(nn.Module):
                                 valid_acc
                                 ))
 
-                self.record['epoch'].append(epoch)
-                self.record['train_error'].append(train_loss)
-                self.record['train_accuracy'].append(train_acc)
-                self.record['validation_error'].append(valid_loss)
-                self.record['validation_accuracy'].append(valid_acc)
+                record['epoch'].append(epoch)
+                record['train_error'].append(train_loss)
+                record['train_accuracy'].append(train_acc)
+                record['validation_error'].append(valid_loss)
+                record['validation_accuracy'].append(valid_acc)
 
                 if plot is True:
                     plt.ion()
                     plt.figure(fig_number)
-                    display_record(record=self.record)
+                    display_record(record=record)
 
         except KeyboardInterrupt:
             print("\n\n**********KeyboardInterrupt: Training stopped prematurely.**********\n\n")
 
-    def _train_epoch(self):
+    def _train_epoch(self, train_loader, retain_graph):
 
         self.train()  # Set model to training mode
 
         train_loss_accumulator = 0.0
         train_accuracy_accumulator = 0.0
-        pbar = trange(len(self.train_loader.dataset), desc='Training.. ')
-        for batch_idx, (data, targets) in enumerate(self.train_loader):
+        pbar = trange(len(train_loader.dataset), desc='Training.. ')
+        for batch_idx, (data, targets) in enumerate(train_loader):
 
             data, targets = Variable(data), Variable(targets)
 
@@ -380,28 +367,28 @@ class BaseNetwork(nn.Module):
             train_loss_accumulator += train_loss.item()
 
             self.optim.zero_grad()
-            train_loss.backward(retain_graph=self.retain_graph)
+            train_loss.backward(retain_graph=retain_graph)
             self.optim.step()
 
             if batch_idx % 10 == 0:
                 # Update tqdm bar
-                if ((batch_idx+10)*len(data)) <= len(self.train_loader.dataset):
+                if ((batch_idx+10)*len(data)) <= len(train_loader.dataset):
                     pbar.update(10 * len(data))
                 else:
-                    pbar.update(len(self.train_loader.dataset) - int(batch_idx*len(data)))
+                    pbar.update(len(train_loader.dataset) - int(batch_idx*len(data)))
 
             train_accuracy_accumulator += self.metrics.get_score(predictions, targets)
 
         pbar.close()
 
         # noinspection PyUnboundLocalVariable
-        train_loss = train_loss_accumulator*len(data)/len(self.train_loader.dataset)
-        train_accuracy = train_accuracy_accumulator*len(data)/len(self.train_loader.dataset)
+        train_loss = train_loss_accumulator*len(data)/len(train_loader.dataset)
+        train_accuracy = train_accuracy_accumulator*len(data)/len(train_loader.dataset)
 
         return train_loss, train_accuracy
 
     # noinspection PyUnboundLocalVariable
-    def _validate(self):
+    def _validate(self, val_loader):
         """
         Validates the network on the validation data
         :return: (val_loss, accuracy, avg_accuracy, IoU, mIoU, conf_mat) # TODO: update this
@@ -410,9 +397,9 @@ class BaseNetwork(nn.Module):
 
         val_loss_accumulator = 0.0
         val_accuracy_accumulator = 0.0
-        pbar = trange(len(self.val_loader.dataset), desc='Validating.. ')
+        pbar = trange(len(val_loader.dataset), desc='Validating.. ')
 
-        for batch_idx, (data, targets) in enumerate(self.val_loader):
+        for batch_idx, (data, targets) in enumerate(val_loader):
 
             data, targets = Variable(data, requires_grad=False), Variable(targets, requires_grad=False)
 
@@ -427,16 +414,16 @@ class BaseNetwork(nn.Module):
             self.metrics.update(predictions.data.cpu().numpy(), targets.cpu().numpy())
             if batch_idx % 10 == 0:
                 # Update tqdm bar
-                if ((batch_idx+10)*len(data)) <= len(self.val_loader.dataset):
+                if ((batch_idx+10)*len(data)) <= len(val_loader.dataset):
                     pbar.update(10 * len(data))
                 else:
-                    pbar.update(len(self.val_loader.dataset) - int(batch_idx*len(data)))
+                    pbar.update(len(val_loader.dataset) - int(batch_idx*len(data)))
             val_accuracy_accumulator += self.metrics.get_score(predictions, targets)
 
         self.metrics.reset()
         pbar.close()
-        validation_loss = val_loss_accumulator*len(data)/len(self.val_loader.dataset)
-        validation_accuracy = val_accuracy_accumulator*len(data)/len(self.val_loader.dataset)
+        validation_loss = val_loss_accumulator*len(data)/len(val_loader.dataset)
+        validation_accuracy = val_accuracy_accumulator*len(data)/len(val_loader.dataset)
 
         return validation_loss, validation_accuracy
 
