@@ -25,6 +25,9 @@ import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+import warnings
+warnings.filterwarnings("ignore")
+
 sns.set()
 logger = logging.getLogger(__name__)
 
