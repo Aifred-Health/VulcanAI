@@ -24,9 +24,9 @@ from sklearn.decomposition import PCA
 
 import matplotlib
 import matplotlib.pyplot as plt
-import seaborn as sns
-sns.set_style('darkgrid')
 
+
+import itertools
 import logging
 logger = logging.getLogger(__name__)
 
@@ -57,6 +57,7 @@ def display_record(record=None, load_path=None, interactive=True):
         '-mo',
         label='Train Error'
     )
+    #val_error = [i if ~np.isnan(i) else None for i in record['validation_error']]
     validation_error, = plt.plot(
         record['epoch'],
         record['validation_error'],
@@ -147,6 +148,34 @@ def _plot_reduction(x_transform, train_y, label_map, title='Dim Reduction'):
     plt.legend(loc='upper right')
     plt.title(title)
     plt.show(False)
+
+def display_confusion_matrix(cm, classes):
+    """
+    This function prints and plots the confusion matrix.
+    Normalization can be applied by setting `normalize=True`.
+    inspired from: https://github.com/zaidalyafeai/Machine-Learning/blob/master/Multi-input%20Network%20Pytorch.ipynb
+    
+    Args:
+        cm: confustion_matrix obtained using vulcanai.Metrics.get_confusion_matrix
+        classes: List of actual class labels (e.g.: MNIST - [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    """
+    plt.imshow(cm, interpolation='nearest', cmap='Blues')
+    plt.title('Confusion matrix')
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes, rotation=45)
+    plt.yticks(tick_marks, classes)
+
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, format(cm[i, j], 'd'),
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    plt.show()
 
 def display_saliency_overlay(image, saliency_map, shape=(28, 28)):
     """

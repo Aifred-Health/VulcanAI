@@ -19,6 +19,7 @@ import os
 import pickle
 import time
 from collections import OrderedDict
+import numpy as np
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -297,7 +298,7 @@ class BaseNetwork(nn.Module):
         self.epoch = 0
 
     def fit(self, train_loader, val_loader, epochs, 
-            retain_graph=None, valid_interv=None, plot=False):
+            retain_graph=None, valid_interv=4, plot=False):
         """
         Trains the network on the provided data.
         :param train_loader: The DataLoader object containing the training data
@@ -312,8 +313,6 @@ class BaseNetwork(nn.Module):
         self.val_loader = val_loader
         self.epochs = epochs
         self.retain_graph = retain_graph
-        if valid_interv:
-            self.valid_interv = valid_interv
 
         self._init_trainer()
 
@@ -333,7 +332,10 @@ class BaseNetwork(nn.Module):
             for epoch in trange(self.epoch, epochs, desc='Epoch: ', ncols=80):
 
                 train_loss, train_acc = self._train_epoch()
-                valid_loss, valid_acc = self._validate()
+                
+                valid_loss = valid_acc = np.nan
+                if epoch % valid_interv == 0:
+                    valid_loss, valid_acc = self._validate()
 
                 tqdm.write("\n Epoch {}:\n"
                            "Train Loss: {:.6f} | Test Loss: {:.6f} |"

@@ -32,7 +32,6 @@ class ConvNet(BaseNetwork, nn.Module):
     Subclass of BaseNetwork defining a ConvNet
     """
 
-    # noinspection PyDefaultArgument
     def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None,
                  activation=nn.ReLU(), pred_activation=nn.Softmax(dim=1), optim_spec={'name': 'Adam', 'lr': 0.001},
                  lr_scheduler=None, stopping_rule='best_validation_error', criter_spec={'name': 'CrossEntropyLoss'}):
@@ -76,15 +75,14 @@ class ConvNet(BaseNetwork, nn.Module):
         self.network_tails = nn.ModuleList([DenseUnit(dim, out_d) for out_d in self.out_dim])
 
     def forward(self, x):
-        # TODO: Priya add data types to the documentation for the params and return statement
         """
         Defines the behaviour of the network.
         If the network is defined with `num_classes` then it is assumed to be the last network
         which contains a classification layer/classifier (network tail). The data ('x')will be passed through the
         network and then through the classifier.
         If not, the input is passed through the network and returned without passing through a classification layer.
-        :param x: the input
-        :return: the output
+        :param x: input torch.Tensor
+        :return: output torch.Tensor
         """
 
         if self._input_network:
@@ -107,7 +105,6 @@ class ConvNet(BaseNetwork, nn.Module):
 
     # TODO: Automatically calculate padding to be the same as input shape.
     def _build_conv_network(self, conv_hid_layers):
-        # TODO: Priya add data types
         """
         Utility function to build the layers into a nn.Sequential object.
         :param conv_hid_layers: The hidden layers specification

@@ -9,12 +9,12 @@ logger = logging.getLogger(__name__)
 class BaseUnit(nn.Sequential):
     """The base class of layer
     """
-    def __init__(self, weight_init=None, bias_init=0,
+    def __init__(self, initializer=None, bias_init=0,
                  norm=None, activation=None, dp=None):
 
         super(BaseUnit, self).__init__()
         
-        self.weight_init = weight_init
+        self.initializer = initializer
         self.bias_init = bias_init
         self.norm = norm
         self.activation = activation
@@ -30,15 +30,15 @@ class BaseUnit(nn.Sequential):
     
     def init_weights(self):
         """Initialize the weights."""
-        if self.weight_init: # SRC: https://github.com/ray-project/ray/blob/b197c0c4044f66628c6672fe78581768a54d0e59/python/ray/rllib/models/pytorch/model.py
-            self.weight_init(self.kernel.weight)
+        if self.initializer:
+            self.initializer(self.kernel.weight)
         nn.init.constant_(self.kernel.bias, self.bias_init)
   
 
 class DenseUnit(BaseUnit):
-    def __init__(self, in_features , out_features , weight_init=None, bias_init=0,
+    def __init__(self, in_features , out_features , initializer=None, bias_init=0,
                  norm=None, activation=None, dp=None):
-        super(DenseUnit, self).__init__(weight_init, bias_init,
+        super(DenseUnit, self).__init__(initializer, bias_init,
                                         norm, activation, dp)
         self.in_features  = in_features 
         self.out_features  = out_features 
@@ -48,10 +48,8 @@ class DenseUnit(BaseUnit):
                             in_features=self.in_features, 
                             out_features=self.out_features
                             )
-        if self.weight_init:
-            self.weight_init(self.kernel.weight)
-        nn.init.constant_(self.kernel.bias, self.bias_init)
         self.add_module('kernel', self.kernel)
+        self.init_weights()
 
         # Norm
         if self.norm is not None:
@@ -70,12 +68,11 @@ class DenseUnit(BaseUnit):
         if self.dp is not None:
             self.dropout = nn.Dropout(self.dp)
             self.add_module('dropout', self.dropout)
-
-        self.init_weights()
+   
 
 class ConvUnit(BaseUnit):
     def __init__(self, conv_dim, in_channels, out_channels, kernel_size=3,
-                 weight_init=nn.init.xavier_uniform_, bias_init=0,
+                 initializer=nn.init.xavier_uniform_, bias_init=0,
                  stride=1, padding=2, norm=None,
                  activation=None, pool_size=None):
         super(ConvUnit, self).__init__()
@@ -94,8 +91,8 @@ class ConvUnit(BaseUnit):
                               stride=stride,
                               padding=padding
                               )
-
         self.add_module('kernel', self.kernel)
+        self.init_weights()
 
         # Norm
         if self.norm is not None:
@@ -110,8 +107,7 @@ class ConvUnit(BaseUnit):
         if pool_size is not None:
             self.pool = self.pool_layer(kernel_size=pool_size)
             self.add_module('pool', self.pool)
-                    
-        self.init_weights()
+          
 
     def _init_layers(self):
         if self.conv_dim == 1:
