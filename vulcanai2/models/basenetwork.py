@@ -8,7 +8,7 @@ import torch.nn.modules.loss as loss
 # Vulcan imports
 from .layers import *
 from .metrics import Metrics
-from ..plotters.visualization import display_record
+#from ..plotters.visualization import display_record
 
 # Generic imports
 import pydash as pdash
@@ -283,10 +283,10 @@ class BaseNetwork(nn.Module):
         criterion_spec = pdash.omit(criterion_spec, "name")
         return criterion_class(**criterion_spec)
 
-    def _init_trainer(self):
+    def _init_trainer(self, train_loader):
         self.optim = self._init_optimizer(self._optim_spec)
         self.criterion = self._get_criterion(self._criter_spec)
-        self.valid_interv = 2*len(self.train_loader)
+        self.valid_interv = 2*len(train_loader)
 
     def fit(self, train_loader, val_loader, epochs, 
             retain_graph=None, valid_interv=None, plot=False):
@@ -300,7 +300,7 @@ class BaseNetwork(nn.Module):
         :return: None
         """
 
-        self._init_trainer()
+        self._init_trainer(train_loader)
 
         epoch = 0
 
@@ -341,7 +341,7 @@ class BaseNetwork(nn.Module):
                 if plot is True:
                     plt.ion()
                     plt.figure(fig_number)
-                    display_record(record=record)
+                    #display_record(record=record)
 
         except KeyboardInterrupt:
             print("\n\n**********KeyboardInterrupt: Training stopped prematurely.**********\n\n")
@@ -388,7 +388,7 @@ class BaseNetwork(nn.Module):
         return train_loss, train_accuracy
 
     # noinspection PyUnboundLocalVariable
-    def _validate(self, val_loader):
+    def _validate(self, val_loader, retain_graph):
         """
         Validates the network on the validation data
         :return: (val_loss, accuracy, avg_accuracy, IoU, mIoU, conf_mat) # TODO: update this
@@ -452,46 +452,33 @@ class BaseNetwork(nn.Module):
         else:
             return output
 
-    # TODO: this is copy pasted - edit as appropriate
-    def save_model(self, save_path='models'):
+    def save_model(self, save_path=None):
         """
-        Will save the model parameters to a npz file.
-        Args:
-            save_path: the location where you want to save the params
+        Save the model (and its' input networks)
+        :param save_path: The save directory (not a file)
+        :return:
         """
+        #recursive recursive recursive
         if self.input_network is not None:
-            if not hasattr(self.input_network['network'], 'save_name'):
-                self.input_network['network'].save_model()
+            self.input_network.save_model(save_path)
 
-        if not os.path.exists(save_path):
-            print('Path not found, creating {}'.format(save_path))
-            os.makedirs(save_path)
-        file_path = os.path.join(save_path, "{}{}".format(self.timestamp,
-                                                          self.name))
-        save_name = '{}.network'.format(file_path)
-        print('Saving model as: {}'.format(save_name))
+        if not save_path:
+            save_path = "{name:}{date:_%Y-%m-%d_%H:%M:%S}/".format(name=self.name, date=datetime.datetime.now())
+            logger.info("No save path provideded, saving to {}".format(save_path))
+        model_file_path = save_path + "model.pkl"
+        state_dict_file_path = save_path + "state_dict.pkl"
+        # object.__getstate__() https://docs.python.org/3/library/pickle.html#example
+        pickle.dump(self, open(model_file_path, "wb"), 2)
+        #pickle.dump(self.state_dict, open(state_dict_file_path, "wb"), 2) #TODO: pretty sure this isn't necessary
 
-        with open(save_name, 'wb') as f:
-            pickle.dump(self, f, protocol=pickle.HIGHEST_PROTOCOL)
 
-        self.save_metadata(file_path)
 
     @classmethod
     def load_model(cls, load_path):
         """
-        Will load the model parameters from npz file.
-        Args:
-            load_path: the exact location where the model has been saved.
+        Load the model from it's parent directory
+        :param load_path: The load directory (not a file)
+        :return:
         """
-        print('Loading model from: {}'.format(load_path))
-        with open(load_path, 'rb') as f:
-            instance = pickle.load(f)
-        return instance
-
-    # def save_metadata(self, file_path):
-    #     """
-    #     Save network metadata information to the specified file path
-    #     :param file_path: file path
-    #     :return: None
-    #     """
-    #     raise NotImplementedError
+        model_file_path = load_path + "model.pkl" #TODO: is it dumb to have a constant name?
+        return pickle.load(open(model_file_path, 'rb'))
