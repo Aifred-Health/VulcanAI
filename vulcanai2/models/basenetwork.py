@@ -40,7 +40,7 @@ class BaseNetwork(nn.Module):
     # TODO: reorganize these.
     def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None, 
                  activation=nn.ReLU(), pred_activation=nn.Softmax(dim=1), optim_spec={'name': 'Adam', 'lr': 0.001},
-                 lr_scheduler=None, stopping_rule='best_validation_error', criter_spec=None):
+                 lr_scheduler=None, stopping_rule='best_validation_error', criter_spec=nn.CrossEntropyLoss):
         """
         Defines the network object.
         :param name: The name of the network. Used when saving the file.
@@ -288,14 +288,12 @@ class BaseNetwork(nn.Module):
         return optim_class(self.parameters(), **optim_spec)
 
     @staticmethod
-    def _get_criterion(criterion_spec):
-        criterion_class = getattr(loss, criterion_spec["name"])
-        criterion_spec = pdash.omit(criterion_spec, "name")
-        return criterion_class(**criterion_spec)
+    def _init_criterion(criterion_spec):
+        return criterion_spec()
 
     def _init_trainer(self):
         self.optim = self._init_optimizer(self._optim_spec)
-        self.criterion = self._get_criterion(self._criter_spec)
+        self.criterion = self._init_criterion(self._criter_spec)
 
         self.valid_interv = 2*len(self.train_loader)
         self.epoch = 0
