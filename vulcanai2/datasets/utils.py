@@ -124,6 +124,8 @@ def check_split_ratio(split_ratio):
 
 # THIS IS FROM SNEHA  https://github.com/sneha-desai
 # TODO: replace with Joseph's version
+# TODO: this should actually be a part of ConcatDataset called by _add see below
+# TODO: https://pytorch.org/docs/stable/_modules/torch/utils/data/dataset.html#Dataset
 def stitch_datasets(df_list, on, index_list=None):
     """
     Args:

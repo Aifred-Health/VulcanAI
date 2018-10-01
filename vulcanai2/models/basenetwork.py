@@ -4,6 +4,7 @@
 import abc
 from torch.autograd import Variable
 import torch.nn.modules.loss as loss
+import torch.utils.data
 
 # Vulcan imports
 from .layers import *
@@ -19,6 +20,7 @@ import os
 import pickle
 import time
 from collections import OrderedDict
+import copy
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -342,6 +344,82 @@ class BaseNetwork(nn.Module):
                     plt.ion()
                     plt.figure(fig_number)
                     display_record(record=record)
+
+        except KeyboardInterrupt:
+            print("\n\n**********KeyboardInterrupt: Training stopped prematurely.**********\n\n")
+
+    def k_fold_cross_validation(self, train_loader, k, epochs, retain_graph=None, plot=False):
+        """
+        Trains the network on the provided data.
+        :param train_loader: The DataLoader object containing the training data
+        :param k: The number of folds
+        :param epochs: The number of epochs
+        :param retain_graph: Specifies whether retain_graph will be true when .backwards is called.
+        :param valid_interv: Specifies when validation should occur. Not yet implemented.
+        :return: None
+        """
+
+        self._init_trainer()
+
+        epoch = 0
+
+        record = dict(
+            epoch=[],
+            train_error=[],
+            train_accuracy=[],
+            validation_error=[],
+            validation_accuracy=[]
+        )
+
+        fold_len = train_loader.dataset.__len__() / k
+        dataset_splits = torch.utils.data.random_split(train_loader.dataset, fold_len)
+        # TODO: check what this does for the last split..
+
+        try:
+            for fold in range(k):
+                if plot is True:
+                    fig_number = plt.gcf().number + 1 if plt.fignum_exists(1) else 1
+                    plt.show()
+
+
+                # TODO: this may break on different devices?? test.
+                # https://discuss.pytorch.org/t/are-there-any-recommended-methods-to-clone-a-model/483/14
+                cross_val_network = copy.deepcopy(self)
+
+                # TODO: this is kinda dumb also you're not passing params... they shouldn't have given you a dataloader
+                # from the start
+                # getting everything except for val fold
+                train_dataset = torch.utils.data.ConcatDataset(dataset_splits[:fold] + dataset_splits[fold:])
+                val_dataset = dataset_splits[k]
+                train_loader = torch.utils.data.DataLoader(train_dataset)
+                val_loader = torch.utils.data.DataLoader(val_dataset)
+
+                for epoch in trange(epoch, epochs, desc='Epoch: ', ncols=80):
+
+                    train_loss, train_acc = cross_val_network._train_epoch(train_loader, retain_graph)
+                    valid_loss, valid_acc = cross_val_network._validate(val_loader, retain_graph)
+
+                    tqdm.write("\n Fold {} Epoch {}:\n"
+                               "Train Loss: {:.6f} | Test Loss: {:.6f} |"
+                               "Train Acc: {:.4f} | Test Acc: {:.4f}".format(
+                        fold,
+                        epoch,
+                        train_loss,
+                        valid_loss,
+                        train_acc,
+                        valid_acc
+                    ))
+
+                    record['epoch'].append("f{}_e{}".format(fold, epoch))
+                    record['train_error'].append(train_loss)
+                    record['train_accuracy'].append(train_acc)
+                    record['validation_error'].append(valid_loss)
+                    record['validation_accuracy'].append(valid_acc)
+
+                    if plot is True:
+                        plt.ion()
+                        plt.figure(fig_number)
+                        display_record(record=record)
 
         except KeyboardInterrupt:
             print("\n\n**********KeyboardInterrupt: Training stopped prematurely.**********\n\n")
