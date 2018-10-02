@@ -23,22 +23,10 @@ logger = logging.getLogger(__name__)
 class Metrics(object):
 
     def __init__(self, num_class, use_unlabeled=False):
-        self.mat = np.zeros((num_class, num_class), dtype=np.float)
-        self.valids = np.zeros((num_class), dtype=np.float)
-        self.IoU = np.zeros((num_class), dtype=np.float)
-        self.mIoU = 0
-
         self.num_class = num_class
-        self.list_classes = list(range(num_class))
-        self.use_unlabeled = use_unlabeled
-        self.mat_start_idx = 1 if not self.use_unlabeled else 0
-
-    def reset(self):
-        self.mat = np.zeros((self.num_class, self.num_class), dtype=float)
-        self.valids = np.zeros((self.num_class), dtype=float)
-        self.IoU = np.zeros((self.num_class), dtype=float)
-        self.mIoU = 0
-    
+        self.mat = np.zeros((self.num_class, self.num_class), dtype=np.float)
+        self.list_classes = list(range(self.num_class))
+  
     def update(self, predictions, targets):
         if not(isinstance(predictions, np.ndarray)) or not(isinstance(targets, np.ndarray)):
             print("Expected ndarray")
@@ -74,38 +62,6 @@ class Metrics(object):
 
         self.mat += confusion_matrix(temp_targets, temp_predictions, labels=self.list_classes)
 
-    #TODO: Move components into run_test since a majority of things calculated are already there
-    # No longer used.
-    # def get_scores(self):
-    #     tp = 0
-    #     fp = 0
-    #     tn = 0
-    #     fn = 0
-    #     total = 0   # Total true positives
-    #     N = 0       # Total samples
-    #     for i in range(self.mat_start_idx, self.num_class):
-    #         N += sum(self.mat[:, i])
-    #         tp = self.mat[i][i]
-    #         fp = sum(self.mat[self.mat_start_idx:, i]) - tp
-    #         fn = sum(self.mat[i,self.mat_start_idx:]) - tp
-
-    #         if (tp+fp) == 0:
-    #             self.valids[i] = 0
-    #         else:
-    #             self.valids[i] = tp/(tp + fp)
-
-    #         if (tp+fp+fn) == 0:
-    #             self.IoU[i] = 0
-    #         else:
-    #             self.IoU[i] = tp/(tp + fp + fn)
-
-    #         total += tp
-
-    #     self.mIoU = sum(self.IoU[self.mat_start_idx:])/(self.num_class - self.mat_start_idx)
-    #     self.acc = total/(sum(sum(self.mat[self.mat_start_idx:, self.mat_start_idx:])))
-
-    #     return self.valids, self.acc, self.IoU, self.mIoU, self.mat           
-
     def get_score(self, predictions, targets, metric='accuracy'):
         if metric == 'accuracy':
             max_index = predictions.max(dim=1)[1]
@@ -114,14 +70,6 @@ class Metrics(object):
             return accuracy
         else:
             raise NotImplementedError('Metric not available.')
-
-    #TODO: Remove since it can be found in run_test
-    def get_precision(self, predictions, targets):
-        return skl_metrics.precision_score(targets.flatten(), predictions.flatten())
-
-    #TODO: Remove since it can be found in run_test
-    def get_roc_score(self, predictions, targets):
-        return skl_metrics.roc_auc_score(targets.flatten(), predictions.flatten())
 
     def get_notable_indices(self, matrix, top_k=5):
         """

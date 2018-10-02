@@ -149,7 +149,7 @@ def _plot_reduction(x_transform, train_y, label_map, title='Dim Reduction'):
     plt.title(title)
     plt.show(False)
 
-def display_confusion_matrix(cm, classes):
+def display_confusion_matrix(cm, class_list):
     """
     This function prints and plots the confusion matrix.
     Normalization can be applied by setting `normalize=True`.
@@ -157,14 +157,14 @@ def display_confusion_matrix(cm, classes):
     
     Args:
         cm: confustion_matrix obtained using vulcanai.Metrics.get_confusion_matrix
-        classes: List of actual class labels (e.g.: MNIST - [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+        class_list: List of actual class labels (e.g.: MNIST - [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
     """
     plt.imshow(cm, interpolation='nearest', cmap='Blues')
     plt.title('Confusion matrix')
     plt.colorbar()
-    tick_marks = np.arange(len(classes))
-    plt.xticks(tick_marks, classes, rotation=45)
-    plt.yticks(tick_marks, classes)
+    tick_marks = np.arange(len(class_list))
+    plt.xticks(tick_marks, class_list, rotation=45)
+    plt.yticks(tick_marks, class_list)
 
     thresh = cm.max() / 2.
     for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):

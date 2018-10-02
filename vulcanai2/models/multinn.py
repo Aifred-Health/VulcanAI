@@ -4,7 +4,8 @@ import torch
 import torch.nn as nn
 
 from .basenetwork import BaseNetwork
-from .layers import DenseUnit, ConvUnit
+from .cnn import ConvNet
+from .dnn import DenseNet
 
 import numpy as np
 import logging
@@ -12,7 +13,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class MultiInputNN(BaseNetwork, nn.Module):
+class MultiInputNN(ConvNet, DenseNet):
 
     def __init__(self, name, input_models):
         """
