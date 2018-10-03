@@ -19,10 +19,14 @@ import os
 import pickle
 import time
 from collections import OrderedDict
+import numpy as np
 
 import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
+
+import warnings
+warnings.filterwarnings("ignore")
 
 sns.set()
 logger = logging.getLogger(__name__)
@@ -36,7 +40,7 @@ class BaseNetwork(nn.Module):
     # TODO: reorganize these.
     def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None, 
                  activation=nn.ReLU(), pred_activation=nn.Softmax(dim=1), optim_spec={'name': 'Adam', 'lr': 0.001},
-                 lr_scheduler=None, stopping_rule='best_validation_error', criter_spec=None):
+                 lr_scheduler=None, stopping_rule='early_stopping', criter_spec=nn.CrossEntropyLoss):
         """
         Defines the network object.
         :param name: The name of the network. Used when saving the file.
@@ -284,20 +288,16 @@ class BaseNetwork(nn.Module):
         return optim_class(self.parameters(), **optim_spec)
 
     @staticmethod
-    def _get_criterion(criterion_spec):
-        criterion_class = getattr(loss, criterion_spec["name"])
-        criterion_spec = pdash.omit(criterion_spec, "name")
-        return criterion_class(**criterion_spec)
+    def _init_criterion(criterion_spec):
+        return criterion_spec()
 
     def _init_trainer(self):
         self.optim = self._init_optimizer(self._optim_spec)
-        self.criterion = self._get_criterion(self._criter_spec)
-
-        self.valid_interv = 2*len(self.train_loader)
+        self.criterion = self._init_criterion(self._criter_spec)
         self.epoch = 0
 
     def fit(self, train_loader, val_loader, epochs, 
-            retain_graph=None, valid_interv=None, plot=False):
+            retain_graph=None, valid_interv=4, plot=False):
         """
         Trains the network on the provided data.
         :param train_loader: The DataLoader object containing the training data
@@ -312,8 +312,6 @@ class BaseNetwork(nn.Module):
         self.val_loader = val_loader
         self.epochs = epochs
         self.retain_graph = retain_graph
-        if valid_interv:
-            self.valid_interv = valid_interv
 
         self._init_trainer()
 
@@ -333,7 +331,10 @@ class BaseNetwork(nn.Module):
             for epoch in trange(self.epoch, epochs, desc='Epoch: ', ncols=80):
 
                 train_loss, train_acc = self._train_epoch()
-                valid_loss, valid_acc = self._validate()
+                
+                valid_loss = valid_acc = np.nan
+                if epoch % valid_interv == 0:
+                    valid_loss, valid_acc = self._validate()
 
                 tqdm.write("\n Epoch {}:\n"
                            "Train Loss: {:.6f} | Test Loss: {:.6f} |"
