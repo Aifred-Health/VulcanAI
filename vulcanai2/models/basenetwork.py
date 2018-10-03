@@ -40,7 +40,7 @@ class BaseNetwork(nn.Module):
     # TODO: reorganize these.
     def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None, 
                  activation=nn.ReLU(), pred_activation=nn.Softmax(dim=1), optim_spec={'name': 'Adam', 'lr': 0.001},
-                 lr_scheduler=None, stopping_rule='early_stopping', criter_spec=nn.CrossEntropyLoss):
+                 lr_scheduler=None, early_stopping=None, criter_spec=nn.CrossEntropyLoss):
         """
         Defines the network object.
         :param name: The name of the network. Used when saving the file.
@@ -69,7 +69,7 @@ class BaseNetwork(nn.Module):
         
         self._optim_spec = optim_spec
         self._lr_scheduler = lr_scheduler
-        self._stopping_rule = stopping_rule
+        self._early_stopping = early_stopping
         self._criter_spec = criter_spec
 
         self._activation = activation
@@ -132,16 +132,16 @@ class BaseNetwork(nn.Module):
         self._lr_scheduler = value
 
     @property
-    def stopping_rule(self):
+    def early_stopping(self):
         """
         Returns the stopping rule
         :return: The stoping rule
         """
-        return self._stopping_rule
+        return self._early_stopping
 
-    @stopping_rule.setter
+    @early_stopping.setter
     def stopping_rule(self, value):
-        self._stopping_rule = value
+        self._early_stopping = value
 
     @property
     def criter_spec(self):
@@ -149,7 +149,7 @@ class BaseNetwork(nn.Module):
         Returns the criterion spec.
         :return: the criterion spec.
         """
-        return self._stopping_rule
+        return self._criter_spec
 
     @criter_spec.setter
     def criter_spec(self, value):
@@ -434,7 +434,6 @@ class BaseNetwork(nn.Module):
                     pbar.update(len(self.val_loader.dataset) - int(batch_idx*len(data)))
             val_accuracy_accumulator += self.metrics.get_score(predictions, targets)
 
-        self.metrics.reset()
         pbar.close()
         validation_loss = val_loss_accumulator*len(data)/len(self.val_loader.dataset)
         validation_accuracy = val_accuracy_accumulator*len(data)/len(self.val_loader.dataset)
