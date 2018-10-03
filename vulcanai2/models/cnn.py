@@ -34,11 +34,11 @@ class ConvNet(BaseNetwork, nn.Module):
 
     def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None,
                  activation=nn.ReLU(), pred_activation=nn.Softmax(dim=1), optim_spec={'name': 'Adam', 'lr': 0.001},
-                 lr_scheduler=None, stopping_rule='early_stopping', criter_spec=nn.CrossEntropyLoss):
+                 lr_scheduler=None, early_stopping=None, criter_spec=nn.CrossEntropyLoss):
         
         nn.Module.__init__(self)
         super(ConvNet, self).__init__(name, dimensions, config, save_path, input_network, num_classes,
-                                      activation, pred_activation, optim_spec, lr_scheduler, stopping_rule, criter_spec)
+                                      activation, pred_activation, optim_spec, lr_scheduler, early_stopping, criter_spec)
 
     def _create_network(self):
 
