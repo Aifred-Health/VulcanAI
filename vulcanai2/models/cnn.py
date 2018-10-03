@@ -74,9 +74,9 @@ class ConvNet(BaseNetwork, nn.Module):
     def _create_classification_layer(self, dim):
         self.network_tails = nn.ModuleList([DenseUnit(dim, out_d) for out_d in self.out_dim])
 
-    def forward(self, x):
+    def _forward(self, x):
         """
-        Defines the behaviour of the network.
+        Computation for the forward pass of the ConvNet module.
         If the network is defined with `num_classes` then it is assumed to be the last network
         which contains a classification layer/classifier (network tail). The data ('x')will be passed through the
         network and then through the classifier.

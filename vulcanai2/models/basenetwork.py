@@ -91,6 +91,10 @@ class BaseNetwork(nn.Module):
         self._create_network()
 
     # TODO: where to do typechecking... just let everything fail?
+    
+    @abc.abstractmethod
+    def _forward(self):
+        pass
 
     @property
     def name(self):
@@ -281,6 +285,19 @@ class BaseNetwork(nn.Module):
         :return: None
         """
         pass
+    
+    def forward(self, *inputs):
+        """Perform a forward pass through the module/modules."""
+
+        if isinstance(self.input_network, list):
+            outputs = []
+            for module in self.input_network:
+                outputs.append(module._forward(inputs))
+            network_output = torch.cat(outputs, 1)
+        else: 
+            network_output = self._forward(inputs)
+            
+        return network_output
 
     def _init_optimizer(self, optim_spec):
         optim_class = getattr(torch.optim, optim_spec["name"])
