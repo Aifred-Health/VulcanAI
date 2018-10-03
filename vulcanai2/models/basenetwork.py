@@ -434,7 +434,6 @@ class BaseNetwork(nn.Module):
                     pbar.update(len(self.val_loader.dataset) - int(batch_idx*len(data)))
             val_accuracy_accumulator += self.metrics.get_score(predictions, targets)
 
-        self.metrics.reset()
         pbar.close()
         validation_loss = val_loss_accumulator*len(data)/len(self.val_loader.dataset)
         validation_accuracy = val_accuracy_accumulator*len(data)/len(self.val_loader.dataset)
