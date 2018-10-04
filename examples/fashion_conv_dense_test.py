@@ -2,6 +2,7 @@ import sys
 sys.path.append('../')
 from vulcanai2 import models, datasets, plotters
 
+import pickle
 import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
@@ -21,9 +22,9 @@ transform = transforms.Compose([transforms.ToTensor(),
                                 transforms.Normalize((0.1307,), (0.3081,))])
 
 
-data_path = r'C:\WORK\Aifred\Vulcan2\master\Vulcan2\data'
+#data_path = r'C:\WORK\Aifred\Vulcan2\master\Vulcan2\data'
 #data_path = r'/Users/robertfratila/Code/Aifred_Health/Vulcan2/data'
-
+data_path = "../data"
 train_dataset = datasets.FashionData(root=data_path, 
                             train=True, 
                             transform=transform,
@@ -93,8 +94,9 @@ model1 = models.DenseNet(
 )
 
 #model1.fit(train_loader, val_loader, 10)
-model1.fit(train_loader, val_loader, 10, plot=True)
+model1.fit(train_loader, val_loader, 2, plot=True)
 
+model1.save_model()
 # TODO: need to revisit this to be able to plot after training, interactive plotting is messing up
 #plotters.visualization.display_record(record=model1.record, interactive=False)
 #plt.show()

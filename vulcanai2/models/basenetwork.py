@@ -456,29 +456,37 @@ class BaseNetwork(nn.Module):
         """
         Save the model (and its' input networks)
         :param save_path: The save directory (not a file)
-        :return:
+        :return: save path, for recursive purposes
         """
-        #recursive recursive recursive
-        if self.input_network is not None:
-            self.input_network.save_model(save_path)
 
         if not save_path:
-            save_path = "{name:}{date:_%Y-%m-%d_%H:%M:%S}/".format(name=self.name, date=datetime.datetime.now())
+            save_path = "{name:}{date:_%Y-%m-%d_%H:%M:%S}/".format(name=self.name, date=datetime.now())
             logger.info("No save path provideded, saving to {}".format(save_path))
+
+        os.mkdir(save_path) #let this throw an error if it already exists
+
+        #recursive recursive recursive
+        if self.input_network is not None:
+            self.input_network.save_model(save_path) #CAITRIN YOU ARE HERE FIXIING SAVE PATH CIRCULAR ERROR
+
+        self.save_path = save_path
+
         model_file_path = save_path + "model.pkl"
-        state_dict_file_path = save_path + "state_dict.pkl"
+        #state_dict_file_path = save_path + "state_dict.pkl"
         # object.__getstate__() https://docs.python.org/3/library/pickle.html#example
         pickle.dump(self, open(model_file_path, "wb"), 2)
         #pickle.dump(self.state_dict, open(state_dict_file_path, "wb"), 2) #TODO: pretty sure this isn't necessary
 
 
-
+    # TODO: rename load previous
     @classmethod
-    def load_model(cls, load_path):
+    def load_model(cls, load_path, load_previous=True):
         """
         Load the model from it's parent directory
         :param load_path: The load directory (not a file)
-        :return:
+        :return: a network object
         """
         model_file_path = load_path + "model.pkl" #TODO: is it dumb to have a constant name?
-        return pickle.load(open(model_file_path, 'rb'))
+
+        instance =  pickle.load(open(model_file_path, 'rb'))
+        instance.input_network.input_save_path
