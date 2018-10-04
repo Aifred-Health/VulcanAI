@@ -460,22 +460,27 @@ class BaseNetwork(nn.Module):
         """
 
         if not save_path:
-            save_path = "{name:}{date:_%Y-%m-%d_%H:%M:%S}/".format(name=self.name, date=datetime.now())
+            save_path = "{date:_%Y-%m-%d_%H:%M:%S}/".format(name=self.name, date=datetime.now())
             logger.info("No save path provideded, saving to {}".format(save_path))
 
-        os.mkdir(save_path) #let this throw an error if it already exists
+        if not save_path.endswith("/"): #TODO: does this break windows?? no idea.
+            save_path = save_path + "/"
+
+        module_save_path = save_path + "{name}/".format(name=self.name)
+
+        os.mkdir(module_save_path) #let this throw an error if it already exists
 
         #recursive recursive recursive
         if self.input_network is not None:
-            self.input_network.save_model(save_path) #CAITRIN YOU ARE HERE FIXIING SAVE PATH CIRCULAR ERROR
+            self.input_network.save_model(save_path)
 
-        self.save_path = save_path
+        self.save_path = save_path #TODO: I don't think this is necessary
 
+        #to improve: # object.__getstate__() https://docs.python.org/3/library/pickle.html#example
         model_file_path = save_path + "model.pkl"
-        #state_dict_file_path = save_path + "state_dict.pkl"
-        # object.__getstate__() https://docs.python.org/3/library/pickle.html#example
+        state_dict_file_path = save_path + "state_dict.pkl"
         pickle.dump(self, open(model_file_path, "wb"), 2)
-        #pickle.dump(self.state_dict, open(state_dict_file_path, "wb"), 2) #TODO: pretty sure this isn't necessary
+        pickle.dump(self.state_dict, open(state_dict_file_path, "wb"), 2) #TODO: pretty sure this isn't necessary
 
 
     # TODO: rename load previous
