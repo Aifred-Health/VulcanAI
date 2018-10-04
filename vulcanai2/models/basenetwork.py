@@ -482,16 +482,26 @@ class BaseNetwork(nn.Module):
         pickle.dump(self, open(model_file_path, "wb"), 2)
         pickle.dump(self.state_dict, open(state_dict_file_path, "wb"), 2) #TODO: pretty sure this isn't necessary
 
-
-    # TODO: rename load previous
     @classmethod
-    def load_model(cls, load_path, load_previous=True):
+    def load_emsemble(cls, load_path):
         """
-        Load the model from it's parent directory
+        Load the model from its parent directory. All parent networks are also loaded.
         :param load_path: The load directory (not a file)
         :return: a network object
         """
         model_file_path = load_path + "model.pkl" #TODO: is it dumb to have a constant name?
 
-        instance =  pickle.load(open(model_file_path, 'rb'))
-        instance.input_network.input_save_path
+        instance = pickle.load(open(model_file_path, 'rb'))
+
+        return instance
+
+    #TODO: implement, add in classification and input layers??
+    @classmethod
+    def load_model(cls, load_path):
+        """
+        Load the model from its parent directory.
+        :param load_path: The load directory
+        :return: a network object
+        """
+        #model_file_path = load_path + "model.pkl"
+        raise NotImplementedError
