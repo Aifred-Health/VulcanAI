@@ -18,7 +18,7 @@ import logging
 import os
 import pickle
 import time
-from collections import OrderedDict
+from collections import OrderedDict as odict
 import numpy as np
 
 import matplotlib
@@ -38,7 +38,7 @@ class BaseNetwork(nn.Module):
     """
     # TODO: not great to use mutables as arguments.
     # TODO: reorganize these.
-    def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None, 
+    def __init__(self, name, dimensions, config, save_path=None, input_networks=None, num_classes=None, 
                  activation=nn.ReLU(), pred_activation=nn.Softmax(dim=1), optim_spec={'name': 'Adam', 'lr': 0.001},
                  lr_scheduler=None, early_stopping=None, criter_spec=nn.CrossEntropyLoss):
         """
@@ -47,7 +47,7 @@ class BaseNetwork(nn.Module):
         :param dimensions: The dimensions of the network.
         :param config: The config, as a dict.
         :param save_path: The name of the file to which you would like to save this network.
-        :param input_network: A network object provided as input
+        :param input_networks: A network object provided as input
         :param num_classes: The number of classes to predict.
         :param activation: The desired activation function for use in the network. Of type torch.nn.Module.
         :param pred_activation: The desired activation function for use in the prediction layer. Of type torch.nn.Module
@@ -63,8 +63,12 @@ class BaseNetwork(nn.Module):
         self._config = config
 
         self._save_path = save_path
+        
+        if not isinstance(input_networks, (odict, type(None))):
+            raise TypeError("input_networks must be a OrderdDict")
+        else:
+            self._input_networks = input_networks
 
-        self._input_network = input_network
         self._num_classes = num_classes
         
         self._optim_spec = optim_spec
@@ -91,6 +95,10 @@ class BaseNetwork(nn.Module):
         self._create_network()
 
     # TODO: where to do typechecking... just let everything fail?
+    
+    @abc.abstractmethod
+    def _forward(self):
+        pass
 
     @property
     def name(self):
@@ -182,7 +190,7 @@ class BaseNetwork(nn.Module):
         """
         if isinstance(output, tuple):
             for i in range(len(output)):
-                summary_dict[i] = OrderedDict()
+                summary_dict[i] = odict()
                 summary_dict[i] = self.get_size(summary_dict[i], output[i])
         else:
             summary_dict['output_shape'] = list(output.size())
@@ -194,8 +202,8 @@ class BaseNetwork(nn.Module):
         :return: OrderedDict of shape of each layer in the network
         """
         if not input_size:
-            if self._input_network:
-                input_size = self._input_network._dimensions
+            if self._input_networks:
+                input_size = self._input_networks._dimensions
             else:
                 input_size = self._dimensions
 
@@ -212,7 +220,7 @@ class BaseNetwork(nn.Module):
                 module_idx = len(summary)
             
                 m_key = '%s-%i' % (class_name, module_idx+1)
-                summary[m_key] = OrderedDict()
+                summary[m_key] = odict()
                 summary[m_key]['input_shape'] = list(input[0].size())
                 summary[m_key] = self.get_size(summary[m_key], output)
             
@@ -240,7 +248,7 @@ class BaseNetwork(nn.Module):
             x = Variable(torch.rand(1, *input_size))
         
         # create properties
-        summary = OrderedDict()
+        summary = odict()
         hooks = []
         # register hook
         self.apply(register_hook)
@@ -270,7 +278,7 @@ class BaseNetwork(nn.Module):
         shapes = self.get_output_shapes()
         for k, v in shapes.items() :
             print('{}:'.format(k))
-            if isinstance(v, OrderedDict):
+            if isinstance(v, odict):
                 for k2, v2 in v.items():
                     print('\t {}: {}'.format(k2, v2))
 
@@ -281,6 +289,24 @@ class BaseNetwork(nn.Module):
         :return: None
         """
         pass
+    
+    def forward(self, *inputs):
+        """Perform a forward pass through the module/modules."""
+
+        if self._input_networks:
+            if isinstance(self._input_networks, odict) and isinstance(inputs, list):
+                outputs = []
+                # Need to add a check for input_networks.keys == inputs.keys !
+
+                for key, value in self._input_networks:
+                    outputs.append(value._forward(inputs[int(key)]))
+                network_output = self._forward(torch.cat(outputs, 1))
+            else: 
+                network_output = self._forward(self._input_networks['0']._forward(inputs))
+        else:
+            network_output = self._forward((inputs))
+
+        return network_output
 
     def _init_optimizer(self, optim_spec):
         optim_class = getattr(torch.optim, optim_spec["name"])
@@ -289,7 +315,7 @@ class BaseNetwork(nn.Module):
 
     @staticmethod
     def _init_criterion(criterion_spec):
-        return criterion_spec()
+        return criterion_spec
 
     def _init_trainer(self):
         self.optim = self._init_optimizer(self._optim_spec)
@@ -472,9 +498,9 @@ class BaseNetwork(nn.Module):
         Args:
             save_path: the location where you want to save the params
         """
-        if self.input_network is not None:
-            if not hasattr(self.input_network['network'], 'save_name'):
-                self.input_network['network'].save_model()
+        if self.input_networks is not None:
+            if not hasattr(self.input_networks['network'], 'save_name'):
+                self.input_networks['network'].save_model()
 
         if not os.path.exists(save_path):
             print('Path not found, creating {}'.format(save_path))
