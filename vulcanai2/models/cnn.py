@@ -37,7 +37,7 @@ class ConvNet(BaseNetwork, nn.Module):
                  lr_scheduler=None, early_stopping=None, criter_spec=nn.CrossEntropyLoss):
         
         nn.Module.__init__(self)
-        super(ConvNet, self).__init__(name, dimensions, config, save_path, input_networks, num_classes,
+        super(ConvNet, self).__init__(name, dimensions, config, save_path, input_network, num_classes,
                                       activation, pred_activation, optim_spec, lr_scheduler, early_stopping, criter_spec)
 
     def _create_network(self):
