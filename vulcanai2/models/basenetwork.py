@@ -76,6 +76,8 @@ class BaseNetwork(nn.Module):
         
         self.optim = None
         self.criterion = None
+        self.epoch = 0
+
         #self._itr = 0 #TODO: ?
 
         self._create_network()
@@ -302,8 +304,6 @@ class BaseNetwork(nn.Module):
 
         self._init_trainer(train_loader)
 
-        epoch = 0
-
         record = dict(
             epoch=[],
             train_error=[],
@@ -317,7 +317,7 @@ class BaseNetwork(nn.Module):
                 fig_number = plt.gcf().number + 1 if plt.fignum_exists(1) else 1
                 plt.show()
                 
-            for epoch in trange(epoch, epochs, desc='Epoch: ', ncols=80):
+            for epoch in trange(self.epoch, epochs, desc='Epoch: ', ncols=80):
 
                 train_loss, train_acc = self._train_epoch(train_loader, retain_graph)
                 valid_loss, valid_acc = self._validate(val_loader, retain_graph)
@@ -325,14 +325,14 @@ class BaseNetwork(nn.Module):
                 tqdm.write("\n Epoch {}:\n"
                            "Train Loss: {:.6f} | Test Loss: {:.6f} |"
                            "Train Acc: {:.4f} | Test Acc: {:.4f}".format(
-                                epoch,
+                                self.epoch,
                                 train_loss,
                                 valid_loss,
                                 train_acc,
                                 valid_acc
                                 ))
 
-                record['epoch'].append(epoch)
+                record['epoch'].append(self.epoch)
                 record['train_error'].append(train_loss)
                 record['train_accuracy'].append(train_acc)
                 record['validation_error'].append(valid_loss)
@@ -342,6 +342,8 @@ class BaseNetwork(nn.Module):
                     plt.ion()
                     plt.figure(fig_number)
                     #display_record(record=record)
+
+                self.epoch += 1
 
         except KeyboardInterrupt:
             print("\n\n**********KeyboardInterrupt: Training stopped prematurely.**********\n\n")
@@ -459,8 +461,10 @@ class BaseNetwork(nn.Module):
         :return: save path, for recursive purposes
         """
 
+        print("in save", self.epoch)
+
         if not save_path:
-            save_path = "{date:_%Y-%m-%d_%H:%M:%S}/".format(name=self.name, date=datetime.now())
+            save_path = "{date:%Y-%m-%d_%H:%M:%S}/".format(name=self.name, date=datetime.now())
             logger.info("No save path provideded, saving to {}".format(save_path))
 
         if not save_path.endswith("/"): #TODO: does this break windows?? no idea.
@@ -468,32 +472,42 @@ class BaseNetwork(nn.Module):
 
         module_save_path = save_path + "{name}/".format(name=self.name)
 
-        os.mkdir(module_save_path) #let this throw an error if it already exists
+        os.makedirs(module_save_path) #let this throw an error if it already exists
 
         #recursive recursive recursive
-        if self.input_network is not None:
-            self.input_network.save_model(save_path)
+        if self._input_network is not None:
+            self._input_network.save_model(save_path)
 
         self.save_path = save_path #TODO: I don't think this is necessary
 
-        #to improve: # object.__getstate__() https://docs.python.org/3/library/pickle.html#example
-        model_file_path = save_path + "model.pkl"
-        state_dict_file_path = save_path + "state_dict.pkl"
+        # to improve: # object.__getstate__() https://docs.python.org/3/library/pickle.html#example
+        model_file_path = module_save_path + "model.pkl"
+        state_dict_file_path = module_save_path + "state_dict.pkl"
         pickle.dump(self, open(model_file_path, "wb"), 2)
         pickle.dump(self.state_dict, open(state_dict_file_path, "wb"), 2) #TODO: pretty sure this isn't necessary
 
+    #TODO: update the state dict and push to the appropriate device.
+    #https://pytorch.org/tutorials/beginner/saving_loading_models.html#what-is-a-state-dict
     @classmethod
-    def load_emsemble(cls, load_path):
+    def load_ensemble(cls, load_path):
         """
         Load the model from its parent directory. All parent networks are also loaded.
         :param load_path: The load directory (not a file)
         :return: a network object
         """
+
+        if not load_path.endswith("/"):  # TODO: does this break windows?? no idea.
+            load_path = load_path + "/"
+
         model_file_path = load_path + "model.pkl" #TODO: is it dumb to have a constant name?
 
         instance = pickle.load(open(model_file_path, 'rb'))
 
+        print("linstance epoch", instance.epoch)
         return instance
+
+        #my_tensor = my_tensor.to(torch.device('cuda')).
+
 
     #TODO: implement, add in classification and input layers??
     @classmethod
@@ -505,3 +519,10 @@ class BaseNetwork(nn.Module):
         """
         #model_file_path = load_path + "model.pkl"
         raise NotImplementedError
+
+
+
+
+
+
+#TODO: caitrin save the optimizers state dict?

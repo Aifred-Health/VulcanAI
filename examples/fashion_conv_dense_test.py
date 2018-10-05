@@ -97,8 +97,14 @@ model1 = models.DenseNet(
 model1.fit(train_loader, val_loader, 2, plot=True)
 
 model1.save_model()
+
+#model2 = models.DenseNet.load_ensemble("/home/caitrin/Vulcan2/Vulcan2/examples/2018-10-04_19:12:36/dense_net_test")
+
+#model2.fit(train_loader, val_loader, 4, plot=True)
+
 # TODO: need to revisit this to be able to plot after training, interactive plotting is messing up
 #plotters.visualization.display_record(record=model1.record, interactive=False)
 #plt.show()
 
-model1.print_model_structure()
+#model1.print_model_structure()
+
