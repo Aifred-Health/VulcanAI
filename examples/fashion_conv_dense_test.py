@@ -112,11 +112,7 @@ model1 = models.DenseNet(
     num_classes=10
 )
 
-<<<<<<< HEAD
-
-=======
 print(model1)
->>>>>>> b824f4fa4546092ef49af51a34720d4b877ad1e4
 #model1.fit(train_loader, val_loader, 10)
 model1.fit(train_loader, val_loader, 2, plot=True)
 
