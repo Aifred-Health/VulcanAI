@@ -14,6 +14,8 @@ import pickle
 
 from datetime import datetime
 
+from .utils import GuidedBackprop
+
 import torch
 from torch.autograd import Variable
 
@@ -177,59 +179,79 @@ def display_confusion_matrix(cm, class_list):
     plt.xlabel('Predicted label')
     plt.show()
 
+
+def compute_saliency_map(model, input_x, input_y):
+    """
+    Return the saliency map using the guided backpropagation method [1].
+
+    [1]: Springgenberg, J.T., Dosovitskiy, A., Brox, T., Riedmiller, M. (2015).
+         Striving for Simplicity: The All Convolutional Net. ICLR 2015 
+         (https://arxiv.org/pdf/1412.6806.pdf)
+
+    :param model: A model type of subclass BaseNetwork
+    :param input_x: Input array of shape (batch, channel, width, height) or 
+                    (batch, channel, width, height, depth)
+    :param input_y: 1D array with class targets
+    :return: Top layer gradients of same shape as input data
+    """
+    if not isinstance(input_x, torch.Tensor):
+        input_x = torch.tensor(input_x, requires_grad=True)
+    elif not input_x.requires_grad:
+        input_x.requires_grad = True
+
+    guided_backprop = GuidedBackprop(model)
+    saliency_map = guided_backprop.generate_gradients(input_x, input_y)
+    guided_backprop.remove_hooks()
+    # saliency_map, _ = torch.max(saliency_map, dim = 1) # get max abs from all channels
+    return saliency_map
+
+
 def display_saliency_overlay(image, saliency_map, shape=(28, 28)):
     """
     Plot overlay saliency map over image.
 
-    Args:
-        image: numpy array (1d vector) for single image
-        saliency_map: numpy array (1d vector) for image
-        shape: the dimensions of the image. defaults to mnist.
+    :param image: numpy or torch array (1d 2d, or 3d) for single image
+    :param saliency_map: numpy array (1d 2d, or 3d) for single image
+    :param shape: the dimensions of the image. defaults to mnist.
+    :return: None
     """
-    if len(image.shape) == 3 or len(saliency_map.shape) == 3:
-        image = image[0]
-        saliency_map = saliency_map[0]
-    elif len(image.shape) == 1 or len(saliency_map.shape) == 1:
+    # Handle different colour channels and shapes for image input
+    if len(image.shape) == 3:
+        if image.shape[0] == 1:
+            # For 1 colour channel, remove it
+            image = image[0]
+        elif image.shape[0] == 3 or image.shape[0] == 4:
+            # For 3 or 4 colour channels, move to end for plotting
+            image = np.moveaxis(image, 0, -1)
+        else:
+            raise ValueError("Invalid number of colour channels in input.")
+    elif len(image.shape) == 1:
         image = np.reshape(image, shape)
+
+    # Handle different colour channels and shapes for saliency map
+    if len(saliency_map.shape) == 3:
+        if saliency_map.shape[0] == 1:
+            # For 1 colour channel, remove it
+            saliency_map = saliency_map[0]
+        elif saliency_map.shape[0] == 3 or saliency_map.shape[0] == 4:
+            # For 3 or 4 colour channels, move to end for plotting
+            saliency_map = np.moveaxis(saliency_map, 0, -1)
+        else:
+            raise ValueError("Invalid number of colour channels in saliency map.")
+    elif len(saliency_map.shape) == 1:
         saliency_map = np.reshape(saliency_map, shape)
 
     fig = plt.figure()
+    # Plot original image
     fig.add_subplot(1, 2, 1)
     plt.imshow(image, cmap='gray')
+    # Plot original with saliency overlay
     fig.add_subplot(1, 2, 2)
     plt.imshow(image, cmap='binary')
     plt.imshow(abs(saliency_map), cmap='hot_r', alpha=0.7)
     plt.colorbar()
     plt.show(False)
 
-def compute_saliency_map(model, input_x, input_y):
-    
-    if not isinstance(input_x, Variable):
-        input_x = Variable(input_x, requires_grad=True)
-    elif not input_x.requires_grad:
-        input_x.requires_grad = True
-
-    # Freeze params, no need to update weights
-    for p in model.parameters():
-        p.requires_grad = False
-
-    # forward pass
-    try:
-        scores = model(input_x)
-    except RuntimeError:
-        model = model.cuda()
-        scores = model(input_x.cuda())
-
-    scores = scores.gather(1, input_y.view(-1, 1)).squeeze()
-
-    # backward pass
-    scores.backward(torch.ones(scores.shape))
-
-    sal_map = input_x.grad.data
-    sal_map = sal_map.abs()
-    sal_map, _ = torch.max(sal_map, dim = 1) # get max abs from all (3) channels 
-
-    return sal_map
 
 # def display_receptive_fields(network, layer_list=None, top_k=5):
 #     """
