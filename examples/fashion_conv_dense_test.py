@@ -94,6 +94,22 @@ model1 = models.DenseNet(
     num_classes=10
 )
 
+# from vulcanai2.models import DenseNet
+# d = DenseNet(
+#             name='Test_DenseNet_class',
+#             dimensions=(200),
+#             config={
+#                 'dense_units': [100],
+#                 'dropouts': [0.3],
+#             },
+#             num_classes=3
+#         )
+
+# test_input_1B = np.ones([1, d.in_dim], dtype=np.float32)
+# sal_map_1B = compute_saliency_map(
+#             d,
+#             test_input_1B, torch.tensor([2]))
+
 
 #model1.fit(train_loader, val_loader, 10)
 model1.fit(train_loader, val_loader, 2, plot=True)
