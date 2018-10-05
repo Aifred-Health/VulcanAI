@@ -10,14 +10,13 @@ class BaseUnit(nn.Sequential):
     """The base class of layer
     """
     def __init__(self, initializer=None, bias_init=0,
-                 norm=None, activation=None, dp=None):
+                 norm=None, dp=None):
 
         super(BaseUnit, self).__init__()
         
         self.initializer = initializer
         self.bias_init = bias_init
         self.norm = norm
-        self.activation = activation
         self.dp = dp
         
         self.in_shape = None #[self.batch_size, *in_shape]
@@ -25,30 +24,30 @@ class BaseUnit(nn.Sequential):
         self.in_bound_layers = []
         self.out_bound_layers = []
         
-        self.kernel = None        
+        self._kernel = None   
         self.norm = norm
     
     def init_weights(self):
         """Initialize the weights."""
         if self.initializer:
-            self.initializer(self.kernel.weight)
-        nn.init.constant_(self.kernel.bias, self.bias_init)
+            self.initializer(self._kernel.weight)
+        nn.init.constant_(self._kernel.bias, self.bias_init)
   
 
 class DenseUnit(BaseUnit):
     def __init__(self, in_features , out_features , initializer=None, bias_init=0,
                  norm=None, activation=None, dp=None):
         super(DenseUnit, self).__init__(initializer, bias_init,
-                                        norm, activation, dp)
+                                        norm, dp)
         self.in_features  = in_features 
         self.out_features  = out_features 
         
         # Main layer
-        self.kernel = nn.Linear(
+        self._kernel = nn.Linear(
                             in_features=self.in_features, 
                             out_features=self.out_features
                             )
-        self.add_module('kernel', self.kernel)
+        self.add_module('_kernel', self._kernel)
         self.init_weights()
 
         # Norm
@@ -61,8 +60,8 @@ class DenseUnit(BaseUnit):
                 self.add_module('norm', self.norm)
 
         # Activation/Non-Linearity
-        if self.activation is not None:
-            self.add_module('activation', self.activation)
+        if activation is not None:
+            self.add_module('_activation', activation)
 
         # Dropout
         if self.dp is not None:
@@ -74,8 +73,9 @@ class ConvUnit(BaseUnit):
     def __init__(self, conv_dim, in_channels, out_channels, kernel_size=3,
                  initializer=nn.init.xavier_uniform_, bias_init=0,
                  stride=1, padding=2, norm=None,
-                 activation=None, pool_size=None):
-        super(ConvUnit, self).__init__()
+                 activation=None, pool_size=None, dp=None):
+        super(ConvUnit, self).__init__(initializer, bias_init,
+                                        norm, dp)
         self.conv_dim = conv_dim
         self._init_layers()
 
@@ -84,14 +84,14 @@ class ConvUnit(BaseUnit):
         self.kernel_size = kernel_size
 
         # Main layer
-        self.kernel = self.conv_layer(
+        self._kernel = self.conv_layer(
                               in_channels=self.in_channels,
                               kernel_size=self.kernel_size,
                               out_channels=self.out_channels,
                               stride=stride,
                               padding=padding
                               )
-        self.add_module('kernel', self.kernel)
+        self.add_module('_kernel', self._kernel)
         self.init_weights()
 
         # Norm
@@ -100,13 +100,18 @@ class ConvUnit(BaseUnit):
             self.add_module('norm', self.norm)
 
         # Activation/Non-Linearity
-        if self.activation is not None:
-            self.add_module('activation', self.activation)
+        if activation is not None:
+            self.add_module('_activation', activation)
 
         # Pool
         if pool_size is not None:
             self.pool = self.pool_layer(kernel_size=pool_size)
             self.add_module('pool', self.pool)
+        
+        # Dropout
+        if self.dp is not None:
+            self.dropout = nn.Dropout(self.dp)
+            self.add_module('dropout', self.dropout)
           
 
     def _init_layers(self):
@@ -142,15 +147,15 @@ class InputUnit(BaseUnit):
         super(InputUnit, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
-        self.kernel = nn.Linear(self.in_channels, self.out_channels, bias=bias)
+        self._kernel = nn.Linear(self.in_channels, self.out_channels, bias=bias)
 
     def forward(self, input):
         if input.dim() > 2:
             input = input.transpose(1,3) # NCHW --> NHWC
-            output = self.kernel(input)
+            output = self._kernel(input)
             return output.transpose(1,3) # NHWC --> NCHW
         else:
-            output = self.kernel(input)
+            output = self._kernel(input)
             return output
 
 class View(BaseUnit):
