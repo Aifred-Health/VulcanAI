@@ -180,7 +180,7 @@ def display_confusion_matrix(cm, class_list):
     plt.show()
 
 
-def compute_saliency_map(model, input_x, input_y):
+def compute_saliency_map(network, input_x, input_y):
     """
     Return the saliency map using the guided backpropagation method [1].
 
@@ -188,7 +188,7 @@ def compute_saliency_map(model, input_x, input_y):
          Striving for Simplicity: The All Convolutional Net. ICLR 2015 
          (https://arxiv.org/pdf/1412.6806.pdf)
 
-    :param model: A model type of subclass BaseNetwork
+    :param network: A network type of subclass BaseNetwork
     :param input_x: Input array of shape (batch, channel, width, height) or 
                     (batch, channel, width, height, depth)
     :param input_y: 1D array with class targets
@@ -199,7 +199,7 @@ def compute_saliency_map(model, input_x, input_y):
     elif not input_x.requires_grad:
         input_x.requires_grad = True
 
-    guided_backprop = GuidedBackprop(model)
+    guided_backprop = GuidedBackprop(network)
     saliency_map = guided_backprop.generate_gradients(input_x, input_y)
     guided_backprop.remove_hooks()
     # saliency_map, _ = torch.max(saliency_map, dim = 1) # get max abs from all channels
