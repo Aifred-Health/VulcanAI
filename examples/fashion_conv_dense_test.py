@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 
 import numpy as np
 import json
-from collections import OrderedDict
+from collections import OrderedDict as odict
 import matplotlib.pyplot as plt
 
 sys.path.append('../')
@@ -79,14 +79,17 @@ dense_net_config = {
 
 model = models.ConvNet(
     name='conv_net_test',
-    input_network=None,
+    input_networks=None,
     dimensions=(1, 28, 28),
     config=conv_net_config
 )
 
+input_networks = odict()
+input_networks['0']=model
+
 model1 = models.DenseNet(
     name='dense_net_test',
-    input_network=model,
+    input_networks=input_networks,
     dimensions=model.conv_flat_dim,
     config=dense_net_config,
     num_classes=10

@@ -32,26 +32,26 @@ class ConvNet(BaseNetwork, nn.Module):
     Subclass of BaseNetwork defining a ConvNet
     """
 
-    def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None,
+    def __init__(self, name, dimensions, config, save_path=None, input_networks=None, num_classes=None,
                  activation=nn.ReLU(), pred_activation=nn.Softmax(dim=1), optim_spec={'name': 'Adam', 'lr': 0.001},
-                 lr_scheduler=None, stopping_rule='early_stopping', criter_spec=nn.CrossEntropyLoss):
+                 lr_scheduler=None, stopping_rule='early_stopping', criter_spec=nn.CrossEntropyLoss()):
         
         nn.Module.__init__(self)
-        super(ConvNet, self).__init__(name, dimensions, config, save_path, input_network, num_classes,
+        super(ConvNet, self).__init__(name, dimensions, config, save_path, input_networks, num_classes,
                                       activation, pred_activation, optim_spec, lr_scheduler, stopping_rule, criter_spec)
 
     def _create_network(self):
 
         self.in_dim = self._dimensions
 
-        if self._input_network and self._input_network.__class__.__name__ == "ConvNet":
-            if self._input_network.conv_flat_dim != self.in_dim:
-                self.in_dim = self.get_flattened_size(self._input_network)
+        if self._input_networks and self._input_networks.__class__.__name__ == "ConvNet":
+            if self._input_networks.conv_flat_dim != self.in_dim:
+                self.in_dim = self.get_flattened_size(self._input_networks)
             else:
                 pass
 
-        if self._input_network and self._input_network.__class__.__name__ == "DenseNet":
-            if self._input_network.dims[-1] != self.in_dim:
+        if self._input_networks and self._input_networks.__class__.__name__ == "DenseNet":
+            if self._input_networks.dims[-1] != self.in_dim:
                 self.in_dim = self.dims[-1]
             else:
                 pass
@@ -84,10 +84,7 @@ class ConvNet(BaseNetwork, nn.Module):
         :param x: input torch.Tensor
         :return: output torch.Tensor
         """
-
-        if self._input_network:
-            x = self._input_network(x)
-
+        
         network_output = self.network(x)
 
         if self._num_classes:
