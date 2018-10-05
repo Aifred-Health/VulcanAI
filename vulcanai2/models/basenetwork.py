@@ -468,8 +468,6 @@ class BaseNetwork(nn.Module):
         :return: save path, for recursive purposes
         """
 
-        print("in save", self.epoch)
-
         if not save_path:
             save_path = "{date:%Y-%m-%d_%H:%M:%S}/".format(name=self.name, date=datetime.now())
             logger.info("No save path provideded, saving to {}".format(save_path))
@@ -510,7 +508,6 @@ class BaseNetwork(nn.Module):
 
         instance = pickle.load(open(model_file_path, 'rb'))
 
-        print("linstance epoch", instance.epoch)
         return instance
 
         # my_tensor = my_tensor.to(torch.device('cuda')).
