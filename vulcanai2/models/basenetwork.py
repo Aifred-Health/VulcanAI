@@ -8,7 +8,7 @@ import torch.nn.modules.loss as loss
 # Vulcan imports
 from .layers import *
 from .metrics import Metrics
-# from ..plotters.visualization import display_record
+from ..plotters.visualization import display_record
 
 # Generic imports
 import pydash as pdash
@@ -83,6 +83,14 @@ class BaseNetwork(nn.Module):
         self.optim = None
         self.criterion = None
         self.epoch = 0
+
+        self.record = dict(
+            epoch=[],
+            train_error=[],
+            train_accuracy=[],
+            validation_error=[],
+            validation_accuracy=[]
+        )
 
         # self._itr = 0 #TODO: ?
 
@@ -290,10 +298,9 @@ class BaseNetwork(nn.Module):
     def _init_criterion(criterion_spec):
         return criterion_spec()
 
-    def _init_trainer(self, train_loader):
+    def _init_trainer(self):
         self.optim = self._init_optimizer(self._optim_spec)
         self.criterion = self._init_criterion(self._criter_spec)
-        self.valid_interv = 2 * len(train_loader)
 
     def fit(self, train_loader, val_loader, epochs,
             retain_graph=None, valid_interv=4, plot=False):
@@ -303,19 +310,11 @@ class BaseNetwork(nn.Module):
         :param val_loader: The DataLoader object containing the validation data
         :param epochs: The number of epochs
         :param retain_graph: Specifies whether retain_graph will be true when .backwards is called.
-        :param valid_interv: Specifies when validation should occur. Not yet implemented.
+        :param valid_interv: Specifies the number of epochs before validation occurs.
         :return: None
         """
 
-        self._init_trainer(train_loader)
-
-        record = dict(
-            epoch=[],
-            train_error=[],
-            train_accuracy=[],
-            validation_error=[],
-            validation_accuracy=[]
-        )
+        self._init_trainer()
 
         try:
             if plot is True:
@@ -340,16 +339,16 @@ class BaseNetwork(nn.Module):
                     valid_acc
                 ))
 
-                record['epoch'].append(self.epoch)
-                record['train_error'].append(train_loss)
-                record['train_accuracy'].append(train_acc)
-                record['validation_error'].append(valid_loss)
-                record['validation_accuracy'].append(valid_acc)
+                self.record['epoch'].append(self.epoch)
+                self.record['train_error'].append(train_loss)
+                self.record['train_accuracy'].append(train_acc)
+                self.record['validation_error'].append(valid_loss)
+                self.record['validation_accuracy'].append(valid_acc)
 
                 if plot is True:
                     plt.ion()
                     plt.figure(fig_number)
-                    # display_record(record=record)
+                    display_record(record=self.record)
 
                 self.epoch += 1
 
@@ -492,12 +491,15 @@ class BaseNetwork(nn.Module):
         pickle.dump(self.state_dict, open(state_dict_file_path, "wb"), 2)  # TODO: pretty sure this isn't necessary
 
     # TODO: update the state dict and push to the appropriate device.
+    # TODO: caitrin save the optimizers state dict? even though this is included with our instance?
     # https://pytorch.org/tutorials/beginner/saving_loading_models.html#what-is-a-state-dict
+    # TODO: implement, add in classification and input layers?
     @classmethod
-    def load_ensemble(cls, load_path):
+    def load_model(cls, load_path, load_ensemble=True):
         """
-        Load the model from its parent directory. All parent networks are also loaded.
+        Load the model from the given directory.
         :param load_path: The load directory (not a file)
+        :param load_ensemble: Whether to load all parent networks as well. Not yet implemented.
         :return: a network object
         """
 
@@ -512,15 +514,3 @@ class BaseNetwork(nn.Module):
 
         # my_tensor = my_tensor.to(torch.device('cuda')).
 
-    # TODO: implement, add in classification and input layers??
-    @classmethod
-    def load_model(cls, load_path):
-        """
-        Load the model from its parent directory.
-        :param load_path: The load directory
-        :return: a network object
-        """
-        # model_file_path = load_path + "model.pkl"
-        raise NotImplementedError
-
-# TODO: caitrin save the optimizers state dict?
