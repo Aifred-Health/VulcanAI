@@ -8,7 +8,7 @@ import torch.nn.modules.loss as loss
 # Vulcan imports
 from .layers import *
 from .metrics import Metrics
-from ..plotters.visualization import display_record
+# from ..plotters.visualization import display_record
 
 # Generic imports
 import pydash as pdash
@@ -26,6 +26,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 import warnings
+
 warnings.filterwarnings("ignore")
 
 sns.set()
@@ -36,9 +37,10 @@ class BaseNetwork(nn.Module):
     """
     Base class upon which all Vulcan NNs will be based.
     """
+
     # TODO: not great to use mutables as arguments.
     # TODO: reorganize these.
-    def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None, 
+    def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None,
                  activation=nn.ReLU(), pred_activation=nn.Softmax(dim=1), optim_spec={'name': 'Adam', 'lr': 0.001},
                  lr_scheduler=None, early_stopping=None, criter_spec=nn.CrossEntropyLoss):
         """
@@ -66,27 +68,23 @@ class BaseNetwork(nn.Module):
 
         self._input_network = input_network
         self._num_classes = num_classes
-        
+
+        self._activation = activation
+        self._pred_activation = pred_activation
+
         self._optim_spec = optim_spec
         self._lr_scheduler = lr_scheduler
         self._early_stopping = early_stopping
         self._criter_spec = criter_spec
 
-        self._activation = activation
-        self._pred_activation = pred_activation
-
         if self._num_classes:
             self.metrics = Metrics(self._num_classes)
-        
-        self.optim = None
-        self._itr = 0
 
-        self.train_loader = None
-        self.val_loader = None
-        self.epochs = None
-        self.retain_graph = False
-        self.valid_interv = None
-        self.record = None
+        self.optim = None
+        self.criterion = None
+        self.epoch = 0
+
+        # self._itr = 0 #TODO: ?
 
         self._create_network()
 
@@ -165,7 +163,7 @@ class BaseNetwork(nn.Module):
             x = torch.ones(1, *self.in_dim)
             x = network(x)
             return x.numel()
-    
+
     def get_output_size(self):
         """
         Returns the output size of the network's last layer
@@ -187,7 +185,7 @@ class BaseNetwork(nn.Module):
         else:
             summary_dict['output_shape'] = list(output.size())
         return summary_dict
-    
+
     def get_output_shapes(self, input_size=None):
         """
         Returns the summary of shapes of all layers in the network
@@ -204,18 +202,19 @@ class BaseNetwork(nn.Module):
             Registers a backward hook
             For more info: https://pytorch.org/docs/stable/_modules/torch/tensor.html#Tensor.register_hook
             """
+
             def hook(module, input, output):
                 """
                 https://github.com/pytorch/tutorials/blob/8afce8a213cb3712aa7de1e1cf158da765f029a7/beginner_source/former_torchies/nn_tutorial.py#L146
                 """
                 class_name = str(module.__class__).split('.')[-1].split("'")[0]
                 module_idx = len(summary)
-            
-                m_key = '%s-%i' % (class_name, module_idx+1)
+
+                m_key = '%s-%i' % (class_name, module_idx + 1)
                 summary[m_key] = OrderedDict()
                 summary[m_key]['input_shape'] = list(input[0].size())
                 summary[m_key] = self.get_size(summary[m_key], output)
-            
+
                 params = 0
                 if hasattr(module, 'weight'):
                     params += torch.prod(torch.LongTensor(list(module.weight.size())))
@@ -225,33 +224,33 @@ class BaseNetwork(nn.Module):
                         summary[m_key]['trainable'] = False
                 if hasattr(module, 'bias'):
                     params += torch.prod(torch.LongTensor(list(module.bias.size())))
-            
+
                 summary[m_key]['nb_params'] = params
-                
+
             if not isinstance(module, nn.Sequential) and \
-                not isinstance(module, nn.ModuleList) and \
+                    not isinstance(module, nn.ModuleList) and \
                     not (module == self):
                 hooks.append(module.register_forward_hook(hook))
-        
+
         # check if there are multiple inputs to the network
         if isinstance(input_size[0], (list, tuple)):
             x = [Variable(torch.rand(1, *in_size)) for in_size in input_size]
         else:
             x = Variable(torch.rand(1, *input_size))
-        
+
         # create properties
         summary = OrderedDict()
         hooks = []
         # register hook
         self.apply(register_hook)
         # make a forward pass
-        self.cpu()(x)
+        self.cpu()(x)  # TODO: why is this .cpu?
         # remove these hooks
         for h in hooks:
             h.remove()
-        
+
         return summary
-    
+
     def get_layers(self):
         """
         Returns an ordered dict of all modules contained in this module (layers).
@@ -268,7 +267,7 @@ class BaseNetwork(nn.Module):
 
     def print_model_structure(self):
         shapes = self.get_output_shapes()
-        for k, v in shapes.items() :
+        for k, v in shapes.items():
             print('{}:'.format(k))
             if isinstance(v, OrderedDict):
                 for k2, v2 in v.items():
@@ -291,12 +290,12 @@ class BaseNetwork(nn.Module):
     def _init_criterion(criterion_spec):
         return criterion_spec()
 
-    def _init_trainer(self):
+    def _init_trainer(self, train_loader):
         self.optim = self._init_optimizer(self._optim_spec)
         self.criterion = self._init_criterion(self._criter_spec)
-        self.epoch = 0
+        self.valid_interv = 2 * len(train_loader)
 
-    def fit(self, train_loader, val_loader, epochs, 
+    def fit(self, train_loader, val_loader, epochs,
             retain_graph=None, valid_interv=4, plot=False):
         """
         Trains the network on the provided data.
@@ -304,18 +303,13 @@ class BaseNetwork(nn.Module):
         :param val_loader: The DataLoader object containing the validation data
         :param epochs: The number of epochs
         :param retain_graph: Specifies whether retain_graph will be true when .backwards is called.
-        :param valid_interv:
+        :param valid_interv: Specifies when validation should occur. Not yet implemented.
         :return: None
         """
 
-        self.train_loader = train_loader
-        self.val_loader = val_loader
-        self.epochs = epochs
-        self.retain_graph = retain_graph
+        self._init_trainer(train_loader)
 
-        self._init_trainer()
-
-        self.record = dict(
+        record = dict(
             epoch=[],
             train_error=[],
             train_accuracy=[],
@@ -327,47 +321,49 @@ class BaseNetwork(nn.Module):
             if plot is True:
                 fig_number = plt.gcf().number + 1 if plt.fignum_exists(1) else 1
                 plt.show()
-                
-            for epoch in trange(self.epoch, epochs, desc='Epoch: ', ncols=80):
 
-                train_loss, train_acc = self._train_epoch()
-                
+            for epoch in trange(0, epochs, desc='Epoch: ', ncols=80):
+
+                train_loss, train_acc = self._train_epoch(train_loader, retain_graph)
+
                 valid_loss = valid_acc = np.nan
                 if epoch % valid_interv == 0:
-                    valid_loss, valid_acc = self._validate()
+                    valid_loss, valid_acc = self._validate(val_loader)
 
                 tqdm.write("\n Epoch {}:\n"
                            "Train Loss: {:.6f} | Test Loss: {:.6f} |"
                            "Train Acc: {:.4f} | Test Acc: {:.4f}".format(
-                                epoch,
-                                train_loss,
-                                valid_loss,
-                                train_acc,
-                                valid_acc
-                                ))
+                    self.epoch,
+                    train_loss,
+                    valid_loss,
+                    train_acc,
+                    valid_acc
+                ))
 
-                self.record['epoch'].append(epoch)
-                self.record['train_error'].append(train_loss)
-                self.record['train_accuracy'].append(train_acc)
-                self.record['validation_error'].append(valid_loss)
-                self.record['validation_accuracy'].append(valid_acc)
+                record['epoch'].append(self.epoch)
+                record['train_error'].append(train_loss)
+                record['train_accuracy'].append(train_acc)
+                record['validation_error'].append(valid_loss)
+                record['validation_accuracy'].append(valid_acc)
 
                 if plot is True:
                     plt.ion()
                     plt.figure(fig_number)
-                    display_record(record=self.record)
+                    # display_record(record=record)
+
+                self.epoch += 1
 
         except KeyboardInterrupt:
             print("\n\n**********KeyboardInterrupt: Training stopped prematurely.**********\n\n")
 
-    def _train_epoch(self):
+    def _train_epoch(self, train_loader, retain_graph):
 
         self.train()  # Set model to training mode
 
         train_loss_accumulator = 0.0
         train_accuracy_accumulator = 0.0
-        pbar = trange(len(self.train_loader.dataset), desc='Training.. ')
-        for batch_idx, (data, targets) in enumerate(self.train_loader):
+        pbar = trange(len(train_loader.dataset), desc='Training.. ')
+        for batch_idx, (data, targets) in enumerate(train_loader):
 
             data, targets = Variable(data), Variable(targets)
 
@@ -381,28 +377,28 @@ class BaseNetwork(nn.Module):
             train_loss_accumulator += train_loss.item()
 
             self.optim.zero_grad()
-            train_loss.backward(retain_graph=self.retain_graph)
+            train_loss.backward(retain_graph=retain_graph)
             self.optim.step()
 
             if batch_idx % 10 == 0:
                 # Update tqdm bar
-                if ((batch_idx+10)*len(data)) <= len(self.train_loader.dataset):
+                if ((batch_idx + 10) * len(data)) <= len(train_loader.dataset):
                     pbar.update(10 * len(data))
                 else:
-                    pbar.update(len(self.train_loader.dataset) - int(batch_idx*len(data)))
+                    pbar.update(len(train_loader.dataset) - int(batch_idx * len(data)))
 
             train_accuracy_accumulator += self.metrics.get_score(predictions, targets)
 
         pbar.close()
 
         # noinspection PyUnboundLocalVariable
-        train_loss = train_loss_accumulator*len(data)/len(self.train_loader.dataset)
-        train_accuracy = train_accuracy_accumulator*len(data)/len(self.train_loader.dataset)
+        train_loss = train_loss_accumulator * len(data) / len(train_loader.dataset)
+        train_accuracy = train_accuracy_accumulator * len(data) / len(train_loader.dataset)
 
         return train_loss, train_accuracy
 
     # noinspection PyUnboundLocalVariable
-    def _validate(self):
+    def _validate(self, val_loader):
         """
         Validates the network on the validation data
         :return: (val_loss, accuracy, avg_accuracy, IoU, mIoU, conf_mat) # TODO: update this
@@ -411,9 +407,9 @@ class BaseNetwork(nn.Module):
 
         val_loss_accumulator = 0.0
         val_accuracy_accumulator = 0.0
-        pbar = trange(len(self.val_loader.dataset), desc='Validating.. ')
+        pbar = trange(len(val_loader.dataset), desc='Validating.. ')
 
-        for batch_idx, (data, targets) in enumerate(self.val_loader):
+        for batch_idx, (data, targets) in enumerate(val_loader):
 
             data, targets = Variable(data, requires_grad=False), Variable(targets, requires_grad=False)
 
@@ -428,15 +424,15 @@ class BaseNetwork(nn.Module):
             self.metrics.update(predictions.data.cpu().numpy(), targets.cpu().numpy())
             if batch_idx % 10 == 0:
                 # Update tqdm bar
-                if ((batch_idx+10)*len(data)) <= len(self.val_loader.dataset):
+                if ((batch_idx + 10) * len(data)) <= len(val_loader.dataset):
                     pbar.update(10 * len(data))
                 else:
-                    pbar.update(len(self.val_loader.dataset) - int(batch_idx*len(data)))
+                    pbar.update(len(val_loader.dataset) - int(batch_idx * len(data)))
             val_accuracy_accumulator += self.metrics.get_score(predictions, targets)
 
         pbar.close()
-        validation_loss = val_loss_accumulator*len(data)/len(self.val_loader.dataset)
-        validation_accuracy = val_accuracy_accumulator*len(data)/len(self.val_loader.dataset)
+        validation_loss = val_loss_accumulator * len(data) / len(val_loader.dataset)
+        validation_accuracy = val_accuracy_accumulator * len(data) / len(val_loader.dataset)
 
         return validation_loss, validation_accuracy
 
@@ -465,46 +461,69 @@ class BaseNetwork(nn.Module):
         else:
             return output
 
-    # TODO: this is copy pasted - edit as appropriate
-    def save_model(self, save_path='models'):
+    def save_model(self, save_path=None):
         """
-        Will save the model parameters to a npz file.
-        Args:
-            save_path: the location where you want to save the params
+        Save the model (and its' input networks)
+        :param save_path: The save directory (not a file)
+        :return: save path, for recursive purposes
         """
-        if self.input_network is not None:
-            if not hasattr(self.input_network['network'], 'save_name'):
-                self.input_network['network'].save_model()
 
-        if not os.path.exists(save_path):
-            print('Path not found, creating {}'.format(save_path))
-            os.makedirs(save_path)
-        file_path = os.path.join(save_path, "{}{}".format(self.timestamp,
-                                                          self.name))
-        save_name = '{}.network'.format(file_path)
-        print('Saving model as: {}'.format(save_name))
+        print("in save", self.epoch)
 
-        with open(save_name, 'wb') as f:
-            pickle.dump(self, f, protocol=pickle.HIGHEST_PROTOCOL)
+        if not save_path:
+            save_path = "{date:%Y-%m-%d_%H:%M:%S}/".format(name=self.name, date=datetime.now())
+            logger.info("No save path provideded, saving to {}".format(save_path))
 
-        self.save_metadata(file_path)
+        if not save_path.endswith("/"):  # TODO: does this break windows?? no idea.
+            save_path = save_path + "/"
 
+        module_save_path = save_path + "{name}/".format(name=self.name)
+
+        os.makedirs(module_save_path)  # let this throw an error if it already exists
+
+        # recursive recursive recursive
+        if self._input_network is not None:
+            self._input_network.save_model(save_path)
+
+        self.save_path = save_path  # TODO: I don't think this is necessary
+
+        # to improve: # object.__getstate__() https://docs.python.org/3/library/pickle.html#example
+        model_file_path = module_save_path + "model.pkl"
+        state_dict_file_path = module_save_path + "state_dict.pkl"
+        pickle.dump(self, open(model_file_path, "wb"), 2)
+        pickle.dump(self.state_dict, open(state_dict_file_path, "wb"), 2)  # TODO: pretty sure this isn't necessary
+
+    # TODO: update the state dict and push to the appropriate device.
+    # https://pytorch.org/tutorials/beginner/saving_loading_models.html#what-is-a-state-dict
+    @classmethod
+    def load_ensemble(cls, load_path):
+        """
+        Load the model from its parent directory. All parent networks are also loaded.
+        :param load_path: The load directory (not a file)
+        :return: a network object
+        """
+
+        if not load_path.endswith("/"):  # TODO: does this break windows?? no idea.
+            load_path = load_path + "/"
+
+        model_file_path = load_path + "model.pkl"  # TODO: is it dumb to have a constant name?
+
+        instance = pickle.load(open(model_file_path, 'rb'))
+
+        print("linstance epoch", instance.epoch)
+        return instance
+
+        # my_tensor = my_tensor.to(torch.device('cuda')).
+
+    # TODO: implement, add in classification and input layers??
     @classmethod
     def load_model(cls, load_path):
         """
-        Will load the model parameters from npz file.
-        Args:
-            load_path: the exact location where the model has been saved.
+        Load the model from its parent directory.
+        :param load_path: The load directory
+        :return: a network object
         """
-        print('Loading model from: {}'.format(load_path))
-        with open(load_path, 'rb') as f:
-            instance = pickle.load(f)
-        return instance
+        # model_file_path = load_path + "model.pkl"
+        raise NotImplementedError
 
-    # def save_metadata(self, file_path):
-    #     """
-    #     Save network metadata information to the specified file path
-    #     :param file_path: file path
-    #     :return: None
-    #     """
-    #     raise NotImplementedError
+# TODO: caitrin save the optimizers state dict?
