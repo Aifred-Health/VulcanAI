@@ -126,6 +126,12 @@ model1.save_model()
 # sal_map = compute_saliency_map(model1, x, y)
 # display_saliency_overlay(train_loader.dataset.train_data[0], sal_map[0])
 
+# To test saliency map generation
+# x = train_loader.dataset.train_data[:5].float().unsqueeze(dim=1) #np.expand_dims(train_loader.dataset[:5][0], axis=0)
+# y = train_loader.dataset.train_labels[:5]
+# sal_map = compute_saliency_map(model1, x, y)
+# display_saliency_overlay(train_loader.dataset.train_data[0], sal_map[0])
+
 # TODO: need to revisit this to be able to plot after training, interactive plotting is messing up
 #plotters.visualization.display_record(record=model1.record, interactive=False)
 #plt.show()
