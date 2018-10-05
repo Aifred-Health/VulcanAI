@@ -495,7 +495,7 @@ class BaseNetwork(nn.Module):
     # https://pytorch.org/tutorials/beginner/saving_loading_models.html#what-is-a-state-dict
     # TODO: implement, add in classification and input layers?
     @classmethod
-    def load_model(cls, load_path, load_ensemble=True):
+    def load_model(cls, load_path, load_complete_model_stack=True):
         """
         Load the model from the given directory.
         :param load_path: The load directory (not a file)
