@@ -3,6 +3,7 @@ sys.path.append('../')
 from vulcanai2 import models, datasets, plotters
 from vulcanai2.plotters.visualization import compute_saliency_map, display_saliency_overlay
 
+import pickle
 import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
@@ -22,29 +23,29 @@ transform = transforms.Compose([transforms.ToTensor(),
                                 transforms.Normalize((0.1307,), (0.3081,))])
 
 
-data_path = r'C:\WORK\Aifred\Vulcan2\master\Vulcan2\data'
+#data_path = r'C:\WORK\Aifred\Vulcan2\master\Vulcan2\data'
 #data_path = r'/Users/robertfratila/Code/Aifred_Health/Vulcan2/data'
-
-train_dataset = datasets.FashionData(root=data_path, 
-                            train=True, 
+data_path = "../data"
+train_dataset = datasets.FashionData(root=data_path,
+                            train=True,
                             transform=transform,
                             download=True
                            )
 
-val_dataset = datasets.FashionData(root=data_path, 
-                            train=False, 
+val_dataset = datasets.FashionData(root=data_path,
+                            train=False,
                             transform=transform,
                            )
 
 
 batch_size = 100
 
-train_loader = DataLoader(dataset=train_dataset, 
-                                           batch_size=batch_size,            
+train_loader = DataLoader(dataset=train_dataset,
+                                           batch_size=batch_size,
                                            shuffle=True)
 
-val_loader = DataLoader(dataset=val_dataset, 
-                                          batch_size=batch_size, 
+val_loader = DataLoader(dataset=val_dataset,
+                                          batch_size=batch_size,
                                           shuffle=False)
 
 
@@ -95,7 +96,13 @@ model1 = models.DenseNet(
 
 
 #model1.fit(train_loader, val_loader, 10)
-model1.fit(train_loader, val_loader, 10, plot=True)
+model1.fit(train_loader, val_loader, 2, plot=True)
+
+model1.save_model()
+
+#model2 = models.DenseNet.load_ensemble("/home/caitrin/Vulcan2/Vulcan2/examples/2018-10-04_19:12:36/dense_net_test")
+
+#model2.fit(train_loader, val_loader, 4, plot=True)
 
 # To test saliency map generation
 # x = train_loader.dataset.train_data[:5].float().unsqueeze(dim=1) #np.expand_dims(train_loader.dataset[:5][0], axis=0)
@@ -107,4 +114,5 @@ model1.fit(train_loader, val_loader, 10, plot=True)
 #plotters.visualization.display_record(record=model1.record, interactive=False)
 #plt.show()
 
-model1.print_model_structure()
+#model1.print_model_structure()
+
