@@ -1,6 +1,7 @@
 import sys
 sys.path.append('../')
 from vulcanai2 import models, datasets, plotters
+from vulcanai2.plotters.visualization import compute_saliency_map, display_saliency_overlay
 
 import torch
 import torch.nn as nn
@@ -92,8 +93,15 @@ model1 = models.DenseNet(
     num_classes=10
 )
 
+
 #model1.fit(train_loader, val_loader, 10)
 model1.fit(train_loader, val_loader, 10, plot=True)
+
+# To test saliency map generation
+# x = train_loader.dataset.train_data[:5].float().unsqueeze(dim=1) #np.expand_dims(train_loader.dataset[:5][0], axis=0)
+# y = train_loader.dataset.train_labels[:5]
+# sal_map = compute_saliency_map(model1, x, y)
+# display_saliency_overlay(train_loader.dataset.train_data[0], sal_map[0])
 
 # TODO: need to revisit this to be able to plot after training, interactive plotting is messing up
 #plotters.visualization.display_record(record=model1.record, interactive=False)
