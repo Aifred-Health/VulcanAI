@@ -123,6 +123,7 @@ class ConvNet(BaseNetwork, nn.Module):
                                     bias_init=conv_layer["bias_init"],
                                     norm=conv_layer["norm"],
                                     activation=activation,
+                                    pool_size=conv_layer["pool_size"],
                                     dp=conv_layer["dropout"]))
         conv_network = nn.Sequential(*conv_layers)
         return conv_network

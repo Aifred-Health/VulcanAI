@@ -59,6 +59,7 @@ conv_net_config = {
                         initializer=None,
                         bias_init=None, # None or value
                         norm=None,
+                        pool_size=None,
                         dropout=0.1 # Float or None
                     ),
                     dict(
@@ -70,6 +71,7 @@ conv_net_config = {
                         initializer=None,
                         bias_init=None, # None or value
                         norm=None,
+                        pool_size=None,
                         dropout=0.1 # Float or None
                     ),
                     dict(
@@ -81,6 +83,7 @@ conv_net_config = {
                         initializer=None,
                         bias_init=None, # None or value
                         norm=None,
+                        pool_size=2,
                         dropout=0.1 # Float or None
                         )
     ],

@@ -116,8 +116,8 @@ class ConvUnit(BaseUnit):
 
         # Pool
         if pool_size is not None:
-            self.pool = self.pool_layer(kernel_size=pool_size)
-            self.add_module('pool', self.pool)
+            self._pool = self.pool_layer(kernel_size=pool_size)
+            self.add_module('_pool', self._pool)
         
         # Dropout
         if self.dp is not None:
