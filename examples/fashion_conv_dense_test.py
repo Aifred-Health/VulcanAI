@@ -57,7 +57,7 @@ conv_net_config = {
                         stride=2,
                         padding=0,
                         initializer=None,
-                        bias_init=0,
+                        bias_init=None, # None or value
                         norm=None,
                         dropout=0.1 # Float or None
                     ),
@@ -68,7 +68,7 @@ conv_net_config = {
                         stride=1,
                         padding=0,
                         initializer=None,
-                        bias_init=0,
+                        bias_init=None, # None or value
                         norm=None,
                         dropout=0.1 # Float or None
                     ),
@@ -79,7 +79,7 @@ conv_net_config = {
                         stride=1,
                         padding=0,
                         initializer=None,
-                        bias_init=0,
+                        bias_init=None, # None or value
                         norm=None,
                         dropout=0.1 # Float or None
                         )
@@ -88,7 +88,7 @@ conv_net_config = {
 dense_net_config = {
     'dense_units': [100],
     'initializers':[None],
-    'bias_inits':[0],
+    'bias_inits':[0], # List of None or values
     'norms':[None],
     'dropouts': [0.3],  # List of Float or None
 }

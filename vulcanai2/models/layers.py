@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 class BaseUnit(nn.Sequential):
     """The base class of layer
     """
-    def __init__(self, initializer=None, bias_init=0,
+    def __init__(self, initializer=None, bias_init=None,
                  norm=None, dp=None):
 
         super(BaseUnit, self).__init__()
@@ -28,14 +28,25 @@ class BaseUnit(nn.Sequential):
         self.norm = norm
     
     def init_weights(self):
-        """Initialize the weights."""
+        """
+        Initialize the weights.
+        if self.initializer is None, then pytorch default weight will be assigned to the kernel
+        """
         if self.initializer:
             self.initializer(self._kernel.weight)
-        nn.init.constant_(self._kernel.bias, self.bias_init)
+
+    def init_bias(self):
+        """
+        Initialize the bias.
+        if self.bias_init is None, then pytorch default weight will be assigned to the kernel
+        """
+        if self.bias_init:
+            nn.init.constant_(self._kernel.bias, self.bias_init)
   
 
 class DenseUnit(BaseUnit):
-    def __init__(self, in_features , out_features , initializer=None, bias_init=0,
+    def __init__(self, in_features, out_features=None,
+                 initializer=None, bias_init=None,
                  norm=None, activation=None, dp=None):
         super(DenseUnit, self).__init__(initializer, bias_init,
                                         norm, dp)
@@ -45,10 +56,12 @@ class DenseUnit(BaseUnit):
         # Main layer
         self._kernel = nn.Linear(
                             in_features=self.in_features, 
-                            out_features=self.out_features
+                            out_features=self.out_features,
+                            bias=True
                             )
         self.add_module('_kernel', self._kernel)
         self.init_weights()
+        self.init_bias()
 
         # Norm
         if self.norm is not None:
@@ -68,7 +81,7 @@ class DenseUnit(BaseUnit):
 
 class ConvUnit(BaseUnit):
     def __init__(self, conv_dim, in_channels, out_channels, kernel_size=3,
-                 initializer=nn.init.xavier_uniform_, bias_init=0,
+                 initializer=None, bias_init=None,
                  stride=1, padding=2, norm=None,
                  activation=None, pool_size=None, dp=None):
         super(ConvUnit, self).__init__(initializer, bias_init,
@@ -86,10 +99,12 @@ class ConvUnit(BaseUnit):
                               kernel_size=self.kernel_size,
                               out_channels=self.out_channels,
                               stride=stride,
-                              padding=padding
+                              padding=padding,
+                              bias=True
                               )
         self.add_module('_kernel', self._kernel)
         self.init_weights()
+        self.init_bias()
 
         # Norm
         if self.norm is not None:
