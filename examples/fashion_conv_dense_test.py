@@ -1,7 +1,7 @@
 import sys
 sys.path.append('../')
 from vulcanai2 import models, datasets, plotters
-from vulcanai2.plotters.visualization import compute_saliency_map, display_saliency_overlay
+from vulcanai2.plotters.visualization import compute_saliency_map, display_saliency_overlay, display_receptive_fields
 
 import pickle
 import torch
@@ -112,7 +112,24 @@ model1 = models.DenseNet(
     num_classes=10
 )
 
-print(model1)
+# from vulcanai2.models import DenseNet
+# d = DenseNet(
+#             name='Test_DenseNet_class',
+#             dimensions=(200),
+#             config={
+#                 'dense_units': [100],
+#                 'dropouts': [0.3],
+#             },
+#             num_classes=3
+#         )
+# rf = display_receptive_fields(d)
+
+# test_input_1B = np.ones([1, d.in_dim], dtype=np.float32)
+# sal_map_1B = compute_saliency_map(
+#             d,
+#             test_input_1B, torch.tensor([2]))
+
+
 #model1.fit(train_loader, val_loader, 10)
 model1.fit(train_loader, val_loader, 2, plot=True)
 
