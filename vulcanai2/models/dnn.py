@@ -103,7 +103,7 @@ class DenseNet(BaseNetwork, nn.Module):
                                           bias_init=self._config["bias_inits"][i],
                                           norm=self._config["norms"][i],
                                           activation=activation,
-                                          dp=self._config["dropouts"][i]))
+                                          dropout=self._config["dropouts"][i]))
         dense_network = nn.Sequential(*dense_layers)
         return dense_network
 

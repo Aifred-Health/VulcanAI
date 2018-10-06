@@ -10,14 +10,14 @@ class BaseUnit(nn.Sequential):
     """The base class of layer
     """
     def __init__(self, initializer=None, bias_init=None,
-                 norm=None, dp=None):
+                 norm=None, dropout=None):
 
         super(BaseUnit, self).__init__()
         
         self.initializer = initializer
         self.bias_init = bias_init
         self.norm = norm
-        self.dp = dp
+        self.dropout = dropout
         
         self.in_shape = None #[self.batch_size, *in_shape]
         self.out_shape = None #[self.batch_size, *out_shape]
@@ -47,9 +47,9 @@ class BaseUnit(nn.Sequential):
 class DenseUnit(BaseUnit):
     def __init__(self, in_features, out_features=None,
                  initializer=None, bias_init=None,
-                 norm=None, activation=None, dp=None):
+                 norm=None, activation=None, dropout=None):
         super(DenseUnit, self).__init__(initializer, bias_init,
-                                        norm, dp)
+                                        norm, dropout)
         self.in_features  = in_features 
         self.out_features  = out_features 
         
@@ -75,17 +75,17 @@ class DenseUnit(BaseUnit):
             self.add_module('_activation', activation)
 
         # Dropout
-        if self.dp is not None:
-            self.add_module('_dropout', nn.Dropout(self.dp))
+        if self.dropout is not None:
+            self.add_module('_dropout', nn.Dropout(self.dropout))
    
-
+# TODO: Automatically calculate padding to be the same as input shape.
 class ConvUnit(BaseUnit):
-    def __init__(self, conv_dim, in_channels, out_channels, kernel_size=3,
+    def __init__(self, conv_dim, in_channels, out_channels, kernel_size,
                  initializer=None, bias_init=None,
-                 stride=1, padding=2, norm=None,
-                 activation=None, pool_size=None, dp=None):
+                 stride=1, padding=0, norm=None,
+                 activation=None, pool_size=None, dropout=None):
         super(ConvUnit, self).__init__(initializer, bias_init,
-                                        norm, dp)
+                                        norm, dropout)
         self.conv_dim = conv_dim
         self._init_layers()
 
@@ -119,8 +119,8 @@ class ConvUnit(BaseUnit):
             self.add_module('_pool', self.pool_layer(kernel_size=pool_size))
         
         # Dropout
-        if self.dp is not None:
-            self.add_module('_dropout', nn.Dropout(self.dp))
+        if self.dropout is not None:
+            self.add_module('_dropout', nn.Dropout(self.dropout))
           
 
     def _init_layers(self):

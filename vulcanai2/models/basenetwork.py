@@ -91,7 +91,9 @@ class BaseNetwork(nn.Module):
 
         # self._itr = 0 #TODO: ?
 
-        self._create_network(activation= activation, pred_activation= pred_activation)
+        self._create_network(
+            activation=activation,
+            pred_activation=pred_activation)
 
     # TODO: where to do typechecking... just let everything fail?
 
@@ -279,7 +281,7 @@ class BaseNetwork(nn.Module):
                     print('\t {}: {}'.format(k2, v2))
 
     @abc.abstractmethod
-    def _create_network(self):
+    def _create_network(self, **kwargs):
         """
         Defines the network. Abstract method that needs to be overridden.
         :return: None
@@ -451,7 +453,7 @@ class BaseNetwork(nn.Module):
         Returns: Numpy matrix with the output probabilities
                  with each class unless otherwise specified.
         """
-        output = self.cpu()(torch.Tensor(input_data)).data
+        output = self.cpu()(torch.Tensor(input_data)).data.numpy()
         if convert_to_class:
             return self.metrics.get_class(output)
         else:

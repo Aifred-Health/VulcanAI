@@ -8,6 +8,7 @@ from .layers import DenseUnit, ConvUnit
 
 import numpy as np
 import logging
+from inspect import getargspec
 
 logger = logging.getLogger(__name__)
 
@@ -19,13 +20,34 @@ class ConvNetConfig:
     """
     Defines the necessary configuration for a ConvNet.
     """
-    def __init__(self, mode, filters, filter_size, stride, pool):
-        self.mode = mode
-        self.filters = filters
-        self.filter_size = filter_size
-        self.stride = stride
-        self.pool = pool
+    def __init__(self, raw_config):
+        if 'conv_units' not in raw_config:
+            raise KeyError("conv_units must be specified")
 
+        # Confirm that all passed units conform to Unit required arguments
+        conv_unit_args = getargspec(ConvUnit).args
+        conv_unit_args.remove('self')
+        conv_unit_args.remove('conv_dim') # Deal with dim inference when building network
+        default_arg_start_index = len(conv_unit_args) - len(getargspec(ConvUnit).defaults)
+        self.req_args = conv_unit_args[:default_arg_start_index]
+        self.units = []
+        for u in raw_config['conv_units']:
+            unit = self._clean_unit(raw_unit=u)
+            self.units.append(unit)
+
+    def _clean_unit(self, raw_unit):
+        """
+        Use this to catch mistakes in each user-specified unit.
+        Infer dimension of Conv using the kernel shape
+        """
+        unit = raw_unit
+        for key in self.req_args:
+            if key not in unit.keys():
+                raise ValueError("{} needs to be specified in your config.".format(key))
+        if not isinstance(unit['kernel_size'], tuple):
+            unit['kernel_size'] = tuple(unit['kernel_size'])
+        unit['conv_dim'] = len(unit['kernel_size'])
+        return unit
 
 class ConvNet(BaseNetwork, nn.Module):
     """
@@ -37,7 +59,7 @@ class ConvNet(BaseNetwork, nn.Module):
                  lr_scheduler=None, early_stopping=None, criter_spec=nn.CrossEntropyLoss()):
         
         nn.Module.__init__(self)
-        super(ConvNet, self).__init__(name, dimensions, config, save_path, input_network, num_classes,
+        super(ConvNet, self).__init__(name, dimensions, ConvNetConfig(config), save_path, input_network, num_classes,
                                       activation, pred_activation, optim_spec, lr_scheduler, early_stopping, criter_spec)
 
     def _create_network(self, **kwargs):
@@ -56,7 +78,7 @@ class ConvNet(BaseNetwork, nn.Module):
             else:
                 pass
 
-        self.conv_hid_layers = self._config["conv_units"]
+        self.conv_hid_layers = self._config.units
 
         # Build Network
         self.network = self._build_conv_network(self.conv_hid_layers, kwargs['activation'])
@@ -103,7 +125,6 @@ class ConvNet(BaseNetwork, nn.Module):
         else:
             return network_output
 
-    # TODO: Automatically calculate padding to be the same as input shape.
     def _build_conv_network(self, conv_hid_layers, activation):
         """
         Utility function to build the layers into a nn.Sequential object.
@@ -111,20 +132,9 @@ class ConvNet(BaseNetwork, nn.Module):
         :return: the conv network as a nn.Sequential object
         """
         conv_layers = []
-        for conv_layer in conv_hid_layers:
-            conv_layers.append(ConvUnit(
-                                    conv_dim=len(conv_layer['k_size']),
-                                    in_channels=conv_layer['in_ch'],         
-                                    out_channels=conv_layer['out_ch'],        
-                                    kernel_size=tuple(conv_layer['k_size']), 
-                                    stride=conv_layer['stride'],
-                                    padding=conv_layer['padding'],
-                                    initializer=conv_layer["initializer"],
-                                    bias_init=conv_layer["bias_init"],
-                                    norm=conv_layer["norm"],
-                                    activation=activation,
-                                    pool_size=conv_layer["pool_size"],
-                                    dp=conv_layer["dropout"]))
+        for conv_layer_config in conv_hid_layers:
+            conv_layer_config['activation'] = activation
+            conv_layers.append(ConvUnit(**conv_layer_config))
         conv_network = nn.Sequential(*conv_layers)
         return conv_network
 
