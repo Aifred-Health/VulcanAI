@@ -1,6 +1,3 @@
-#TODO: all methods need to be updated to work with new dataset
-__author__="RobertFratila"
-
 """Contains auxilliary methods."""
 import os
 
