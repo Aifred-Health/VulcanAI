@@ -1,6 +1,8 @@
 import sys
 sys.path.append('../')
 from vulcanai2 import models, datasets, plotters
+from vulcanai2.models.cnn import ConvNet
+from vulcanai2.models.dnn import DenseNet
 from vulcanai2.plotters.visualization import compute_saliency_map, display_saliency_overlay, display_receptive_fields
 
 import pickle
@@ -94,7 +96,6 @@ model1 = DenseNet(
     num_classes=10
 )
 
-# from vulcanai2.models import DenseNet
 # d = DenseNet(
 #             name='Test_DenseNet_class',
 #             dimensions=(200),
