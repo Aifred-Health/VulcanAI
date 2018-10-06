@@ -352,7 +352,7 @@ class BaseNetwork(nn.Module):
                 self.epoch += 1
 
         except KeyboardInterrupt:
-            print("\n\n**********KeyboardInterrupt: Training stopped prematurely.**********\n\n")
+            logger.warning("\n\n**********KeyboardInterrupt: Training stopped prematurely.**********\n\n")
 
     def _train_epoch(self, train_loader, retain_graph):
 

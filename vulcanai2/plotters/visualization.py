@@ -37,9 +37,8 @@ def display_record(record=None, load_path=None, interactive=True):
     """
     Display the training curve for a network training session.
 
-    Args:
-        record: the record dictionary for dynamic graphs during training
-        load_path: the saved record .pickle file to load
+    :param record: the record dictionary for dynamic graphs during training
+    :param load_path: the saved record .pickle file to load
     """
     title = 'Training curve'
     if load_path is not None:
