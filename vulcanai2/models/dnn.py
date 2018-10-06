@@ -34,7 +34,7 @@ class DenseNet(BaseNetwork, nn.Module):
                                        activation, pred_activation, optim_spec, lr_scheduler, early_stopping, criter_spec
                                        )
 
-    def _create_network(self):
+    def _create_network(self, **kwargs):
         self.in_dim = self._dimensions
 
         if self._input_network and self._input_network.__class__.__name__ == "ConvNet":
@@ -50,18 +50,18 @@ class DenseNet(BaseNetwork, nn.Module):
                 pass
 
         self.dims = [self.in_dim] + self._config["dense_units"]
-        self.network = self._build_dense_network(self.dims)
+        self.network = self._build_dense_network(self.dims, kwargs['activation'])
         
         if self._num_classes:
             self.out_dim = self._num_classes
-            self._create_classification_layer(self.dims[-1])
+            self._create_classification_layer(self.dims[-1], kwargs['pred_activation'])
 
             if torch.cuda.is_available():
                 for module in self.modules():
                     module.cuda()
 
-    def _create_classification_layer(self, dim):
-        self.network_tail = DenseUnit(dim, self.out_dim)
+    def _create_classification_layer(self, dim, pred_activation):
+        self.network_tail = DenseUnit(dim, self.out_dim, activation=pred_activation)
 
     def forward(self, x):
         """
@@ -87,7 +87,7 @@ class DenseNet(BaseNetwork, nn.Module):
         else:
             return network_output
 
-    def _build_dense_network(self, dims):
+    def _build_dense_network(self, dims, activation):
         """
         Utility function to build the layers into a nn.Sequential object.
         :param dims: The dimensions
@@ -95,11 +95,15 @@ class DenseNet(BaseNetwork, nn.Module):
         """
         dim_pairs = list(zip(dims[:-1], dims[1:]))
         dense_layers = []
-        for in_d, out_d in dim_pairs:
+        for i, (in_d, out_d) in enumerate(dim_pairs):
             dense_layers.append(DenseUnit(
                                           in_features=in_d,
                                           out_features=out_d,
-                                          activation=self._activation))
+                                          initializer=self._config["initializers"][i],
+                                          bias_init=self._config["bias_inits"][i],
+                                          norm=self._config["norms"][i],
+                                          activation=activation,
+                                          dp=self._config["dropouts"][i]))
         dense_network = nn.Sequential(*dense_layers)
         return dense_network
 

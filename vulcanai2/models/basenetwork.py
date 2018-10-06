@@ -69,9 +69,6 @@ class BaseNetwork(nn.Module):
         self._input_network = input_network
         self._num_classes = num_classes
 
-        self._activation = activation
-        self._pred_activation = pred_activation
-
         self._optim_spec = optim_spec
         self._lr_scheduler = lr_scheduler
         self._early_stopping = early_stopping
@@ -94,7 +91,7 @@ class BaseNetwork(nn.Module):
 
         # self._itr = 0 #TODO: ?
 
-        self._create_network()
+        self._create_network(activation= activation, pred_activation= pred_activation)
 
     # TODO: where to do typechecking... just let everything fail?
 

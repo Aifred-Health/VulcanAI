@@ -55,27 +55,42 @@ conv_net_config = {
                         out_ch=16,
                         k_size=(5, 5),
                         stride=2,
-                        padding=0
+                        padding=0,
+                        initializer=None,
+                        bias_init=0,
+                        norm=None,
+                        dropout=0.1 # Float or None
                     ),
                     dict(
                         in_ch=16,
                         out_ch=32,
                         k_size=(5, 5),
                         stride=1,
-                        padding=0
+                        padding=0,
+                        initializer=None,
+                        bias_init=0,
+                        norm=None,
+                        dropout=0.1 # Float or None
                     ),
                     dict(
                         in_ch=32,
                         out_ch=64,
                         k_size=(5, 5),
                         stride=1,
-                        padding=0
+                        padding=0,
+                        initializer=None,
+                        bias_init=0,
+                        norm=None,
+                        dropout=0.1 # Float or None
                         )
     ],
 }
 dense_net_config = {
     'dense_units': [100],
-    'dropouts': [0.3],
+    'initializers':[None],
+    'bias_inits':[0],
+    'norms':[None],
+    'dropouts': [0.3],  # List of Float or None
 }
 
 model = models.ConvNet(
@@ -92,7 +107,7 @@ model1 = models.DenseNet(
     config=dense_net_config,
     num_classes=10
 )
-
+print(model1)
 #model1.fit(train_loader, val_loader, 10)
 model1.fit(train_loader, val_loader, 2, plot=True)
 

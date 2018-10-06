@@ -53,11 +53,9 @@ class DenseUnit(BaseUnit):
         # Norm
         if self.norm is not None:
             if self.norm =='batch':
-                self.norm = torch.nn.BatchNorm1d(self.out_features)
-                self.add_module('norm', self.norm)
+                self.add_module('_norm', torch.nn.BatchNorm1d(self.out_features))
             elif self.norm == 'instance':
-                self.norm = torch.nn.InstanceNorm1d(self.out_features)
-                self.add_module('norm', self.norm)
+                self.add_module('_norm', torch.nn.InstanceNorm1d(self.out_features))
 
         # Activation/Non-Linearity
         if activation is not None:
@@ -65,8 +63,7 @@ class DenseUnit(BaseUnit):
 
         # Dropout
         if self.dp is not None:
-            self.dropout = nn.Dropout(self.dp)
-            self.add_module('dropout', self.dropout)
+            self.add_module('_dropout', nn.Dropout(self.dp))
    
 
 class ConvUnit(BaseUnit):
@@ -96,8 +93,7 @@ class ConvUnit(BaseUnit):
 
         # Norm
         if self.norm is not None:
-            self.norm = self.batch_norm(num_features=self.out_channels)
-            self.add_module('norm', self.norm)
+            self.add_module('_norm', self.batch_norm(num_features=self.out_channels))
 
         # Activation/Non-Linearity
         if activation is not None:
@@ -110,8 +106,7 @@ class ConvUnit(BaseUnit):
         
         # Dropout
         if self.dp is not None:
-            self.dropout = nn.Dropout(self.dp)
-            self.add_module('dropout', self.dropout)
+            self.add_module('_dropout', nn.Dropout(self.dp))
           
 
     def _init_layers(self):

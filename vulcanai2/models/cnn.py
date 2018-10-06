@@ -40,7 +40,7 @@ class ConvNet(BaseNetwork, nn.Module):
         super(ConvNet, self).__init__(name, dimensions, config, save_path, input_network, num_classes,
                                       activation, pred_activation, optim_spec, lr_scheduler, early_stopping, criter_spec)
 
-    def _create_network(self):
+    def _create_network(self, **kwargs):
 
         self.in_dim = self._dimensions
 
@@ -59,20 +59,20 @@ class ConvNet(BaseNetwork, nn.Module):
         self.conv_hid_layers = self._config["conv_units"]
 
         # Build Network
-        self.network = self._build_conv_network(self.conv_hid_layers)
+        self.network = self._build_conv_network(self.conv_hid_layers, kwargs['activation'])
 
         self.conv_flat_dim = self.get_flattened_size(self.network)
 
         if self._num_classes:
             self.out_dim = np.reshape(self._num_classes, -1).tolist()
-            self._create_classification_layer(self.conv_flat_dim)
+            self._create_classification_layer(self.conv_flat_dim, kwargs['pred_activation'])
             
             if torch.cuda.is_available():
                 for module in self.modules():
                     module.cuda()
 
-    def _create_classification_layer(self, dim):
-        self.network_tails = nn.ModuleList([DenseUnit(dim, out_d) for out_d in self.out_dim])
+    def _create_classification_layer(self, dim, pred_activation):
+        self.network_tails = nn.ModuleList([DenseUnit(dim, out_d, activation=pred_activation) for out_d in self.out_dim])
 
     def forward(self, x):
         """
@@ -104,7 +104,7 @@ class ConvNet(BaseNetwork, nn.Module):
             return network_output
 
     # TODO: Automatically calculate padding to be the same as input shape.
-    def _build_conv_network(self, conv_hid_layers):
+    def _build_conv_network(self, conv_hid_layers, activation):
         """
         Utility function to build the layers into a nn.Sequential object.
         :param conv_hid_layers: The hidden layers specification
@@ -119,7 +119,11 @@ class ConvNet(BaseNetwork, nn.Module):
                                     kernel_size=tuple(conv_layer['k_size']), 
                                     stride=conv_layer['stride'],
                                     padding=conv_layer['padding'],
-                                    activation=self._activation))
+                                    initializer=conv_layer["initializer"],
+                                    bias_init=conv_layer["bias_init"],
+                                    norm=conv_layer["norm"],
+                                    activation=activation,
+                                    dp=conv_layer["dropout"]))
         conv_network = nn.Sequential(*conv_layers)
         return conv_network
 
