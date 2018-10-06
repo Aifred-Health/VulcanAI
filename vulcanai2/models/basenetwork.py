@@ -353,7 +353,7 @@ class BaseNetwork(nn.Module):
                 self.epoch += 1
 
         except KeyboardInterrupt:
-            print("\n\n**********KeyboardInterrupt: Training stopped prematurely.**********\n\n")
+            logger.warning("\n\n**********KeyboardInterrupt: Training stopped prematurely.**********\n\n")
 
     def _train_epoch(self, train_loader, retain_graph):
 
@@ -454,7 +454,7 @@ class BaseNetwork(nn.Module):
         Returns: Numpy matrix with the output probabilities
                  with each class unless otherwise specified.
         """
-        output = self.cpu()(torch.Tensor(input_data)).data
+        output = self.cpu()(torch.Tensor(input_data)).data.numpy()
         if convert_to_class:
             return self.metrics.get_class(output)
         else:

@@ -79,14 +79,14 @@ dense_net_config = {
     'dropouts': [0.3],
 }
 
-model = models.ConvNet(
+model = ConvNet(
     name='conv_net_test',
     input_network=None,
     dimensions=(1, 28, 28),
     config=conv_net_config
 )
 
-model1 = models.DenseNet(
+model1 = DenseNet(
     name='dense_net_test',
     input_network=model,
     dimensions=model.conv_flat_dim,

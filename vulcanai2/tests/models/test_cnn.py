@@ -30,7 +30,6 @@ class TestConvNet:
 
     @pytest.fixture
     def cnn_class(self):
-        from vulcanai2.models.cnn import ConvNet
         return ConvNet(
             name='Test_ConvNet_class',
             dimensions=(1, 28, 28),

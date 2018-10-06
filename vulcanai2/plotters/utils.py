@@ -1,5 +1,6 @@
 import torch
 from torch.nn import ReLU
+# from ..models.basenetwork import BaseNetwork
 
 class GuidedBackprop():
     """
@@ -14,8 +15,7 @@ class GuidedBackprop():
        :param hooks: list of references to all hooks placed for removal after
     """
     def __init__(self, network):
-        from ..models.basenetwork import BaseNetwork
-        if not issubclass(type(network), BaseNetwork):
+        if network.__class__.__bases__[0].__name__ != "BaseNetwork":
             raise ValueError("Network type must be a subclass of BaseNetwork")
         self.network = network
         self.gradients = None
@@ -30,7 +30,7 @@ class GuidedBackprop():
             self.gradients = grad_in[0]
         # Register hook to the first layer
         # TODO: Modify for multi-input NNs
-        import pudb; pu.db
+
         if '_input_network' in self.network._modules:
             first_layer = self.network._modules['_input_network']._modules['network'][0]
         else:
