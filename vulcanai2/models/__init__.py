@@ -1,7 +1,15 @@
 # -*- coding: utf-8 -*-
 """ Imports network classes so they can be used directly"""
-# Uncommenting this and running pytest -v plotters will end in circular imports
-# but not when just running the whole pytest -v weird
+__all__ = [
+    'basenetwork',
+    'cnn',
+    'dnn',
+    'layers',
+    'metrics',
+    'utils'
+]
 
+# Commenting this leads to circular imports when
+# running test on plotters
 # from .cnn import ConvNet
 # from .dnn import DenseNet
