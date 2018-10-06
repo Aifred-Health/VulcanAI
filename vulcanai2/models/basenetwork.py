@@ -465,10 +465,10 @@ class BaseNetwork(nn.Module):
         """
 
         if not save_path:
-            save_path = "{vulcanmodel_date:%Y-%m-%d_%H:%M:%S}/".format(name=self.name, date=datetime.now())
-            logger.info("No save path provideded, saving to {}".format(save_path))
+            save_path = r"saved_models/{}_{}/".format(self.name, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+            logger.info("No save path provided, saving to {}".format(save_path))
 
-        if not save_path.endswith("/"):  # TODO: does this break windows?? no idea.
+        if not save_path.endswith("/"):
             save_path = save_path + "/"
 
         module_save_path = save_path + "{name}/".format(name=self.name)
