@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from copy import deepcopy
 
-from vulcanai2.plotters.visualization import *
+from vulcanai2.plotters.visualization import compute_saliency_map
 
 class TestVisualization:
 

@@ -7,10 +7,8 @@ from torch.autograd import Variable
 import math
 import numpy as np
 from sklearn import metrics as skl_metrics
-from sklearn.metrics import confusion_matrix
-from sklearn.preprocessing import LabelBinarizer
-from sklearn.manifold import TSNE
-from sklearn.decomposition import PCA
+
+from .utils import get_confusion_matrix, round_list
 
 from copy import deepcopy
 import datetime
@@ -27,40 +25,40 @@ class Metrics(object):
         self.mat = np.zeros((self.num_class, self.num_class), dtype=np.float)
         self.list_classes = list(range(self.num_class))
   
-    def update(self, predictions, targets):
-        if not(isinstance(predictions, np.ndarray)) or not(isinstance(targets, np.ndarray)):
-            print("Expected ndarray")
+    # def update(self, predictions, targets):
+    #     if not(isinstance(predictions, np.ndarray)) or not(isinstance(targets, np.ndarray)):
+    #         print("Expected ndarray")
 
-        elif len(targets.shape) == 3:        # batched spatial target
-            if len(predictions.shape) == 4:  # prediction is 1 hot encoded
-                temp_predictions = np.argmax(predictions, axis=1).flatten()
-            elif len(predictions.shape) == 3:
-                temp_predictions = predictions.flatten()
-            else:
-                print("Predictions and Targets does not match")
-            temp_targets = targets.flatten()
+    #     elif len(targets.shape) == 3:        # batched spatial target
+    #         if len(predictions.shape) == 4:  # prediction is 1 hot encoded
+    #             temp_predictions = np.argmax(predictions, axis=1).flatten()
+    #         elif len(predictions.shape) == 3:
+    #             temp_predictions = predictions.flatten()
+    #         else:
+    #             print("Predictions and Targets does not match")
+    #         temp_targets = targets.flatten()
 
-        elif len(targets.shape) == 2:        # spatial target
-            if len(predictions.shape) == 3:  # prediction is 1 hot encoded
-                temp_predictions = np.argmax(predictions, axis=1).flatten()
-            elif len(predictions.shape) == 2:
-                temp_predictions = predictions.flatten()
-            else:
-                print("Predictions and Targets does not match")
-            temp_targets = targets.flatten()
+    #     elif len(targets.shape) == 2:        # spatial target
+    #         if len(predictions.shape) == 3:  # prediction is 1 hot encoded
+    #             temp_predictions = np.argmax(predictions, axis=1).flatten()
+    #         elif len(predictions.shape) == 2:
+    #             temp_predictions = predictions.flatten()
+    #         else:
+    #             print("Predictions and Targets does not match")
+    #         temp_targets = targets.flatten()
 
-        elif len(targets.shape) == 1:
-            if len(predictions.shape) == 2:  # prediction is 1 hot encoded
-                temp_predictions = np.argmax(predictions, axis=1).flatten()
-            elif len(predictions.shape) == 1:
-                temp_predictions = predictions
-            else:
-                print("Predictions and Targets does not match")
-            temp_targets = targets
-        else:
-            print("Data with this dimension cannot be handled")
+    #     elif len(targets.shape) == 1:
+    #         if len(predictions.shape) == 2:  # prediction is 1 hot encoded
+    #             temp_predictions = np.argmax(predictions, axis=1).flatten()
+    #         elif len(predictions.shape) == 1:
+    #             temp_predictions = predictions
+    #         else:
+    #             print("Predictions and Targets does not match")
+    #         temp_targets = targets
+    #     else:
+    #         print("Data with this dimension cannot be handled")
 
-        self.mat += confusion_matrix(temp_targets, temp_predictions, labels=self.list_classes)
+    #     self.mat += confusion_matrix(temp_targets, temp_predictions, labels=self.list_classes)
 
     def get_score(self, predictions, targets, metric='accuracy'):
         if metric == 'accuracy':
@@ -70,72 +68,6 @@ class Metrics(object):
             return accuracy
         else:
             raise NotImplementedError('Metric not available.')
-
-    def get_notable_indices(self, matrix, top_k=5):
-        """
-        Return dict of top k and bottom k features useful from matrix.
-
-        Args:
-            matrix: 1d numpy array
-            top_k: defaults to top and bottom 5 indices
-        """
-        important_features = matrix.argsort()[-top_k:][::-1]
-        unimportant_features = matrix.argsort()[:-1][:top_k]
-        return {'important_indices': important_features,
-                'unimportant_indices': unimportant_features}
-
-    def round_list(self, raw_list, decimals=4):
-        """
-        Return the same list with each item rounded off.
-
-        Args:
-            raw_list: float list
-            decimals: how many decimal points to round to
-
-        Returns: the rounded list
-        """
-        return [round(item, decimals) for item in raw_list]
-
-    def get_confusion_matrix(self, predictions, targets):
-        """
-        Calculate the confusion matrix for classification network predictions.
-
-        Args:
-            predictions: the class matrix predicted by the network.
-                    Does not take one hot vectors.
-            targets: the class matrix of the ground truth
-                    Does not take one hot vectors.
-
-        Returns: the confusion matrix
-        """
-        print(type(predictions))
-        if len(predictions.shape) == 2:
-            predictions = predictions[:, 0]
-        if len(targets.shape) == 2:
-            targets = targets[:, 0]
-        return confusion_matrix(y_true=targets,
-                                y_pred=predictions)
-
-    def get_one_hot(self, in_matrix):
-        """
-        Reformat truth matrix to same size as the output of the dense network.
-
-        Args:
-            in_matrix: the categorized 1D matrix
-
-        Returns: a one-hot matrix representing the categorized matrix
-        """
-        if in_matrix.dtype.name == 'category':
-            custum_array = in_matrix.cat.codes
-
-        elif isinstance(in_matrix, np.ndarray):
-            custum_array = in_matrix
-
-        else:
-            raise ValueError("Input matrix cannot be converted.")
-
-        lb = LabelBinarizer()
-        return np.array(lb.fit_transform(custum_array), dtype='float32')
 
     # TODO: class # should correspond with self.num_class
     def get_class(self, in_matrix):
@@ -174,7 +106,7 @@ class Metrics(object):
                                             convert_to_class=False)
         class_prediction = self.get_class(raw_prediction)
 
-        confusion_matrix = self.get_confusion_matrix(
+        confusion_matrix = get_confusion_matrix(
             predictions=class_prediction,
             targets=test_y
         )
@@ -212,29 +144,29 @@ class Metrics(object):
         print ('\nAccuracy: {}'.format(accuracy))
 
         print ('Sensitivity:'),
-        print(self.round_list(sens, decimals=3))
+        print(round_list(sens, decimals=3))
         print ('\tMacro Sensitivity: {:.4f}'.format(sens_macro))
 
         print ('Specificity:'),
-        print(self.round_list(spec, decimals=3))
+        print(round_list(spec, decimals=3))
         print ('\tMacro Specificity: {:.4f}'.format(spec_macro))
 
         print ('DICE:'),
-        print(self.round_list(dice, decimals=3))
+        print(round_list(dice, decimals=3))
         print ('\tAvg. DICE: {:.4f}'.format(np.average(dice)))
 
         print ('Positive Predictive Value:'),
-        print(self.round_list(ppv, decimals=3))
+        print(round_list(ppv, decimals=3))
         print ('\tMacro Positive Predictive Value: {:.4f}'.format
             (ppv_macro))
 
         print ('Negative Predictive Value:'),
-        print(self.round_list(npv, decimals=3))
+        print(round_list(npv, decimals=3))
         print ('\tMacro Negative Predictive Value: {:.4f}'.format
             (npv_macro))
 
         print ('F1-score:'),
-        print(self.round_list(f1, decimals=3))
+        print(round_list(f1, decimals=3))
         print ('\tMacro f1-score: {:.4f}'.format(f1_macro))
         print('')
 

@@ -420,7 +420,7 @@ class BaseNetwork(nn.Module):
             validation_loss = self.criterion(predictions, targets)
             val_loss_accumulator += validation_loss.item()
 
-            self.metrics.update(predictions.data.cpu().numpy(), targets.cpu().numpy())
+            # self.metrics.update(predictions.data.cpu().numpy(), targets.cpu().numpy())
             if batch_idx % 10 == 0:
                 # Update tqdm bar
                 if ((batch_idx + 10) * len(data)) <= len(val_loader.dataset):
