@@ -60,7 +60,7 @@ conv_net_config = {
                         # bias_init=None, # None or value
                         # norm=None,
                         # pool_size=None,
-                        # dropout=0.1 # Float or None
+                        dropout=0.1 # Float or None
                     ),
                     dict(
                         in_channels=16,
@@ -93,14 +93,14 @@ dense_net_config = {
     # 'initializer': None,
     # 'bias_init': None,
     # 'norm': None,
-    # 'dropout': 0.5,  # Single value or List
+    'dropout': 0.5,  # Single value or List
 }
 
 model = models.ConvNet(
     name='conv_net_test',
     input_network=None,
     dimensions=(1, 28, 28),
-    config=conv_net_config
+    config=conv_net_config,
 )
 
 model1 = models.DenseNet(

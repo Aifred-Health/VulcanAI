@@ -76,7 +76,10 @@ class DenseUnit(BaseUnit):
 
         # Dropout
         if self.dropout is not None:
-            self.add_module('_dropout', nn.Dropout(self.dropout))
+            if isinstance(activation, nn.SELU):
+                self.add_module('_dropout', nn.AlphaDropout(self.dropout))
+            else:
+                self.add_module('_dropout', nn.Dropout(self.dropout))
    
 # TODO: Automatically calculate padding to be the same as input shape.
 class ConvUnit(BaseUnit):
@@ -120,7 +123,10 @@ class ConvUnit(BaseUnit):
         
         # Dropout
         if self.dropout is not None:
-            self.add_module('_dropout', nn.Dropout(self.dropout))
+            if isinstance(activation, nn.SELU):
+                self.add_module('_dropout', nn.AlphaDropout(self.dropout))
+            else:
+                self.add_module('_dropout', nn.Dropout(self.dropout))
           
 
     def _init_layers(self):
