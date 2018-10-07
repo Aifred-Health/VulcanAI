@@ -27,7 +27,7 @@ class ConvNetConfig:
         # Confirm that all passed units conform to Unit required arguments
         conv_unit_arg_spec = getfullargspec(ConvUnit)
         conv_unit_arg_spec.args.remove('self')
-        conv_unit_arg_spec.args.remove('conv_dim') # Deal with dim inference when building network
+        conv_unit_arg_spec.args.remove('conv_dim') # Deal with dim inference when cleaning unit
 
         # Find the index for where the defaulted values begin
         default_arg_start_index = len(conv_unit_arg_spec.args) - len(conv_unit_arg_spec.defaults)

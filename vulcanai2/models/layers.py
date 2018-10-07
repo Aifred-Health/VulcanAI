@@ -146,7 +146,7 @@ class ConvUnit(BaseUnit):
             self.conv_layer = None
             self.batch_norm = None
             self.pool_layer = None
-            ValueError("Convolution is only supported for one of the first three dimensions")
+            raise ValueError("Convolution is only supported for one of the first three dimensions")
 
     def get_conv_output_size(self):
         '''Helper function to calculate the size of the flattened features after the convolutional layer'''
