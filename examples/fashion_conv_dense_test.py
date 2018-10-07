@@ -51,38 +51,56 @@ val_loader = DataLoader(dataset=val_dataset,
 conv_net_config = {
     'conv_units': [
                     dict(
-                        in_ch=1,
-                        out_ch=16,
-                        k_size=(5, 5),
-                        stride=2,
-                        padding=0
+                        in_channels=1,
+                        out_channels=16,
+                        kernel_size=(5, 5),
+                        stride=2, # Makes a big difference in training speeds
+                        padding=0,
+                        initializer=None,
+                        bias_init=None, # None or value
+                        norm=None,
+                        pool_size=None,
+                        dropout=0.1 # Float or None
                     ),
                     dict(
-                        in_ch=16,
-                        out_ch=32,
-                        k_size=(5, 5),
+                        in_channels=16,
+                        out_channels=32,
+                        kernel_size=(5, 5),
                         stride=1,
-                        padding=0
+                        padding=0,
+                        initializer=None,
+                        bias_init=None, # None or value
+                        norm=None,
+                        pool_size=None,
+                        dropout=0.1 # Float or None
                     ),
                     dict(
-                        in_ch=32,
-                        out_ch=64,
-                        k_size=(5, 5),
+                        in_channels=32,
+                        out_channels=64,
+                        kernel_size=(5, 5),
                         stride=1,
-                        padding=0
+                        padding=0,
+                        initializer=None,
+                        bias_init=None, # None or value
+                        norm=None,
+                        pool_size=2,
+                        dropout=0.1 # Float or None
                         )
     ],
 }
 dense_net_config = {
-    'dense_units': [100],
-    'dropouts': [0.3],
+    'dense_units': [100, 50],
+    'initializer': None,
+    'bias_init': None,
+    'norm': None,
+    'dropout': 0.5,  # Single value or List
 }
 
 model = models.ConvNet(
     name='conv_net_test',
     input_network=None,
     dimensions=(1, 28, 28),
-    config=conv_net_config
+    config=conv_net_config,
 )
 
 model1 = models.DenseNet(
@@ -93,6 +111,7 @@ model1 = models.DenseNet(
     num_classes=10
 )
 
+print(model1)
 #model1.fit(train_loader, val_loader, 10)
 model1.fit(train_loader, val_loader, 2, plot=True)
 

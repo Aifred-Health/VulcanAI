@@ -10,8 +10,8 @@ class TestDenseNet:
             name='Test_DenseNet_class',
             dimensions=(200),
             config={
-                'dense_units': [100],
-                'dropouts': [0.3],
+                'dense_units': [100, 50],
+                'dropout': [0.3, 0.5],
             }
         )
     
@@ -21,8 +21,8 @@ class TestDenseNet:
             name='Test_DenseNet_class',
             dimensions=(200),
             config={
-                'dense_units': [100],
-                'dropouts': [0.3],
+                'dense_units': [100, 50],
+                'dropout': 0.5,
             },
             num_classes=3
         )

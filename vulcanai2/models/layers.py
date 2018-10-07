@@ -9,73 +9,94 @@ logger = logging.getLogger(__name__)
 class BaseUnit(nn.Sequential):
     """The base class of layer
     """
-    def __init__(self, initializer=None, bias_init=0,
-                 norm=None, activation=None, dp=None):
+    def __init__(self, initializer=None, bias_init=None,
+                 norm=None, dropout=None):
 
         super(BaseUnit, self).__init__()
         
         self.initializer = initializer
         self.bias_init = bias_init
         self.norm = norm
-        self.activation = activation
-        self.dp = dp
+        self.dropout = dropout
         
         self.in_shape = None #[self.batch_size, *in_shape]
         self.out_shape = None #[self.batch_size, *out_shape]
         self.in_bound_layers = []
         self.out_bound_layers = []
         
-        self.kernel = None        
+        self._kernel = None   
         self.norm = norm
     
     def init_weights(self):
-        """Initialize the weights."""
+        """
+        Initialize the weights.
+        if self.initializer is None, then pytorch default weight
+        will be assigned to the kernel
+        """
         if self.initializer:
-            self.initializer(self.kernel.weight)
-        nn.init.constant_(self.kernel.bias, self.bias_init)
+            self.initializer(self._kernel.weight)
+
+    def init_bias(self):
+        """
+        Initialize the bias.
+        if self.bias_init is None, then pytorch default weight
+        will be assigned to the kernel
+        """
+        if self.bias_init:
+            nn.init.constant_(self._kernel.bias, self.bias_init)
   
 
 class DenseUnit(BaseUnit):
-    def __init__(self, in_features , out_features , initializer=None, bias_init=0,
-                 norm=None, activation=None, dp=None):
+    def __init__(self, in_features, out_features,
+                 initializer=None, bias_init=None,
+                 norm=None, activation=None, dropout=None):
         super(DenseUnit, self).__init__(initializer, bias_init,
-                                        norm, activation, dp)
+                                        norm, dropout)
         self.in_features  = in_features 
         self.out_features  = out_features 
         
         # Main layer
-        self.kernel = nn.Linear(
+        self._kernel = nn.Linear(
                             in_features=self.in_features, 
-                            out_features=self.out_features
+                            out_features=self.out_features,
+                            bias=True
                             )
-        self.add_module('kernel', self.kernel)
+        self.add_module('_kernel', self._kernel)
         self.init_weights()
+        self.init_bias()
 
         # Norm
         if self.norm is not None:
             if self.norm =='batch':
-                self.norm = torch.nn.BatchNorm1d(self.out_features)
-                self.add_module('norm', self.norm)
+                self.add_module(
+                    '_norm',
+                    torch.nn.BatchNorm1d(self.out_features))
             elif self.norm == 'instance':
-                self.norm = torch.nn.InstanceNorm1d(self.out_features)
-                self.add_module('norm', self.norm)
+                self.add_module(
+                    '_norm',
+                    torch.nn.InstanceNorm1d(self.out_features))
 
         # Activation/Non-Linearity
-        if self.activation is not None:
-            self.add_module('activation', self.activation)
+        if activation is not None:
+            self.add_module('_activation', activation)
 
         # Dropout
-        if self.dp is not None:
-            self.dropout = nn.Dropout(self.dp)
-            self.add_module('dropout', self.dropout)
+        if self.dropout is not None:
+            if isinstance(activation, nn.SELU):
+                self.add_module(
+                    '_dropout', nn.AlphaDropout(self.dropout))
+            else:
+                self.add_module(
+                    '_dropout', nn.Dropout(self.dropout))
    
-
+# TODO: Automatically calculate padding to be the same as input shape.
 class ConvUnit(BaseUnit):
-    def __init__(self, conv_dim, in_channels, out_channels, kernel_size=3,
-                 initializer=nn.init.xavier_uniform_, bias_init=0,
-                 stride=1, padding=2, norm=None,
-                 activation=None, pool_size=None):
-        super(ConvUnit, self).__init__()
+    def __init__(self, conv_dim, in_channels, out_channels, kernel_size,
+                 initializer=None, bias_init=None,
+                 stride=1, padding=0, norm=None,
+                 activation=None, pool_size=None, dropout=None):
+        super(ConvUnit, self).__init__(initializer, bias_init,
+                                        norm, dropout)
         self.conv_dim = conv_dim
         self._init_layers()
 
@@ -84,29 +105,41 @@ class ConvUnit(BaseUnit):
         self.kernel_size = kernel_size
 
         # Main layer
-        self.kernel = self.conv_layer(
+        self._kernel = self.conv_layer(
                               in_channels=self.in_channels,
                               kernel_size=self.kernel_size,
                               out_channels=self.out_channels,
                               stride=stride,
-                              padding=padding
+                              padding=padding,
+                              bias=True
                               )
-        self.add_module('kernel', self.kernel)
+        self.add_module('_kernel', self._kernel)
         self.init_weights()
+        self.init_bias()
 
         # Norm
         if self.norm is not None:
-            self.norm = self.batch_norm(num_features=self.out_channels)
-            self.add_module('norm', self.norm)
+            self.add_module(
+                '_norm',
+                self.batch_norm(num_features=self.out_channels))
 
         # Activation/Non-Linearity
-        if self.activation is not None:
-            self.add_module('activation', self.activation)
+        if activation is not None:
+            self.add_module('_activation', activation)
 
         # Pool
         if pool_size is not None:
-            self.pool = self.pool_layer(kernel_size=pool_size)
-            self.add_module('pool', self.pool)
+            self.add_module(
+                '_pool', self.pool_layer(kernel_size=pool_size))
+        
+        # Dropout
+        if self.dropout is not None:
+            if isinstance(activation, nn.SELU):
+                self.add_module(
+                    '_dropout', nn.AlphaDropout(self.dropout))
+            else:
+                self.add_module(
+                    '_dropout', nn.Dropout(self.dropout))
           
 
     def _init_layers(self):
@@ -126,31 +159,37 @@ class ConvUnit(BaseUnit):
             self.conv_layer = None
             self.batch_norm = None
             self.pool_layer = None
-            ValueError("Convolution is only supported for one of the first three dimensions")
+            raise ValueError("Convolution is only supported"
+            " for one of the first three dimensions")
 
     def get_conv_output_size(self):
-        '''Helper function to calculate the size of the flattened features after the convolutional layer'''
+        """
+        Helper function to calculate the size of the flattened
+        features after the convolutional layer
+        """
         with torch.no_grad():
             x = torch.ones(1, *self.in_dim)
             x = self.conv_model(x)
             return x.numel()
 
 
-####### TODO: Will work on these classes below later during Vulcan2 deployment
+####### TODO: Will work on these classes below later during
+# Vulcan2 deployment
 class InputUnit(BaseUnit):
     def __init__(self, in_channels, out_channels, bias=False):
         super(InputUnit, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
-        self.kernel = nn.Linear(self.in_channels, self.out_channels, bias=bias)
+        self._kernel = nn.Linear(
+            self.in_channels, self.out_channels, bias=bias)
 
     def forward(self, input):
         if input.dim() > 2:
             input = input.transpose(1,3) # NCHW --> NHWC
-            output = self.kernel(input)
+            output = self._kernel(input)
             return output.transpose(1,3) # NHWC --> NCHW
         else:
-            output = self.kernel(input)
+            output = self._kernel(input)
             return output
 
 class View(BaseUnit):
@@ -162,6 +201,3 @@ class View(BaseUnit):
         self.shape = shape
     def forward(self, input):
         return input.view(*self.shape)
-
-
-
