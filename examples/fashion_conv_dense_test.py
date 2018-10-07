@@ -89,11 +89,11 @@ conv_net_config = {
     ],
 }
 dense_net_config = {
-    'dense_units': [100],
-    'initializers':[None],
-    'bias_inits':[0], # List of None or values
-    'norms':[None],
-    'dropouts': [0.3],  # List of Float or None
+    'dense_units': [100, 50],
+    'initializer': [None, None],
+    'bias_init': [None, None], # List of None or values
+    'norm': [None, None],
+    'dropout': [0.4, 0.8],  # List of Float or None
 }
 
 model = models.ConvNet(
@@ -110,6 +110,7 @@ model1 = models.DenseNet(
     config=dense_net_config,
     num_classes=10
 )
+
 print(model1)
 #model1.fit(train_loader, val_loader, 10)
 model1.fit(train_loader, val_loader, 2, plot=True)

@@ -45,7 +45,7 @@ class BaseUnit(nn.Sequential):
   
 
 class DenseUnit(BaseUnit):
-    def __init__(self, in_features, out_features=None,
+    def __init__(self, in_features, out_features,
                  initializer=None, bias_init=None,
                  norm=None, activation=None, dropout=None):
         super(DenseUnit, self).__init__(initializer, bias_init,

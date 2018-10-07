@@ -11,7 +11,7 @@ class TestDenseNet:
             dimensions=(200),
             config={
                 'dense_units': [100],
-                'dropouts': [0.3],
+                'dropout': [0.3],
             }
         )
     
@@ -22,7 +22,7 @@ class TestDenseNet:
             dimensions=(200),
             config={
                 'dense_units': [100],
-                'dropouts': [0.3],
+                'dropout': [0.3],
             },
             num_classes=3
         )

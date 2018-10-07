@@ -8,7 +8,7 @@ from .layers import DenseUnit, ConvUnit
 
 import numpy as np
 import logging
-from inspect import getargspec
+from inspect import getfullargspec
 
 logger = logging.getLogger(__name__)
 
@@ -25,11 +25,13 @@ class ConvNetConfig:
             raise KeyError("conv_units must be specified")
 
         # Confirm that all passed units conform to Unit required arguments
-        conv_unit_args = getargspec(ConvUnit).args
-        conv_unit_args.remove('self')
-        conv_unit_args.remove('conv_dim') # Deal with dim inference when building network
-        default_arg_start_index = len(conv_unit_args) - len(getargspec(ConvUnit).defaults)
-        self.req_args = conv_unit_args[:default_arg_start_index]
+        conv_unit_arg_spec = getfullargspec(ConvUnit)
+        conv_unit_arg_spec.args.remove('self')
+        conv_unit_arg_spec.args.remove('conv_dim') # Deal with dim inference when building network
+
+        # Find the index for where the defaulted values begin
+        default_arg_start_index = len(conv_unit_arg_spec.args) - len(conv_unit_arg_spec.defaults)
+        self.required_args = conv_unit_arg_spec.args[:default_arg_start_index]
         self.units = []
         for u in raw_config['conv_units']:
             unit = self._clean_unit(raw_unit=u)
@@ -41,7 +43,7 @@ class ConvNetConfig:
         Infer dimension of Conv using the kernel shape
         """
         unit = raw_unit
-        for key in self.req_args:
+        for key in self.required_args:
             if key not in unit.keys():
                 raise ValueError("{} needs to be specified in your config.".format(key))
         if not isinstance(unit['kernel_size'], tuple):
@@ -78,10 +80,9 @@ class ConvNet(BaseNetwork, nn.Module):
             else:
                 pass
 
-        self.conv_hid_layers = self._config.units
-
+        conv_hid_layers = self._config.units
         # Build Network
-        self.network = self._build_conv_network(self.conv_hid_layers, kwargs['activation'])
+        self.network = self._build_conv_network(conv_hid_layers, kwargs['activation'])
 
         self.conv_flat_dim = self.get_flattened_size(self.network)
 
