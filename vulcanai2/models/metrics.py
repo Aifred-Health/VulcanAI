@@ -18,6 +18,7 @@ from collections import Counter
 import logging
 logger = logging.getLogger(__name__)
 
+
 class Metrics(object):
 
     def __init__(self, num_class, use_unlabeled=False):
@@ -85,7 +86,7 @@ class Metrics(object):
             return np.around(in_matrix)
 
     # TODO: Modify to use val loader
-    def run_test(self, model, data_loader, figure_path=None, plot=False):
+    def run_test(self, model, data_loader, figure_path=None, plot=False, detailed=True):
         """
         Will conduct the test suite to determine model strength.
 
@@ -98,6 +99,9 @@ class Metrics(object):
             model._num_classes == 0 or \
             not hasattr(model, 'network_tail'):
             raise ValueError('There\'s no classification layer')
+
+        if detailed:
+            logger.level = logging.INFO
 
         test_x = data_loader.dataset.test_data.float().unsqueeze(dim=1)
         test_y = data_loader.dataset.test_labels
@@ -135,41 +139,41 @@ class Metrics(object):
         f1 = np.nan_to_num(2 * (ppv * sens) / (ppv + sens))
         f1_macro = np.average(np.nan_to_num(2 * sens * ppv / (sens + ppv)))
 
-        print ('{} test\'s results'.format(model.name))
+        logger.info('{} test\'s results'.format(model.name))
 
-        print ('TP: {}'.format(tp)),
-        print ('FP: {}'.format(fp)),
-        print ('TN: {}'.format(tn)),
-        print ('FN: {}'.format(fn))
+        logger.info('TP: {}'.format(tp)),
+        logger.info('FP: {}'.format(fp)),
+        logger.info('TN: {}'.format(tn)),
+        logger.info('FN: {}'.format(fn))
 
-        print ('\nAccuracy: {}'.format(accuracy))
+        logger.info('\nAccuracy: {}'.format(accuracy))
 
-        print ('Sensitivity:'),
-        print(round_list(sens, decimals=3))
-        print ('\tMacro Sensitivity: {:.4f}'.format(sens_macro))
+        logger.info('Sensitivity:'),
+        logger.info(round_list(sens, decimals=3))
+        logger.info('\tMacro Sensitivity: {:.4f}'.format(sens_macro))
 
-        print ('Specificity:'),
-        print(round_list(spec, decimals=3))
-        print ('\tMacro Specificity: {:.4f}'.format(spec_macro))
+        logger.info('Specificity:'),
+        logger.info(round_list(spec, decimals=3))
+        logger.info('\tMacro Specificity: {:.4f}'.format(spec_macro))
 
-        print ('DICE:'),
-        print(round_list(dice, decimals=3))
-        print ('\tAvg. DICE: {:.4f}'.format(np.average(dice)))
+        logger.info('DICE:'),
+        logger.info(round_list(dice, decimals=3))
+        logger.info('\tAvg. DICE: {:.4f}'.format(np.average(dice)))
 
-        print ('Positive Predictive Value:'),
-        print(round_list(ppv, decimals=3))
-        print ('\tMacro Positive Predictive Value: {:.4f}'.format
+        logger.info('Positive Predictive Value:'),
+        logger.info(round_list(ppv, decimals=3))
+        logger.info('\tMacro Positive Predictive Value: {:.4f}'.format
             (ppv_macro))
 
-        print ('Negative Predictive Value:'),
-        print(round_list(npv, decimals=3))
-        print ('\tMacro Negative Predictive Value: {:.4f}'.format
+        logger.info('Negative Predictive Value:'),
+        logger.info(round_list(npv, decimals=3))
+        logger.info('\tMacro Negative Predictive Value: {:.4f}'.format
             (npv_macro))
 
-        print ('F1-score:'),
-        print(round_list(f1, decimals=3))
-        print ('\tMacro f1-score: {:.4f}'.format(f1_macro))
-        print('')
+        logger.info('F1-score:'),
+        logger.info(round_list(f1, decimals=3))
+        logger.info('\tMacro f1-score: {:.4f}'.format(f1_macro))
+        logger.info('')
 
         all_class_auc = []
         for i in range(model._num_classes):
