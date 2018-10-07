@@ -75,13 +75,17 @@ class DenseNet(BaseNetwork, nn.Module):
     def _create_network(self, **kwargs):
         self.in_dim = self._dimensions
 
-        if self._input_network and self._input_network.__class__.__name__ == "ConvNet":
+        if self._input_network and \
+            self._input_network.__class__.__name__ == "ConvNet":
+
             if self._input_network.conv_flat_dim != self.in_dim:
                 self.in_dim = self.get_flattened_size(self._input_network)
             else:
                 pass
 
-        if self._input_network and self._input_network.__class__.__name__ == "DenseNet":
+        if self._input_network and \
+            self._input_network.__class__.__name__ == "DenseNet":
+
             if self._input_network.dims[-1] != self.in_dim:
                 self.in_dim = self._input_network.dims[-1]
             else:
@@ -89,26 +93,32 @@ class DenseNet(BaseNetwork, nn.Module):
 
         dense_hid_layers = self._config.units
         # Build network
-        self.network = self._build_dense_network(dense_hid_layers, kwargs['activation'])
+        self.network = self._build_dense_network(
+            dense_hid_layers, kwargs['activation'])
 
         if self._num_classes:
             self.out_dim = self._num_classes
-            self._create_classification_layer(dense_hid_layers[-1]['out_features'], kwargs['pred_activation'])
+            self._create_classification_layer(
+                dense_hid_layers[-1]['out_features'],
+                kwargs['pred_activation'])
 
             if torch.cuda.is_available():
                 for module in self.modules():
                     module.cuda()
 
     def _create_classification_layer(self, dim, pred_activation):
-        self.network_tail = DenseUnit(dim, self.out_dim, activation=pred_activation)
+        self.network_tail = DenseUnit(
+            dim, self.out_dim, activation=pred_activation)
 
     def forward(self, x):
         """
         Defines the behaviour of the network.
-        If the network is defined with `num_classes` then it is assumed to be the last network
-        which contains a classification layer/classifier (network tail). The data ('x')will be passed through the
-        network and then through the classifier.
-        If not, the input is passed through the network and returned without passing through a classification layer.
+        If the network is defined with `num_classes` then it is
+        assumed to be the last network which contains a classification
+        layer/classifier (network tail). The data ('x') will be passed
+        through the network and then through the classifier.
+        If not, the input is passed through the network and
+        returned without passing through a classification layer.
         :param x: input torch.Tensor
         :return: output torch.Tensor
         """

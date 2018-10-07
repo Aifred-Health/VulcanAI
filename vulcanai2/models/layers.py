@@ -30,7 +30,8 @@ class BaseUnit(nn.Sequential):
     def init_weights(self):
         """
         Initialize the weights.
-        if self.initializer is None, then pytorch default weight will be assigned to the kernel
+        if self.initializer is None, then pytorch default weight
+        will be assigned to the kernel
         """
         if self.initializer:
             self.initializer(self._kernel.weight)
@@ -38,7 +39,8 @@ class BaseUnit(nn.Sequential):
     def init_bias(self):
         """
         Initialize the bias.
-        if self.bias_init is None, then pytorch default weight will be assigned to the kernel
+        if self.bias_init is None, then pytorch default weight
+        will be assigned to the kernel
         """
         if self.bias_init:
             nn.init.constant_(self._kernel.bias, self.bias_init)
@@ -66,9 +68,13 @@ class DenseUnit(BaseUnit):
         # Norm
         if self.norm is not None:
             if self.norm =='batch':
-                self.add_module('_norm', torch.nn.BatchNorm1d(self.out_features))
+                self.add_module(
+                    '_norm',
+                    torch.nn.BatchNorm1d(self.out_features))
             elif self.norm == 'instance':
-                self.add_module('_norm', torch.nn.InstanceNorm1d(self.out_features))
+                self.add_module(
+                    '_norm',
+                    torch.nn.InstanceNorm1d(self.out_features))
 
         # Activation/Non-Linearity
         if activation is not None:
@@ -77,9 +83,11 @@ class DenseUnit(BaseUnit):
         # Dropout
         if self.dropout is not None:
             if isinstance(activation, nn.SELU):
-                self.add_module('_dropout', nn.AlphaDropout(self.dropout))
+                self.add_module(
+                    '_dropout', nn.AlphaDropout(self.dropout))
             else:
-                self.add_module('_dropout', nn.Dropout(self.dropout))
+                self.add_module(
+                    '_dropout', nn.Dropout(self.dropout))
    
 # TODO: Automatically calculate padding to be the same as input shape.
 class ConvUnit(BaseUnit):
@@ -111,7 +119,9 @@ class ConvUnit(BaseUnit):
 
         # Norm
         if self.norm is not None:
-            self.add_module('_norm', self.batch_norm(num_features=self.out_channels))
+            self.add_module(
+                '_norm',
+                self.batch_norm(num_features=self.out_channels))
 
         # Activation/Non-Linearity
         if activation is not None:
@@ -119,14 +129,17 @@ class ConvUnit(BaseUnit):
 
         # Pool
         if pool_size is not None:
-            self.add_module('_pool', self.pool_layer(kernel_size=pool_size))
+            self.add_module(
+                '_pool', self.pool_layer(kernel_size=pool_size))
         
         # Dropout
         if self.dropout is not None:
             if isinstance(activation, nn.SELU):
-                self.add_module('_dropout', nn.AlphaDropout(self.dropout))
+                self.add_module(
+                    '_dropout', nn.AlphaDropout(self.dropout))
             else:
-                self.add_module('_dropout', nn.Dropout(self.dropout))
+                self.add_module(
+                    '_dropout', nn.Dropout(self.dropout))
           
 
     def _init_layers(self):
@@ -146,23 +159,29 @@ class ConvUnit(BaseUnit):
             self.conv_layer = None
             self.batch_norm = None
             self.pool_layer = None
-            raise ValueError("Convolution is only supported for one of the first three dimensions")
+            raise ValueError("Convolution is only supported"
+            " for one of the first three dimensions")
 
     def get_conv_output_size(self):
-        '''Helper function to calculate the size of the flattened features after the convolutional layer'''
+        """
+        Helper function to calculate the size of the flattened
+        features after the convolutional layer
+        """
         with torch.no_grad():
             x = torch.ones(1, *self.in_dim)
             x = self.conv_model(x)
             return x.numel()
 
 
-####### TODO: Will work on these classes below later during Vulcan2 deployment
+####### TODO: Will work on these classes below later during
+# Vulcan2 deployment
 class InputUnit(BaseUnit):
     def __init__(self, in_channels, out_channels, bias=False):
         super(InputUnit, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
-        self._kernel = nn.Linear(self.in_channels, self.out_channels, bias=bias)
+        self._kernel = nn.Linear(
+            self.in_channels, self.out_channels, bias=bias)
 
     def forward(self, input):
         if input.dim() > 2:
@@ -182,6 +201,3 @@ class View(BaseUnit):
         self.shape = shape
     def forward(self, input):
         return input.view(*self.shape)
-
-
-
