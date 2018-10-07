@@ -125,7 +125,8 @@ class DenseNet(BaseNetwork, nn.Module):
         if self._input_network:
             x = self._input_network(x)
 
-        if self._input_network and self._input_network.__class__.__name__ == "ConvNet":
+        if self._input_network and \
+            self._input_network.__class__.__name__ == "ConvNet":
             x = x.view(-1, self._input_network.conv_flat_dim)
 
         network_output = self.network(x)
