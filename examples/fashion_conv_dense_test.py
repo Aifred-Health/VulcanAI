@@ -54,45 +54,45 @@ conv_net_config = {
                         in_channels=1,
                         out_channels=16,
                         kernel_size=(5, 5),
-                        # stride=2,
-                        padding=2,
-                        # initializer=None,
-                        # bias_init=None, # None or value
-                        # norm=None,
-                        # pool_size=None,
+                        stride=2, # Makes a big difference in training speeds
+                        padding=0,
+                        initializer=None,
+                        bias_init=None, # None or value
+                        norm=None,
+                        pool_size=None,
                         dropout=0.1 # Float or None
                     ),
                     dict(
                         in_channels=16,
                         out_channels=32,
                         kernel_size=(5, 5),
-                        # stride=1,
-                        padding=2,
-                        # initializer=None,
-                        # bias_init=None, # None or value
-                        # norm=None,
-                        # pool_size=None,
-                        # dropout=0.1 # Float or None
+                        stride=1,
+                        padding=0,
+                        initializer=None,
+                        bias_init=None, # None or value
+                        norm=None,
+                        pool_size=None,
+                        dropout=0.1 # Float or None
                     ),
                     dict(
                         in_channels=32,
                         out_channels=64,
                         kernel_size=(5, 5),
-                        # stride=1,
-                        padding=2,
-                        # initializer=None,
-                        # bias_init=None, # None or value
-                        # norm=None,
-                        # pool_size=2,
-                        # dropout=0.1 # Float or None
+                        stride=1,
+                        padding=0,
+                        initializer=None,
+                        bias_init=None, # None or value
+                        norm=None,
+                        pool_size=2,
+                        dropout=0.1 # Float or None
                         )
     ],
 }
 dense_net_config = {
     'dense_units': [100, 50],
-    # 'initializer': None,
-    # 'bias_init': None,
-    # 'norm': None,
+    'initializer': None,
+    'bias_init': None,
+    'norm': None,
     'dropout': 0.5,  # Single value or List
 }
 
