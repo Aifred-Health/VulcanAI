@@ -22,7 +22,7 @@ class Metrics(object):
 
     def __init__(self, num_class, use_unlabeled=False):
         self.num_class = num_class
-        self.mat = np.zeros((self.num_class, self.num_class), dtype=np.float)
+        # self.mat = np.zeros((self.num_class, self.num_class), dtype=np.float)
         self.list_classes = list(range(self.num_class))
   
     # def update(self, predictions, targets):
@@ -74,35 +74,37 @@ class Metrics(object):
         """
         Reformat truth matrix to be the classes in a 1D array.
 
-        Args:
-            in_matrix: one-hot matrix
-
-        Returns: 2D Class array
+        :param n_matrix: one-hot matrix
+        :return: 1D Class array
         """
+        # For one-hot encoded entries
         if in_matrix.shape[1] > 1:
-            return np.expand_dims(np.argmax(in_matrix, axis=1), axis=1)
+            return np.argmax(in_matrix, axis=1)
+        # For binary entries
         elif in_matrix.shape[1] == 1:
             return np.around(in_matrix)
 
     # TODO: Modify to use val loader
-    def run_test(self, model, test_x, test_y, figure_path=None, plot=False):
+    def run_test(self, model, data_loader, figure_path=None, plot=False):
         """
         Will conduct the test suite to determine model strength.
 
-        Args:
-            test_x: data the model has not yet seen to predict
-            test_y: corresponding truth vectors
-            figure_path: string, folder to place images in.
-            plot: bool, determines if graphs should be plotted when ran.
+        :param data_loader: a DataLoader object to run the test with
+        :param figure_path: string, folder to place images in.
+        :param plot: bool, determines if graphs should be plotted.
+        :return: results dictionary
         """
-        if model._num_classes is None or model._num_classes == 0:
+        if model._num_classes is None or \
+            model._num_classes == 0 or \
+            not hasattr(model, 'network_tail'):
             raise ValueError('There\'s no classification layer')
 
-        if test_y.shape[1] > 1:
-            test_y = self.get_class(test_y)  # Y is in one hot representation
+        test_x = data_loader.dataset.test_data.float().unsqueeze(dim=1)
+        test_y = data_loader.dataset.test_labels
 
-        raw_prediction = model.forward_pass(input_data=test_x,
-                                            convert_to_class=False)
+        raw_prediction = model.forward_pass(
+            input_data=test_x,
+            convert_to_class=False)
         class_prediction = self.get_class(raw_prediction)
 
         confusion_matrix = get_confusion_matrix(
@@ -173,11 +175,11 @@ class Metrics(object):
         for i in range(model._num_classes):
             if model._num_classes == 1:      
                 fpr, tpr, _ = skl_metrics.roc_curve(test_y,
-                                                        raw_prediction.detach(),
+                                                        raw_prediction,
                                                         pos_label=1)
             else:
                 fpr, tpr, _ = skl_metrics.roc_curve(test_y,
-                                                        raw_prediction[:, i].detach(),
+                                                        raw_prediction[:, i],
                                                         pos_label=i)
 
             auc = skl_metrics.auc(fpr, tpr)
