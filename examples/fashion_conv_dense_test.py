@@ -90,10 +90,10 @@ conv_net_config = {
 }
 dense_net_config = {
     'dense_units': [100, 50],
-    'initializer': [None, None],
-    'bias_init': [None, None], # List of None or values
-    'norm': [None, None],
-    'dropout': [0.4, 0.8],  # List of Float or None
+    # 'initializer': None,
+    # 'bias_init': None,
+    # 'norm': None,
+    # 'dropout': 0.5,  # Single value or List
 }
 
 model = models.ConvNet(

@@ -38,6 +38,9 @@ class DenseNetConfig:
             if isinstance(raw_config[arg], list):
                 if len(raw_config[arg]) != len(raw_config['dense_units']):
                     raise ValueError("{} list must be same length as dense_units.".format(arg))
+            else:
+                # If a single value is specified, it will be applied to all layers
+                raw_config[arg] = [raw_config[arg]] * len(raw_config['dense_units'])
         
         # TODO: Think about moving dimension to config file
         _units_per_layer = list([None] + raw_config['dense_units'])
