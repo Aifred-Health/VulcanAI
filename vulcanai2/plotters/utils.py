@@ -1,5 +1,5 @@
 import torch
-from torch.nn import ReLU
+from torch.nn import ReLU, SELU
 # from ..models.basenetwork import BaseNetwork
 
 class GuidedBackprop():
@@ -30,11 +30,10 @@ class GuidedBackprop():
             self.gradients = grad_in[0]
         # Register hook to the first layer
         # TODO: Modify for multi-input NNs
-
         if '_input_network' in self.network._modules:
-            first_layer = self.network._modules['_input_network']._modules['network'][0]
+            first_layer = self.network._input_network.network[0]
         else:
-            first_layer = self.network._modules['network'][0]
+            first_layer = self.network.network[0]
 
         self.hooks.append(first_layer.register_backward_hook(hook_function))
 
@@ -46,15 +45,16 @@ class GuidedBackprop():
             """
             If there is a negative gradient, changes it to zero
             """
-            if isinstance(module, ReLU):
+            if isinstance(module, ReLU) or isinstance(module, SELU):
                 return (torch.clamp(grad_in[0], min=0.0),)
         # Loop through layers, hook up activations with activation_hook_function
         if '_input_network' in self.network._modules:
-            self.hooks.append(self.network._modules['_input_network']._activation.
+            for layer in self.network._input_network.network:
+                self.hooks.append(layer._activation.
+                    register_backward_hook(activation_hook_function))
+        for layer in self.network.network:
+            self.hooks.append(layer._activation.
                 register_backward_hook(activation_hook_function))
-
-        self.hooks.append(self.network._modules['_activation'].
-            register_backward_hook(activation_hook_function))
 
     def remove_hooks(self):
         """
