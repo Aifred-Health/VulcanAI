@@ -42,7 +42,7 @@ class BaseNetwork(nn.Module):
     # TODO: reorganize these.
     def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None,
                  activation=nn.ReLU(), pred_activation=nn.Softmax(dim=1), optim_spec={'name': 'Adam', 'lr': 0.001},
-                 lr_scheduler=None, early_stopping=None, criter_spec=nn.CrossEntropyLoss):
+                 lr_scheduler=None, early_stopping=None, criter_spec=nn.CrossEntropyLoss()):
         """
         Defines the network object.
         :param name: The name of the network. Used when saving the file.
@@ -69,9 +69,6 @@ class BaseNetwork(nn.Module):
         self._input_network = input_network
         self._num_classes = num_classes
 
-        self._activation = activation
-        self._pred_activation = pred_activation
-
         self._optim_spec = optim_spec
         self._lr_scheduler = lr_scheduler
         self._early_stopping = early_stopping
@@ -94,7 +91,9 @@ class BaseNetwork(nn.Module):
 
         # self._itr = 0 #TODO: ?
 
-        self._create_network()
+        self._create_network(
+            activation=activation,
+            pred_activation=pred_activation)
 
     # TODO: where to do typechecking... just let everything fail?
 
@@ -282,7 +281,7 @@ class BaseNetwork(nn.Module):
                     print('\t {}: {}'.format(k2, v2))
 
     @abc.abstractmethod
-    def _create_network(self):
+    def _create_network(self, **kwargs):
         """
         Defines the network. Abstract method that needs to be overridden.
         :return: None
@@ -296,7 +295,7 @@ class BaseNetwork(nn.Module):
 
     @staticmethod
     def _init_criterion(criterion_spec):
-        return criterion_spec()
+        return criterion_spec
 
     def _init_trainer(self):
         self.optim = self._init_optimizer(self._optim_spec)
@@ -454,7 +453,7 @@ class BaseNetwork(nn.Module):
         Returns: Numpy matrix with the output probabilities
                  with each class unless otherwise specified.
         """
-        output = self.cpu()(torch.Tensor(input_data)).data
+        output = self.cpu()(torch.Tensor(input_data)).data.numpy()
         if convert_to_class:
             return self.metrics.get_class(output)
         else:
@@ -468,10 +467,10 @@ class BaseNetwork(nn.Module):
         """
 
         if not save_path:
-            save_path = "{date:%Y-%m-%d_%H:%M:%S}/".format(name=self.name, date=datetime.now())
-            logger.info("No save path provideded, saving to {}".format(save_path))
+            save_path = r"saved_models/{}_{}/".format(self.name, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+            logger.info("No save path provided, saving to {}".format(save_path))
 
-        if not save_path.endswith("/"):  # TODO: does this break windows?? no idea.
+        if not save_path.endswith("/"):
             save_path = save_path + "/"
 
         module_save_path = save_path + "{name}/".format(name=self.name)

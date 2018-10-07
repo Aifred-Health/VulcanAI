@@ -147,7 +147,6 @@ class Metrics(object):
 
         Returns: 2D Class array
         """
-        in_matrix= in_matrix.detach()
         if in_matrix.shape[1] > 1:
             return np.expand_dims(np.argmax(in_matrix, axis=1), axis=1)
         elif in_matrix.shape[1] == 1:

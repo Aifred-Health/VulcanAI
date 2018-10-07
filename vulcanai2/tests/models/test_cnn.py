@@ -12,16 +12,15 @@ class TestConvNet:
             config={
                 'conv_units': [
                     {
-                        "in_ch":1,
-                        "out_ch":16,
-                        "k_size":(5, 5),
-                        "stride":1,
-                        "padding":2
+                        "in_channels":1,
+                        "out_channels":16,
+                        "kernel_size":(5, 5),
+                        "stride":2
                     },
                     {
-                        "in_ch":16,
-                        "out_ch":1,
-                        "k_size":(5, 5),
+                        "in_channels":16,
+                        "out_channels":1,
+                        "kernel_size":(5, 5),
                         "stride":1,
                         "padding":2
                     }]
@@ -37,16 +36,15 @@ class TestConvNet:
             config={
                 'conv_units': [
                     {
-                        "in_ch":1,
-                        "out_ch":16,
-                        "k_size":(5, 5),
-                        "stride":1,
-                        "padding":2
+                        "in_channels":1,
+                        "out_channels":16,
+                        "kernel_size":(5, 5),
+                        "stride":2
                     },
                     {
-                        "in_ch":16,
-                        "out_ch":1,
-                        "k_size":(5, 5),
+                        "in_channels":16,
+                        "out_channels":1,
+                        "kernel_size":(5, 5),
                         "stride":1,
                         "padding":2
                     }]
