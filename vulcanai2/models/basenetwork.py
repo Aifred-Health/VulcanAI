@@ -352,7 +352,7 @@ class BaseNetwork(nn.Module):
                 self.epoch += 1
 
         except KeyboardInterrupt:
-            print("\n\n**********KeyboardInterrupt: Training stopped prematurely.**********\n\n")
+            logger.warning("\n\n**********KeyboardInterrupt: Training stopped prematurely.**********\n\n")
 
     def _train_epoch(self, train_loader, retain_graph):
 
@@ -419,7 +419,7 @@ class BaseNetwork(nn.Module):
             validation_loss = self.criterion(predictions, targets)
             val_loss_accumulator += validation_loss.item()
 
-            self.metrics.update(predictions.data.cpu().numpy(), targets.cpu().numpy())
+            # self.metrics.update(predictions.data.cpu().numpy(), targets.cpu().numpy())
             if batch_idx % 10 == 0:
                 # Update tqdm bar
                 if ((batch_idx + 10) * len(data)) <= len(val_loader.dataset):

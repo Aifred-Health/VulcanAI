@@ -95,7 +95,7 @@ class ConvNet(BaseNetwork, nn.Module):
         self.conv_flat_dim = self.get_flattened_size(self.network)
 
         if self._num_classes:
-            self.out_dim = np.reshape(self._num_classes, -1).tolist()
+            self.out_dim = self._num_classes
             self._create_classification_layer(
                 self.conv_flat_dim, kwargs['pred_activation'])
             
@@ -104,8 +104,8 @@ class ConvNet(BaseNetwork, nn.Module):
                     module.cuda()
 
     def _create_classification_layer(self, dim, pred_activation):
-        self.network_tails = nn.ModuleList(
-            [DenseUnit(dim, out_d, activation=pred_activation) for out_d in self.out_dim])
+        self.network_tail = DenseUnit(
+            dim, self.out_dim, activation=pred_activation)
 
     def forward(self, x):
         """
@@ -113,7 +113,7 @@ class ConvNet(BaseNetwork, nn.Module):
         If the network is defined with `num_classes` then it is
         assumed to be the last network which contains a
         classification layer/classifier (network tail).
-        The data ('x')will be passed through the network and
+        The data ('x') will be passed through the network and
         then through the classifier. If not, the input is passed
         through the network and returned without passing through
         a classification layer.
@@ -127,14 +127,8 @@ class ConvNet(BaseNetwork, nn.Module):
 
         if self._num_classes:
             network_output = network_output.view(-1, self.conv_flat_dim)
-            output = []
-            for network_tail in self.network_tails:
-                output.append(network_tail(network_output))
-            # return tensor if single tail, else list of tail tensors
-            if len(output) == 1:
-                return output[0]
-            else:
-                return output
+            class_output = self.network_tail(network_output)
+            return class_output
         else:
             return network_output
 

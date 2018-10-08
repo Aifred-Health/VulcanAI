@@ -1,6 +1,3 @@
-#TODO: all methods need to be updated to work with new dataset
-__author__="RobertFratila"
-
 """Contains auxilliary methods."""
 import os
 
@@ -15,9 +12,9 @@ import pickle
 from datetime import datetime
 
 from .utils import GuidedBackprop
+from ..models.utils import get_notable_indices
 
 import torch
-from torch.autograd import Variable
 
 from sklearn.metrics import confusion_matrix
 from sklearn.preprocessing import LabelBinarizer
@@ -37,9 +34,8 @@ def display_record(record=None, load_path=None, interactive=True):
     """
     Display the training curve for a network training session.
 
-    Args:
-        record: the record dictionary for dynamic graphs during training
-        load_path: the saved record .pickle file to load
+    :param record: the record dictionary for dynamic graphs during training
+    :param load_path: the saved record .pickle file to load
     """
     title = 'Training curve'
     if load_path is not None:
@@ -180,7 +176,7 @@ def display_confusion_matrix(cm, class_list):
     plt.show()
 
 
-def compute_saliency_map(model, input_x, input_y):
+def compute_saliency_map(network, input_x, input_y):
     """
     Return the saliency map using the guided backpropagation method [1].
 
@@ -188,7 +184,7 @@ def compute_saliency_map(model, input_x, input_y):
          Striving for Simplicity: The All Convolutional Net. ICLR 2015 
          (https://arxiv.org/pdf/1412.6806.pdf)
 
-    :param model: A model type of subclass BaseNetwork
+    :param network: A network type of subclass BaseNetwork
     :param input_x: Input array of shape (batch, channel, width, height) or 
                     (batch, channel, width, height, depth)
     :param input_y: 1D array with class targets
@@ -199,7 +195,7 @@ def compute_saliency_map(model, input_x, input_y):
     elif not input_x.requires_grad:
         input_x.requires_grad = True
 
-    guided_backprop = GuidedBackprop(model)
+    guided_backprop = GuidedBackprop(network)
     saliency_map = guided_backprop.generate_gradients(input_x, input_y)
     guided_backprop.remove_hooks()
     # saliency_map, _ = torch.max(saliency_map, dim = 1) # get max abs from all channels
@@ -253,51 +249,48 @@ def display_saliency_overlay(image, saliency_map, shape=(28, 28)):
     plt.show(False)
 
 
-# def display_receptive_fields(network, layer_list=None, top_k=5):
-#     """
-#     Display receptive fields of layers from a network [1].
-#
-#     [1]: Luo, W., Li, Y., Urtason, R., Zemel, R. (2016).
-#          Understanding the Effective Receptive Field in Deep
-#          Convolutional Neural Networks. Advances in Neural Information
-#          Processing Systems, 29 (NIPS 2016)
-#
-#
-#     Args:
-#         network: Network object
-#         layer: list of layer indices to get fields from
-#         top_k: most and least k important features from field
-#
-#     Returns a dict of the top k and bottom k important features.
-#     """
-#     if layer_list is None:
-#         layer_list = range(len(network.layers))
-#     if not isinstance(layer_list, list):
-#         raise ValueError('layer_list must be a list of int')
-#     layers = []
-#     # Filter out layers with no weights. e.g. input, dropout
-#     for index in layer_list:
-#         try:
-#             network.layers[index].W
-#         except:
-#             print ('Skipping layer: {}'.format(network.layers[index].name))
-#             continue
-#         else:
-#             layers.append(network.layers[index])
-#     # Get fields for filtered layers
-#     feature_importance = {}
-#     fig = plt.figure()
-#     for i, l in enumerate(layers):
-#         raw_field = l.W.container.storage[0]
-#         field = np.average(raw_field, axis=1)  # average all outgoing
-#         field_shape = [int(sqrt(field.shape[0]))] * 2
-#         fig.add_subplot(floor(sqrt(len(layers))),
-#                         ceil(sqrt(len(layers))),
-#                         i + 1)
-#         feats = get_notable_indices(abs(field), top_k=top_k)
-#         feature_importance.update({'{}'.format(l.name): feats})
-#         plt.title(l.name)
-#         plt.imshow(np.reshape(abs(field), field_shape), cmap='hot_r')
-#         plt.colorbar()
-#     plt.show(False)
-#     return feature_importance
+def display_receptive_fields(network, top_k=5):
+    """
+    Display receptive fields of layers from a network [1].
+
+    [1]: Luo, W., Li, Y., Urtason, R., Zemel, R. (2016).
+         Understanding the Effective Receptive Field in Deep
+         Convolutional Neural Networks. Advances in Neural Information
+         Processing Systems, 29 (NIPS 2016)
+
+
+    :param network: Network object
+    :param top_k: most and least k important features from field
+
+    Returns a dict of the top k and bottom k important features.
+    """
+    if type(network).__name__ == "ConvNet":
+        raise NotImplementedError("ConvNet receptive fields not yet implemented")
+    elif '_input_network' in network._modules:
+        if type(network._modules['_input_network']).__name__ == "ConvNet":
+            raise NotImplementedError("ConvNet receptive fields not yet implemented")
+
+    feature_importance = {}
+    fig = plt.figure()
+    fig.suptitle("Feature importance")
+    num_layers = len(network._modules['network'])
+    for i, layer in enumerate(network._modules['network']):
+        raw_field = layer.kernel._parameters['weight'].detach()
+        field = np.average(raw_field, axis=0)  # average all outgoing
+        field_shape = [
+            floor(sqrt(field.shape[0])),
+            ceil(sqrt(field.shape[0]))
+            ]
+        fig.add_subplot(
+            floor(sqrt(num_layers)),
+            ceil(sqrt(num_layers)),
+            i + 1)
+        feats = get_notable_indices(abs(field), top_k=top_k)
+        unit_type = type(layer).__name__
+        layer_name = '{}_{}'.format(unit_type, i)
+        feature_importance.update({layer_name: feats})
+        plt.title(layer_name)
+        plt.imshow(np.resize(abs(field), field_shape), cmap='hot_r')
+        plt.colorbar()
+    plt.show(False)
+    return feature_importance

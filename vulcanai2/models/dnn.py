@@ -132,8 +132,8 @@ class DenseNet(BaseNetwork, nn.Module):
         network_output = self.network(x)
 
         if self._num_classes:
-            output = self.network_tail(network_output)
-            return output
+            class_output = self.network_tail(network_output)
+            return class_output
         else:
             return network_output
 
