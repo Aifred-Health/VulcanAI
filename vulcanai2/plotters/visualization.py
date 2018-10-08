@@ -190,11 +190,6 @@ def compute_saliency_map(network, input_x, input_y):
     :param input_y: 1D array with class targets
     :return: Top layer gradients of same shape as input data
     """
-    if not isinstance(input_x, torch.Tensor):
-        input_x = torch.tensor(input_x, requires_grad=True)
-    elif not input_x.requires_grad:
-        input_x.requires_grad = True
-
     guided_backprop = GuidedBackprop(network)
     saliency_map = guided_backprop.generate_gradients(input_x, input_y)
     guided_backprop.remove_hooks()
@@ -244,7 +239,8 @@ def display_saliency_overlay(image, saliency_map, shape=(28, 28)):
     # Plot original with saliency overlay
     fig.add_subplot(1, 2, 2)
     plt.imshow(image, cmap='binary')
-    plt.imshow(abs(saliency_map), cmap='hot_r', alpha=0.7)
+    # Optional: get the absolute values of the saliency map here
+    plt.imshow(saliency_map, cmap='Blues', alpha=0.7)
     plt.colorbar()
     plt.show(False)
 

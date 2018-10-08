@@ -65,6 +65,9 @@ class TestVisualization:
             torch.tensor([0, 2, 1, 1, 0]))
         assert sal_map_5B.shape == test_input_5B.shape
 
+        # Check that all gradients are not 0
+        assert ~np.all(sal_map_5B == 0.)
+
         # Test hook removal
         assert cnn_class._backward_hooks == model_copy._backward_hooks
 
@@ -86,6 +89,9 @@ class TestVisualization:
             dnn_class, test_input_5B,
             torch.tensor([0, 2, 1, 1, 0]))
         assert sal_map_5B.shape == test_input_5B.shape
+
+        # Check that all gradients are not 0
+        assert ~np.all(sal_map_5B == 0.)
 
         # Test hook removal
         assert dnn_class._backward_hooks == model_copy._backward_hooks
