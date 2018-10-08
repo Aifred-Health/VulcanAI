@@ -114,37 +114,38 @@ model1 = DenseNet(
     num_classes=10
 )
 
-# d = DenseNet(
-#             name='Test_DenseNet_class',
-#             dimensions=(200),
-#             config={
-#                 'dense_units': [100],
-#                 'dropouts': [0.3],
-#             },
-#             num_classes=3
-#         )
+d = DenseNet(
+            name='Test_DenseNet_class',
+            dimensions=(200),
+            config={
+                'dense_units': [100, 50],
+                'dropout': 0.3,
+            },
+            num_classes=3
+        )
 # rf = display_receptive_fields(d)
 
-# test_input_1B = np.ones([1, d.in_dim], dtype=np.float32)
-# sal_map_1B = compute_saliency_map(
-#             d,
-#             test_input_1B, torch.tensor([2]))
+test_input_1B = np.ones([1, d.in_dim], dtype=np.float32)
+sal_map_1B = compute_saliency_map(
+            d,
+            test_input_1B, torch.tensor([2]))
 
 
 #model1.fit(train_loader, val_loader, 10)
-model1.fit(train_loader, val_loader, 2, plot=True)
+# model1.fit(train_loader, val_loader, 2, plot=True)
 
-model1.save_model()
+# model1.save_model()
 
 #model2 = models.DenseNet.load_ensemble("/home/caitrin/Vulcan2/Vulcan2/examples/2018-10-04_19:12:36/dense_net_test")
 
 #model2.fit(train_loader, val_loader, 4, plot=True)
 
 # To test saliency map generation
-# x = train_loader.dataset.train_data[:5].float().unsqueeze(dim=1) #np.expand_dims(train_loader.dataset[:5][0], axis=0)
-# y = train_loader.dataset.train_labels[:5]
-# sal_map = compute_saliency_map(model1, x, y)
-# display_saliency_overlay(train_loader.dataset.train_data[0], sal_map[0])
+x = train_loader.dataset.train_data[:5].float().unsqueeze(dim=1) #np.expand_dims(train_loader.dataset[:5][0], axis=0)
+y = train_loader.dataset.train_labels[:5]
+# import pudb; pu.db
+sal_map = compute_saliency_map(model1, x, y)
+display_saliency_overlay(train_loader.dataset.train_data[0], sal_map[0])
 
 # TODO: need to revisit this to be able to plot after training, interactive plotting is messing up
 #plotters.visualization.display_record(record=model1.record, interactive=False)
