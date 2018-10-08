@@ -27,13 +27,14 @@ class GuidedBackprop():
 
     def hook_top_layers(self):
         def hook_function(module, grad_in, grad_out):
+            # import pudb; pu.db
             self.gradients = grad_in[0]
         # Register hook to the first layer
         # TODO: Modify for multi-input NNs
         if '_input_network' in self.network._modules:
-            first_layer = self.network._input_network.network[0]
+            first_layer = self.network._input_network.network[0]._kernel
         else:
-            first_layer = self.network.network[0]
+            first_layer = self.network.network[0]._kernel
 
         self.hooks.append(first_layer.register_backward_hook(hook_function))
 
