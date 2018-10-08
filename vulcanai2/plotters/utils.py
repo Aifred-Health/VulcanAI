@@ -50,8 +50,8 @@ class GuidedBackprop():
             if isinstance(module, ReLU) or isinstance(module, SELU):
                 return (torch.clamp(grad_in[0], min=0.0),)
 
-        # Since all layer activations in a Net object point to the same 
-        # function we only need to hook one of them with 
+        # Since all layer activations in a Net object point to the same
+        # function we only need to hook one of them with
         # activation_hook_function
         if '_input_network' in self.network._modules:
             self.hooks.append(self.network._input_network.network[0]._activation.
@@ -79,9 +79,9 @@ class GuidedBackprop():
         """
         if not isinstance(input_x, torch.Tensor):
             input_x = torch.tensor(input_x)
-        
+
         input_x = Variable(input_x, requires_grad=True)
-        
+
         # Forward pass
         network_output = self.network(input_x)
         # Zero gradients
