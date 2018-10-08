@@ -27,7 +27,6 @@ class GuidedBackprop():
 
     def hook_top_layers(self):
         def hook_function(module, grad_in, grad_out):
-            # import pudb; pu.db
             self.gradients = grad_in[0]
         # Register hook to the first layer
         # TODO: Modify for multi-input NNs
