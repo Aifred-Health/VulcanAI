@@ -138,7 +138,7 @@ model1 = DenseNet(
 
 
 #model1.fit(train_loader, val_loader, 10)
-model1.cuda().fit(train_loader, val_loader, 2, plot=False)
+model1.fit(train_loader, val_loader, 2, plot=False)
 
 # model1.save_model()
 
