@@ -81,9 +81,9 @@ class ConvNet(BaseNetwork, nn.Module):
             self._create_classification_layer(
                 self.conv_flat_dim, kwargs['pred_activation'])
             
-            if torch.cuda.is_available():
-                for module in self.modules():
-                    module.cuda()
+        if torch.cuda.is_available():
+            for module in self.modules():
+                module.cuda()
 
     def _create_classification_layer(self, dim, pred_activation):
         self.network_tail = DenseUnit(

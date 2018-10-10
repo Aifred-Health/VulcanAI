@@ -85,9 +85,9 @@ class DenseNet(BaseNetwork, nn.Module):
                 dense_hid_layers[-1]['out_features'],
                 kwargs['pred_activation'])
 
-            if torch.cuda.is_available():
-                for module in self.modules():
-                    module.cuda()
+        if torch.cuda.is_available():
+            for module in self.modules():
+                module.cuda()
 
     def _create_classification_layer(self, dim, pred_activation):
         self.network_tail = DenseUnit(

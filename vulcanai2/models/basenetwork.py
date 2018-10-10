@@ -130,10 +130,10 @@ class BaseNetwork(nn.Module):
             
             outputs = []
             for model, x in zip(models, inputs):
-                outputs.append(model.cuda()(x))
-            network_output = self.cuda()._forward(torch.cat(outputs, 1))
+                outputs.append(model(x))
+            network_output = self._forward(torch.cat(outputs, 1))
         else:
-            network_output = self.cuda()._forward((inputs))
+            network_output = self._forward((inputs))
         return network_output
         
     @property
