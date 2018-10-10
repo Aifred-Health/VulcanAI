@@ -103,37 +103,16 @@ class DenseNet(BaseNetwork, nn.Module):
 
     """
 
-    def __init__(self, name, dimensions, config, save_path=None,
-                 input_network=None, num_classes=None,
-                 activation=nn.ReLU(), pred_activation=None,
-                 optim_spec={'name': 'Adam', 'lr': 0.001},
-                 lr_scheduler=None, early_stopping=None,
-                 criter_spec=nn.CrossEntropyLoss()):
-        """Define the DenseNet object."""
+    def __init__(self, name, dimensions, config, save_path=None, input_networks=None, num_classes=None,
+                 activation=nn.ReLU(), pred_activation=nn.Softmax(dim=1), optim_spec={'name': 'Adam', 'lr': 0.001},
+                 lr_scheduler=None, early_stopping=None, criter_spec=nn.CrossEntropyLoss()):
+        
         nn.Module.__init__(self)
-        super(DenseNet, self).__init__(
-            name, dimensions, DenseNetConfig(config), save_path, input_network,
-            num_classes, activation, pred_activation, optim_spec,
-            lr_scheduler, early_stopping, criter_spec)
+        super(DenseNet, self).__init__(name, dimensions, DenseNetConfig(config), save_path, input_networks, num_classes,
+                                       activation, pred_activation, optim_spec, lr_scheduler, early_stopping, criter_spec
+                                       )
 
     def _create_network(self, **kwargs):
-        self.in_dim = self._dimensions
-
-        if self._input_network and \
-           self._input_network.__class__.__name__ == "ConvNet":
-
-            if self._input_network.conv_flat_dim != self.in_dim:
-                self.in_dim = self.get_flattened_size(self._input_network)
-            else:
-                pass
-
-        if self._input_network and \
-           self._input_network.__class__.__name__ == "DenseNet":
-
-            if self._input_network.dims[-1] != self.in_dim:
-                self.in_dim = self._input_network.dims[-1]
-            else:
-                pass
 
         dense_hid_layers = self._config.units
         # Build network
@@ -156,7 +135,7 @@ class DenseNet(BaseNetwork, nn.Module):
             out_features=self.out_dim,
             activation=pred_activation)
 
-    def forward(self, x):
+    def _forward(self, x, **kwargs):
         """
         Define the forward behaviour of the network.
 
@@ -178,8 +157,6 @@ class DenseNet(BaseNetwork, nn.Module):
         output : torch.Tensor
 
         """
-        if self._input_network:
-            x = self._input_network(x)
 
         if self._input_network and \
            self._input_network.__class__.__name__ == "ConvNet":

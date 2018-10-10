@@ -107,20 +107,38 @@ dense_net_config = {
 
 model = ConvNet(
     name='conv_net_test',
-    input_network=None,
+    input_networks=None,
     dimensions=(1, 28, 28),
     config=conv_net_config,
 )
 
 model1 = DenseNet(
     name='dense_net_test',
-    input_network=model,
+    input_networks=[model],
     dimensions=model.conv_flat_dim,
     config=dense_net_config,
     num_classes=10
 )
 
-# model1.fit(train_loader, val_loader, 2, plot=True)
+# d = DenseNet(
+#             name='Test_DenseNet_class',
+#             dimensions=(200),
+#             config={
+#                 'dense_units': [100],
+#                 'dropouts': [0.3],
+#             },
+#             num_classes=3
+#         )
+# rf = display_receptive_fields(d)
+
+# test_input_1B = np.ones([1, d.in_dim], dtype=np.float32)
+# sal_map_1B = compute_saliency_map(
+#             d,
+#             test_input_1B, torch.tensor([2]))
+
+
+#model1.fit(train_loader, val_loader, 10)
+model1.cuda().fit(train_loader, val_loader, 2, plot=False)
 
 # model1.save_model()
 
