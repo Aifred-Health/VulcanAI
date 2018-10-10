@@ -133,7 +133,7 @@ class ConvNet(BaseNetwork, nn.Module):
             out_features=self.out_dim,
             activation=pred_activation)
 
-    def forward(self, x):
+    def _forward(self, x, **kwargs):
         """
         Define the forward behaviour of the network.
 
@@ -155,9 +155,6 @@ class ConvNet(BaseNetwork, nn.Module):
         output : torch.Tensor
 
         """
-        if self._input_network:
-            x = self._input_network(x)
-
         network_output = self.network(x)
 
         if self._num_classes:
