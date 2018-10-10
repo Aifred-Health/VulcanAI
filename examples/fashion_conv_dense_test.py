@@ -101,14 +101,14 @@ dense_net_config = {
 
 model = ConvNet(
     name='conv_net_test',
-    input_network=None,
+    input_networks=None,
     dimensions=(1, 28, 28),
     config=conv_net_config,
 )
 
 model1 = DenseNet(
     name='dense_net_test',
-    input_network=model,
+    input_networks=[model],
     dimensions=model.conv_flat_dim,
     config=dense_net_config,
     num_classes=10
@@ -132,7 +132,7 @@ model1 = DenseNet(
 
 
 #model1.fit(train_loader, val_loader, 10)
-model1.fit(train_loader, val_loader, 2, plot=True)
+model1.cuda().fit(train_loader, val_loader, 2, plot=False)
 
 model1.save_model()
 

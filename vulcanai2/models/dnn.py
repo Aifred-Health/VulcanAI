@@ -63,33 +63,16 @@ class DenseNet(BaseNetwork, nn.Module):
 
     """
 
-    def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None,
+    def __init__(self, name, dimensions, config, save_path=None, input_networks=None, num_classes=None,
                  activation=nn.ReLU(), pred_activation=nn.Softmax(dim=1), optim_spec={'name': 'Adam', 'lr': 0.001},
                  lr_scheduler=None, early_stopping=None, criter_spec=nn.CrossEntropyLoss()):
         
         nn.Module.__init__(self)
-        super(DenseNet, self).__init__(name, dimensions, DenseNetConfig(config), save_path, input_network, num_classes,
+        super(DenseNet, self).__init__(name, dimensions, DenseNetConfig(config), save_path, input_networks, num_classes,
                                        activation, pred_activation, optim_spec, lr_scheduler, early_stopping, criter_spec
                                        )
 
     def _create_network(self, **kwargs):
-        self.in_dim = self._dimensions
-
-        if self._input_network and \
-            self._input_network.__class__.__name__ == "ConvNet":
-
-            if self._input_network.conv_flat_dim != self.in_dim:
-                self.in_dim = self.get_flattened_size(self._input_network)
-            else:
-                pass
-
-        if self._input_network and \
-            self._input_network.__class__.__name__ == "DenseNet":
-
-            if self._input_network.dims[-1] != self.in_dim:
-                self.in_dim = self._input_network.dims[-1]
-            else:
-                pass
 
         dense_hid_layers = self._config.units
         # Build network
@@ -110,9 +93,9 @@ class DenseNet(BaseNetwork, nn.Module):
         self.network_tail = DenseUnit(
             dim, self.out_dim, activation=pred_activation)
 
-    def forward(self, x):
+    def _forward(self, x, **kwargs):
         """
-        Defines the behaviour of the network.
+        Computation for the forward pass of the DenseNet module.
         If the network is defined with `num_classes` then it is
         assumed to be the last network which contains a classification
         layer/classifier (network tail). The data ('x') will be passed
@@ -122,11 +105,8 @@ class DenseNet(BaseNetwork, nn.Module):
         :param x: input torch.Tensor
         :return: output torch.Tensor
         """
-        if self._input_network:
-            x = self._input_network(x)
 
-        if self._input_network and \
-            self._input_network.__class__.__name__ == "ConvNet":
+        if self._input_network and self._input_network.__class__.__name__ == "ConvNet":
             x = x.view(-1, self._input_network.conv_flat_dim)
 
         network_output = self.network(x)

@@ -58,33 +58,15 @@ class ConvNet(BaseNetwork, nn.Module):
     Subclass of BaseNetwork defining a ConvNet
     """
 
-    def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None,
+    def __init__(self, name, dimensions, config, save_path=None, input_networks=None, num_classes=None,
                  activation=nn.ReLU(), pred_activation=nn.Softmax(dim=1), optim_spec={'name': 'Adam', 'lr': 0.001},
                  lr_scheduler=None, early_stopping=None, criter_spec=nn.CrossEntropyLoss()):
         
         nn.Module.__init__(self)
-        super(ConvNet, self).__init__(name, dimensions, ConvNetConfig(config), save_path, input_network, num_classes,
+        super(ConvNet, self).__init__(name, dimensions, ConvNetConfig(config), save_path, input_networks, num_classes,
                                       activation, pred_activation, optim_spec, lr_scheduler, early_stopping, criter_spec)
 
     def _create_network(self, **kwargs):
-
-        self.in_dim = self._dimensions
-
-        if self._input_network and \
-            self._input_network.__class__.__name__ == "ConvNet":
-
-            if self._input_network.conv_flat_dim != self.in_dim:
-                self.in_dim = self.get_flattened_size(self._input_network)
-            else:
-                pass
-
-        if self._input_network and \
-            self._input_network.__class__.__name__ == "DenseNet":
-
-            if self._input_network.dims[-1] != self.in_dim:
-                self.in_dim = self.dims[-1]
-            else:
-                pass
 
         conv_hid_layers = self._config.units
         # Build Network
@@ -107,9 +89,9 @@ class ConvNet(BaseNetwork, nn.Module):
         self.network_tail = DenseUnit(
             dim, self.out_dim, activation=pred_activation)
 
-    def forward(self, x):
+    def _forward(self, x, **kwargs):
         """
-        Defines the behaviour of the network.
+        Computation for the forward pass of the ConvNet module.
         If the network is defined with `num_classes` then it is
         assumed to be the last network which contains a
         classification layer/classifier (network tail).
@@ -120,9 +102,6 @@ class ConvNet(BaseNetwork, nn.Module):
         :param x: input torch.Tensor
         :return: output torch.Tensor
         """
-        if self._input_network:
-            x = self._input_network(x)
-
         network_output = self.network(x)
 
         if self._num_classes:

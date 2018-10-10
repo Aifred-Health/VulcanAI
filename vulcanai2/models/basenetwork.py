@@ -18,7 +18,7 @@ import logging
 import os
 import pickle
 import time
-from collections import OrderedDict
+from collections import OrderedDict as odict
 import numpy as np
 
 import matplotlib
@@ -40,7 +40,7 @@ class BaseNetwork(nn.Module):
 
     # TODO: not great to use mutables as arguments.
     # TODO: reorganize these.
-    def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None,
+    def __init__(self, name, dimensions, config, save_path=None, input_networks=None, num_classes=None,
                  activation=nn.ReLU(), pred_activation=nn.Softmax(dim=1), optim_spec={'name': 'Adam', 'lr': 0.001},
                  lr_scheduler=None, early_stopping=None, criter_spec=nn.CrossEntropyLoss()):
         """
@@ -49,7 +49,7 @@ class BaseNetwork(nn.Module):
         :param dimensions: The dimensions of the network.
         :param config: The config, as a dict.
         :param save_path: The name of the file to which you would like to save this network.
-        :param input_network: A network object provided as input
+        :param input_networks: A network object provided as input
         :param num_classes: The number of classes to predict.
         :param activation: The desired activation function for use in the network. Of type torch.nn.Module.
         :param pred_activation: The desired activation function for use in the prediction layer. Of type torch.nn.Module
@@ -66,7 +66,14 @@ class BaseNetwork(nn.Module):
 
         self._save_path = save_path
 
-        self._input_network = input_network
+        self._input_networks = input_networks
+        if isinstance(input_networks, list) and len(input_networks)==1:
+            self._input_network = input_networks[0]
+        elif isinstance(input_networks, type(None)):
+            self._input_network = None
+        else:
+            raise SyntaxError("MultiInputNN does not support this function")
+
         self._num_classes = num_classes
 
         self._optim_spec = optim_spec
@@ -89,14 +96,46 @@ class BaseNetwork(nn.Module):
             validation_accuracy=[]
         )
 
-        # self._itr = 0 #TODO: ?
+        self.in_dim = self._dimensions
+        if self._input_networks:
+            for i, in_net in enumerate(self._input_networks):
+                if in_net.__class__.__name__ == "ConvNet":
+                    if in_net.conv_flat_dim != self.in_dim:
+                        self.in_dim[i] = self.get_flattened_size(in_net)
+                    else:
+                        pass
 
+                if in_net.__class__.__name__ == "DenseNet":
+                    if in_net.dims[-1] != self.in_dim:
+                        self.in_dim = in_net.dims[-1]
+                    else:
+                        pass
         self._create_network(
             activation=activation,
             pred_activation=pred_activation)
 
     # TODO: where to do typechecking... just let everything fail?
 
+    @abc.abstractmethod
+    def _forward(self):
+        pass
+
+    def forward(self, inputs):
+        """Perform a forward pass through the module/modules."""
+
+        if self._input_networks:
+            if not isinstance(inputs, list):
+                inputs = [inputs]
+            models=self._input_networks
+            
+            outputs = []
+            for model, x in zip(models, inputs):
+                outputs.append(model.cuda()(x))
+            network_output = self.cuda()._forward(torch.cat(outputs, 1))
+        else:
+            network_output = self.cuda()._forward((inputs))
+        return network_output
+        
     @property
     def name(self):
         """
@@ -187,7 +226,7 @@ class BaseNetwork(nn.Module):
         """
         if isinstance(output, tuple):
             for i in range(len(output)):
-                summary_dict[i] = OrderedDict()
+                summary_dict[i] = odict()
                 summary_dict[i] = self.get_size(summary_dict[i], output[i])
         else:
             summary_dict['output_shape'] = list(output.size())
@@ -199,8 +238,8 @@ class BaseNetwork(nn.Module):
         :return: OrderedDict of shape of each layer in the network
         """
         if not input_size:
-            if self._input_network:
-                input_size = self._input_network._dimensions
+            if self._input_networks:
+                input_size = self._input_networks._dimensions
             else:
                 input_size = self._dimensions
 
@@ -218,7 +257,7 @@ class BaseNetwork(nn.Module):
                 module_idx = len(summary)
 
                 m_key = '%s-%i' % (class_name, module_idx + 1)
-                summary[m_key] = OrderedDict()
+                summary[m_key] = odict()
                 summary[m_key]['input_shape'] = list(input[0].size())
                 summary[m_key] = self.get_size(summary[m_key], output)
 
@@ -246,7 +285,7 @@ class BaseNetwork(nn.Module):
             x = Variable(torch.rand(1, *input_size))
 
         # create properties
-        summary = OrderedDict()
+        summary = odict()
         hooks = []
         # register hook
         self.apply(register_hook)
@@ -276,7 +315,7 @@ class BaseNetwork(nn.Module):
         shapes = self.get_output_shapes()
         for k, v in shapes.items():
             print('{}:'.format(k))
-            if isinstance(v, OrderedDict):
+            if isinstance(v, odict):
                 for k2, v2 in v.items():
                     print('\t {}: {}'.format(k2, v2))
 
@@ -300,7 +339,7 @@ class BaseNetwork(nn.Module):
     def _init_trainer(self):
         self.optim = self._init_optimizer(self._optim_spec)
         self.criterion = self._init_criterion(self._criter_spec)
-
+    
     def fit(self, train_loader, val_loader, epochs,
             retain_graph=None, valid_interv=4, plot=False):
         """
@@ -369,7 +408,7 @@ class BaseNetwork(nn.Module):
                 data, targets = data.cuda(), targets.cuda()
 
             # Forward + Backward + Optimize
-            predictions = self(data)
+            predictions = self([data])
 
             train_loss = self.criterion(predictions, targets)
             train_loss_accumulator += train_loss.item()
@@ -389,13 +428,11 @@ class BaseNetwork(nn.Module):
 
         pbar.close()
 
-        # noinspection PyUnboundLocalVariable
         train_loss = train_loss_accumulator * len(data) / len(train_loader.dataset)
         train_accuracy = train_accuracy_accumulator * len(data) / len(train_loader.dataset)
 
         return train_loss, train_accuracy
 
-    # noinspection PyUnboundLocalVariable
     def _validate(self, val_loader):
         """
         Validates the network on the validation data
@@ -414,7 +451,7 @@ class BaseNetwork(nn.Module):
             if torch.cuda.is_available():
                 data, targets = data.cuda(), targets.cuda()
 
-            predictions = self(data)
+            predictions = self([data])
 
             validation_loss = self.criterion(predictions, targets)
             val_loss_accumulator += validation_loss.item()
@@ -478,8 +515,13 @@ class BaseNetwork(nn.Module):
         os.makedirs(module_save_path)  # let this throw an error if it already exists
 
         # recursive recursive recursive
-        if self._input_network is not None:
-            self._input_network.save_model(save_path)
+        if self._input_networks is not None:
+            if self._input_network:
+                self._input_network.save_model(save_path)
+            else:
+                # TODO: should rewrite the save_path structure
+                for i, input_network in enumerate(self._input_networks):
+                    input_network.save_model("MultiInputNN_"+save_path+"_{}".format(i))
 
         self.save_path = save_path  # TODO: I don't think this is necessary
 
