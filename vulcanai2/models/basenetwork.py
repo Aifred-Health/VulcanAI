@@ -75,8 +75,7 @@ class BaseNetwork(nn.Module):
         self._criter_spec = criter_spec
 
         if self._num_classes:
-            self.criter_spec = nn.CrossEntropyLoss()
-            pred_activation = nn.ReLU()
+            self._criter_spec = nn.CrossEntropyLoss()
             self.metrics = Metrics(self._num_classes)
 
         self.optim = None
@@ -455,11 +454,14 @@ class BaseNetwork(nn.Module):
         Returns: Numpy matrix with the output probabilities
                  with each class unless otherwise specified.
         """
-        output = self.cpu()(torch.Tensor(input_data)).data.numpy()
-        if convert_to_class:
-            return self.metrics.get_class(output)
-        else:
-            return output
+        if ~isinstance(input_data, torch.Tensor):
+            input_data = torch.Tensor(input_data)
+        output = self(input_data)
+        if self._num_classes:
+            output = nn.Softmax(dim=1)(output)
+            if convert_to_class:
+                return self.metrics.get_class(output)
+        return output.detach().numpy()
 
     def save_model(self, save_path=None):
         """

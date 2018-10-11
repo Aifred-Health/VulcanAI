@@ -54,12 +54,19 @@ class TestConvNet:
     def test_forward_not_nan(self, cnn_noclass):
         """Confirm out is non nan."""
         test_input = np.ones([1, *cnn_noclass.in_dim])
-        output = cnn_noclass.forward_pass(test_input)
+        output = cnn_noclass.forward_pass(
+            input_data=test_input,
+            convert_to_class=False)
         assert np.any(~np.isnan(output))
     
     def test_forward_class_not_nan(self, cnn_class):
         """Confirm out is non nan."""
         test_input = np.ones([1, *cnn_class.in_dim])
-        output = cnn_class.forward_pass(test_input)
-        assert np.any(~np.isnan(output))
+        raw_output = cnn_class.forward_pass(
+            input_data=test_input,
+            convert_to_class=False)
+        class_output = cnn_class.metrics.get_class(
+            in_matrix=raw_output)
+        assert np.any(~np.isnan(class_output))
+        assert np.any(~np.isnan(raw_output))
 

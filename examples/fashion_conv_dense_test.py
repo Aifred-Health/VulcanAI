@@ -125,10 +125,12 @@ d = DenseNet(
         )
 # rf = display_receptive_fields(d)
 
-test_input_1B = np.ones([1, d.in_dim], dtype=np.float32)
-sal_map_1B = compute_saliency_map(
-            d,
-            test_input_1B, torch.tensor([2]))
+# test_input_1B = np.ones([1, d.in_dim], dtype=np.float32)
+# import pudb; pu.dbq
+# a = d.forward_pass(test_input_1B)
+# sal_map_1B = compute_saliency_map(
+#             d,
+#             test_input_1B, torch.tensor([2]))
 
 
 #model1.fit(train_loader, val_loader, 10)

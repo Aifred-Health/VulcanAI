@@ -35,7 +35,6 @@ class GuidedBackprop():
             first_layer = self.network._input_network.network[0]._kernel
         else:
             first_layer = self.network.network[0]._kernel
-
         self.hooks.append(first_layer.register_backward_hook(hook_function))
 
     def crop_negative_gradients(self):
@@ -49,14 +48,12 @@ class GuidedBackprop():
             """
             if isinstance(module, ReLU) or isinstance(module, SELU):
                 return (torch.clamp(grad_in[0], min=0.0),)
-
         # Since all layer activations in a Net object point to the same
         # function we only need to hook one of them with
         # activation_hook_function
         if '_input_network' in self.network._modules:
             self.hooks.append(self.network._input_network.network[0]._activation.
                 register_backward_hook(activation_hook_function))
-
         self.hooks.append(self.network.network[0]._activation.
             register_backward_hook(activation_hook_function))
 
@@ -83,7 +80,6 @@ class GuidedBackprop():
         else:
             if not input_x.requires_grad:
                 input_x.requires_grad = True
-
         # Forward pass
         network_output = self.network(input_x)
         # Zero gradients

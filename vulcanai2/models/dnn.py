@@ -65,7 +65,7 @@ class DenseNet(BaseNetwork, nn.Module):
 
     def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None,
                  activation=nn.ReLU(), pred_activation=None, optim_spec={'name': 'Adam', 'lr': 0.001},
-                 lr_scheduler=None, early_stopping=None, criter_spec=nn.CrossEntropyLoss()):
+                 lr_scheduler=None, early_stopping=None, criter_spec=nn.MSELoss()):
         
         nn.Module.__init__(self)
         super(DenseNet, self).__init__(name, dimensions, DenseNetConfig(config), save_path, input_network, num_classes,

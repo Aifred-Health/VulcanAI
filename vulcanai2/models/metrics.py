@@ -78,6 +78,8 @@ class Metrics(object):
         :param n_matrix: one-hot matrix
         :return: 1D Class array
         """
+        if isinstance(in_matrix, torch.Tensor):
+            in_matrix = in_matrix.detach().numpy()
         # For one-hot encoded entries
         if in_matrix.shape[1] > 1:
             return np.argmax(in_matrix, axis=1)
