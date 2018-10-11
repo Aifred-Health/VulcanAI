@@ -41,8 +41,8 @@ class BaseNetwork(nn.Module):
     # TODO: not great to use mutables as arguments.
     # TODO: reorganize these.
     def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None,
-                 activation=nn.ReLU(), pred_activation=nn.Softmax(dim=1), optim_spec={'name': 'Adam', 'lr': 0.001},
-                 lr_scheduler=None, early_stopping=None, criter_spec=nn.CrossEntropyLoss()):
+                 activation=nn.ReLU(), pred_activation=None, optim_spec={'name': 'Adam', 'lr': 0.001},
+                 lr_scheduler=None, early_stopping=None, criter_spec=nn.MSELoss()):
         """
         Defines the network object.
         :param name: The name of the network. Used when saving the file.
@@ -55,7 +55,7 @@ class BaseNetwork(nn.Module):
         :param pred_activation: The desired activation function for use in the prediction layer. Of type torch.nn.Module
         :param optim_spec: A dictionary of parameters for the desired optimizer.
         :param lr_scheduler: A callable torch.optim.lr_scheduler
-        :param stopping_rule: A string. So far just 'best_validation_error' is implemented.
+        :param early_stopping: A string. So far just 'best_validation_error' is implemented.
         :param criter_spec: criterion specification dictionary with name of criterion and all parameters necessary.
         """
         super(BaseNetwork, self).__init__()
@@ -75,6 +75,8 @@ class BaseNetwork(nn.Module):
         self._criter_spec = criter_spec
 
         if self._num_classes:
+            self.criter_spec = nn.CrossEntropyLoss()
+            pred_activation = nn.ReLU()
             self.metrics = Metrics(self._num_classes)
 
         self.optim = None

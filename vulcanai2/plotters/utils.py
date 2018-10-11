@@ -77,10 +77,12 @@ class GuidedBackprop():
         :param target_class_list: 1D list of class truths
         :return: Gradient array with same shape as input images
         """
+        # To properly pass the gradients
         if not isinstance(input_x, torch.Tensor):
-            input_x = torch.tensor(input_x)
-
-        input_x = Variable(input_x, requires_grad=True)
+            input_x = torch.tensor(input_x, requires_grad=True)
+        else:
+            if not input_x.requires_grad:
+                input_x.requires_grad = True
 
         # Forward pass
         network_output = self.network(input_x)
