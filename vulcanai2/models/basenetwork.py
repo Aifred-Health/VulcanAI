@@ -454,14 +454,15 @@ class BaseNetwork(nn.Module):
         Returns: Numpy matrix with the output probabilities
                  with each class unless otherwise specified.
         """
-        if ~isinstance(input_data, torch.Tensor):
-            input_data = torch.Tensor(input_data)
+        self.eval()
+        if not isinstance(input_data, torch.Tensor):
+            input_data = torch.FloatTensor(input_data, requires_grad=False)
         output = self(input_data)
         if self._num_classes:
             # Get probabilities
             output = nn.Softmax(dim=1)(output)
             if convert_to_class:
-                return self.metrics.get_class(output)
+                return self.metrics.get_class(in_matrix=output)
         return output.detach().numpy()
 
     def save_model(self, save_path=None):

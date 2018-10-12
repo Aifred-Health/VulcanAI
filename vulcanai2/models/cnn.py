@@ -105,7 +105,9 @@ class ConvNet(BaseNetwork, nn.Module):
 
     def _create_classification_layer(self, dim, pred_activation):
         self.network_tail = DenseUnit(
-            dim, self.out_dim, activation=pred_activation)
+            in_features=dim,
+            out_features=self.out_dim,
+            activation=pred_activation)
 
     def forward(self, x):
         """
