@@ -458,6 +458,7 @@ class BaseNetwork(nn.Module):
             input_data = torch.Tensor(input_data)
         output = self(input_data)
         if self._num_classes:
+            # Get probabilities
             output = nn.Softmax(dim=1)(output)
             if convert_to_class:
                 return self.metrics.get_class(output)

@@ -58,11 +58,11 @@ class TestVisualization:
         # Test shape conservation
         sal_map_1B = compute_saliency_map(
             cnn_class,
-            test_input_1B, torch.Tensor([2]))
+            test_input_1B, torch.LongTensor([2]))
         assert sal_map_1B.shape == test_input_1B.shape
         sal_map_5B = compute_saliency_map(
             cnn_class, test_input_5B,
-            torch.Tensor([0, 2, 1, 1, 0]))
+            torch.LongTensor([0, 2, 1, 1, 0]))
         assert sal_map_5B.shape == test_input_5B.shape
 
         # Check that all gradients are not 0
@@ -83,11 +83,11 @@ class TestVisualization:
         # Test shape conservation
         sal_map_1B = compute_saliency_map(
             dnn_class,
-            test_input_1B, torch.Tensor([2]))
+            test_input_1B, torch.LongTensor([2]))
         assert sal_map_1B.shape == test_input_1B.shape
         sal_map_5B = compute_saliency_map(
             dnn_class, test_input_5B,
-            torch.Tensor([0, 2, 1, 1, 0]))
+            torch.LongTensor([0, 2, 1, 1, 0]))
         assert sal_map_5B.shape == test_input_5B.shape
 
         # Check that all gradients are not 0

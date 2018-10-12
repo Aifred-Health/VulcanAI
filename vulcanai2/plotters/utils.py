@@ -1,6 +1,5 @@
 import torch
 from torch.nn import ReLU, SELU
-from torch.autograd import Variable
 # from ..models.basenetwork import BaseNetwork
 
 class GuidedBackprop():
@@ -28,7 +27,13 @@ class GuidedBackprop():
 
     def hook_top_layers(self):
         def hook_function(module, grad_in, grad_out):
-            self.gradients = grad_in[0]
+            # TODO: Revisit dim disorder and check isinstance for classes.
+            if module.__class__.__name__ == 'Linear':
+                # grad_in shape is (bias, input, weights)
+                self.gradients = grad_in[1]
+            elif module.__class__.__bases__[0].__name__ == '_ConvNd':
+                # grad_in shape is (input, weights, bias)
+                self.gradients = grad_in[0]
         # Register hook to the first layer
         # TODO: Modify for multi-input NNs
         if '_input_network' in self.network._modules:
@@ -66,13 +71,13 @@ class GuidedBackprop():
         for h in self.hooks:
             h.remove()
 
-    def generate_gradients(self, input_x, target_class_list):
+    def generate_gradients(self, input_x, targets):
         """
         Computes guided backprop gradients and returns top layer gradients.
 
         :param input_x: 1D for DenseNet, 4D (for 2D images) or 5D (for 3D images) Tensor.
-        :param target_class_list: 1D list of class truths
-        :return: Gradient array with same shape as input images
+        :param targets: 1D list of class truths of type torch.LongTensor
+        :return: Gradient numpy array with same shape as input images
         """
         self.network.eval()
         # To properly pass the gradients
@@ -87,7 +92,7 @@ class GuidedBackprop():
         self.network.zero_grad()
         # Target for backprop
         one_hot_zeros = torch.zeros(network_output.size()[0], network_output.size()[-1])
-        one_hot_output = one_hot_zeros.scatter_(1, target_class_list.unsqueeze(dim=1), 1)
+        one_hot_output = one_hot_zeros.scatter_(1, targets.unsqueeze(dim=1), 1)
         # Backward pass
         network_output.backward(gradient=one_hot_output)
         # Convert Pytorch variable to numpy array

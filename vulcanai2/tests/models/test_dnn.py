@@ -29,7 +29,7 @@ class TestDenseNet:
 
     def test_forward_not_nan(self, dnn_noclass):
         """Confirm out is non nan."""
-        test_input = np.ones([1, dnn_noclass.in_dim])
+        test_input = np.ones([5, dnn_noclass.in_dim])
         output = dnn_noclass.forward_pass(
             input_data=test_input,
             convert_to_class=False)
@@ -37,7 +37,7 @@ class TestDenseNet:
     
     def test_forward_class_not_nan(self, dnn_class):
         """Confirm out is non nan."""
-        test_input = np.ones([1, dnn_class.in_dim])
+        test_input = np.ones([5, dnn_class.in_dim])
         raw_output = dnn_class.forward_pass(
             input_data=test_input,
             convert_to_class=False)

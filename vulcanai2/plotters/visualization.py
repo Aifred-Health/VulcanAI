@@ -173,7 +173,7 @@ def display_confusion_matrix(cm, class_list):
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
-    plt.show()
+    plt.show(False)
 
 
 def compute_saliency_map(network, input_x, input_y):
