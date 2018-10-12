@@ -16,8 +16,6 @@ from ..models.utils import get_notable_indices
 
 import torch
 
-from sklearn.metrics import confusion_matrix
-from sklearn.preprocessing import LabelBinarizer
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 
@@ -276,7 +274,7 @@ def display_receptive_fields(network, top_k=5):
     fig.suptitle("Feature importance")
     num_layers = len(network._modules['network'])
     for i, layer in enumerate(network._modules['network']):
-        raw_field = layer.kernel._parameters['weight'].detach()
+        raw_field = layer.kernel._parameters['weight'].detach().numpy()
         field = np.average(raw_field, axis=0)  # average all outgoing
         field_shape = [
             floor(sqrt(field.shape[0])),
@@ -286,12 +284,13 @@ def display_receptive_fields(network, top_k=5):
             floor(sqrt(num_layers)),
             ceil(sqrt(num_layers)),
             i + 1)
-        feats = get_notable_indices(abs(field), top_k=top_k)
+        field = abs(field)
+        feats = get_notable_indices(field, top_k=top_k)
         unit_type = type(layer).__name__
         layer_name = '{}_{}'.format(unit_type, i)
         feature_importance.update({layer_name: feats})
         plt.title(layer_name)
-        plt.imshow(np.resize(abs(field), field_shape), cmap='hot_r')
+        plt.imshow(np.resize(field, field_shape), cmap='Blues')
         plt.colorbar()
     plt.show(False)
     return feature_importance
