@@ -38,7 +38,6 @@ def get_confusion_matrix(predictions, targets):
 
     :return: the confusion matrix
     """
-    print(type(predictions))
     if len(predictions.shape) == 2:
         predictions = predictions[:, 0]
     if len(targets.shape) == 2:

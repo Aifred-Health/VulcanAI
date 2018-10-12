@@ -1,3 +1,4 @@
+"""Defines the network test suite."""
 import numpy as np
 
 import torch

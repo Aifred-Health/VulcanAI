@@ -147,29 +147,34 @@ def _plot_reduction(x_transform, train_y, label_map, title='Dim Reduction'):
     plt.title(title)
     plt.show(False)
 
-def display_confusion_matrix(cm, class_list):
+def display_confusion_matrix(cm, class_list=None):
     """
     This function prints and plots the confusion matrix.
     Normalization can be applied by setting `normalize=True`.
     inspired from: https://github.com/zaidalyafeai/Machine-Learning/blob/master/Multi-input%20Network%20Pytorch.ipynb
     
     Args:
-        cm: confustion_matrix obtained using vulcanai.Metrics.get_confusion_matrix
+        cm: confustion_matrix obtained using vulcanai.models.utils.get_confusion_matrix
         class_list: List of actual class labels (e.g.: MNIST - [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
     """
-    plt.imshow(cm, interpolation='nearest', cmap='Blues')
+    if class_list is None:
+        class_list = list(range(cm.shape[0]))
+    if not isinstance(class_list, list):
+        raise ValueError("class_list must be of type list.")
+    fig = plt.figure()
+    plt.imshow(cm, interpolation='nearest', cmap='Blues', origin='lower')
     plt.title('Confusion matrix')
     plt.colorbar()
     tick_marks = np.arange(len(class_list))
     plt.xticks(tick_marks, class_list, rotation=45)
     plt.yticks(tick_marks, class_list)
-
+    # Plot number overlay
     thresh = cm.max() / 2.
     for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
         plt.text(j, i, format(cm[i, j], 'd'),
                  horizontalalignment="center",
                  color="white" if cm[i, j] > thresh else "black")
-
+    # Plot labels
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')

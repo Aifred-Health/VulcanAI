@@ -29,7 +29,7 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-sns.set()
+sns.set(style='dark')
 logger = logging.getLogger(__name__)
 
 
