@@ -456,7 +456,7 @@ class BaseNetwork(nn.Module):
         """
         self.eval()
         if not isinstance(input_data, torch.Tensor):
-            input_data = torch.FloatTensor(input_data, requires_grad=False)
+            input_data = torch.tensor(input_data, requires_grad=False).float()
         output = self(input_data)
         if self._num_classes:
             # Get probabilities
