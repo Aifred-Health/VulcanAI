@@ -434,11 +434,15 @@ class BaseNetwork(nn.Module):
 
         return validation_loss, validation_accuracy
 
-    def run_test(self, test_x, test_y, figure_path=None, plot=False):
+    def run_test(self, data_loader, figure_path=None, plot=False):
         """
         Will conduct the test suite to determine model strength.
         """
-        return self.metrics.run_test(self, test_x, test_y, figure_path, plot)
+        return self.metrics.run_test(
+            model=self,
+            data_loader=data_loader,
+            figure_path=figure_path,
+            plot=plot)
 
     # TODO: Instead of self.cpu(), use is_cuda to know if you can use gpu
     def forward_pass(self, data_loader, convert_to_class=False):

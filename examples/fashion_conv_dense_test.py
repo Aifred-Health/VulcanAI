@@ -114,8 +114,7 @@ model1 = DenseNet(
     num_classes=10
 )
 
-#model1.fit(train_loader, val_loader, 10)
-# model1.fit(train_loader, val_loader, 2, plot=True)
+model1.fit(train_loader, val_loader, 2, plot=True)
 
 # model1.save_model()
 
@@ -124,20 +123,19 @@ model1 = DenseNet(
 #model2.fit(train_loader, val_loader, 4, plot=True)
 
 # To test saliency map generation
+model1.run_test(val_loader, plot=True)
 
 # f_pass = model1.forward_pass(val_loader, convert_to_class=True)
-# from vulcanai2.models.utils import get_confusion_matrix
-# from vulcanai2.plotters.visualization import display_confusion_matrix
 
-# cm = get_confusion_matrix(
-#     model1.forward_pass(val_loader, convert_to_class=True),
-#     val_loader.dataset.test_labels)
-# display_confusion_matrix(cm, ["Zero","one","two","three","four","five","six","seven","eight","nine"])
-# display_confusion_matrix(cm)
-# x = train_loader.dataset.train_data[:5].float().unsqueeze(dim=1) #np.expand_dims(train_loader.dataset[:5][0], axis=0)
-# y = train_loader.dataset.train_labels[:5]
-# sal_map = compute_saliency_map(model1, x, y)
-# display_saliency_overlay(train_loader.dataset.train_data[0], sal_map[0])
+cm = get_confusion_matrix(
+    model1.forward_pass(val_loader, convert_to_class=True),
+    val_loader.dataset.test_labels)
+display_confusion_matrix(cm, ["T-shirt/top","Trouser","Pullover","Dress","Coat","Sandal","Shirt","Sneaker","Bag","Ankle"])
+
+x = train_loader.dataset.train_data[:5].float().unsqueeze(dim=1) #np.expand_dims(train_loader.dataset[:5][0], axis=0)
+y = train_loader.dataset.train_labels[:5]
+sal_map = compute_saliency_map(model1, x, y)
+display_saliency_overlay(train_loader.dataset.train_data[0], sal_map[0])
 
 # TODO: need to revisit this to be able to plot after training, interactive plotting is messing up
 #plotters.visualization.display_record(record=model1.record, interactive=False)

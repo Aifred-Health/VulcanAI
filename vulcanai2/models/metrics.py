@@ -3,13 +3,13 @@ import numpy as np
 
 import torch
 import torch.nn.functional as F
-from torch.autograd import Variable
 
 import math
 import numpy as np
 from sklearn import metrics as skl_metrics
 
 from .utils import get_confusion_matrix, round_list
+from ..plotters.visualization import display_confusion_matrix
 
 from copy import deepcopy
 import datetime
@@ -18,6 +18,7 @@ from collections import Counter
 
 import logging
 logger = logging.getLogger(__name__)
+logger.addHandler(logging.StreamHandler())
 
 
 class Metrics(object):
@@ -89,7 +90,7 @@ class Metrics(object):
             return np.around(in_matrix)
 
     # TODO: Modify to use val loader
-    def run_test(self, model, data_loader, figure_path=None, plot=False, detailed=True):
+    def run_test(self, model, data_loader, figure_path=None, plot=False):
         """
         Will conduct the test suite to determine model strength.
 
@@ -98,19 +99,18 @@ class Metrics(object):
         :param plot: bool, determines if graphs should be plotted.
         :return: results dictionary
         """
+        if plot:
+            logger.setLevel(logging.INFO)
+
         if model._num_classes is None or \
             model._num_classes == 0 or \
             not hasattr(model, 'network_tail'):
             raise ValueError('There\'s no classification layer')
 
-        if detailed:
-            logger.level = logging.INFO
-
-        test_x = data_loader.dataset.test_data.float().unsqueeze(dim=1)
         test_y = data_loader.dataset.test_labels
 
         raw_prediction = model.forward_pass(
-            input_data=test_x,
+            data_loader=data_loader,
             convert_to_class=False)
         class_prediction = self.get_class(raw_prediction)
 
@@ -118,6 +118,9 @@ class Metrics(object):
             predictions=class_prediction,
             targets=test_y
         )
+
+        if plot:
+            display_confusion_matrix(confusion_matrix)
 
         tp = np.diagonal(confusion_matrix).astype('float32')
         tn = (np.array([np.sum(confusion_matrix)] *
@@ -144,39 +147,30 @@ class Metrics(object):
 
         logger.info('{} test\'s results'.format(model.name))
 
-        logger.info('TP: {}'.format(tp)),
-        logger.info('FP: {}'.format(fp)),
-        logger.info('TN: {}'.format(tn)),
+        logger.info('TP: {}'.format(tp))
+        logger.info('FP: {}'.format(fp))
+        logger.info('TN: {}'.format(tn))
         logger.info('FN: {}'.format(fn))
 
         logger.info('\nAccuracy: {}'.format(accuracy))
 
-        logger.info('Sensitivity:'),
-        logger.info(round_list(sens, decimals=3))
+        logger.info('Sensitivity: {}'.format(round_list(sens, decimals=3)))
         logger.info('\tMacro Sensitivity: {:.4f}'.format(sens_macro))
 
-        logger.info('Specificity:'),
-        logger.info(round_list(spec, decimals=3))
+        logger.info('Specificity: {}'.format(round_list(spec, decimals=3)))
         logger.info('\tMacro Specificity: {:.4f}'.format(spec_macro))
 
-        logger.info('DICE:'),
-        logger.info(round_list(dice, decimals=3))
+        logger.info('DICE: {}'.format(round_list(dice, decimals=3)))
         logger.info('\tAvg. DICE: {:.4f}'.format(np.average(dice)))
 
-        logger.info('Positive Predictive Value:'),
-        logger.info(round_list(ppv, decimals=3))
-        logger.info('\tMacro Positive Predictive Value: {:.4f}'.format
-            (ppv_macro))
+        logger.info('Positive Predictive Value: {}'.format(round_list(ppv, decimals=3)))
+        logger.info('\tMacro Positive Predictive Value: {:.4f}'.format(ppv_macro))
 
-        logger.info('Negative Predictive Value:'),
-        logger.info(round_list(npv, decimals=3))
-        logger.info('\tMacro Negative Predictive Value: {:.4f}'.format
-            (npv_macro))
+        logger.info('Negative Predictive Value: {}'.format(round_list(npv, decimals=3)))
+        logger.info('\tMacro Negative Predictive Value: {:.4f}'.format(npv_macro))
 
-        logger.info('F1-score:'),
-        logger.info(round_list(f1, decimals=3))
+        logger.info('F1-score: {}'.format(round_list(f1, decimals=3)))
         logger.info('\tMacro f1-score: {:.4f}'.format(f1_macro))
-        logger.info('')
 
         all_class_auc = []
         for i in range(model._num_classes):
