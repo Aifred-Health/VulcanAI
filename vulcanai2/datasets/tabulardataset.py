@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 # TODO: add more logging statements as appropriate
+# TODO: give option to mirror train/target
 class TabularDataset(Dataset):
     """
     This defines a dataset, subclassed from torch.utils.data.Dataset. It uses pd.dataframe as the backend, with utility
