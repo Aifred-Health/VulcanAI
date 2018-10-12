@@ -72,23 +72,23 @@ class GuidedBackprop():
         for h in self.hooks:
             h.remove()
 
-    def generate_gradients(self, input_x, targets):
+    def generate_gradients(self, input_data, targets):
         """
         Computes guided backprop gradients and returns top layer gradients.
 
-        :param input_x: 1D for DenseNet, 4D (for 2D images) or 5D (for 3D images) Tensor.
+        :param input_data: 1D for DenseNet, 4D (for 2D images) or 5D (for 3D images) Tensor.
         :param targets: 1D list of class truths of type torch.LongTensor
         :return: Gradient numpy array with same shape as input images
         """
         self.network.eval()
         # To properly pass the gradients
-        if not isinstance(input_x, torch.Tensor):
-            input_x = torch.tensor(input_x, requires_grad=True)
+        if not isinstance(input_data, torch.Tensor):
+            input_data = torch.tensor(input_data, requires_grad=True)
         else:
-            if not input_x.requires_grad:
-                input_x.requires_grad = True
+            if not input_data.requires_grad:
+                input_data.requires_grad = True
         # Forward pass
-        network_output = self.network(input_x)
+        network_output = self.network(input_data)
         # Zero gradients
         self.network.zero_grad()
         # Target for backprop

@@ -3,7 +3,12 @@ sys.path.append('../')
 from vulcanai2 import models, datasets, plotters
 from vulcanai2.models.cnn import ConvNet
 from vulcanai2.models.dnn import DenseNet
-from vulcanai2.plotters.visualization import compute_saliency_map, display_saliency_overlay, display_receptive_fields
+from vulcanai2.plotters.visualization import (compute_saliency_map, 
+                                              display_saliency_overlay,
+                                              display_receptive_fields,
+                                              display_confusion_matrix)
+from vulcanai2.models.utils import get_confusion_matrix
+
 
 import pickle
 import torch
