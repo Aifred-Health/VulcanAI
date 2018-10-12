@@ -1,3 +1,4 @@
+"""Contains all visualization utilities."""
 import torch
 from torch.nn import ReLU, SELU
 # from ..models.basenetwork import BaseNetwork
@@ -22,10 +23,10 @@ class GuidedBackprop():
         self.hooks = []
         # Put model in evaluation mode
         self.network.eval()
-        self.crop_negative_gradients()
-        self.hook_top_layers()
+        self._crop_negative_gradients()
+        self._hook_top_layers()
 
-    def hook_top_layers(self):
+    def _hook_top_layers(self):
         def hook_function(module, grad_in, grad_out):
             # TODO: Revisit dim disorder and check isinstance for classes.
             if module.__class__.__name__ == 'Linear':
@@ -42,7 +43,7 @@ class GuidedBackprop():
             first_layer = self.network.network[0]._kernel
         self.hooks.append(first_layer.register_backward_hook(hook_function))
 
-    def crop_negative_gradients(self):
+    def _crop_negative_gradients(self):
         """
             Updates relu/selu activation functions so that it
             only returns positive gradients
@@ -63,7 +64,7 @@ class GuidedBackprop():
             register_backward_hook(activation_hook_function))
 
 
-    def remove_hooks(self):
+    def _remove_hooks(self):
         """
         Remove all previously placed activation hooks from model.
         :return: None
@@ -98,4 +99,5 @@ class GuidedBackprop():
         # Convert Pytorch variable to numpy array
         # Will return batch dimension as well
         gradients_as_arr = self.gradients.data.numpy()
+        self._remove_hooks()
         return gradients_as_arr

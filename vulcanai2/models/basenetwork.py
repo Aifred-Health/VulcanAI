@@ -42,7 +42,7 @@ class BaseNetwork(nn.Module):
     # TODO: reorganize these.
     def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None,
                  activation=nn.ReLU(), pred_activation=None, optim_spec={'name': 'Adam', 'lr': 0.001},
-                 lr_scheduler=None, early_stopping=None, criter_spec=nn.MSELoss()):
+                 lr_scheduler=None, early_stopping=None, criter_spec=nn.CrossEntropyLoss()):
         """
         Defines the network object.
         :param name: The name of the network. Used when saving the file.
@@ -75,7 +75,6 @@ class BaseNetwork(nn.Module):
         self._criter_spec = criter_spec
 
         if self._num_classes:
-            self._criter_spec = nn.CrossEntropyLoss()
             self.metrics = Metrics(self._num_classes)
 
         self.optim = None
@@ -442,28 +441,40 @@ class BaseNetwork(nn.Module):
         return self.metrics.run_test(self, test_x, test_y, figure_path, plot)
 
     # TODO: Instead of self.cpu(), use is_cuda to know if you can use gpu
-    def forward_pass(self, input_data, convert_to_class=False):
+    def forward_pass(self, data_loader, convert_to_class=False):
         """
         Allow the implementer to quickly get outputs from the network.
 
-        Args:
-            input_data: Numpy matrix to make the predictions on
-            convert_to_class: If true, output the class
-                             with highest probability
+        :param data_loader: DataLoader object to make the predictions on
+        :param convert_to_class: If true, list of class predictions instead
+                                 of class probabilites
 
-        Returns: Numpy matrix with the output probabilities
-                 with each class unless otherwise specified.
+        :return: Numpy matrix with the output probabilities
+                 for each class unless otherwise specified.
         """
         self.eval()
-        if not isinstance(input_data, torch.Tensor):
-            input_data = torch.tensor(input_data, requires_grad=False).float()
-        output = self(input_data)
-        if self._num_classes:
-            # Get probabilities
-            output = nn.Softmax(dim=1)(output)
-            if convert_to_class:
-                return self.metrics.get_class(in_matrix=output)
-        return output.detach().numpy()
+        # prediction_shape used to aggregate network outputs
+        # (e.g. with or without class conversion)
+        pred_collector = torch.tensor([])
+        for batch_idx, (data, _) in enumerate(data_loader):
+            if torch.cuda.is_available():
+                data = data.cuda()
+            # Get raw network output
+            predictions = self(data)
+            if self._num_classes:
+                # Get probabilities
+                predictions = nn.Softmax(dim=1)(predictions)
+                if convert_to_class:
+                    predictions = torch.tensor(
+                        self.metrics.get_class(in_matrix=predictions)).float()
+            # Aggregate predictions
+            pred_collector = torch.cat([pred_collector, predictions])
+        # Tensor comes in as float so convert back to int if returning classes
+        if self._num_classes and convert_to_class:
+            pred_collector = pred_collector.long()
+        if isinstance(pred_collector, torch.Tensor):
+                pred_collector = pred_collector.detach().numpy()
+        return pred_collector
 
     def save_model(self, save_path=None):
         """

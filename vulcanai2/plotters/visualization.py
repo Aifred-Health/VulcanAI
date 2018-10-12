@@ -1,4 +1,4 @@
-"""Contains auxilliary methods."""
+"""Contains all visualization methods."""
 import os
 
 import numpy as np
@@ -195,7 +195,6 @@ def compute_saliency_map(network, input_x, input_y):
     """
     guided_backprop = GuidedBackprop(network)
     saliency_map = guided_backprop.generate_gradients(input_x, input_y)
-    guided_backprop.remove_hooks()
     # saliency_map, _ = torch.max(saliency_map, dim = 1) # get max abs from all channels
     return saliency_map
 
@@ -236,6 +235,7 @@ def display_saliency_overlay(image, saliency_map, shape=(28, 28)):
         saliency_map = np.reshape(saliency_map, shape)
 
     fig = plt.figure()
+    fig.suptitle("Saliency Map")
     # Plot original image
     fig.add_subplot(1, 2, 1)
     plt.imshow(image, cmap='gray')
