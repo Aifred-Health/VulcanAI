@@ -135,7 +135,7 @@ class DenseNet(BaseNetwork, nn.Module):
             out_features=self.out_dim,
             activation=pred_activation)
 
-    def _forward(self, x):
+    def _forward(self, x, **kwargs):
         """
         Define the forward behaviour of the network.
 
@@ -158,8 +158,8 @@ class DenseNet(BaseNetwork, nn.Module):
 
         """
 
-        if self._input_networks and self._input_networks[0].__class__.__name__ == "ConvNet":
-            x = x.view(-1, self._input_networks[0].conv_flat_dim)
+        if len(x.size())>2:
+            x = x.view(x.size()[0], -1)
         network_output = self.network(x)
 
         return network_output
@@ -181,8 +181,8 @@ class DenseNet(BaseNetwork, nn.Module):
             the dense network as a nn.Sequential object
 
         """
-        # Specify incoming feature size for the first dense hidden layer
-        dense_hid_layers[0]['in_features'] = self.in_dim
+        # Specify incoming feature size for the first dense hidden layer        
+        dense_hid_layers[0]['in_features'] = sum(self.in_dim)
         dense_layers = []
         for dense_layer_config in dense_hid_layers:
             dense_layer_config['activation'] = activation
@@ -191,8 +191,7 @@ class DenseNet(BaseNetwork, nn.Module):
         return dense_network
 
     def __str__(self):
-        """Specify how to print network as string."""
-        if self.optim:
+        if self.optim is not None:
             return super(DenseNet, self).__str__() + f'\noptim: {self.optim}'
         else:
             return super(DenseNet, self).__str__()

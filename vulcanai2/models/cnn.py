@@ -141,7 +141,7 @@ class ConvNet(BaseNetwork, nn.Module):
             out_features=self.out_dim,
             activation=pred_activation)
 
-    def _forward(self, x):
+    def _forward(self, x, **kwargs):
         """
         Define the forward behaviour of the network.
 
@@ -191,8 +191,7 @@ class ConvNet(BaseNetwork, nn.Module):
         return conv_network
 
     def __str__(self):
-        """Specify how to print network as string."""
-        if self.optim:
+        if self.optim is not None:
             return super(ConvNet, self).__str__() + f'\noptim: {self.optim}'
         else:
             return super(ConvNet, self).__str__()
