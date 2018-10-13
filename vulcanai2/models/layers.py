@@ -27,7 +27,7 @@ class BaseUnit(nn.Sequential):
         self._kernel = None   
         self.norm = norm
     
-    def init_weights(self):
+    def _init_weights(self):
         """
         Initialize the weights.
         if self.initializer is None, then pytorch default weight
@@ -36,7 +36,7 @@ class BaseUnit(nn.Sequential):
         if self.initializer:
             self.initializer(self._kernel.weight)
 
-    def init_bias(self):
+    def _init_bias(self):
         """
         Initialize the bias.
         if self.bias_init is None, then pytorch default weight
@@ -62,8 +62,8 @@ class DenseUnit(BaseUnit):
                             bias=True
                             )
         self.add_module('_kernel', self._kernel)
-        self.init_weights()
-        self.init_bias()
+        self._init_weights()
+        self._init_bias()
 
         # Norm
         if self.norm is not None:
@@ -114,14 +114,19 @@ class ConvUnit(BaseUnit):
                               bias=True
                               )
         self.add_module('_kernel', self._kernel)
-        self.init_weights()
-        self.init_bias()
+        self._init_weights()
+        self._init_bias()
 
         # Norm
         if self.norm is not None:
-            self.add_module(
-                '_norm',
-                self.batch_norm(num_features=self.out_channels))
+            if self.norm == 'batch':
+                self.add_module(
+                    '_norm',
+                    self.batch_norm(num_features=self.out_channels))
+            elif self.norm == 'instance':
+                self.add_module(
+                    '_norm',
+                    self.instance_norm(num_features=self.out_channels))
 
         # Activation/Non-Linearity
         if activation is not None:
@@ -146,18 +151,22 @@ class ConvUnit(BaseUnit):
         if self.conv_dim == 1:
             self.conv_layer = nn.Conv1d
             self.batch_norm = nn.BatchNorm1d
+            self.instance_norm = nn.InstanceNorm1d
             self.pool_layer = nn.MaxPool1d
         elif self.conv_dim == 2:
             self.conv_layer = nn.Conv2d
             self.batch_norm = nn.BatchNorm2d
+            self.instance_norm = nn.InstanceNorm2d
             self.pool_layer = nn.MaxPool2d
         elif self.conv_dim == 3:
             self.conv_layer = nn.Conv3d
             self.batch_norm = nn.BatchNorm3d
+            self.instance_norm = nn.InstanceNorm3d
             self.pool_layer = nn.MaxPool3d
         else:
             self.conv_layer = None
             self.batch_norm = None
+            self.instance_norm = None
             self.pool_layer = None
             raise ValueError("Convolution is only supported"
             " for one of the first three dimensions")
