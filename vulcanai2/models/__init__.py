@@ -5,6 +5,7 @@ __all__ = [
     'cnn',
     'dnn',
     'layers',
+    'snapshot_ensemble',
     'metrics',
     'utils'
 ]
