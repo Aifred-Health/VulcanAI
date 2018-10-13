@@ -141,7 +141,7 @@ class BaseNetwork(nn.Module):
 
     # TODO: where to do typechecking... just let everything fail?
 
-    def forward(self, inputs):
+    def forward(self, inputs, **kwargs):
         """
         Perform a forward pass through the module/modules.
         If the network is defined with `num_classes` then it is
@@ -150,21 +150,21 @@ class BaseNetwork(nn.Module):
         through the networks and then through the classifier.
         If not, the input is passed through the network and
         returned without passing through a classification layer.
-        :param x: input torch.Tensor
+        :param x: input list(torch.Tensor)
         :return: output torch.Tensor        
         """
+
         if not isinstance(inputs, list):
                 inputs = [inputs]
-        bs = inputs[0][0]
+
         if self._input_networks is not None:
-            models=self._input_networks
-            outputs = []
-            for model, x in zip(models, inputs):
-                outputs.append(model(x))
-                #TODO: Use tablemodules NEW: https://github.com/torch/nn/blob/master/doc/table.md
-            network_output = self._forward(torch.s(outputs, dim=1)) # Ref:https://github.com/torch/torch7/blob/master/doc/maths.md
+            networks = self._input_networks
+            net_outs = []
+            for net, x in zip(networks, inputs):
+                net_outs.append(net(x))
+            network_output = self._forward(net_outs)
         else:
-            network_output = self._forward((inputs[0]))
+            network_output = self._forward((inputs))
         
         if self._num_classes:
             class_output = self.network_tail(network_output)
@@ -512,10 +512,10 @@ class BaseNetwork(nn.Module):
 
             if torch.cuda.is_available():
                 data, targets = data.cuda(), targets.cuda()
-                self = self.cuda()
+                self._to_cuda()
 
             # Forward + Backward + Optimize
-            predictions = self([data,data])
+            predictions = self([data, data])
 
             train_loss = self.criterion(predictions, targets)
             train_loss_accumulator += train_loss.item()
@@ -557,8 +557,9 @@ class BaseNetwork(nn.Module):
 
             if torch.cuda.is_available():
                 data, targets = data.cuda(), targets.cuda()
+                self._to_cuda()
 
-            predictions = self([data])
+            predictions = self([data, data])
 
             validation_loss = self.criterion(predictions, targets)
             val_loss_accumulator += validation_loss.item()
@@ -577,6 +578,20 @@ class BaseNetwork(nn.Module):
         validation_accuracy = val_accuracy_accumulator * len(data) / len(val_loader.dataset)
 
         return validation_loss, validation_accuracy
+    
+    def _to_cuda(self):
+        """
+        This helper function is to be implemented inorder to apply
+        .cuda() to all its own modules and its input_network and 
+        their modules within a multiple input network.
+        """
+        if torch.cuda.is_available():
+            self.cuda()
+            for module in self.modules():
+                module.cuda()
+            if self._input_networks is not None:
+                for net in self._input_networks:
+                    net._to_cuda()
 
     def run_test(self, data_loader, figure_path=None, plot=False):
         """

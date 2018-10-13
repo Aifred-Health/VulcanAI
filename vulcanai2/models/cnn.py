@@ -131,17 +131,13 @@ class ConvNet(BaseNetwork, nn.Module):
             self._create_classification_layer(
                 self.conv_flat_dim, kwargs['pred_activation'])
             
-        if torch.cuda.is_available():
-            for module in self.modules():
-                module.cuda()
-
     def _create_classification_layer(self, dim, pred_activation):
         self.network_tail = DenseUnit(
             in_features=dim,
             out_features=self.out_dim,
             activation=pred_activation)
 
-    def _forward(self, x, **kwargs):
+    def _forward(self, xs, **kwargs):
         """
         Define the forward behaviour of the network.
 
@@ -163,7 +159,14 @@ class ConvNet(BaseNetwork, nn.Module):
         output : torch.Tensor
 
         """
-        network_output = self.network(x)
+        out = []
+        for x in xs:
+            # TODO: NotImplemented yet, but procesing of the multiple inputs shapes before concatenation
+            # Ueful tools:https://github.com/torch/torch7/blob/master/doc/maths.md
+            # https://github.com/torch/nn/blob/master/doc/table.md
+            out.append(x)
+
+        network_output = self.network(torch.cat(out, dim=1))
         return network_output
 
     def _build_conv_network(self, conv_hid_layers, activation):
