@@ -126,14 +126,7 @@ model1 = DenseNet(
     config=dense_net_config,
     num_classes=10
 )
-# od1 = model.get_output_shapes((1, 28, 28))
 
-# print(list(od1))
-# for k,v in model.get_output_shapes((1, 28, 28)).items():
-#     print('{}:'.format(k))
-#     if isinstance(v, odict):
-#         for k2, v2 in v.items():
-#             print('\t {}: {}'.format(k2, v2))
 # print(model1.get_output_shapes())
 # d = DenseNet(
 #             name='Test_DenseNet_class',
@@ -153,12 +146,14 @@ model1 = DenseNet(
 
 
 #model1.fit(train_loader, val_loader, 10)
+
 # NOTE: in_dim must be list of tuples or ints | out_dim must represent for single output so just tuple or int
 print(model.in_dim, model.out_dim, dense_model.in_dim, dense_model.out_dim, model1.in_dim, model1.out_dim)
 print(model1.get_output_shapes(input_size = [(1,28,28), 784])) #TODO: Ensure to make this work without specifying the input size
+
 model1.fit(train_loader, val_loader, 2, plot=False)
 
-model1.save_model()
+#model1.save_model()
 
 #model2 = models.DenseNet.load_ensemble("/home/caitrin/Vulcan2/Vulcan2/examples/2018-10-04_19:12:36/dense_net_test")
 

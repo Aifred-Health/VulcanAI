@@ -85,25 +85,23 @@ class DenseNet(BaseNetwork, nn.Module):
                 dense_hid_layers[-1]['out_features'],
                 kwargs['pred_activation'])
 
-        if torch.cuda.is_available():
-            for module in self.modules():
-                module.cuda()
-
     def _create_classification_layer(self, dim, pred_activation):
         self.network_tail = DenseUnit(
             dim, self.out_dim, activation=pred_activation)
 
-    def _forward(self, x, **kwargs):
+    def _forward(self, xs, **kwargs):
         """
         Computation for the forward pass of the DenseNet module.
-        :param x: input torch.Tensor
+        :param xs: input list(torch.Tensor)
         :return: output torch.Tensor
         """
+        out = []
+        for x in xs:
+            if len(x.size())>2:
+                x = x.view(x.size()[0], -1)
+            out.append(x)
 
-        if len(x.size())>2:
-            x = x.view(x.size()[0], -1)
-        network_output = self.network(x)
-
+        network_output = self.network(torch.cat(out, dim=1))
         return network_output
 
     def _build_dense_network(self, dense_hid_layers, activation):
