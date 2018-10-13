@@ -67,14 +67,14 @@ class ConvNet(BaseNetwork, nn.Module):
                                       activation, pred_activation, optim_spec, lr_scheduler, early_stopping, criter_spec)
 
     def _create_network(self, **kwargs):
-
+        
         conv_hid_layers = self._config.units
         # Build Network
         self.network = self._build_conv_network(
             conv_hid_layers,
             kwargs['activation'])
 
-        self.conv_flat_dim = self.get_flattened_size(self.network)
+        self.conv_flat_dim = self.get_flattened_size(self.network) # TODO: convert to list
 
         if self._num_classes:
             self.out_dim = self._num_classes
@@ -89,7 +89,7 @@ class ConvNet(BaseNetwork, nn.Module):
         self.network_tail = DenseUnit(
             dim, self.out_dim, activation=pred_activation)
 
-    def _forward(self, x, **kwargs):
+    def _forward(self, x):
         """
         Computation for the forward pass of the ConvNet module.
         If the network is defined with `num_classes` then it is
@@ -103,13 +103,7 @@ class ConvNet(BaseNetwork, nn.Module):
         :return: output torch.Tensor
         """
         network_output = self.network(x)
-
-        if self._num_classes:
-            network_output = network_output.view(-1, self.conv_flat_dim)
-            class_output = self.network_tail(network_output)
-            return class_output
-        else:
-            return network_output
+        return network_output
 
     def _build_conv_network(self, conv_hid_layers, activation):
         """
