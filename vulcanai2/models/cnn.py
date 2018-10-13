@@ -113,6 +113,17 @@ class ConvNet(BaseNetwork, nn.Module):
             conv_layers.append(ConvUnit(**conv_layer_config))
         conv_network = nn.Sequential(*conv_layers)
         return conv_network
+    
+    def get_flattened_size(self, network):
+        """
+        Returns the flattened output size of a Single Input ConvNet's last layer.
+        :param network: The network to flatten
+        :return: The flattened output size of the conv network's last layer.
+        """
+        with torch.no_grad():
+            x = torch.ones(1, *self.in_dim[0])
+            x = network(x)
+            return x.numel()
 
     def __str__(self):
         if self.optim is not None:

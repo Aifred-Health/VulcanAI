@@ -7,6 +7,7 @@ import torch.nn.modules.loss as loss
 
 # Vulcan imports
 from .layers import *
+from .utils import get_size
 from .metrics import Metrics
 from ..plotters.visualization import display_record
 
@@ -217,39 +218,6 @@ class BaseNetwork(nn.Module):
     def criter_spec(self, value):
         self._criter_spec = value
 
-    def get_flattened_size(self, network):
-        """
-        Returns the flattened output size of a Single Input ConvNet's last layer.
-        :param network: The network to flatten
-        :return: The flattened output size of the conv network's last layer.
-        """
-        with torch.no_grad():
-            x = torch.ones(1, *self.in_dim[0])
-            x = network(x)
-            return x.numel()
-
-    def get_output_size(self):
-        """
-        Returns the output size of the Single Input DenseNet's last layer
-        :return: The output size of the network's last layer
-        """
-        with torch.no_grad():
-            x = torch.ones(1, self.in_dim[0])
-            x = self(x)  # x = network(x)
-            return x.size()[1]
-
-    def get_size(self, summary_dict, output):
-        """
-        Helper function for the function get_output_shapes
-        """
-        if isinstance(output, tuple):
-            for i in range(len(output)):
-                summary_dict[i] = odict()
-                summary_dict[i] = self.get_size(summary_dict[i], output[i])
-        else:
-            summary_dict['output_shape'] = list(output.size())
-        return summary_dict
-
     def get_output_shapes(self, network=None, input_size=None):
         """
         Returns the summary of shapes of all layers in the network
@@ -277,7 +245,7 @@ class BaseNetwork(nn.Module):
                 m_key = '%s-%i' % (class_name, module_idx + 1)
                 summary[m_key] = odict()
                 summary[m_key]['input_shape'] = list(input[0].size())
-                summary[m_key] = self.get_size(summary[m_key], output)
+                summary[m_key] = get_size(summary[m_key], output)
 
                 params = 0
                 if hasattr(module, 'weight'):
