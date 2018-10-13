@@ -439,7 +439,7 @@ class BaseNetwork(nn.Module):
         Will conduct the test suite to determine model strength.
         """
         return self.metrics.run_test(
-            model=self,
+            network=self,
             data_loader=data_loader,
             figure_path=figure_path,
             plot=plot)
