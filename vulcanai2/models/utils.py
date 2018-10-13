@@ -75,3 +75,15 @@ def get_one_hot(in_matrix):
 
     lb = LabelBinarizer()
     return np.array(lb.fit_transform(custom_array), dtype='float32')
+
+def get_size(summary_dict, output):
+    """
+    Helper function for the BaseNetwork's get_output_shapes
+    """
+    if isinstance(output, tuple):
+        for i in range(len(output)):
+            summary_dict[i] = odict()
+            summary_dict[i] = get_size(summary_dict[i], output[i])
+    else:
+        summary_dict['output_shape'] = list(output.size())
+    return summary_dict
