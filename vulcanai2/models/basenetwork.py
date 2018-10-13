@@ -18,12 +18,8 @@ from datetime import datetime
 import logging
 import os
 import pickle
-<<<<<<< HEAD
-from collections import OrderedDict
-=======
 import time
 from collections import OrderedDict as odict
->>>>>>> added multiinput network - need testing with multi inputs
 import numpy as np
 
 import matplotlib
@@ -83,18 +79,21 @@ class BaseNetwork(nn.Module):
         super(BaseNetwork, self).__init__()
 
         self._name = name
-        self._dimensions = dimensions
+        if isinstance(dimensions, tuple):
+            self._dimensions = [dimensions]
+        elif isinstance(dimensions, int):
+            self._dimensions = (dimensions,)
+        else:
+            self._dimensions = dimensions
         self._config = config
 
         self._save_path = save_path
 
-        self._input_networks = input_networks
-        if isinstance(input_networks, list) and len(input_networks)==1:
-            self._input_network = input_networks[0]
-        elif isinstance(input_networks, type(None)):
-            self._input_network = None
+        if not isinstance(input_networks, type(None)) and \
+            not isinstance(input_networks, list):
+            self._input_networks = [input_networks]
         else:
-            raise SyntaxError("MultiInputNN does not support this function")
+            self._input_networks = input_networks
 
         self._num_classes = num_classes
 
@@ -118,33 +117,39 @@ class BaseNetwork(nn.Module):
             validation_accuracy=[]
         )
 
-        self.in_dim = self._dimensions
-        if self._input_networks:
-            for i, in_net in enumerate(self._input_networks):
-                if in_net.__class__.__name__ == "ConvNet":
-                    if in_net.conv_flat_dim != self.in_dim:
-                        self.in_dim[i] = self.get_flattened_size(in_net)
-                    else:
-                        pass
+        if self._dimensions:
+            if len(self._dimensions)==1: # Check if length of self._dimensions list is 1, then self.in_dim is the first tuple of self._dimensions
+                self.in_dim = self._dimensions[0]
+            else:
+                # if len(self._dimensions) > 1, then iterate and concatenate all dims
+                self.in_dim = []
+                for net in self._input_networks:
+                    self.in_dim.append(net.in_dim)
+        #import pdb; pdb.set_trace()
 
-                if in_net.__class__.__name__ == "DenseNet":
-                    if in_net.dims[-1] != self.in_dim:
-                        self.in_dim = in_net.dims[-1]
-                    else:
-                        pass
         self._create_network(
             activation=activation,
             pred_activation=pred_activation)
+       
+        out_shapes = self.get_output_shapes()
+        self.out_dim = out_shapes[list(out_shapes)[-1]]['output_shape'][1:] 
 
+    # TODO: ignore for now
+    # def get_in_dim(self, network = None):
+    #     if not network:
+    #         network = self
+    #     for net in network.input_networks:
+    #             if net.input_networks is None:
+                    
+    #                 self.in_dim.append(net.get_output_shapes())
+
+    #             else:
+    #                 self.in_dim = self.get_in_dim(net)
+    #             temp_tensor = torch.zeros([1, *net.in_dim])
     # TODO: where to do typechecking... just let everything fail?
-
-    @abc.abstractmethod
-    def _forward(self):
-        pass
 
     def forward(self, inputs):
         """Perform a forward pass through the module/modules."""
-
         if self._input_networks:
             if not isinstance(inputs, list):
                 inputs = [inputs]
@@ -153,10 +158,15 @@ class BaseNetwork(nn.Module):
             outputs = []
             for model, x in zip(models, inputs):
                 outputs.append(model(x))
-            network_output = self._forward(torch.cat(outputs, 1))
+            network_output = self._forward(torch.cat(outputs))
         else:
             network_output = self._forward((inputs))
-        return network_output
+        
+        if self._num_classes:
+            class_output = self.network_tail(network_output)
+            return class_output
+        else:
+            return network_output
         
     @property
     def name(self):
@@ -265,10 +275,7 @@ class BaseNetwork(nn.Module):
         :return: OrderedDict of shape of each layer in the network
         """
         if not input_size:
-            if self._input_networks:
-                input_size = self._input_networks._dimensions
-            else:
-                input_size = self._dimensions
+            input_size = self._dimensions
 
         def register_hook(module):
             """
@@ -305,9 +312,15 @@ class BaseNetwork(nn.Module):
                     not (module == self):
                 hooks.append(module.register_forward_hook(hook))
 
+        # check if input_size is not a int
+        if isinstance(input_size, int):
+            input_size = [input_size]
+        # check if there is only one input to the network
+        if isinstance(input_size[0], (list, tuple)) and len(input_size)==1:
+            x = Variable(torch.rand(1, *input_size[0]))
         # check if there are multiple inputs to the network
-        if isinstance(input_size[0], (list, tuple)):
-            x = [Variable(torch.rand(1, *in_size)) for in_size in input_size]
+        elif isinstance(input_size[0], (list, tuple)) and len(input_size)>1:
+            x = [Variable(torch.rand(1, *in_size)) for in_size in input_size]        
         else:
             x = Variable(torch.rand(1, *input_size))
 
@@ -485,13 +498,11 @@ class BaseNetwork(nn.Module):
         pbar = trange(len(train_loader.dataset), desc='Training.. ')
         for batch_idx, (data, targets) in enumerate(train_loader):
 
-            data, targets = Variable(data), Variable(targets)
-
             if torch.cuda.is_available():
                 data, targets = data.cuda(), targets.cuda()
 
             # Forward + Backward + Optimize
-            predictions = self([data])
+            predictions = self([data, data])
 
             train_loss = self.criterion(predictions, targets)
             train_loss_accumulator += train_loss.item()

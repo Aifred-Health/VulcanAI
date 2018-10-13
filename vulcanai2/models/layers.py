@@ -232,6 +232,7 @@ class ConvUnit(BaseUnit):
             else:
                 self.add_module(
                     '_dropout', nn.Dropout(self.dropout))
+         
 
     def _init_layers(self):
         if self.conv_dim == 1:

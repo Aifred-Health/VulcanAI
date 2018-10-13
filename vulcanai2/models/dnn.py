@@ -135,7 +135,7 @@ class DenseNet(BaseNetwork, nn.Module):
             out_features=self.out_dim,
             activation=pred_activation)
 
-    def _forward(self, x, **kwargs):
+    def _forward(self, x):
         """
         Define the forward behaviour of the network.
 
@@ -158,17 +158,11 @@ class DenseNet(BaseNetwork, nn.Module):
 
         """
 
-        if self._input_network and \
-           self._input_network.__class__.__name__ == "ConvNet":
-            x = x.view(-1, self._input_network.conv_flat_dim)
-
+        if self._input_networks and self._input_networks[0].__class__.__name__ == "ConvNet":
+            x = x.view(-1, self._input_networks[0].conv_flat_dim)
         network_output = self.network(x)
 
-        if self._num_classes:
-            class_output = self.network_tail(network_output)
-            return class_output
-        else:
-            return network_output
+        return network_output
 
     def _build_dense_network(self, dense_hid_layers, activation):
         """
