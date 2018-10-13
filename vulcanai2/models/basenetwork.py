@@ -299,10 +299,6 @@ class BaseNetwork(nn.Module):
 
     def _init_trainer(self):
         self.optim = self._init_optimizer(self._optim_spec)
-        # if self._lr_scheduler is not None:
-        #     self.optim = self._lr_scheduler(
-        #         op
-        #     )
         self.criterion = self._init_criterion(self._criter_spec)
 
     def fit(self, train_loader, val_loader, epochs,
@@ -317,7 +313,10 @@ class BaseNetwork(nn.Module):
         :return: None
         """
 
-        self._init_trainer()
+        # In case there is already one, don't overwrite it.
+        # Important for not removing the ref from a lr scheduler
+        if self.optim is None:
+            self._init_trainer()
 
         try:
             if plot is True:
@@ -327,6 +326,8 @@ class BaseNetwork(nn.Module):
             for epoch in trange(0, epochs, desc='Epoch: ', ncols=80):
 
                 train_loss, train_acc = self._train_epoch(train_loader, retain_graph)
+                if self.lr_scheduler is not None:
+                    self.lr_scheduler.step(epoch=epoch)
 
                 valid_loss = valid_acc = np.nan
                 if epoch % valid_interv == 0:
