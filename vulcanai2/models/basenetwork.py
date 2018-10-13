@@ -40,13 +40,13 @@ class BaseNetwork(nn.Module):
 
     # TODO: not great to use mutables as arguments.
     # TODO: reorganize these.
-    def __init__(self, name, dimensions, config, save_path=None, input_networks=None, num_classes=None,
+    def __init__(self, name, in_dim, config, save_path=None, input_networks=None, num_classes=None,
                  activation=nn.ReLU(), pred_activation=nn.Softmax(dim=1), optim_spec={'name': 'Adam', 'lr': 0.001},
                  lr_scheduler=None, early_stopping=None, criter_spec=nn.CrossEntropyLoss()):
         """
         Defines the network object.
         :param name: The name of the network. Used when saving the file.
-        :param dimensions: The dimensions of the network. type: List of tuples or int
+        :param in_dim: The input dimensions of the network. type: List of tuples or int
         :param config: The config, as a dict.
         :param save_path: The name of the file to which you would like to save this network.
         :param input_networks: A network object provided as input
@@ -61,12 +61,12 @@ class BaseNetwork(nn.Module):
         super(BaseNetwork, self).__init__()
 
         self._name = name
-        if dimensions is not None:
+        if in_dim is not None:
             # Must be a list of tuples(ConvNet)/int(DenseNet)
-            if isinstance(dimensions, (tuple, int)):
-                self.in_dim = [dimensions] 
+            if isinstance(in_dim, (tuple, int)):
+                self.in_dim = [in_dim] 
             else:
-                self.in_dim = dimensions
+                self.in_dim = in_dim
         else:
             self.in_dim = []
             for net in self._input_networks:
@@ -595,6 +595,3 @@ class BaseNetwork(nn.Module):
         instance = pickle.load(open(model_file_path, 'rb'))
 
         return instance
-
-        # my_tensor = my_tensor.to(torch.device('cuda')).
-
