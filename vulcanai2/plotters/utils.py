@@ -88,7 +88,7 @@ class GuidedBackprop():
             if not input_data.requires_grad:
                 input_data.requires_grad = True
         # Forward pass
-        network_output = self.network(input_data)
+        network_output = self.network.cpu()(input_data)
         # Zero gradients
         self.network.zero_grad()
         # Target for backprop

@@ -462,6 +462,7 @@ class BaseNetwork(nn.Module):
         pred_collector = torch.tensor([])
         for batch_idx, (data, _) in enumerate(data_loader):
             if torch.cuda.is_available():
+                self.cuda()
                 data = data.cuda()
             # Get raw network output
             predictions = self(data)
@@ -470,9 +471,9 @@ class BaseNetwork(nn.Module):
                 predictions = nn.Softmax(dim=1)(predictions)
                 if convert_to_class:
                     predictions = torch.tensor(
-                        self.metrics.get_class(in_matrix=predictions)).float()
+                        self.metrics.get_class(in_matrix=predictions.cpu())).float()
             # Aggregate predictions
-            pred_collector = torch.cat([pred_collector, predictions])
+            pred_collector = torch.cat([pred_collector, predictions.cpu()])
         # Tensor comes in as float so convert back to int if returning classes
         if self._num_classes and convert_to_class:
             pred_collector = pred_collector.long()
