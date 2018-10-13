@@ -142,6 +142,9 @@ y = train_loader.dataset.train_labels[:5]
 sal_map = compute_saliency_map(model1, x, y)
 display_saliency_overlay(train_loader.dataset.train_data[0], sal_map[0])
 
+from vulcanai2.models.snapshot_ensemble import Snapshot
+se = Snapshot("test_SE", model, 3)
+import pudb; pu.db
 # TODO: need to revisit this to be able to plot after training, interactive plotting is messing up
 #plotters.visualization.display_record(record=model1.record, interactive=False)
 #plt.show()
