@@ -21,6 +21,7 @@ from sklearn.decomposition import PCA
 
 import matplotlib
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 import itertools
@@ -92,16 +93,16 @@ def display_record(record=None, load_path=None, interactive=True):
         plt.draw()
         plt.pause(1e-17)
 
-def display_pca(train_x, train_y, label_map=None):
+def display_pca(input_data, targets, label_map=None):
     pca = PCA(n_components=2, random_state=0)
-    x_transform = pca.fit_transform(train_x)
+    x_transform = pca.fit_transform(input_data)
     _plot_reduction(
         x_transform,
-        train_y,
+        targets,
         label_map=label_map,
         title='PCA Visualization')
 
-def display_tsne(train_x, train_y, label_map=None):
+def display_tsne(input_data, targets, label_map=None):
     """
     t-distributed Stochastic Neighbor Embedding (t-SNE) visualization [1].
 
@@ -109,20 +110,20 @@ def display_tsne(train_x, train_y, label_map=None):
             JMLR 9(Nov):2579--2605.
 
     Args:
-        train_x: 2d numpy array (batch, features) of samples
-        train_y: 2d numpy array (batch, labels) for samples
+        input_data: 2d numpy array (batch, features) of samples
+        targets: 2d numpy array (batch, labels) for samples
         label_map: a dict of labelled (str(int), string) key, value pairs
     """
     tsne = TSNE(n_components=2, random_state=0)
-    x_transform = tsne.fit_transform(train_x)
+    x_transform = tsne.fit_transform(input_data)
     _plot_reduction(
         x_transform,
-        train_y,
+        targets,
         label_map=label_map,
         title='t-SNE Visualization')
 
-def _plot_reduction(x_transform, train_y, label_map, title='Dim Reduction'):
-    y_unique = np.unique(train_y)
+def _plot_reduction(x_transform, targets, label_map, title='Dim Reduction'):
+    y_unique = np.unique(targets)
     if label_map is None:
         label_map = {str(i): str(i) for i in y_unique}
     elif not isinstance(label_map, dict):
@@ -131,8 +132,8 @@ def _plot_reduction(x_transform, train_y, label_map, title='Dim Reduction'):
     colours = np.array(sns.color_palette("hls", len(y_unique)))
     plt.figure()
     for index, cl in enumerate(y_unique):
-        plt.scatter(x=x_transform[train_y == cl, 0],
-                    y=x_transform[train_y == cl, 1],
+        plt.scatter(x=x_transform[targets == cl, 0],
+                    y=x_transform[targets == cl, 1],
                     s=100,
                     c=colours[index],
                     alpha=0.5,
@@ -159,7 +160,7 @@ def display_confusion_matrix(cm, class_list=None):
         class_list = list(range(cm.shape[0]))
     if not isinstance(class_list, list):
         raise ValueError("class_list must be of type list.")
-    fig = plt.figure()
+    plt.figure()
     plt.imshow(cm, interpolation='nearest', cmap='Blues', origin='lower')
     plt.title('Confusion matrix')
     plt.colorbar()
@@ -179,7 +180,7 @@ def display_confusion_matrix(cm, class_list=None):
     plt.show(False)
 
 
-def compute_saliency_map(network, input_x, input_y):
+def compute_saliency_map(network, input_data, targets):
     """
     Return the saliency map using the guided backpropagation method [1].
 
@@ -188,13 +189,13 @@ def compute_saliency_map(network, input_x, input_y):
          (https://arxiv.org/pdf/1412.6806.pdf)
 
     :param network: A network type of subclass BaseNetwork
-    :param input_x: Input array of shape (batch, channel, width, height) or 
+    :param input_data: Input array of shape (batch, channel, width, height) or
                     (batch, channel, width, height, depth)
-    :param input_y: 1D array with class targets
+    :param targets: 1D array with class targets
     :return: Top layer gradients of same shape as input data
     """
     guided_backprop = GuidedBackprop(network)
-    saliency_map = guided_backprop.generate_gradients(input_x, input_y)
+    saliency_map = guided_backprop.generate_gradients(input_data, targets)
     # saliency_map, _ = torch.max(saliency_map, dim = 1) # get max abs from all channels
     return saliency_map
 
