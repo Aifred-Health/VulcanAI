@@ -321,6 +321,10 @@ class BaseNetwork(nn.Module):
 
     def _init_trainer(self):
         self.optim = self._init_optimizer(self._optim_spec)
+        # if self._lr_scheduler is not None:
+        #     self.optim = self._lr_scheduler(
+        #         op
+        #     )
         self.criterion = self._init_criterion(self._criter_spec)
 
     def fit(self, train_loader, val_loader, epochs,
