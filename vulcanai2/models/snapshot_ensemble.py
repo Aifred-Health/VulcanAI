@@ -1,6 +1,9 @@
 
 from copy import deepcopy
+import os
 import numpy as np
+import logging
+from datetime import datetime
 
 import torch
 import torch.nn as nn
@@ -9,6 +12,8 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 from .basenetwork import BaseNetwork
 from .metrics import Metrics
 
+logger = logging.getLogger(__name__)
+
 class SnapshotNet(object):
     """Uses Network to build model snapshots."""
     def __init__(self, name, template_network, n_snapshots=3):
@@ -16,9 +21,9 @@ class SnapshotNet(object):
         Initialize snapshot ensemble given a network.
 
         :param name: string of snapshot ensemble name
-        :param template_network: Network object which you want to ensemble
+        :param template_network: BaseNetwork object which you want to ensemble
         :param n_snapshots: number of snapshots in ensemble
-        :param n_epochs: total number of epochs
+        :param n_epochs: total number of epochs (evenly distributed between snapshots)
         """
         self.name = name
         if not isinstance(template_network, BaseNetwork):
@@ -40,7 +45,7 @@ class SnapshotNet(object):
         
         # There must be at least one train epoch for each snapshot
         if epochs < self.M:
-            print('Number of epochs to small for number of Snapshots. '
+            logger.warn('Number of epochs to small for number of Snapshots. '
                   'Setting epochs to {}.'.format(self.M))
             epochs = self.M
 
@@ -66,8 +71,8 @@ class SnapshotNet(object):
                 plot=plot
             )
             # Save instance of snapshot in a dictionary
-            snap_name = "{}_{}".format(self.name, index)
-            self.snapshot_networks[snap_name] = deepcopy(self.template_network)
+            snaps_name = "{}_{}".format(self.name, index)
+            self.snapshot_networks[snaps_name] = deepcopy(self.template_network)
 
     def forward_pass(self, data_loader, convert_to_class=False):
         """
@@ -76,85 +81,42 @@ class SnapshotNet(object):
         :param convert_to_class: return class predictions from ensemble
         """
         prediction_collection = []
-        for net_key in self.snapshot_networks.keys():
-            print("Getting output from {}".format(net_key))
+        for key, network in self.snapshot_networks.items():
+            logger.info("Getting output from {}".format(key))
             prediction_collection.append(
-                self.snapshot_networks[net_key].forward_pass(
+                network.forward_pass(
                     data_loader=data_loader,
                     convert_to_class=False))
         prediction_collection = np.array(prediction_collection)
-        raw_prediction = np.mean(prediction_collection, axis=0,
-                                 dtype='float32')
+        raw_prediction = np.mean(prediction_collection, axis=0, dtype='float32')
         if convert_to_class:
             # TODO: be able to use Metrics.get_class outside
             return Metrics.get_class(None, raw_prediction)
         else:
             return raw_prediction
 
-    def save_model(self, save_path='models'):
-        """Save all ensembled snapshot_networks in a folder with ensemble name."""
-        ensemble_path = "{}{}".format(self.timestamp, self.name)
-        new_save_path = os.path.join(save_path, ensemble_path)
-        if not os.path.exists(new_save_path):
-            print ('Creating {} folder'.format(new_save_path))
-            os.makedirs(new_save_path)
-
-        for model in self.snapshot_networks:
-            model.save_model(save_path=new_save_path)
-
-        self.save_ensemble_metadata(new_save_path)
-
-    @classmethod
-    def load_model(cls, ensemble_path):
-        """Load up ensembled models given a folder location."""
-        json_file = "{}_metadata.json".format(
-            os.path.join(ensemble_path, os.path.basename(ensemble_path))
-        )
-        with open(json_file, 'r') as file:
-            config = json.load(file)
-
-        networks = []
-        for model_file in sorted(os.listdir(ensemble_path)):
-            if model_file.endswith('.network'):
-                file = os.path.join(ensemble_path, model_file)
-                networks += [Network.load_model(file)]
-
-        snap = SnapshotNet(
-            name='snap1',
-            template_network=networks[0],
-            n_snapshots=config[ensemble_path]['n_snapshots']
-        )
-        snap.snapshot_networks = networks
-        return snap
-
-    def save_ensemble_metadata(self, file_path):
+    # TODO: Fix bc it writes in the same folder several models
+    def save_model(self, save_path=None):
         """
-        Will save ensemble configuration.
-        Args:
-            file_path: the npz file path without the npz
+        Save all ensembled snapshot_networks in a folder
+        with ensemble name.
         """
-        config = {
-            "{}".format(file_path): {
-                "n_snapshots": self.M,
-                "init_learning_rate": self.template_network.init_learning_rate,
-                "networks": [{n.name: n.save_name} for n in self.networks]
-            }
-        }
+        if save_path==None:
+            save_path = r"saved_models/{}_{}/".format(
+                self.name, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+        for key, network in self.snapshot_networks.items():
+            logger.info("Saving network {}".format(key))
+            network.save_model(save_path=save_path)
 
-        json_file = "{}_metadata.json".format(
-            os.path.join(file_path, os.path.basename(file_path))
-        )
-        print ('Saving metadata to {}'.format(json_file))
-        with open(json_file, 'w') as file:
-            json.dump(config, file)
+    # TODO: Fix to load the correct models
+    # @classmethod
+    # def load_model(cls, load_path):
+    #     """Load up ensembled models given a folder location."""
+    #     networks = []
+    #     for model_file in sorted(os.listdir(load_path)):
+    #         if model_file.endswith('.network'):
+    #             file = os.path.join(load_path, model_file)
+    #             networks += [BaseNetwork.load_model(file)]
 
-    def save_record(self, save_path='records'):
-        """Save individual training curves for all networks."""
-        ensemble_path = "{}{}".format(self.timestamp, self.name)
-        new_save_path = os.path.join(save_path, ensemble_path)
-        if not os.path.exists(new_save_path):
-            print ('Creating {} folder'.format(new_save_path))
-            os.makedirs(new_save_path)
-
-        for model in self.networks:
-            model.save_record(save_path=new_save_path)
+        
+    #     return None
