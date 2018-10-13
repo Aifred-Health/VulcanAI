@@ -165,7 +165,7 @@ class BaseNetwork(nn.Module):
                 net_outs.append(net(x))
             network_output = self._forward(net_outs)
         else:
-            network_output = self._forward((inputs))
+            network_output = self._forward((inputs[0]))
         
         if self._num_classes:
             class_output = self.network_tail(network_output)
@@ -246,8 +246,6 @@ class BaseNetwork(nn.Module):
         Returns the summary of shapes of all layers in the network
         :return: OrderedDict of shape of each layer in the network
         """
-        if not network:
-            network = self
         if not input_size:
             input_size = self.in_dim
         # input_size must be a list
@@ -485,7 +483,7 @@ class BaseNetwork(nn.Module):
                 self._to_cuda()
 
             # Forward + Backward + Optimize
-            predictions = self([data])
+            predictions = self([data,data])
 
             train_loss = self.criterion(predictions, targets)
             train_loss_accumulator += train_loss.item()
