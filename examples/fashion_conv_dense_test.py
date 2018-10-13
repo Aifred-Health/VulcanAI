@@ -111,23 +111,23 @@ model = ConvNet(
     config=conv_net_config,
 )
 
-# dense_model = DenseNet(
-#     name='conv_net_test',
-#     input_networks=None,
-#     dimensions=(784),
-#     config={
-#     'dense_units': [500, 100, 50],
-#     'initializer': None,
-#     'bias_init': None,
-#     'norm': None,
-#     'dropout': 0.5,  # Single value or List
-#     },
-# )
+dense_model = DenseNet(
+    name='conv_net_test',
+    input_networks=None,
+    dimensions=[784],
+    config={
+    'dense_units': [500, 100],
+    'initializer': None,
+    'bias_init': None,
+    'norm': None,
+    'dropout': 0.5,  # Single value or List
+    },
+)
 
 model1 = DenseNet(
     name='dense_net_test',
-    input_networks=[model],
-    dimensions=(model.conv_flat_dim),
+    input_networks=[model, dense_model],
+    dimensions=[model.conv_flat_dim, dense_model.out_dim],
     config=dense_net_config,
     num_classes=10
 )

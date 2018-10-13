@@ -79,14 +79,18 @@ class BaseNetwork(nn.Module):
         super(BaseNetwork, self).__init__()
 
         self._name = name
-        if isinstance(dimensions, tuple):
-            self._dimensions = [dimensions]
-        elif isinstance(dimensions, int):
-            self._dimensions = (dimensions,)
+        if dimensions is not None:
+            # Must be a list of tuples(ConvNet)/int(DenseNet)
+            if isinstance(dimensions, (tuple, int)):
+                self.in_dim = [dimensions] 
+            else:
+                self.in_dim = dimensions
         else:
-            self._dimensions = dimensions
+            self.in_dim = []
+            for net in self._input_networks:
+                self.in_dim.append(net.in_dim)
+        #print(self.in_dim)
         self._config = config
-
         self._save_path = save_path
 
         if not isinstance(input_networks, type(None)) and \
@@ -117,41 +121,50 @@ class BaseNetwork(nn.Module):
             validation_accuracy=[]
         )
 
-        if self._dimensions:
-            if len(self._dimensions)==1: # Check if length of self._dimensions list is 1, then self.in_dim is the first tuple of self._dimensions
-                self.in_dim = self._dimensions[0]
-            else:
-                # if len(self._dimensions) > 1, then iterate and concatenate all dims
-                self.in_dim = []
-                for net in self._input_networks:
-                    self.in_dim.append(net.in_dim)
-        #import pdb; pdb.set_trace()
-
         self._create_network(
             activation=activation,
             pred_activation=pred_activation)
+
+        #print(self)
         
         out_shapes = self.get_output_shapes(network=self.network,input_size=self.in_dim)
-        self.out_dim = out_shapes[list(out_shapes)[-1]]['output_shape'][1:] 
+        self.out_dim = out_shapes[list(out_shapes)[-1]]['output_shape'][1:]
+        if len(self.out_dim)>1:
+            self.out_dim = tuple(self.out_dim)
+        else:
+            self.out_dim = self.out_dim[0]
         if self._num_classes:
             out_shapes = self.get_output_shapes(network=self.network_tail,input_size=self.out_dim)
-            self.out_dim = out_shapes[list(out_shapes)[-1]]['output_shape'][1:] 
+            self.out_dim = out_shapes[list(out_shapes)[-1]]['output_shape'][1:]
+        
+        #print(self.out_dim)
 
     # TODO: where to do typechecking... just let everything fail?
 
     def forward(self, inputs):
-        """Perform a forward pass through the module/modules."""
-        if self._input_networks:
-            if not isinstance(inputs, list):
+        """
+        Perform a forward pass through the module/modules.
+        If the network is defined with `num_classes` then it is
+        assumed to be the last network which contains a classification
+        layer/network tail. The inputs will be passed
+        through the networks and then through the classifier.
+        If not, the input is passed through the network and
+        returned without passing through a classification layer.
+        :param x: input torch.Tensor
+        :return: output torch.Tensor        
+        """
+        if not isinstance(inputs, list):
                 inputs = [inputs]
+        bs = inputs[0][0]
+        if self._input_networks is not None:
             models=self._input_networks
-            
             outputs = []
             for model, x in zip(models, inputs):
                 outputs.append(model(x))
-            network_output = self._forward(torch.cat(outputs))
+                #TODO: Use tablemodules NEW: https://github.com/torch/nn/blob/master/doc/table.md
+            network_output = self._forward(torch.s(outputs, dim=1)) # Ref:https://github.com/torch/torch7/blob/master/doc/maths.md
         else:
-            network_output = self._forward((inputs))
+            network_output = self._forward((inputs[0]))
         
         if self._num_classes:
             class_output = self.network_tail(network_output)
@@ -229,22 +242,22 @@ class BaseNetwork(nn.Module):
 
     def get_flattened_size(self, network):
         """
-        Returns the flattened output size of the conv network's last layer.
+        Returns the flattened output size of a Single Input ConvNet's last layer.
         :param network: The network to flatten
         :return: The flattened output size of the conv network's last layer.
         """
         with torch.no_grad():
-            x = torch.ones(1, *self.in_dim)
+            x = torch.ones(1, *self.in_dim[0])
             x = network(x)
             return x.numel()
 
     def get_output_size(self):
         """
-        Returns the output size of the network's last layer
+        Returns the output size of the Single Input DenseNet's last layer
         :return: The output size of the network's last layer
         """
         with torch.no_grad():
-            x = torch.ones(1, self.in_dim)
+            x = torch.ones(1, self.in_dim[0])
             x = self(x)  # x = network(x)
             return x.size()[1]
 
@@ -265,10 +278,11 @@ class BaseNetwork(nn.Module):
         Returns the summary of shapes of all layers in the network
         :return: OrderedDict of shape of each layer in the network
         """
-        if not network:
-            network = self
         if not input_size:
             input_size = self.in_dim
+        # input_size must be a list
+        if isinstance(input_size, (tuple, int)):
+            input_size = [input_size]
 
         def register_hook(module):
             """
@@ -305,21 +319,28 @@ class BaseNetwork(nn.Module):
                     not (module == self):
                 hooks.append(module.register_forward_hook(hook))
 
-        # check if input_size is not a int
-        if isinstance(input_size, int):
-            input_size = [input_size]
-        # check if there are multiple inputs to the network
-        if isinstance(input_size[0], (list, tuple)):
-            x = [Variable(torch.rand(1, *in_size)) for in_size in input_size]        
-        else:
-            x = Variable(torch.rand(1, *input_size))
+        x = []
+        for in_size in input_size:
+            if isinstance(in_size, tuple):
+                x.append(Variable(torch.rand(1, *in_size)))
+            else: 
+                x.append(Variable(torch.rand(1, *[in_size])))
+        
         # create properties
         summary = odict()
         hooks = []
-        # register hook
-        network.apply(register_hook)
-        # make a forward pass
-        network.cpu()(x)
+
+        if not network:
+            # register hook
+            self.apply(register_hook)
+            # make a forward pass
+            self.cpu()(x)
+        else:
+            # register hook
+            network.apply(register_hook)
+            # make a forward pass
+            network.cpu()(torch.cat(x,1)) # self.network does not multiinput
+
         # remove these hooks
         for h in hooks:
             h.remove()
@@ -438,7 +459,7 @@ class BaseNetwork(nn.Module):
                 self = self.cuda()
 
             # Forward + Backward + Optimize
-            predictions = self([data])
+            predictions = self([data,data])
 
             train_loss = self.criterion(predictions, targets)
             train_loss_accumulator += train_loss.item()
