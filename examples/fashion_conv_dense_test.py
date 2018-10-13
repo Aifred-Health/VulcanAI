@@ -133,7 +133,7 @@ model1 = DenseNet(
     num_classes=10
 )
 # od1 = model.get_output_shapes((1, 28, 28))
-# #import pdb; pdb.set_trace()
+
 # print(list(od1))
 # for k,v in model.get_output_shapes((1, 28, 28)).items():
 #     print('{}:'.format(k))
@@ -159,6 +159,8 @@ model1 = DenseNet(
 
 
 #model1.fit(train_loader, val_loader, 10)
+print(model.in_dim, model.out_dim,model1.in_dim, model1.out_dim)
+print(model1.get_output_shapes(input_size = [(1,28,28)])) #TODO: Ensure to make this work without specifying the input size
 model1.fit(train_loader, val_loader, 2, plot=False)
 
 # model1.save_model()

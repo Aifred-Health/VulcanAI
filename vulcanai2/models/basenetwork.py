@@ -130,22 +130,13 @@ class BaseNetwork(nn.Module):
         self._create_network(
             activation=activation,
             pred_activation=pred_activation)
-       
-        out_shapes = self.get_output_shapes()
+        
+        out_shapes = self.get_output_shapes(network=self.network,input_size=self.in_dim)
         self.out_dim = out_shapes[list(out_shapes)[-1]]['output_shape'][1:] 
+        if self._num_classes:
+            out_shapes = self.get_output_shapes(network=self.network_tail,input_size=self.out_dim)
+            self.out_dim = out_shapes[list(out_shapes)[-1]]['output_shape'][1:] 
 
-    # TODO: ignore for now
-    # def get_in_dim(self, network = None):
-    #     if not network:
-    #         network = self
-    #     for net in network.input_networks:
-    #             if net.input_networks is None:
-                    
-    #                 self.in_dim.append(net.get_output_shapes())
-
-    #             else:
-    #                 self.in_dim = self.get_in_dim(net)
-    #             temp_tensor = torch.zeros([1, *net.in_dim])
     # TODO: where to do typechecking... just let everything fail?
 
     def forward(self, inputs):
@@ -269,13 +260,15 @@ class BaseNetwork(nn.Module):
             summary_dict['output_shape'] = list(output.size())
         return summary_dict
 
-    def get_output_shapes(self, input_size=None):
+    def get_output_shapes(self, network=None, input_size=None):
         """
         Returns the summary of shapes of all layers in the network
         :return: OrderedDict of shape of each layer in the network
         """
+        if not network:
+            network = self
         if not input_size:
-            input_size = self._dimensions
+            input_size = self.in_dim
 
         def register_hook(module):
             """
@@ -315,22 +308,18 @@ class BaseNetwork(nn.Module):
         # check if input_size is not a int
         if isinstance(input_size, int):
             input_size = [input_size]
-        # check if there is only one input to the network
-        if isinstance(input_size[0], (list, tuple)) and len(input_size)==1:
-            x = Variable(torch.rand(1, *input_size[0]))
         # check if there are multiple inputs to the network
-        elif isinstance(input_size[0], (list, tuple)) and len(input_size)>1:
+        if isinstance(input_size[0], (list, tuple)):
             x = [Variable(torch.rand(1, *in_size)) for in_size in input_size]        
         else:
             x = Variable(torch.rand(1, *input_size))
-
         # create properties
         summary = odict()
         hooks = []
         # register hook
-        self.apply(register_hook)
+        network.apply(register_hook)
         # make a forward pass
-        self.cpu()(x)  # TODO: why is this .cpu?
+        network.cpu()(x)
         # remove these hooks
         for h in hooks:
             h.remove()
@@ -497,12 +486,15 @@ class BaseNetwork(nn.Module):
         train_accuracy_accumulator = 0.0
         pbar = trange(len(train_loader.dataset), desc='Training.. ')
         for batch_idx, (data, targets) in enumerate(train_loader):
+            
+            data, targets = Variable(data), Variable(targets)
 
             if torch.cuda.is_available():
                 data, targets = data.cuda(), targets.cuda()
+                self = self.cuda()
 
             # Forward + Backward + Optimize
-            predictions = self([data, data])
+            predictions = self([data])
 
             train_loss = self.criterion(predictions, targets)
             train_loss_accumulator += train_loss.item()
