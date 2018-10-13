@@ -90,9 +90,9 @@ class Metrics(object):
             return np.around(in_matrix)
 
     # TODO: Modify to use val loader
-    def run_test(self, model, data_loader, figure_path=None, plot=False):
+    def run_test(self, network, data_loader, figure_path=None, plot=False):
         """
-        Will conduct the test suite to determine model strength.
+        Will conduct the test suite to determine network strength.
 
         :param data_loader: a DataLoader object to run the test with
         :param figure_path: string, folder to place images in.
@@ -102,14 +102,14 @@ class Metrics(object):
         if plot:
             logger.setLevel(logging.INFO)
 
-        if model._num_classes is None or \
-            model._num_classes == 0 or \
-            not hasattr(model, 'network_tail'):
+        if network._num_classes is None or \
+            network._num_classes == 0 or \
+            not hasattr(network, 'network_tail'):
             raise ValueError('There\'s no classification layer')
 
         test_y = data_loader.dataset.test_labels
 
-        raw_prediction = model.forward_pass(
+        raw_prediction = network.forward_pass(
             data_loader=data_loader,
             convert_to_class=False)
         class_prediction = self.get_class(raw_prediction)
@@ -145,7 +145,7 @@ class Metrics(object):
         f1 = np.nan_to_num(2 * (ppv * sens) / (ppv + sens))
         f1_macro = np.average(np.nan_to_num(2 * sens * ppv / (sens + ppv)))
 
-        logger.info('{} test\'s results'.format(model.name))
+        logger.info('{} test\'s results'.format(network.name))
 
         logger.info('TP: {}'.format(tp))
         logger.info('FP: {}'.format(fp))
@@ -173,8 +173,8 @@ class Metrics(object):
         logger.info('\tMacro f1-score: {:.4f}'.format(f1_macro))
 
         all_class_auc = []
-        for i in range(model._num_classes):
-            if model._num_classes == 1:      
+        for i in range(network._num_classes):
+            if network._num_classes == 1:
                 fpr, tpr, _ = skl_metrics.roc_curve(test_y,
                                                         raw_prediction,
                                                         pos_label=1)
