@@ -79,12 +79,12 @@ class BaseNetwork(nn.Module):
         super(BaseNetwork, self).__init__()
 
         self._name = name
-        if dimensions is not None:
+        if in_dim is not None:
             # Must be a list of tuples(ConvNet)/int(DenseNet)
-            if isinstance(dimensions, (tuple, int)):
-                self.in_dim = [dimensions] 
+            if isinstance(in_dim, (tuple, int)):
+                self.in_dim = [in_dim] 
             else:
-                self.in_dim = dimensions
+                self.in_dim = in_dim
         else:
             self.in_dim = []
             for net in self._input_networks:
@@ -640,6 +640,3 @@ class BaseNetwork(nn.Module):
         instance = pickle.load(open(model_file_path, 'rb'))
 
         return instance
-
-        # my_tensor = my_tensor.to(torch.device('cuda')).
-
