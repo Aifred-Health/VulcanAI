@@ -108,14 +108,14 @@ dense_net_config = {
 model = ConvNet(
     name='conv_net_test',
     input_networks=None,
-    dimensions=(1, 28, 28),
+    in_dim=(1, 28, 28),
     config=conv_net_config,
 )
 
 dense_model = DenseNet(
     name='conv_net_test',
     input_networks=None,
-    dimensions=[784],
+    in_dim=[784],
     config={
     'dense_units': [500, 100],
     'initializer': None,
@@ -128,7 +128,7 @@ dense_model = DenseNet(
 model1 = DenseNet(
     name='dense_net_test',
     input_networks=[model, dense_model],
-    dimensions=[model.conv_flat_dim, dense_model.out_dim],
+    in_dim=[model.conv_flat_dim, dense_model.out_dim],
     config=dense_net_config,
     num_classes=10
 )
@@ -136,7 +136,7 @@ model1 = DenseNet(
 # print(model1.get_output_shapes())
 # d = DenseNet(
 #             name='Test_DenseNet_class',
-#             dimensions=(200),
+#             in_dim=(200),
 #             config={
 #                 'dense_units': [100],
 #                 'dropouts': [0.3],
