@@ -165,7 +165,7 @@ class BaseNetwork(nn.Module):
                 net_outs.append(net(x))
             network_output = self._forward(net_outs)
         else:
-            network_output = self._forward((inputs[0]))
+            network_output = self._forward((inputs))
         
         if self._num_classes:
             class_output = self.network_tail(network_output)
@@ -483,7 +483,7 @@ class BaseNetwork(nn.Module):
                 self._to_cuda()
 
             # Forward + Backward + Optimize
-            predictions = self([data,data])
+            predictions = self([data, data])
 
             train_loss = self.criterion(predictions, targets)
             train_loss_accumulator += train_loss.item()

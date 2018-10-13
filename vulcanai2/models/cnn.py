@@ -137,7 +137,7 @@ class ConvNet(BaseNetwork, nn.Module):
             out_features=self.out_dim,
             activation=pred_activation)
 
-    def _forward(self, x, **kwargs):
+    def _forward(self, xs, **kwargs):
         """
         Define the forward behaviour of the network.
 
