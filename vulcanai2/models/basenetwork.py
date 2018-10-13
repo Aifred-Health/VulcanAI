@@ -93,7 +93,7 @@ class BaseNetwork(nn.Module):
         self._config = config
         self._save_path = save_path
 
-        if not isinstance(input_networks, type(None)) and \
+        if input_networks is not None and \
             not isinstance(input_networks, list):
             self._input_networks = [input_networks]
         else:
