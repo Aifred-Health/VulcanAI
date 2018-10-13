@@ -167,7 +167,7 @@ class BaseNetwork(nn.Module):
         return self._early_stopping
 
     @early_stopping.setter
-    def stopping_rule(self, value):
+    def early_stopping(self, value):
         self._early_stopping = value
 
     @property
