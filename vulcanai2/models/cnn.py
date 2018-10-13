@@ -92,32 +92,14 @@ class ConvNet(BaseNetwork, nn.Module):
             lr_scheduler, early_stopping, criter_spec)
 
     def _create_network(self, **kwargs):
-
-        self.in_dim = self._dimensions
-
-        if self._input_network and \
-           self._input_network.__class__.__name__ == "ConvNet":
-
-            if self._input_network.conv_flat_dim != self.in_dim:
-                self.in_dim = self.get_flattened_size(self._input_network)
-            else:
-                pass
-
-        if self._input_network and \
-           self._input_network.__class__.__name__ == "DenseNet":
-
-            if self._input_network.dims[-1] != self.in_dim:
-                self.in_dim = self.dims[-1]
-            else:
-                pass
-
+        
         conv_hid_layers = self._config.units
         # Build Network
         self.network = self._build_conv_network(
             conv_hid_layers,
             kwargs['activation'])
 
-        self.conv_flat_dim = self.get_flattened_size(self.network)
+        self.conv_flat_dim = self.get_flattened_size(self.network) # TODO: convert to list
 
         if self._num_classes:
             self.out_dim = self._num_classes
@@ -134,7 +116,7 @@ class ConvNet(BaseNetwork, nn.Module):
             out_features=self.out_dim,
             activation=pred_activation)
 
-    def _forward(self, x, **kwargs):
+    def _forward(self, x):
         """
         Define the forward behaviour of the network.
 
@@ -157,13 +139,7 @@ class ConvNet(BaseNetwork, nn.Module):
 
         """
         network_output = self.network(x)
-
-        if self._num_classes:
-            network_output = network_output.view(-1, self.conv_flat_dim)
-            class_output = self.network_tail(network_output)
-            return class_output
-        else:
-            return network_output
+        return network_output
 
     def _build_conv_network(self, conv_hid_layers, activation):
         """
