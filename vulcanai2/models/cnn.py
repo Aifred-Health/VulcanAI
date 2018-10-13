@@ -89,16 +89,9 @@ class ConvNet(BaseNetwork, nn.Module):
         self.network_tail = DenseUnit(
             dim, self.out_dim, activation=pred_activation)
 
-    def _forward(self, x):
+    def _forward(self, x, **kwargs):
         """
         Computation for the forward pass of the ConvNet module.
-        If the network is defined with `num_classes` then it is
-        assumed to be the last network which contains a
-        classification layer/classifier (network tail).
-        The data ('x') will be passed through the network and
-        then through the classifier. If not, the input is passed
-        through the network and returned without passing through
-        a classification layer.
         :param x: input torch.Tensor
         :return: output torch.Tensor
         """
@@ -119,7 +112,7 @@ class ConvNet(BaseNetwork, nn.Module):
         return conv_network
 
     def __str__(self):
-        if self.optim:
+        if self.optim is not None:
             return super(ConvNet, self).__str__() + f'\noptim: {self.optim}'
         else:
             return super(ConvNet, self).__str__()
