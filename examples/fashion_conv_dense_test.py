@@ -145,8 +145,12 @@ model1 = DenseNet(
 from vulcanai2.models.snapshot_ensemble import SnapshotNet
 
 se = SnapshotNet("snap", model1, 3)
+
+# Does it make more sense to pass the total # of epochs
+# or just how many each model should train for?
 se.fit(train_loader, val_loader, 30, plot=True)
-se.forward_pass(val_loader, convert_to_class=True)
+# se.save_model()
+preds = se.forward_pass(val_loader, convert_to_class=True)
 
 
 # TODO: need to revisit this to be able to plot after training, interactive plotting is messing up
