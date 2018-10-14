@@ -1,12 +1,9 @@
-
+"""Contains all ensemble models."""
 from copy import deepcopy
-import os
 import numpy as np
 import logging
 from datetime import datetime
 
-import torch
-import torch.nn as nn
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
 from .basenetwork import BaseNetwork
@@ -14,20 +11,32 @@ from .metrics import Metrics
 
 logger = logging.getLogger(__name__)
 
+
 class SnapshotNet(object):
     """Uses Network to build model snapshots."""
+
     def __init__(self, name, template_network, n_snapshots=3):
         """
-        Initialize snapshot ensemble given a network.
+        Initialize snapshot ensemble given a template network.
 
-        :param name: string of snapshot ensemble name
-        :param template_network: BaseNetwork object which you want to ensemble
-        :param n_snapshots: number of snapshots in ensemble
-        :param n_epochs: total number of epochs (evenly distributed between snapshots)
+        Parameters
+        ----------
+        name : str
+            String of snapshot ensemble name.
+        template_network : BaseNetwork
+            Network object which you want to ensemble.
+        n_snapshots : int
+            Number of snapshots in ensemble.
+
+        Returns
+        -------
+        network : SnapshotNet
+
         """
         self.name = name
         if not isinstance(template_network, BaseNetwork):
-            raise ValueError("template_network type must inherit from BaseNetwork.")
+            raise ValueError(
+                "template_network type must inherit from BaseNetwork.")
 
         self.template_network = deepcopy(template_network)
 
@@ -39,20 +48,35 @@ class SnapshotNet(object):
     def fit(self, train_loader, val_loader, epochs,
             retain_graph=None, valid_interv=4, plot=False):
         """
-        Train each model for T/M epochs and sets new network learning rate.
+        Train each model for T/M epochs and controls network learning rate.
+
         Collects each model in a class variable self.snapshot_networks
+
+        Parameters
+        ----------
+        train_loader : DataLoader
+            Input data and targets to train against
+        val_loader : DataLoader
+            Input data and targets to validate against
+        n_epochs : int
+            Total number of epochs (evenly distributed between snapshots)
+
+        Returns
+        -------
+        None
+
         """
-        
         # There must be at least one train epoch for each snapshot
         if epochs < self.M:
-            logger.warn('Number of epochs to small for number of Snapshots. '
-                  'Setting epochs to {}.'.format(self.M))
+            logger.warn(
+                'Number of epochs to small for number of Snapshots. '
+                'Setting epochs to {}.'.format(self.M))
             epochs = self.M
 
         T = epochs
         # How many epochs each singular network should train for
-        network_epochs = T  // self.M
-        
+        network_epochs = T // self.M
+
         # Temporary but check if it first has an optimizer,
         # if not it will make one
         if self.template_network.optim is None:
@@ -66,19 +90,32 @@ class SnapshotNet(object):
             self.template_network.fit(
                 train_loader=train_loader,
                 val_loader=val_loader,
-                epochs = network_epochs,
+                epochs=network_epochs,
                 valid_interv=valid_interv,
                 plot=plot
             )
             # Save instance of snapshot in a dictionary
             snaps_name = "{}_{}".format(self.name, index)
-            self.snapshot_networks[snaps_name] = deepcopy(self.template_network)
+            self.snapshot_networks[snaps_name] = \
+                deepcopy(self.template_network)
 
     def forward_pass(self, data_loader, convert_to_class=False):
         """
-        Get output of ensemble.
-        :param data_loader: Numpy matrix to make the predictions on
-        :param convert_to_class: return class predictions from ensemble
+        Run forward on all snapshot networks, collect and return results.
+
+        Parameters
+        ----------
+        data_loader : DataLoader
+            Input data to pass through networks
+        convert_to_class : boolean
+            Whether to convert class probabilities to classes
+
+        Returns
+        -------
+        prediction : numpy.ndarray
+            For raw probabilities the shape is [batch, num_classes].
+            For class probabilities the shape is [batch]
+
         """
         prediction_collection = []
         for key, network in self.snapshot_networks.items():
@@ -98,10 +135,19 @@ class SnapshotNet(object):
     # TODO: Fix bc it writes in the same folder several models
     def save_model(self, save_path=None):
         """
-        Save all ensembled snapshot_networks in a folder
-        with ensemble name.
+        Save all ensembled snapshot_networks in a folder with ensemble name.
+
+        Parameters
+        ----------
+        save_path : str
+            The folder path to save models in.
+
+        Returns
+        -------
+        None
+
         """
-        if save_path==None:
+        if save_path is None:
             save_path = r"saved_models/{}_{}/".format(
                 self.name, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
         for key, network in self.snapshot_networks.items():
@@ -118,5 +164,4 @@ class SnapshotNet(object):
     #             file = os.path.join(load_path, model_file)
     #             networks += [BaseNetwork.load_model(file)]
 
-        
     #     return None
