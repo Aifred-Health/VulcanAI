@@ -164,7 +164,7 @@ def _plot_reduction(x_transform, targets, label_map, title):
 
 def display_confusion_matrix(cm, class_list=None):
     """
-    This function prints and plots the confusion matrix.
+    Print and plot the confusion matrix.
 
     inspired from: https://github.com/zaidalyafeai/Machine-Learning
 

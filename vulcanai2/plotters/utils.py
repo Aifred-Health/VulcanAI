@@ -55,9 +55,7 @@ class GuidedBackprop():
     def _crop_negative_gradients(self):
         """Update relu/selu activations to return positive gradients."""
         def activation_hook_function(module, grad_in, grad_out):
-            """
-            If there is a negative gradient, changes it to zero
-            """
+            """If there is a negative gradient, changes it to zero."""
             if isinstance(module, ReLU) or isinstance(module, SELU):
                 return (torch.clamp(grad_in[0], min=0.0),)
         # Since all layer activations in a Net object point to the same
