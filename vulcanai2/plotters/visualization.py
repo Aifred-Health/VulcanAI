@@ -3,18 +3,12 @@ import os
 
 import numpy as np
 
-import pandas as pd
-
 from math import sqrt, ceil, floor
 
 import pickle
 
-from datetime import datetime
-
 from .utils import GuidedBackprop
 from ..models.utils import get_notable_indices
-
-import torch
 
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
@@ -22,7 +16,6 @@ from sklearn.decomposition import PCA
 import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
-
 
 import itertools
 import logging
@@ -33,8 +26,19 @@ def display_record(record=None, load_path=None, interactive=True):
     """
     Display the training curve for a network training session.
 
-    :param record: the record dictionary for dynamic graphs during training
-    :param load_path: the saved record .pickle file to load
+    Parameters
+    ----------
+    record : dict
+        the network record dictionary for dynamic graphs during training.
+    load_path : str
+        (deprecated) Where records could be loaded from.
+    interactive : boolean
+        To display during training or afterwards.
+
+    Returns
+    -------
+    None
+
     """
     title = 'Training curve'
     if load_path is not None:
@@ -54,7 +58,8 @@ def display_record(record=None, load_path=None, interactive=True):
         '-mo',
         label='Train Error'
     )
-    #val_error = [i if ~np.isnan(i) else None for i in record['validation_error']]
+    # val_error = \
+    # [i if ~np.isnan(i) else None for i in record['validation_error']]
     validation_error, = plt.plot(
         record['epoch'],
         record['validation_error'],
@@ -93,7 +98,9 @@ def display_record(record=None, load_path=None, interactive=True):
         plt.draw()
         plt.pause(1e-17)
 
+
 def display_pca(input_data, targets, label_map=None):
+    """Calculate pca reduction and plot it."""
     pca = PCA(n_components=2, random_state=0)
     x_transform = pca.fit_transform(input_data)
     _plot_reduction(
@@ -102,6 +109,7 @@ def display_pca(input_data, targets, label_map=None):
         label_map=label_map,
         title='PCA Visualization')
 
+
 def display_tsne(input_data, targets, label_map=None):
     """
     t-distributed Stochastic Neighbor Embedding (t-SNE) visualization [1].
@@ -109,10 +117,15 @@ def display_tsne(input_data, targets, label_map=None):
     [1]: Maaten, L., Hinton, G. (2008). Visualizing Data using t-SNE.
             JMLR 9(Nov):2579--2605.
 
-    Args:
-        input_data: 2d numpy array (batch, features) of samples
-        targets: 2d numpy array (batch, labels) for samples
-        label_map: a dict of labelled (str(int), string) key, value pairs
+    Parameters
+    ----------
+    input_data : numpy.dnarray
+        Input data to reduce in dimensions.
+    targets : numpy.ndarray
+        size (batch, labels) for samples.
+    label_map : dict
+        labelled {str(int), string} key, value pairs.
+
     """
     tsne = TSNE(n_components=2, random_state=0)
     x_transform = tsne.fit_transform(input_data)
@@ -122,7 +135,9 @@ def display_tsne(input_data, targets, label_map=None):
         label_map=label_map,
         title='t-SNE Visualization')
 
-def _plot_reduction(x_transform, targets, label_map, title='Dim Reduction'):
+
+def _plot_reduction(x_transform, targets, label_map, title):
+    """Once PCA and t-SNE has been calculated, this is used to plot."""
     y_unique = np.unique(targets)
     if label_map is None:
         label_map = {str(i): str(i) for i in y_unique}
@@ -146,15 +161,20 @@ def _plot_reduction(x_transform, targets, label_map, title='Dim Reduction'):
     plt.title(title)
     plt.show(False)
 
+
 def display_confusion_matrix(cm, class_list=None):
     """
     This function prints and plots the confusion matrix.
-    Normalization can be applied by setting `normalize=True`.
-    inspired from: https://github.com/zaidalyafeai/Machine-Learning/blob/master/Multi-input%20Network%20Pytorch.ipynb
-    
-    Args:
-        cm: confustion_matrix obtained using vulcanai.models.utils.get_confusion_matrix
-        class_list: List of actual class labels (e.g.: MNIST - [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    inspired from: https://github.com/zaidalyafeai/Machine-Learning
+
+    Parameters
+    ----------
+    cm : numpy.ndarray
+        2D confustion_matrix obtained using utils.get_confusion_matrix
+    class_list : list
+        Actual class labels (e.g.: MNIST - [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+
     """
     if class_list is None:
         class_list = list(range(cm.shape[0]))
@@ -185,18 +205,27 @@ def compute_saliency_map(network, input_data, targets):
     Return the saliency map using the guided backpropagation method [1].
 
     [1]: Springgenberg, J.T., Dosovitskiy, A., Brox, T., Riedmiller, M. (2015).
-         Striving for Simplicity: The All Convolutional Net. ICLR 2015 
+         Striving for Simplicity: The All Convolutional Net. ICLR 2015
          (https://arxiv.org/pdf/1412.6806.pdf)
 
-    :param network: A network type of subclass BaseNetwork
-    :param input_data: Input array of shape (batch, channel, width, height) or
-                    (batch, channel, width, height, depth)
-    :param targets: 1D array with class targets
-    :return: Top layer gradients of same shape as input data
+    Parameters
+    ----------
+    network : BaseNetwork
+        A network to get saliency maps on.
+    input_data : numpy.ndarray
+        Input array of shape (batch, channel, width, height) or
+        (batch, channel, width, height, depth).
+    targets : numpy.ndarray
+        1D array with class targets of size [batch].
+
+    Returns
+    -------
+    saliency_map : numpy.ndarray
+        Top layer gradients of the same shape as input data.
+
     """
     guided_backprop = GuidedBackprop(network)
     saliency_map = guided_backprop.generate_gradients(input_data, targets)
-    # saliency_map, _ = torch.max(saliency_map, dim = 1) # get max abs from all channels
     return saliency_map
 
 
@@ -204,10 +233,15 @@ def display_saliency_overlay(image, saliency_map, shape=(28, 28)):
     """
     Plot overlay saliency map over image.
 
-    :param image: numpy or torch array (1d 2d, or 3d) for single image
-    :param saliency_map: numpy array (1d 2d, or 3d) for single image
-    :param shape: the dimensions of the image. defaults to mnist.
-    :return: None
+    Parameters
+    ----------
+    image : numpy.ndarray
+        (1D, 2D, 3D) for single image or linear output.
+    saliency_map: numpy.ndarray
+        (1D, 2D, 3D) for single image or linear output.
+    shape : tuple, list
+        The dimensions of the image. Defaults to mnist.
+
     """
     # Handle different colour channels and shapes for image input
     if len(image.shape) == 3:
@@ -231,7 +265,7 @@ def display_saliency_overlay(image, saliency_map, shape=(28, 28)):
             # For 3 or 4 colour channels, move to end for plotting
             saliency_map = np.moveaxis(saliency_map, 0, -1)
         else:
-            raise ValueError("Invalid number of colour channels in saliency map.")
+            raise ValueError("Invalid number of channels in saliency map.")
     elif len(saliency_map.shape) == 1:
         saliency_map = np.reshape(saliency_map, shape)
 
@@ -258,17 +292,22 @@ def display_receptive_fields(network, top_k=5):
          Convolutional Neural Networks. Advances in Neural Information
          Processing Systems, 29 (NIPS 2016)
 
+    network : BaseNetwork
+        Network to get receptive fields of.
+    top_k : int
+        To return the most and least k important features from field
 
-    :param network: Network object
-    :param top_k: most and least k important features from field
+    Returns
+    -------
+    k_features: dict
+        A dict of the top k and bottom k important features.
 
-    Returns a dict of the top k and bottom k important features.
     """
     if type(network).__name__ == "ConvNet":
-        raise NotImplementedError("ConvNet receptive fields not yet implemented")
+        raise NotImplementedError
     elif '_input_network' in network._modules:
         if type(network._modules['_input_network']).__name__ == "ConvNet":
-            raise NotImplementedError("ConvNet receptive fields not yet implemented")
+            raise NotImplementedError
 
     feature_importance = {}
     fig = plt.figure()

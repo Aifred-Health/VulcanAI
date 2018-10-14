@@ -3,19 +3,28 @@ import torch
 from torch.nn import ReLU, SELU
 # from ..models.basenetwork import BaseNetwork
 
+
 class GuidedBackprop():
     """
-       Produces gradients generated with guided back propagation from the given input.
-       Modified from https://github.com/utkuozbulak/pytorch-cnn-visualizations/blob/master/src/guided_backprop.py
+    Generate gradients with guided back propagation w.r.t given input.
 
-       Insert backward hooks for all activations to propagate only positive gradients.
-       Returns gradients of top most layer
+    Modified from https://github.com/utkuozbulak/pytorch-cnn-visualizations
+    Insert backward hooks for activations to propagate positive gradients.
 
-       :param network: Network subclassed from BaseNetwork to conduct guided backprop.
-       :param gradients: Hold gradients from top layer
-       :param hooks: list of references to all hooks placed for removal after
+    Parameters
+    ----------
+    network : BaseNetwork
+        Network to conduct guided backprop on.
+
+    Returns
+    -------
+    gradients : numpy.ndarray
+        radients of top most layer.
+
     """
+
     def __init__(self, network):
+        """Set up hooks for activations and gradient retrieval."""
         if network.__class__.__bases__[0].__name__ != "BaseNetwork":
             raise ValueError("Network type must be a subclass of BaseNetwork")
         self.network = network
@@ -44,10 +53,7 @@ class GuidedBackprop():
         self.hooks.append(first_layer.register_backward_hook(hook_function))
 
     def _crop_negative_gradients(self):
-        """
-            Updates relu/selu activation functions so that it
-            only returns positive gradients
-        """
+        """Update relu/selu activations to return positive gradients."""
         def activation_hook_function(module, grad_in, grad_out):
             """
             If there is a negative gradient, changes it to zero
@@ -58,27 +64,34 @@ class GuidedBackprop():
         # function we only need to hook one of them with
         # activation_hook_function
         if '_input_network' in self.network._modules:
-            self.hooks.append(self.network._input_network.network[0]._activation.
-                register_backward_hook(activation_hook_function))
-        self.hooks.append(self.network.network[0]._activation.
-            register_backward_hook(activation_hook_function))
-
+            self.hooks.append(
+                self.network._input_network.network[0].
+                _activation.register_backward_hook(activation_hook_function))
+        self.hooks.append(
+            self.network.network[0].
+            _activation.register_backward_hook(activation_hook_function))
 
     def _remove_hooks(self):
-        """
-        Remove all previously placed activation hooks from model.
-        :return: None
-        """
+        """Remove all previously placed hooks from model."""
         for h in self.hooks:
             h.remove()
 
     def generate_gradients(self, input_data, targets):
         """
-        Computes guided backprop gradients and returns top layer gradients.
+        Compute guided backprop gradients and returns top layer gradients.
 
-        :param input_data: 1D for DenseNet, 4D (for 2D images) or 5D (for 3D images) Tensor.
-        :param targets: 1D list of class truths of type torch.LongTensor
-        :return: Gradient numpy array with same shape as input images
+        Parameters
+        ----------
+        input_data : numpy.ndarray or torch.Tensor
+            1D for DenseNet, 4D (for 2D images) or 5D (for 3D images) Tensor.
+        targets : numpy.ndarray or torch.LongTensor
+            1D list of class labels
+
+        Returns
+        -------
+        gradients : numpy.ndarray
+            Gradient numpy array with same shape as input images.
+
         """
         self.network.eval()
         # To properly pass the gradients
@@ -87,12 +100,16 @@ class GuidedBackprop():
         else:
             if not input_data.requires_grad:
                 input_data.requires_grad = True
+        if not isinstance(targets, torch.LongTensor):
+            targets = torch.LongTensor(targets)
         # Forward pass
         network_output = self.network.cpu()(input_data)
         # Zero gradients
         self.network.zero_grad()
         # Target for backprop
-        one_hot_zeros = torch.zeros(network_output.size()[0], network_output.size()[-1])
+        one_hot_zeros = torch.zeros(
+            network_output.size()[0],
+            network_output.size()[-1])
         one_hot_output = one_hot_zeros.scatter_(1, targets.unsqueeze(dim=1), 1)
         # Backward pass
         network_output.backward(gradient=one_hot_output)
