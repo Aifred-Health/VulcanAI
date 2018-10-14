@@ -142,7 +142,7 @@ model1 = DenseNet(
 # sal_map = compute_saliency_map(model1, x, y)
 # display_saliency_overlay(train_loader.dataset.train_data[0], sal_map[0])
 
-from vulcanai2.models.snapshot_ensemble import SnapshotNet
+from vulcanai2.models.ensemble import SnapshotNet
 
 se = SnapshotNet("snap", model1, 3)
 
