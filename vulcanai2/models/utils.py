@@ -2,12 +2,25 @@ import numpy as np
 from sklearn.metrics import confusion_matrix
 from sklearn.preprocessing import LabelBinarizer
 
+
 def get_notable_indices(feature_importances, top_k=5):
     """
     Return dict of top k and bottom k features useful from matrix.
 
-    :param feature_importance: 1D numpy array
-    :param top_k: defaults to top and bottom 5 indices
+    Parameters
+    ----------
+    feature_importance : numpy.ndarray
+        1D numpy array to extract the top of bottom indices.
+    top_k : int
+        How many features from top and bottom to extract.
+        Defaults to 5.
+
+    Returns
+    -------
+    notable_indices : dict
+        Indices of the top most important features.
+        Indices of the bottom mos unimportant features.
+
     """
     important_features = feature_importances.argsort()[-top_k:][::-1]
     unimportant_features = feature_importances.argsort()[:-1][:top_k]
@@ -19,10 +32,18 @@ def round_list(raw_list, decimals=4):
     """
     Return the same list with each item rounded off.
 
-    Args:
-    :param raw_list: float list
-    :param decimals: how many decimal points to round to
-    :return: the rounded list in the same shape
+    Parameters
+    ----------
+    raw_list : float list
+        float list to round.
+    decimals : int
+        How many decimal points to round to.
+
+    Returns
+    -------
+    rounded_list : float list
+        The rounded list in the same shape as raw_list.
+
     """
     return [round(item, decimals) for item in raw_list]
 
@@ -31,14 +52,19 @@ def get_confusion_matrix(predictions, targets):
     """
     Calculate the confusion matrix for classification network predictions.
 
-    :param predictions: the class matrix predicted by the network.
-                        oes not take one hot vectors.
-    :param targets: the class matrix of the ground truth
-                    Does not take one hot vectors.
+    Parameters
+    ----------
+    predictions : numpy.ndarray
+        The classes predicted by the network. Does not take one hot vectors.
+    targets : numpy.ndarray
+        the classes of the ground truth. Does not take one hot vectors.
 
-    :return: the confusion matrix
+    Returns
+    -------
+    confusion_matrix : numpy.ndarray
+        The confusion matrix.
+
     """
-    print(type(predictions))
     if len(predictions.shape) == 2:
         predictions = predictions[:, 0]
     if len(targets.shape) == 2:
@@ -51,10 +77,16 @@ def get_one_hot(in_matrix):
     """
     Reformat truth matrix to same size as the output of the dense network.
 
-    Args:
-        in_matrix: the categorized 1D matrix
+    Parameters
+    ----------
+    in_matrix : numpy.ndarray
+        The categorized 1D matrix
 
-    Returns: a one-hot matrix representing the categorized matrix
+    Returns
+    -------
+    one_hot : numpy.ndarray
+        A one-hot matrix representing the categorized matrix
+
     """
     if in_matrix.dtype.name == 'category':
         custom_array = in_matrix.cat.codes

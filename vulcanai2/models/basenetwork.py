@@ -2,8 +2,9 @@
 """Defines the basenetwork class"""
 # Core imports
 import abc
+import torch
 from torch.autograd import Variable
-import torch.nn.modules.loss as loss
+from torch import nn
 
 # Vulcan imports
 from .layers import *
@@ -17,7 +18,6 @@ from datetime import datetime
 import logging
 import os
 import pickle
-import time
 from collections import OrderedDict
 import numpy as np
 
@@ -29,34 +29,51 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-sns.set()
+sns.set(style='dark')
 logger = logging.getLogger(__name__)
 
 
 class BaseNetwork(nn.Module):
-    """
-    Base class upon which all Vulcan NNs will be based.
-    """
+    """Base class upon which all Vulcan NNs will be based."""
 
     # TODO: not great to use mutables as arguments.
     # TODO: reorganize these.
-    def __init__(self, name, dimensions, config, save_path=None, input_network=None, num_classes=None,
-                 activation=nn.ReLU(), pred_activation=nn.Softmax(dim=1), optim_spec={'name': 'Adam', 'lr': 0.001},
-                 lr_scheduler=None, early_stopping=None, criter_spec=nn.CrossEntropyLoss()):
+    def __init__(self, name, dimensions, config, save_path=None,
+                 input_network=None, num_classes=None,
+                 activation=nn.ReLU(), pred_activation=None,
+                 optim_spec={'name': 'Adam', 'lr': 0.001},
+                 lr_scheduler=None, early_stopping=None,
+                 criter_spec=nn.CrossEntropyLoss()):
         """
         Defines the network object.
-        :param name: The name of the network. Used when saving the file.
-        :param dimensions: The dimensions of the network.
-        :param config: The config, as a dict.
-        :param save_path: The name of the file to which you would like to save this network.
-        :param input_network: A network object provided as input
-        :param num_classes: The number of classes to predict.
-        :param activation: The desired activation function for use in the network. Of type torch.nn.Module.
-        :param pred_activation: The desired activation function for use in the prediction layer. Of type torch.nn.Module
-        :param optim_spec: A dictionary of parameters for the desired optimizer.
-        :param lr_scheduler: A callable torch.optim.lr_scheduler
-        :param stopping_rule: A string. So far just 'best_validation_error' is implemented.
-        :param criter_spec: criterion specification dictionary with name of criterion and all parameters necessary.
+
+        Parameters
+        ----------
+        name : str
+            The name of the network. Used when saving the file.
+        dimensions : list of tuples
+            The dimensions of the network.
+        config : dict
+            The configuration of the network module, as a dict.
+        save_path : str
+            The name of the file to which you would like to save this network.
+        input_network : list of BaseNetwork
+            A network object provided as input.
+        num_classes : int or None
+            The number of classes to predict.
+        activation : torch.nn.Module
+            The desired activation function for use in the network.
+        pred_activation : torch.nn.Module
+            The desired activation function for use in the prediction layer.
+        optim_spec : dict
+            A dictionary of parameters for the desired optimizer.
+        lr_scheduler : torch.optim.lr_scheduler
+            A callable torch.optim.lr_scheduler
+        early_stopping : str or None
+            So far just 'best_validation_error' is implemented.
+        criter_spec : dict
+            criterion specification with name and all its parameters.
+
         """
         super(BaseNetwork, self).__init__()
 
@@ -101,7 +118,11 @@ class BaseNetwork(nn.Module):
     def name(self):
         """
         Returns the name.
-        :return: the name of the network.
+
+        Returns
+        -------
+        name : string
+            The name of the network.
         """
         return self._name
 
@@ -120,7 +141,8 @@ class BaseNetwork(nn.Module):
     @save_path.setter
     def save_path(self, value):
         if not value:
-            self._save_path = "{}_{date:%Y-%m-%d_%H:%M:%S}/".format(self.name, date=datetime.now())
+            self._save_path = "{}_{date:%Y-%m-%d_%H:%M:%S}/".format(
+                self.name, date=datetime.now())
         else:
             self._save_path = value
 
@@ -434,30 +456,52 @@ class BaseNetwork(nn.Module):
 
         return validation_loss, validation_accuracy
 
-    def run_test(self, test_x, test_y, figure_path=None, plot=False):
+    def run_test(self, data_loader, figure_path=None, plot=False):
         """
         Will conduct the test suite to determine model strength.
         """
-        return self.metrics.run_test(self, test_x, test_y, figure_path, plot)
+        return self.metrics.run_test(
+            network=self,
+            data_loader=data_loader,
+            figure_path=figure_path,
+            plot=plot)
 
     # TODO: Instead of self.cpu(), use is_cuda to know if you can use gpu
-    def forward_pass(self, input_data, convert_to_class=False):
+    def forward_pass(self, data_loader, convert_to_class=False):
         """
         Allow the implementer to quickly get outputs from the network.
 
-        Args:
-            input_data: Numpy matrix to make the predictions on
-            convert_to_class: If true, output the class
-                             with highest probability
+        :param data_loader: DataLoader object to make the predictions on
+        :param convert_to_class: If true, list of class predictions instead
+                                 of class probabilites
 
-        Returns: Numpy matrix with the output probabilities
-                 with each class unless otherwise specified.
+        :return: Numpy matrix with the output probabilities
+                 for each class unless otherwise specified.
         """
-        output = self.cpu()(torch.Tensor(input_data)).data.numpy()
-        if convert_to_class:
-            return self.metrics.get_class(output)
-        else:
-            return output
+        self.eval()
+        # prediction_shape used to aggregate network outputs
+        # (e.g. with or without class conversion)
+        pred_collector = torch.tensor([])
+        for batch_idx, (data, _) in enumerate(data_loader):
+            if torch.cuda.is_available():
+                self = self.cuda()
+                data = data.cuda()
+            # Get raw network output
+            predictions = self(data)
+            if self._num_classes:
+                # Get probabilities
+                predictions = nn.Softmax(dim=1)(predictions)
+                if convert_to_class:
+                    predictions = torch.tensor(
+                        self.metrics.get_class(in_matrix=predictions.cpu())).float()
+            # Aggregate predictions
+            pred_collector = torch.cat([pred_collector, predictions.cpu()])
+        # Tensor comes in as float so convert back to int if returning classes
+        if self._num_classes and convert_to_class:
+            pred_collector = pred_collector.long()
+        if isinstance(pred_collector, torch.Tensor):
+                pred_collector = pred_collector.detach().numpy()
+        return pred_collector
 
     def save_model(self, save_path=None):
         """
