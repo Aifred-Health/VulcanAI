@@ -1,8 +1,6 @@
 """Define the ConvUnit and DenseUnit."""
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from torch.nn import init
 import logging
 logger = logging.getLogger(__name__)
 
@@ -55,6 +53,7 @@ class DenseUnit(BaseUnit):
     def __init__(self, in_features, out_features,
                  initializer=None, bias_init=None,
                  norm=None, activation=None, dropout=None):
+        """Initilize a single DenseUnit (i.e. a dense layer)."""
         super(DenseUnit, self).__init__(initializer, bias_init,
                                         norm, dropout)
         self.in_features = in_features
@@ -62,7 +61,7 @@ class DenseUnit(BaseUnit):
 
         # Main layer
         self._kernel = nn.Linear(
-                            in_features=self.in_features, 
+                            in_features=self.in_features,
                             out_features=self.out_features,
                             bias=True
                             )
@@ -103,6 +102,7 @@ class ConvUnit(BaseUnit):
                  initializer=None, bias_init=None,
                  stride=1, padding=0, norm=None,
                  activation=None, pool_size=None, dropout=None):
+        """Initilize a single ConvUnit (i.e. a conv layer)."""
         super(ConvUnit, self).__init__(initializer, bias_init,
                                        norm, dropout)
         self.conv_dim = conv_dim
@@ -144,7 +144,7 @@ class ConvUnit(BaseUnit):
         if pool_size is not None:
             self.add_module(
                 '_pool', self.pool_layer(kernel_size=pool_size))
-        
+
         # Dropout
         if self.dropout is not None:
             if isinstance(activation, nn.SELU):
@@ -189,7 +189,10 @@ class ConvUnit(BaseUnit):
 
 # TODO: Will work on these classes below later during Vulcan2 deployment
 class InputUnit(BaseUnit):
+    """InputUnit."""
+
     def __init__(self, in_channels, out_channels, bias=False):
+        """Initialize InputUnit."""
         super(InputUnit, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -197,6 +200,7 @@ class InputUnit(BaseUnit):
             self.in_channels, self.out_channels, bias=bias)
 
     def forward(self, input):
+        """Define forward for InputUnit."""
         if input.dim() > 2:
             input = input.transpose(1, 3)  # NCHW --> NHWC
             output = self._kernel(input)
@@ -208,8 +212,12 @@ class InputUnit(BaseUnit):
 
 class View(BaseUnit):
     """Layer to reshape the input # TODO : Testing."""
+
     def __init__(self, *shape):
+        """View defined."""
         super(View, self).__init__()
         self.shape = shape
+
     def forward(self, input):
+        """Define forward for View."""
         return input.view(*self.shape)

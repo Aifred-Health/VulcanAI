@@ -1,3 +1,4 @@
+"""Define utility functions used by models."""
 import numpy as np
 from sklearn.metrics import confusion_matrix
 from sklearn.preprocessing import LabelBinarizer

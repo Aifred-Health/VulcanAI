@@ -1,6 +1,4 @@
 """Defines the network test suite."""
-import numpy as np
-
 import torch
 import torch.nn.functional as F
 
@@ -64,7 +62,26 @@ class Metrics(object):
     #     self.mat += confusion_matrix(temp_targets, temp_predictions, labels=self.list_classes)
 
     def get_score(self, predictions, targets, metric='accuracy'):
+        """
+        Calculate some defined score given predictions and targets.
+
+        Parameters
+        ----------
+        predictions : torch.Tensor
+            Network output of shape [batch, num_classes].
+        targets : torch.LongTensor
+            The truth values of shape [batch].
+        metric : str
+            The metric to calculate and return.
+
+        Returns
+        -------
+        score : float
+            The specified metric to calculate.
+
+        """
         if metric == 'accuracy':
+            # TODO: Use get_class
             max_index = predictions.max(dim=1)[1]
             correct = (max_index == targets).sum()
             accuracy = int(correct.data) / len(targets)
@@ -77,8 +94,16 @@ class Metrics(object):
         """
         Reformat truth matrix to be the classes in a 1D array.
 
-        :param n_matrix: one-hot matrix
-        :return: 1D Class array
+        Parameters
+        ----------
+        n_matrix : numpy.ndarray or torch.Tensor
+            One-hot matrix of shape [batch, num_classes].
+
+        Returns
+        -------
+        class_list : numpy.ndarray
+            1D class array.
+
         """
         if isinstance(in_matrix, torch.Tensor):
             in_matrix = in_matrix.detach().numpy()
@@ -94,17 +119,26 @@ class Metrics(object):
         """
         Will conduct the test suite to determine network strength.
 
-        :param data_loader: a DataLoader object to run the test with
-        :param figure_path: string, folder to place images in.
-        :param plot: bool, determines if graphs should be plotted.
-        :return: results dictionary
+        Parameters
+        ----------
+        data_loader : DataLoader
+            A DataLoader object to run the test with.
+        figure_path : string
+            Folder to place images in.
+        plot: bool
+            Determine if graphs should be plotted in real time.
+
+        Returns
+        -------
+        results : dict
+
         """
         if plot:
             logger.setLevel(logging.INFO)
 
         if network._num_classes is None or \
-            network._num_classes == 0 or \
-            not hasattr(network, 'network_tail'):
+           network._num_classes == 0 or \
+           not hasattr(network, 'network_tail'):
             raise ValueError('There\'s no classification layer')
 
         test_y = data_loader.dataset.test_labels
@@ -123,8 +157,9 @@ class Metrics(object):
             display_confusion_matrix(confusion_matrix)
 
         tp = np.diagonal(confusion_matrix).astype('float32')
-        tn = (np.array([np.sum(confusion_matrix)] *
-                    confusion_matrix.shape[0]) -
+        tn = (np.array(
+            [np.sum(confusion_matrix)] *
+            confusion_matrix.shape[0]) -
             confusion_matrix.sum(axis=0) -
             confusion_matrix.sum(axis=1) + tp).astype('float32')
         # sum each column and remove diagonal
@@ -134,13 +169,17 @@ class Metrics(object):
 
         sens = np.nan_to_num(tp / (tp + fn))  # recall
         spec = np.nan_to_num(tn / (tn + fp))
-        sens_macro = np.average(sens)  # sens_micro = np.nan_to_num(sum(tp) / (sum(tp) + sum(fn)))
-        spec_macro = np.average(spec)  # sens_micro = np.nan_to_num(sum(tn) / (sum(tn) + sum(fp)))
+        sens_macro = np.average(sens)
+        # sens_micro = np.nan_to_num(sum(tp) / (sum(tp) + sum(fn)))
+        spec_macro = np.average(spec)
+        # sens_micro = np.nan_to_num(sum(tn) / (sum(tn) + sum(fp)))
         dice = 2 * tp / (2 * tp + fp + fn)
         ppv = np.nan_to_num(tp / (tp + fp))  # precision
-        ppv_macro = np.average(ppv)    # ppv_micro = np.nan_to_num(sum(tp) / (sum(tp) + sum(fp)))
+        ppv_macro = np.average(ppv)
+        # ppv_micro = np.nan_to_num(sum(tp) / (sum(tp) + sum(fp)))
         npv = np.nan_to_num(tn / (tn + fn))
-        npv_macro = np.average(npv)    # npv_micro = np.nan_to_num(sum(tn) / (sum(tn) + sum(fn)))
+        npv_macro = np.average(npv)
+        # npv_micro = np.nan_to_num(sum(tn) / (sum(tn) + sum(fn)))
         accuracy = np.sum(tp) / np.sum(confusion_matrix)
         f1 = np.nan_to_num(2 * (ppv * sens) / (ppv + sens))
         f1_macro = np.average(np.nan_to_num(2 * sens * ppv / (sens + ppv)))
@@ -163,11 +202,15 @@ class Metrics(object):
         logger.info('DICE: {}'.format(round_list(dice, decimals=3)))
         logger.info('\tAvg. DICE: {:.4f}'.format(np.average(dice)))
 
-        logger.info('Positive Predictive Value: {}'.format(round_list(ppv, decimals=3)))
-        logger.info('\tMacro Positive Predictive Value: {:.4f}'.format(ppv_macro))
+        logger.info('Positive Predictive Value: {}'.format(
+            round_list(ppv, decimals=3)))
+        logger.info('\tMacro Positive Predictive Value: {:.4f}'.format(
+            ppv_macro))
 
-        logger.info('Negative Predictive Value: {}'.format(round_list(npv, decimals=3)))
-        logger.info('\tMacro Negative Predictive Value: {:.4f}'.format(npv_macro))
+        logger.info('Negative Predictive Value: {}'.format(
+            round_list(npv, decimals=3)))
+        logger.info('\tMacro Negative Predictive Value: {:.4f}'.format(
+            npv_macro))
 
         logger.info('F1-score: {}'.format(round_list(f1, decimals=3)))
         logger.info('\tMacro f1-score: {:.4f}'.format(f1_macro))
@@ -176,12 +219,12 @@ class Metrics(object):
         for i in range(network._num_classes):
             if network._num_classes == 1:
                 fpr, tpr, _ = skl_metrics.roc_curve(test_y,
-                                                        raw_prediction,
-                                                        pos_label=1)
+                                                    raw_prediction,
+                                                    pos_label=1)
             else:
                 fpr, tpr, _ = skl_metrics.roc_curve(test_y,
-                                                        raw_prediction[:, i],
-                                                        pos_label=i)
+                                                    raw_prediction[:, i],
+                                                    pos_label=i)
 
             auc = skl_metrics.auc(fpr, tpr)
             all_class_auc += [auc]
