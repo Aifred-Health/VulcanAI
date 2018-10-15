@@ -19,7 +19,7 @@ class GuidedBackprop():
     Returns
     -------
     gradients : numpy.ndarray
-        radients of top most layer.
+        Gradients of top most layer w.r.t the input sample.
 
     """
 
