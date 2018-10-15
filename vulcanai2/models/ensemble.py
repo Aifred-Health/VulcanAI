@@ -13,26 +13,26 @@ logger = logging.getLogger(__name__)
 
 
 class SnapshotNet(object):
-    """Uses Network to build model snapshots."""
+    """
+    Initialize snapshot ensemble given a template network.
+
+    Parameters
+    ----------
+    name : str
+        String of snapshot ensemble name.
+    template_network : BaseNetwork
+        Network object which you want to ensemble.
+    n_snapshots : int
+        Number of snapshots in ensemble.
+
+    Returns
+    -------
+    network : SnapshotNet
+
+    """
 
     def __init__(self, name, template_network, n_snapshots=3):
-        """
-        Initialize snapshot ensemble given a template network.
-
-        Parameters
-        ----------
-        name : str
-            String of snapshot ensemble name.
-        template_network : BaseNetwork
-            Network object which you want to ensemble.
-        n_snapshots : int
-            Number of snapshots in ensemble.
-
-        Returns
-        -------
-        network : SnapshotNet
-
-        """
+        """Uses Network to build model snapshots."""
         self.name = name
         if not isinstance(template_network, BaseNetwork):
             raise ValueError(
@@ -125,7 +125,8 @@ class SnapshotNet(object):
                     data_loader=data_loader,
                     convert_to_class=False))
         prediction_collection = np.array(prediction_collection)
-        raw_prediction = np.mean(prediction_collection, axis=0, dtype='float32')
+        raw_prediction = np.mean(
+            prediction_collection, axis=0, dtype='float32')
         if convert_to_class:
             # TODO: be able to use Metrics.get_class outside
             return Metrics.get_class(None, raw_prediction)

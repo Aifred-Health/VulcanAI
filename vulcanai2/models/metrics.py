@@ -20,12 +20,24 @@ logger.addHandler(logging.StreamHandler())
 
 
 class Metrics(object):
+    """
+    A class to calculate all metrics for a BaseNetwork.
+
+    Responsible for the test suite.
+
+    Parameters
+    ----------
+    num_class : int
+        The number of classes the network is trying to predict.
+
+    """
 
     def __init__(self, num_class, use_unlabeled=False):
+        """Initialize the metrics class for a BaseNetwork."""
         self.num_class = num_class
         # self.mat = np.zeros((self.num_class, self.num_class), dtype=np.float)
         self.list_classes = list(range(self.num_class))
-  
+
     # def update(self, predictions, targets):
     #     if not(isinstance(predictions, np.ndarray)) or not(isinstance(targets, np.ndarray)):
     #         print("Expected ndarray")

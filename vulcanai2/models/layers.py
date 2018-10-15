@@ -6,7 +6,26 @@ logger = logging.getLogger(__name__)
 
 
 class BaseUnit(nn.Sequential):
-    """The base class of layer."""
+    """
+    The base class for all layers.
+
+    Parameters
+    ----------
+    initializer : torch.nn.init
+        Torch initialization function.
+    bias_init : int or float
+        A constant int or float to initialize biases with.
+    norm : str
+        'batch' for batch norm of 'instance' for instance norm.
+    dropout : float between 0-1
+        The probability of dropping out a feature during training.
+
+    Returns
+    -------
+    dense_unit : torch.nn.Sequential
+        A single fully connected layer.
+
+    """
 
     def __init__(self, initializer=None, bias_init=None,
                  norm=None, dropout=None):
@@ -48,12 +67,37 @@ class BaseUnit(nn.Sequential):
 
 
 class DenseUnit(BaseUnit):
-    """Define the DenseUnit object."""
+    """
+    Define the DenseUnit object.
+
+    Parameters
+    ----------
+    in_features : int
+        The incoming feature size of a sample.
+    out_features : int
+        The number of hidden Linear units for this layer.
+    initializer : torch.nn.init
+        Torch initialization function.
+    bias_init : int or float
+        A constant int or float to initialize biases with.
+    norm : str
+        'batch' for batch norm of 'instance' for instance norm.
+    activation : torch.nn.Module
+        An activation function to apply after Linear unit.
+    dropout : float between 0-1
+        The probability of dropping out a feature during training.
+
+    Returns
+    -------
+    dense_unit : torch.nn.Sequential
+        A single fully connected layer.
+
+    """
 
     def __init__(self, in_features, out_features,
                  initializer=None, bias_init=None,
                  norm=None, activation=None, dropout=None):
-        """Initilize a single DenseUnit (i.e. a dense layer)."""
+        """Initialize a single DenseUnit (i.e. a dense layer)."""
         super(DenseUnit, self).__init__(initializer, bias_init,
                                         norm, dropout)
         self.in_features = in_features
@@ -96,13 +140,48 @@ class DenseUnit(BaseUnit):
 
 # TODO: Automatically calculate padding to be the same as input shape.
 class ConvUnit(BaseUnit):
-    """Define the ConvUnit object."""
+    """
+    Define the ConvUnit object.
+
+    Parameters
+    ----------
+    conv_dim : int
+        1, 2, or 3 representing spatial dimensional inputs.
+    in_channels : int
+        The number of incoming channels.
+    out_channels : int
+        The number of convolution kernels for this layer.
+    kernel_size : int or tuple
+        The size of the 1, 2, or 3 dimensional convolution kernel.
+    initializer : torch.nn.init
+        Torch initialization function.
+    bias_init : int or float
+        A constant int or float to initialize biases with.
+    stride : int or tuple
+        The stride of the 1, 2, or 3 dimensional convolution kernel.
+    padding : int
+        Number of zero-padding on both sides per dimension.
+    norm : str
+        'batch' for batch norm of 'instance' for instance norm.
+    activation : torch.nn.Module
+        An activation function to apply after Linear unit.
+    pool_size : int
+        Max pooling by a factor of pool_size in each dimension.
+    dropout : float between 0-1
+        The probability of dropping out a feature during training.
+
+    Returns
+    -------
+    conv_unit : torch.nn.Sequential
+        A single convolution layer.
+
+    """
 
     def __init__(self, conv_dim, in_channels, out_channels, kernel_size,
                  initializer=None, bias_init=None,
                  stride=1, padding=0, norm=None,
                  activation=None, pool_size=None, dropout=None):
-        """Initilize a single ConvUnit (i.e. a conv layer)."""
+        """Initialize a single ConvUnit (i.e. a conv layer)."""
         super(ConvUnit, self).__init__(initializer, bias_init,
                                        norm, dropout)
         self.conv_dim = conv_dim

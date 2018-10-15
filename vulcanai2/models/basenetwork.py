@@ -34,7 +34,37 @@ logger = logging.getLogger(__name__)
 
 
 class BaseNetwork(nn.Module):
-    """Base class upon which all Vulcan NNs will be based."""
+    """
+    Defines the BaseNetwork object.
+
+    Parameters
+    ----------
+    name : str
+        The name of the network. Used when saving the file.
+    dimensions : list of tuples
+        The dimensions of the network.
+    config : dict
+        The configuration of the network module, as a dict.
+    save_path : str
+        The name of the file to which you would like to save this network.
+    input_network : list of BaseNetwork
+        A network object provided as input.
+    num_classes : int or None
+        The number of classes to predict.
+    activation : torch.nn.Module
+        The desired activation function for use in the network.
+    pred_activation : torch.nn.Module
+        The desired activation function for use in the prediction layer.
+    optim_spec : dict
+        A dictionary of parameters for the desired optimizer.
+    lr_scheduler : torch.optim.lr_scheduler
+        A callable torch.optim.lr_scheduler
+    early_stopping : str or None
+        So far just 'best_validation_error' is implemented.
+    criter_spec : dict
+        criterion specification with name and all its parameters.
+
+    """
 
     # TODO: not great to use mutables as arguments.
     # TODO: reorganize these.
@@ -44,37 +74,7 @@ class BaseNetwork(nn.Module):
                  optim_spec={'name': 'Adam', 'lr': 0.001},
                  lr_scheduler=None, early_stopping=None,
                  criter_spec=nn.CrossEntropyLoss()):
-        """
-        Defines the network object.
-
-        Parameters
-        ----------
-        name : str
-            The name of the network. Used when saving the file.
-        dimensions : list of tuples
-            The dimensions of the network.
-        config : dict
-            The configuration of the network module, as a dict.
-        save_path : str
-            The name of the file to which you would like to save this network.
-        input_network : list of BaseNetwork
-            A network object provided as input.
-        num_classes : int or None
-            The number of classes to predict.
-        activation : torch.nn.Module
-            The desired activation function for use in the network.
-        pred_activation : torch.nn.Module
-            The desired activation function for use in the prediction layer.
-        optim_spec : dict
-            A dictionary of parameters for the desired optimizer.
-        lr_scheduler : torch.optim.lr_scheduler
-            A callable torch.optim.lr_scheduler
-        early_stopping : str or None
-            So far just 'best_validation_error' is implemented.
-        criter_spec : dict
-            criterion specification with name and all its parameters.
-
-        """
+        """Define, initialize, and build the BaseNetwork."""
         super(BaseNetwork, self).__init__()
 
         self._name = name

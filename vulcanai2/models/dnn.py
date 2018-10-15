@@ -71,7 +71,37 @@ class DenseNetConfig:
 
 
 class DenseNet(BaseNetwork, nn.Module):
-    """Subclass of BaseNetwork defining a DenseNet."""
+    """
+    Subclass of BaseNetwork defining a DenseNet.
+
+    Parameters
+    ----------
+    name : str
+        The name of the network. Used when saving the file.
+    dimensions : list of tuples
+        The dimensions of the network.
+    config : dict
+        The configuration of the network module, as a dict.
+    save_path : str
+        The name of the file to which you would like to save this network.
+    input_network : list of BaseNetwork
+        A network object provided as input.
+    num_classes : int or None
+        The number of classes to predict.
+    activation : torch.nn.Module
+        The desired activation function for use in the network.
+    pred_activation : torch.nn.Module
+        The desired activation function for use in the prediction layer.
+    optim_spec : dict
+        A dictionary of parameters for the desired optimizer.
+    lr_scheduler : torch.optim.lr_scheduler
+        A callable torch.optim.lr_scheduler
+    early_stopping : str or None
+        So far just 'best_validation_error' is implemented.
+    criter_spec : dict
+        criterion specification with name and all its parameters.
+
+    """
 
     def __init__(self, name, dimensions, config, save_path=None,
                  input_network=None, num_classes=None,
