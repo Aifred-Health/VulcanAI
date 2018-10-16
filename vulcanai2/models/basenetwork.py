@@ -524,8 +524,8 @@ class BaseNetwork(nn.Module):
             save_path = save_path + "/"
 
         module_save_path = save_path + "{name}/".format(name=self.name)
-
-        os.makedirs(module_save_path)  # let this throw an error if it already exists
+        if not os.path.exists(module_save_path):
+            os.makedirs(module_save_path)  # let this throw an error if it already exists
 
         # recursive recursive recursive
         if self._input_network is not None:

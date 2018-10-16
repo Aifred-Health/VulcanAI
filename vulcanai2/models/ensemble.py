@@ -96,8 +96,28 @@ class SnapshotNet(object):
             )
             # Save instance of snapshot in a dictionary
             snaps_name = "{}_{}".format(self.name, index)
-            self.snapshot_networks[snaps_name] = \
-                deepcopy(self.template_network)
+            temp_network = deepcopy(self.template_network)
+            self._update_network_name_stack(temp_network, index)
+            self.snapshot_networks[snaps_name] = temp_network
+
+    def _update_network_name_stack(self, network, append_str):
+        """
+        Given a network, append a string to the name of all networks in stack.
+
+        Recursively traverse each input network to update names
+        with the appended string.
+
+        Parameters
+        ----------
+        network : BaseNetwork
+            Network stack to update names of with new append_str.
+        append_str : int, str
+            The characters to append at the end of BaseNetwork stack of names.
+
+        """
+        if '_input_network' in network._modules:
+            self._update_network_name_stack(network._input_network, append_str)
+        network.name = "{}_{}".format(network.name, append_str)
 
     def forward_pass(self, data_loader, convert_to_class=False):
         """
@@ -133,7 +153,6 @@ class SnapshotNet(object):
         else:
             return raw_prediction
 
-    # TODO: Fix bc it writes in the same folder several models
     def save_model(self, save_path=None):
         """
         Save all ensembled snapshot_networks in a folder with ensemble name.
