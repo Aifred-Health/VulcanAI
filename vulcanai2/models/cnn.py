@@ -76,48 +76,23 @@ class ConvNetConfig:
 
 
 class ConvNet(BaseNetwork, nn.Module):
-    """
-    Subclass of BaseNetwork defining a ConvNet.
+    """Subclass of BaseNetwork defining a ConvNet."""
 
-    Parameters
-    ----------
-    name : str
-        The name of the network. Used when saving the file.
-    dimensions : list of tuples
-        The dimensions of the network.
-    config : dict
-        The configuration of the network module, as a dict.
-    save_path : str
-        The name of the file to which you would like to save this network.
-    input_network : list of BaseNetwork
-        A network object provided as input.
-    num_classes : int or None
-        The number of classes to predict.
-    activation : torch.nn.Module
-        The desired activation function for use in the network.
-    pred_activation : torch.nn.Module
-        The desired activation function for use in the prediction layer.
-    optim_spec : dict
-        A dictionary of parameters for the desired optimizer.
-    lr_scheduler : torch.optim.lr_scheduler
-        A callable torch.optim.lr_scheduler
-    early_stopping : str or None
-        So far just 'best_validation_error' is implemented.
-    criter_spec : dict
-        criterion specification with name and all its parameters.
-
-    """
-
-    def __init__(self, name, in_dim, config, save_path=None, input_networks=None, num_classes=None,
-                 activation=nn.ReLU(), pred_activation=nn.Softmax(dim=1), optim_spec={'name': 'Adam', 'lr': 0.001},
-                 lr_scheduler=None, early_stopping=None, criter_spec=nn.CrossEntropyLoss()):
-        
+    def __init__(self, name, in_dim, config, save_path=None,
+                 input_networks=None, num_classes=None,
+                 activation=nn.ReLU(), pred_activation=None,
+                 optim_spec={'name': 'Adam', 'lr': 0.001},
+                 lr_scheduler=None, early_stopping=None,
+                 criter_spec=nn.CrossEntropyLoss()):
+        """Define the ConvNet object."""
         nn.Module.__init__(self)
-        super(ConvNet, self).__init__(name, in_dim, ConvNetConfig(config), save_path, input_networks, num_classes,
-                                      activation, pred_activation, optim_spec, lr_scheduler, early_stopping, criter_spec)
+        super(ConvNet, self).__init__(
+            name, in_dim, ConvNetConfig(config), save_path, input_networks,
+            num_classes, activation, pred_activation, optim_spec,
+            lr_scheduler, early_stopping, criter_spec)
 
     def _create_network(self, **kwargs):
-        
+
         conv_hid_layers = self._config.units
         # Build Network
         self.network = self._build_conv_network(

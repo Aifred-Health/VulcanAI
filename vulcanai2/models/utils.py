@@ -2,6 +2,7 @@
 import numpy as np
 from sklearn.metrics import confusion_matrix
 from sklearn.preprocessing import LabelBinarizer
+from collections import OrderedDict as odict
 
 
 def round_list(raw_list, decimals=4):
