@@ -531,7 +531,7 @@ class BaseNetwork(nn.Module):
         if self._input_network is not None:
             self._input_network.save_model(save_path)
 
-        self.save_path = save_path  # TODO: I don't think this is necessary
+        self.save_path = module_save_path  # TODO: I don't think this is necessary
 
         # to improve: # object.__getstate__() https://docs.python.org/3/library/pickle.html#example
         model_file_path = module_save_path + "model.pkl"
@@ -562,4 +562,3 @@ class BaseNetwork(nn.Module):
         return instance
 
         # my_tensor = my_tensor.to(torch.device('cuda')).
-

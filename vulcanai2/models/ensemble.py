@@ -3,6 +3,7 @@ from copy import deepcopy
 import numpy as np
 import logging
 from datetime import datetime
+import pickle
 
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
@@ -86,6 +87,7 @@ class SnapshotNet(object):
             optimizer=self.template_network.optim,
             T_max=network_epochs
         )
+
         for index in range(self.M):
             self.template_network.fit(
                 train_loader=train_loader,
@@ -97,7 +99,9 @@ class SnapshotNet(object):
             # Save instance of snapshot in a dictionary
             snaps_name = "{}_{}".format(self.name, index)
             temp_network = deepcopy(self.template_network)
-            self._update_network_name_stack(temp_network, index)
+            self._update_network_name_stack(
+                network=temp_network,
+                append_str=index)
             self.snapshot_networks[snaps_name] = temp_network
 
     def _update_network_name_stack(self, network, append_str):
@@ -153,6 +157,13 @@ class SnapshotNet(object):
         else:
             return raw_prediction
 
+    def __getstate__(self):
+        """Remove Snapshot networks to only save the filename locations."""
+        snapshot_dict = dict(self.__dict__)
+        del snapshot_dict['template_network']
+        del snapshot_dict['snapshot_networks']
+        return snapshot_dict
+
     def save_model(self, save_path=None):
         """
         Save all ensembled snapshot_networks in a folder with ensemble name.
@@ -167,21 +178,51 @@ class SnapshotNet(object):
         None
 
         """
+        self.ensemble_file_paths = []
         if save_path is None:
             save_path = r"saved_models/{}_{}/".format(
                 self.name, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+        if not save_path.endswith("/"):
+            save_path = save_path + "/"
         for key, network in self.snapshot_networks.items():
             logger.info("Saving network {}".format(key))
             network.save_model(save_path=save_path)
+            self.ensemble_file_paths.append(network.save_path)
+        model_file_path = save_path + "snapshot_model.pkl"
+        pickle.dump(self, open(model_file_path, "wb"), 2)
 
-    # TODO: Fix to load the correct models
-    # @classmethod
-    # def load_model(cls, load_path):
-    #     """Load up ensembled models given a folder location."""
-    #     networks = []
-    #     for model_file in sorted(os.listdir(load_path)):
-    #         if model_file.endswith('.network'):
-    #             file = os.path.join(load_path, model_file)
-    #             networks += [BaseNetwork.load_model(file)]
+    # TODO: Save all in self including the snapshot_networks?
+    @classmethod
+    def load_model(cls, load_path):
+        """
+        Load up ensembled models given a folder location.
 
-    #     return None
+        Will finddinfuse the snapshot_model.pkl
+
+        Parameters
+        ----------
+        load_path : str
+            Snapshot folder location containing the snapshot_model.pkl.
+
+        Returns
+        -------
+        snapshot_network : SnapshotNet
+            Returns the ensemble network to the same state
+            as it was when it was saved.
+
+        """
+        # TODO: does this break windows?? no idea.
+        if not load_path.endswith("/"):
+            load_path = load_path + "/"
+        model_file_path = load_path + "snapshot_model.pkl"
+        snap_skeleton = pickle.load(open(model_file_path, 'rb'))
+        networks = {}
+        for idx, network_file in enumerate(snap_skeleton.ensemble_file_paths):
+            snaps_name = "{}_{}".format(snap_skeleton.name, idx)
+            net = BaseNetwork.load_model(network_file)
+            networks[snaps_name] = net
+        # Generate the ensemble
+        snap_skeleton.snapshot_networks = networks
+        # Reinstantiate the most recently trained model as the template
+        snap_skeleton.template_network = list(networks.values())[-1]
+        return snap_skeleton
