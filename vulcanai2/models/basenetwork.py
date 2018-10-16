@@ -88,17 +88,18 @@ class BaseNetwork(nn.Module):
                 self.in_dim = in_dim
         else:
             self.in_dim = []
-            for net in self._input_networks:
+            for net in self.input_networks:
                 self.in_dim.append(net.in_dim)
         # print(self.in_dim)
         self._config = config
         self._save_path = save_path
 
+        # TODO: See if using nn.ModuleDict is faster
         if input_networks is not None and \
-           not isinstance(input_networks, list):
-               self._input_networks = [input_networks]
+           not isinstance(input_networks, nn.ModuleList):
+               self.input_networks = nn.ModuleList(input_networks)
         else:
-            self._input_networks = input_networks
+            self.input_networks = input_networks
 
         self._num_classes = num_classes
 
@@ -157,8 +158,8 @@ class BaseNetwork(nn.Module):
         if not isinstance(inputs, list):
                 inputs = [inputs]
 
-        if self._input_networks is not None:
-            networks = self._input_networks
+        if self.input_networks is not None:
+            networks = self.input_networks
             net_outs = []
             for net, x in zip(networks, inputs):
                 net_outs.append(net(x))
@@ -426,6 +427,7 @@ class BaseNetwork(nn.Module):
                 self._to_cuda()
 
             # Forward + Backward + Optimize
+            # TODO: Remove temp
             predictions = self([data, data])
 
             train_loss = self.criterion(predictions, targets)
@@ -500,8 +502,8 @@ class BaseNetwork(nn.Module):
             self.cuda()
             for module in self.modules():
                 module.cuda()
-            if self._input_networks is not None:
-                for net in self._input_networks:
+            if self.input_networks is not None:
+                for net in self.input_networks:
                     net._to_cuda()
 
     def run_test(self, data_loader, figure_path=None, plot=False):
@@ -570,12 +572,12 @@ class BaseNetwork(nn.Module):
         os.makedirs(module_save_path)  # let this throw an error if it already exists
 
         # recursive recursive recursive
-        if self._input_networks is not None:
+        if self.input_networks is not None:
             if self._input_network:
                 self._input_network.save_model(save_path)
             else:
                 # TODO: should rewrite the save_path structure
-                for i, input_network in enumerate(self._input_networks):
+                for i, input_network in enumerate(self.input_networks):
                     input_network.save_model("MultiInputNN_"+save_path+"_{}".format(i))
 
         self.save_path = save_path  # TODO: I don't think this is necessary

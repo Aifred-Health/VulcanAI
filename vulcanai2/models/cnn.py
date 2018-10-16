@@ -78,8 +78,8 @@ class ConvNetConfig:
 class ConvNet(BaseNetwork, nn.Module):
     """Subclass of BaseNetwork defining a ConvNet."""
 
-    def __init__(self, name, dimensions, config, save_path=None,
-                 input_network=None, num_classes=None,
+    def __init__(self, name, in_dim, config, save_path=None,
+                 input_networks=None, num_classes=None,
                  activation=nn.ReLU(), pred_activation=None,
                  optim_spec={'name': 'Adam', 'lr': 0.001},
                  lr_scheduler=None, early_stopping=None,
@@ -87,12 +87,12 @@ class ConvNet(BaseNetwork, nn.Module):
         """Define the ConvNet object."""
         nn.Module.__init__(self)
         super(ConvNet, self).__init__(
-            name, dimensions, ConvNetConfig(config), save_path, input_network,
+            name, in_dim, ConvNetConfig(config), save_path, input_networks,
             num_classes, activation, pred_activation, optim_spec,
             lr_scheduler, early_stopping, criter_spec)
 
     def _create_network(self, **kwargs):
-        
+
         conv_hid_layers = self._config.units
         # Build Network
         self.network = self._build_conv_network(
