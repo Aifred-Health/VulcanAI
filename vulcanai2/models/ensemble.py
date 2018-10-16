@@ -32,7 +32,7 @@ class SnapshotNet(object):
     """
 
     def __init__(self, name, template_network, n_snapshots=3):
-        """Uses Network to build model snapshots."""
+        """Use Network to build model snapshots."""
         self.name = name
         if not isinstance(template_network, BaseNetwork):
             raise ValueError(

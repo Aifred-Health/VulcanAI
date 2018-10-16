@@ -321,6 +321,7 @@ class BaseNetwork(nn.Module):
 
     def _init_trainer(self):
         self.optim = self._init_optimizer(self._optim_spec)
+        # TODO: Use logger to describe if the optimizer is changed.
         self.criterion = self._init_criterion(self._criter_spec)
 
     def fit(self, train_loader, val_loader, epochs,
