@@ -35,6 +35,16 @@ class SnapshotNet(object):
 
     def __init__(self, name, template_network, n_snapshots=3):
         """Use Network to build model snapshots."""
+        # For inheriting from BaseNetwork
+        # super(SnapshotNet, self).__init__(
+        #     name, template_network.in_dim, template_network._config,
+        #     template_network.save_path, template_network._input_network,
+        #     template_network._num_classes,
+        #     template_network.network[0]._activation,
+        #     None, template_network._optim_spec,
+        #     template_network.lr_scheduler, template_network.early_stopping,
+        #     template_network._criter_spec)
+
         self.name = name
         if not isinstance(template_network, BaseNetwork):
             raise ValueError(
