@@ -40,8 +40,8 @@ class BaseNetwork(nn.Module):
 
     # TODO: not great to use mutables as arguments.
     # TODO: reorganize these.
-    def __init__(self, name, dimensions, config, save_path=None,
-                 input_network=None, num_classes=None,
+    def __init__(self, name, in_dim, config, save_path=None,
+                 input_networks=None, num_classes=None,
                  activation=nn.ReLU(), pred_activation=None,
                  optim_spec={'name': 'Adam', 'lr': 0.001},
                  lr_scheduler=None, early_stopping=None,
@@ -53,13 +53,13 @@ class BaseNetwork(nn.Module):
         ----------
         name : str
             The name of the network. Used when saving the file.
-        dimensions : list of tuples
+        in_dim : list of tuples
             The dimensions of the network.
         config : dict
             The configuration of the network module, as a dict.
         save_path : str
             The name of the file to which you would like to save this network.
-        input_network : list of BaseNetwork
+        input_networks : list of BaseNetwork
             A network object provided as input.
         num_classes : int or None
             The number of classes to predict.
@@ -90,13 +90,13 @@ class BaseNetwork(nn.Module):
             self.in_dim = []
             for net in self._input_networks:
                 self.in_dim.append(net.in_dim)
-        #print(self.in_dim)
+        # print(self.in_dim)
         self._config = config
         self._save_path = save_path
 
         if input_networks is not None and \
-            not isinstance(input_networks, list):
-            self._input_networks = [input_networks]
+           not isinstance(input_networks, list):
+               self._input_networks = [input_networks]
         else:
             self._input_networks = input_networks
 
@@ -128,17 +128,16 @@ class BaseNetwork(nn.Module):
 
         #print(self)
         
-        out_shapes = self.get_output_shapes(network=self.network,input_size=self.in_dim)
+        out_shapes = self.get_output_shapes(network=self.network, input_size=self.in_dim)
         self.out_dim = out_shapes[list(out_shapes)[-1]]['output_shape'][1:]
         if len(self.out_dim)>1:
             self.out_dim = tuple(self.out_dim)
         else:
             self.out_dim = self.out_dim[0]
         if self._num_classes:
-            out_shapes = self.get_output_shapes(network=self.network_tail,input_size=self.out_dim)
-            self.out_dim = out_shapes[list(out_shapes)[-1]]['output_shape'][1:]
-        
-        #print(self.out_dim)
+            out_shapes = self.get_output_shapes(network=self.network_tail, input_size=self.out_dim)
+            self.out_dim = out_shapes[list(out_shapes)[-1]]['output_shape'][1:]   
+        # print(self.out_dim)
 
     # TODO: where to do typechecking... just let everything fail?
 
