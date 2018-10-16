@@ -69,11 +69,11 @@ class TestSnapshotNet:
         )
         assert test_snap.template_network.lr_scheduler is not None
         # Check correct number of generated snapshots
-        assert len(test_snap.snapshot_networks.keys()) == 3
+        assert len(test_snap.snapshot_networks) == 3
         # Check snapshots are not identical
-        assert list(test_snap.snapshot_networks.values())[0] is not \
-            list(test_snap.snapshot_networks.values())[1] is not \
-            list(test_snap.snapshot_networks.values())[2]
+        assert test_snap.snapshot_networks[0] is not \
+            test_snap.snapshot_networks[1] is not \
+            test_snap.snapshot_networks[2]
         output = test_snap.forward_pass(
             data_loader=test_dataloader,
             convert_to_class=False)

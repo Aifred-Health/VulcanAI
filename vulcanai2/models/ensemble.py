@@ -5,6 +5,7 @@ import logging
 from datetime import datetime
 import pickle
 
+from torch import nn
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
 from .basenetwork import BaseNetwork
@@ -44,7 +45,7 @@ class SnapshotNet(object):
         if n_snapshots <= 0:
             raise ValueError("n_snapshots must be >=1.")
         self.M = n_snapshots
-        self.snapshot_networks = {}
+        self.snapshot_networks = nn.ModuleList()
 
     def fit(self, train_loader, val_loader, epochs,
             retain_graph=None, valid_interv=4, plot=False):
@@ -96,13 +97,12 @@ class SnapshotNet(object):
                 valid_interv=valid_interv,
                 plot=plot
             )
-            # Save instance of snapshot in a dictionary
-            snaps_name = "{}_{}".format(self.name, index)
+            # Save instance of snapshot in a nn.ModuleList
             temp_network = deepcopy(self.template_network)
             self._update_network_name_stack(
                 network=temp_network,
                 append_str=index)
-            self.snapshot_networks[snaps_name] = temp_network
+            self.snapshot_networks.append(temp_network)
 
     def _update_network_name_stack(self, network, append_str):
         """
@@ -142,8 +142,8 @@ class SnapshotNet(object):
 
         """
         prediction_collection = []
-        for key, network in self.snapshot_networks.items():
-            logger.info("Getting output from {}".format(key))
+        for network in self.snapshot_networks:
+            logger.info("Getting output from {}".format(network.name))
             prediction_collection.append(
                 network.forward_pass(
                     data_loader=data_loader,
@@ -184,8 +184,8 @@ class SnapshotNet(object):
                 self.name, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
         if not save_path.endswith("/"):
             save_path = save_path + "/"
-        for key, network in self.snapshot_networks.items():
-            logger.info("Saving network {}".format(key))
+        for network in self.snapshot_networks:
+            logger.info("Saving network {}".format(network.name))
             network.save_model(save_path=save_path)
             self.ensemble_file_paths.append(network.save_path)
         model_file_path = save_path + "snapshot_model.pkl"
@@ -216,13 +216,12 @@ class SnapshotNet(object):
             load_path = load_path + "/"
         model_file_path = load_path + "snapshot_model.pkl"
         snap_skeleton = pickle.load(open(model_file_path, 'rb'))
-        networks = {}
-        for idx, network_file in enumerate(snap_skeleton.ensemble_file_paths):
-            snaps_name = "{}_{}".format(snap_skeleton.name, idx)
+        networks = nn.ModuleList()
+        for network_file in snap_skeleton.ensemble_file_paths:
             net = BaseNetwork.load_model(network_file)
-            networks[snaps_name] = net
+            networks.append(net)
         # Generate the ensemble
         snap_skeleton.snapshot_networks = networks
         # Reinstantiate the most recently trained model as the template
-        snap_skeleton.template_network = list(networks.values())[-1]
+        snap_skeleton.template_network = networks[-1]
         return snap_skeleton
