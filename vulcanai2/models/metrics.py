@@ -149,8 +149,7 @@ class Metrics(object):
             logger.setLevel(logging.INFO)
 
         if network._num_classes is None or \
-           network._num_classes == 0 or \
-           not hasattr(network, 'network_tail'):
+           network._num_classes == 0:
             raise ValueError('There\'s no classification layer')
 
         test_y = data_loader.dataset.test_labels

@@ -51,6 +51,8 @@ class SnapshotNet(object):
                 "template_network type must inherit from BaseNetwork.")
 
         self.template_network = deepcopy(template_network)
+        self._num_classes = template_network._num_classes
+        self.metrics = Metrics(self._num_classes)
 
         if n_snapshots <= 0:
             raise ValueError("n_snapshots must be >=1.")
@@ -151,6 +153,8 @@ class SnapshotNet(object):
             For class probabilities the shape is [batch]
 
         """
+        if len(self.snapshot_networks) == 0:
+            raise ValueError("SnapshotNet must be trained first.")
         prediction_collection = []
         for network in self.snapshot_networks:
             logger.info("Getting output from {}".format(network.name))
@@ -162,10 +166,17 @@ class SnapshotNet(object):
         raw_prediction = np.mean(
             prediction_collection, axis=0, dtype='float32')
         if convert_to_class:
-            # TODO: be able to use Metrics.get_class outside
-            return Metrics.get_class(None, raw_prediction)
+            return self.metrics.get_class(raw_prediction)
         else:
             return raw_prediction
+
+    def run_test(self, data_loader, figure_path=None, plot=False):
+        """Will conduct the test suite to determine ensemble strength."""
+        return self.metrics.run_test(
+            network=self,
+            data_loader=data_loader,
+            figure_path=figure_path,
+            plot=plot)
 
     def __getstate__(self):
         """Remove Snapshot networks to only save the filename locations."""
