@@ -115,7 +115,7 @@ class SnapshotNet(object):
             The characters to append at the end of BaseNetwork stack of names.
 
         """
-        if '_input_network' in network._modules:
+        if network._input_network is not None:
             self._update_network_name_stack(network._input_network, append_str)
         network.name = "{}_{}".format(network.name, append_str)
 
