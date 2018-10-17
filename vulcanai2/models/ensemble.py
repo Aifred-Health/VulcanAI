@@ -5,6 +5,7 @@ import logging
 from datetime import datetime
 import pickle
 
+import torch
 from torch import nn
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
@@ -137,40 +138,20 @@ class SnapshotNet(BaseNetwork):
             self._update_network_name_stack(network._input_network, append_str)
         network.name = "{}_{}".format(network.name, append_str)
 
-    def forward_pass(self, data_loader, convert_to_class=False):
+    def forward(self, x):
         """
-        Run forward on all snapshot networks, collect and return results.
+        Snapshot forward function.
 
-        Parameters
-        ----------
-        data_loader : DataLoader
-            Input data to pass through networks
-        convert_to_class : boolean
-            Whether to convert class probabilities to classes
-
-        Returns
-        -------
-        prediction : numpy.ndarray
-            For raw probabilities the shape is [batch, num_classes].
-            For class probabilities the shape is [batch]
+        Collect outputs of all internal networks and average outputs.
 
         """
         if len(self.snapshot_networks) == 0:
             raise ValueError("SnapshotNet must be trained first.")
-        prediction_collection = []
-        for network in self.snapshot_networks:
-            logger.info("Getting output from {}".format(network.name))
-            prediction_collection.append(
-                network.forward_pass(
-                    data_loader=data_loader,
-                    convert_to_class=False))
-        prediction_collection = np.array(prediction_collection)
-        raw_prediction = np.mean(
-            prediction_collection, axis=0, dtype='float32')
-        if convert_to_class:
-            return self.metrics.get_class(raw_prediction)
-        else:
-            return raw_prediction
+        pred_collector = []
+        for net in self.snapshot_networks:
+            pred_collector.append(net(x))
+        pred_collector = torch.stack(pred_collector)
+        return torch.mean(input=pred_collector, dim=0)
 
     def __getstate__(self):
         """Remove Snapshot networks to only save the filename locations."""
