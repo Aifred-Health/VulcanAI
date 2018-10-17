@@ -136,55 +136,33 @@ def stitch_datasets(df_list, on, index_list=None):
 
     """
     print(index_list)
-    # change column names to all caps
-    for i in range(len(df_list)):
-        df_list[i].columns = map(str.lower, df_list[i].columns)
+    first_column = list(df_list)[1]
+    merged_df = df_list[first_column].copy(deep=True)
+    merged_df = merged_df.apply(pd.to_numeric, errors='ignore')
 
-    # create an empty Dataframe and set first column to on
-    merged_df = pd.DataFrame(columns=[on])
+    count = 1
 
-    # if indexes are not specified, create an added column for each feature
-    # otherwise, only create extra column for features in list
-    if index_list is None:
-        for i in range(len(df_list)):
-            col_list_1 = list(df_list[i].columns)
-            df = pd.DataFrame(1, index=df_list[i].index,
-                              columns=np.arange(len(df_list[i].columns) - 1))
-            col_list_2 = list(df.columns)
-            df_list[i] = pd.concat([df_list[i], df], axis=1)
-            concat_list = [None] * (len(col_list_1) + len(col_list_2))
-            concat_list[0] = col_list_1[0]
-            col_list_1 = col_list_1[1:(len(col_list_1))]
-            concat_list[1::2] = col_list_1
-            concat_list[2::2] = col_list_2
-            df_list[i] = df_list[i][concat_list]
-    else:
-        print(df_list[0])
-        print(df_list[1])
-        frequency = [0] * len(df_list)
-        for j in range(len(df_list)):
-            for k in range(len(index_list)):
-                for l in range(len(df_list[j].columns)):
-                    if (list(df_list[j].columns))[l] == index_list[k]:
-                        frequency[j] += 1
-        for i in range(len(df_list)):
-            if frequency[i] == 0:
-                df_list[i] = df_list[i]
-            else:
-                col_list_1 = list(df_list[i].columns)
-                df = pd.DataFrame(1, index=df_list[i].index, columns=np.arange(frequency[i]))
-                col_list_2 = list(df.columns)
-                df_list[i] = pd.concat([df_list[i], df], axis=1)
-                concat_list = [None] * (len(col_list_1) + len(col_list_2))
-                concat_list[0] = col_list_1[0]
-                col_list_1 = col_list_1[1:(len(col_list_1))]
-                concat_list[1::2] = col_list_1
-                concat_list[2::2] = col_list_2
-                df_list[i] = df_list[i][concat_list]
+    for key in list(df_list):
+        if key != first_column:
+            print('Combining: {} '.format(key))
 
-    for j in range(len(df_list)):
-        merged_df = pd.merge(merged_df, df_list[j], how='outer', on=on)
+            count = count + 1
+            df_two = df_list[key].copy(deep=True)
+            df_two = df_two.apply(pd.to_numeric, errors='ignore')
+            merged_df = merged_df.append(df_two)
 
-    merged_df.fillna(0, inplace=True)
+    if on is not None:
+        # Group by keys, forward fill and backward fill missing data then remove duplicate keys
+        df_groupOn = merged_df.reset_index().groupby(on).apply(
+            lambda x: x.fillna(method='ffill').fillna(method='bfill'))
+        if 'index' in list(df_groupOn):
+            del df_groupOn['index']
+        print("\tDropping duplicates")
 
+        merged_df = df_groupOn.drop_duplicates(subset=on)
+
+    merged_df.fillna(-1, inplace=True)
+    print("\nMerge Total columns = {totalCols}, rows = {totalRows} ".format(
+        totalCols=len(list(merged_df)),
+        totalRows=len(merged_df)))
     return merged_df
