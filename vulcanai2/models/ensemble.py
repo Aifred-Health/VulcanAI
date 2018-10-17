@@ -9,12 +9,11 @@ from torch import nn
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
 from .basenetwork import BaseNetwork
-from .metrics import Metrics
 
 logger = logging.getLogger(__name__)
 
 
-class SnapshotNet(object):
+class SnapshotNet(BaseNetwork):
     """
     Initialize snapshot ensemble given a template network.
 
@@ -36,23 +35,26 @@ class SnapshotNet(object):
     def __init__(self, name, template_network, n_snapshots=3):
         """Use Network to build model snapshots."""
         # For inheriting from BaseNetwork
-        # super(SnapshotNet, self).__init__(
-        #     name, template_network.in_dim, template_network._config,
-        #     template_network.save_path, template_network._input_network,
-        #     template_network._num_classes,
-        #     template_network.network[0]._activation,
-        #     None, template_network._optim_spec,
-        #     template_network.lr_scheduler, template_network.early_stopping,
-        #     template_network._criter_spec)
+        super(SnapshotNet, self).__init__(
+            name=name,
+            dimensions=template_network.in_dim,
+            config=None,  # template_network._config
+            save_path=None,  # template_network.save_path
+            input_network=None,  # template_network._input_network
+            num_classes=template_network._num_classes,
+            activation=None,  # template_network.network[0]._activation
+            pred_activation=None,  # pred_activation
+            optim_spec=None,  # template_network._optim_spec
+            lr_scheduler=None,  # template_network.lr_scheduler
+            early_stopping=None,  # template_network.early_stopping
+            criter_spec=None  # template_network._criter_spec
+        )
 
-        self.name = name
         if not isinstance(template_network, BaseNetwork):
             raise ValueError(
                 "template_network type must inherit from BaseNetwork.")
 
         self.template_network = deepcopy(template_network)
-        self._num_classes = template_network._num_classes
-        self.metrics = Metrics(self._num_classes)
 
         if n_snapshots <= 0:
             raise ValueError("n_snapshots must be >=1.")
@@ -170,19 +172,11 @@ class SnapshotNet(object):
         else:
             return raw_prediction
 
-    def run_test(self, data_loader, figure_path=None, plot=False):
-        """Will conduct the test suite to determine ensemble strength."""
-        return self.metrics.run_test(
-            network=self,
-            data_loader=data_loader,
-            figure_path=figure_path,
-            plot=plot)
-
     def __getstate__(self):
         """Remove Snapshot networks to only save the filename locations."""
         snapshot_dict = dict(self.__dict__)
-        del snapshot_dict['template_network']
-        del snapshot_dict['snapshot_networks']
+        del snapshot_dict['_modules']['template_network']
+        del snapshot_dict['_modules']['snapshot_networks']
         return snapshot_dict
 
     def save_model(self, save_path=None):
