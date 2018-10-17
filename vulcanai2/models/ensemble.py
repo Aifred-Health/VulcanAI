@@ -60,14 +60,14 @@ class SnapshotNet(BaseNetwork):
             raise ValueError("n_snapshots must be >=1.")
         self.M = n_snapshots
         # TODO: Should this be called self.network for continuity?
-        self.snapshot_networks = nn.ModuleList()
+        self.network = nn.ModuleList()
 
     def fit(self, train_loader, val_loader, epochs,
             retain_graph=None, valid_interv=4, plot=False):
         """
         Train each model for T/M epochs and controls network learning rate.
 
-        Collects each model in a class variable self.snapshot_networks
+        Collects each model in a class variable self.network
 
         Parameters
         ----------
@@ -117,7 +117,7 @@ class SnapshotNet(BaseNetwork):
             self._update_network_name_stack(
                 network=temp_network,
                 append_str=index)
-            self.snapshot_networks.append(temp_network)
+            self.network.append(temp_network)
 
     def _update_network_name_stack(self, network, append_str):
         """
@@ -154,10 +154,10 @@ class SnapshotNet(BaseNetwork):
         output : torch.Tensor
 
         """
-        if len(self.snapshot_networks) == 0:
+        if len(self.network) == 0:
             raise ValueError("SnapshotNet must be trained first.")
         pred_collector = []
-        for net in self.snapshot_networks:
+        for net in self.network:
             pred_collector.append(net(x))
         # Stack outputs along a new 0 dimension to be averaged
         pred_collector = torch.stack(pred_collector)
@@ -167,12 +167,12 @@ class SnapshotNet(BaseNetwork):
         """Remove Snapshot networks to only save the filename locations."""
         snapshot_dict = dict(self.__dict__)
         del snapshot_dict['_modules']['template_network']
-        del snapshot_dict['_modules']['snapshot_networks']
+        del snapshot_dict['_modules']['network']
         return snapshot_dict
 
     def save_model(self, save_path=None):
         """
-        Save all ensembled snapshot_networks in a folder with ensemble name.
+        Save all ensembled network in a folder with ensemble name.
 
         Parameters
         ----------
@@ -190,11 +190,11 @@ class SnapshotNet(BaseNetwork):
                 self.name, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
         if not save_path.endswith("/"):
             save_path = save_path + "/"
-        for network in self.snapshot_networks:
+        for network in self.network:
             logger.info("Saving network {}".format(network.name))
             network.save_model(save_path=save_path)
             self.ensemble_save_paths.append(network.save_path)
-        module_save_path = save_path + "snapshot_model.pkl"
+        module_save_path = save_path + "model.pkl"
         self.save_path = module_save_path
         pickle.dump(self, open(module_save_path, "wb"), 2)
 
@@ -220,14 +220,14 @@ class SnapshotNet(BaseNetwork):
         # TODO: does this break windows?? no idea.
         if not load_path.endswith("/"):
             load_path = load_path + "/"
-        model_file_path = load_path + "snapshot_model.pkl"
+        model_file_path = load_path + "model.pkl"
         snap_skeleton = pickle.load(open(model_file_path, 'rb'))
         networks = nn.ModuleList()
         for network_file in snap_skeleton.ensemble_save_paths:
             net = BaseNetwork.load_model(network_file)
             networks.append(net)
         # Generate the ensemble
-        snap_skeleton.snapshot_networks = networks
+        snap_skeleton.network = networks
         # Reinstantiate the most recently trained model as the template
         snap_skeleton.template_network = networks[-1]
         return snap_skeleton
