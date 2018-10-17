@@ -1,6 +1,5 @@
 """Contains all ensemble models."""
 from copy import deepcopy
-import numpy as np
 import logging
 from datetime import datetime
 import pickle
@@ -35,7 +34,7 @@ class SnapshotNet(BaseNetwork):
 
     def __init__(self, name, template_network, n_snapshots=3):
         """Use Network to build model snapshots."""
-        # For inheriting from BaseNetwork
+        # TODO: Should these be defaulted to the values of template_network?
         super(SnapshotNet, self).__init__(
             name=name,
             dimensions=template_network.in_dim,
@@ -60,6 +59,7 @@ class SnapshotNet(BaseNetwork):
         if n_snapshots <= 0:
             raise ValueError("n_snapshots must be >=1.")
         self.M = n_snapshots
+        # TODO: Should this be called self.network for continuity?
         self.snapshot_networks = nn.ModuleList()
 
     def fit(self, train_loader, val_loader, epochs,
@@ -150,6 +150,7 @@ class SnapshotNet(BaseNetwork):
         pred_collector = []
         for net in self.snapshot_networks:
             pred_collector.append(net(x))
+        # Stack outputs along a new 0 dimension to be averaged
         pred_collector = torch.stack(pred_collector)
         return torch.mean(input=pred_collector, dim=0)
 
@@ -174,7 +175,7 @@ class SnapshotNet(BaseNetwork):
         None
 
         """
-        self.ensemble_file_paths = []
+        self.ensemble_save_paths = []
         if save_path is None:
             save_path = r"saved_models/{}_{}/".format(
                 self.name, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
@@ -183,11 +184,11 @@ class SnapshotNet(BaseNetwork):
         for network in self.snapshot_networks:
             logger.info("Saving network {}".format(network.name))
             network.save_model(save_path=save_path)
-            self.ensemble_file_paths.append(network.save_path)
-        model_file_path = save_path + "snapshot_model.pkl"
-        pickle.dump(self, open(model_file_path, "wb"), 2)
+            self.ensemble_save_paths.append(network.save_path)
+        module_save_path = save_path + "snapshot_model.pkl"
+        self.save_path = module_save_path
+        pickle.dump(self, open(module_save_path, "wb"), 2)
 
-    # TODO: Save all in self including the snapshot_networks?
     @classmethod
     def load_model(cls, load_path):
         """
@@ -213,7 +214,7 @@ class SnapshotNet(BaseNetwork):
         model_file_path = load_path + "snapshot_model.pkl"
         snap_skeleton = pickle.load(open(model_file_path, 'rb'))
         networks = nn.ModuleList()
-        for network_file in snap_skeleton.ensemble_file_paths:
+        for network_file in snap_skeleton.ensemble_save_paths:
             net = BaseNetwork.load_model(network_file)
             networks.append(net)
         # Generate the ensemble
