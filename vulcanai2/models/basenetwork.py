@@ -54,7 +54,8 @@ class BaseNetwork(nn.Module):
         name : str
             The name of the network. Used when saving the file.
         in_dim : list of tuples
-            The dimensions of the network.
+            The input dimensions of the network. If inferencing from input_networks,
+            it must be a list of either out_dim or conv_flat_dim.
         config : dict
             The configuration of the network module, as a dict.
         save_path : str
@@ -90,7 +91,7 @@ class BaseNetwork(nn.Module):
             self.in_dim = []
             for net in self.input_networks:
                 self.in_dim.append(net.in_dim)
-        # print(self.in_dim)
+        #print(self.in_dim)
         self._config = config
         self._save_path = save_path
 
@@ -424,7 +425,7 @@ class BaseNetwork(nn.Module):
 
             if torch.cuda.is_available():
                 data, targets = data.cuda(), targets.cuda()
-                self._to_cuda()
+                self.cuda()
 
             # Forward + Backward + Optimize
             # TODO: Remove temp
@@ -470,7 +471,7 @@ class BaseNetwork(nn.Module):
 
             if torch.cuda.is_available():
                 data, targets = data.cuda(), targets.cuda()
-                self._to_cuda()
+                self.cuda()
 
             predictions = self([data, data])
 
@@ -492,20 +493,6 @@ class BaseNetwork(nn.Module):
 
         return validation_loss, validation_accuracy
     
-    def _to_cuda(self):
-        """
-        This helper function is to be implemented inorder to apply
-        .cuda() to all its own modules and its input_network and 
-        their modules within a multiple input network.
-        """
-        if torch.cuda.is_available():
-            self.cuda()
-            for module in self.modules():
-                module.cuda()
-            if self.input_networks is not None:
-                for net in self.input_networks:
-                    net._to_cuda()
-
     def run_test(self, data_loader, figure_path=None, plot=False):
         """
         Will conduct the test suite to determine model strength.
@@ -534,8 +521,8 @@ class BaseNetwork(nn.Module):
         pred_collector = torch.tensor([])
         for batch_idx, (data, _) in enumerate(data_loader):
             if torch.cuda.is_available():
-                self = self.cuda()
                 data = data.cuda()
+                self.cuda()
             # Get raw network output
             predictions = self(data)
             if self._num_classes:
