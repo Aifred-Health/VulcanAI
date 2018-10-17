@@ -144,6 +144,15 @@ class SnapshotNet(BaseNetwork):
 
         Collect outputs of all internal networks and average outputs.
 
+        Parameters
+        ----------
+        x : torch.Tensor
+            Input tensor to pass through self.
+
+        Returns
+        -------
+        output : torch.Tensor
+
         """
         if len(self.snapshot_networks) == 0:
             raise ValueError("SnapshotNet must be trained first.")

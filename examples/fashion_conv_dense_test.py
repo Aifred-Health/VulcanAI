@@ -148,10 +148,14 @@ se = SnapshotNet("snap", model1, 3)
 
 # Does it make more sense to pass the total # of epochs
 # or just how many each model should train for?
-se.fit(train_loader, val_loader, 30, plot=True)
+
+se.fit(train_loader, val_loader, 3, plot=True)
+se.run_test(val_loader, plot=True)
+
 se.save_model()
 
-# se = SnapshotNet.load_model('saved_models/snap_2018-10-16_14-29-17')
+
+# se = SnapshotNet.load_model('saved_models/snap_2018-10-17_00-06-17')
 preds = se.forward_pass(val_loader, convert_to_class=True)
 
 
