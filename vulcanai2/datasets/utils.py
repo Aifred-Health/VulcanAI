@@ -13,6 +13,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+#TODO: change the bits of this you don't understand
 def check_split_ratio(split_ratio):
     """
     Check that the split ratio argument is not malformed
@@ -25,22 +26,22 @@ def check_split_ratio(split_ratio):
         # Assert in bounds, validation size is zero
         assert 0. < split_ratio < 1., (
             "Split ratio {} not between 0 and 1".format(split_ratio))
-
         test_ratio = 1. - split_ratio
         return split_ratio, test_ratio, valid_ratio
+
     elif isinstance(split_ratio, list):
         # A list of relative ratios is provided
         length = len(split_ratio)
         assert length == 2 or length == 3, (
             "Length of split ratio list should be 2 or 3, got {}".format(split_ratio))
-
         # Normalize if necessary
         ratio_sum = sum(split_ratio)
         if not ratio_sum == 1.:
+            logger.warning("Changed malformed ratios")
             split_ratio = [float(ratio) / ratio_sum for ratio in split_ratio]
-
         if length == 2:
             return tuple(split_ratio + [valid_ratio])
+        logger.info("Split ratio {} verified".format(str(split_ratio)))
         return tuple(split_ratio)
     else:
         raise ValueError('Split ratio must be float or a list, got {}'
