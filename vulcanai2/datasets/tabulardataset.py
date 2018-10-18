@@ -60,6 +60,13 @@ class TabularDataset(Dataset):
         y = self.df[[self.labelColumn]].iloc[[idx]].values.tolist()[0]
         return xs, y
 
+    def convert_to_dataframe(self):
+        """
+        Converts TabularDataset variable back to dataframe
+        :return: The dataframe at current state
+        """
+        return self.df
+
     def save_dataframe(self, file_path):
         """
         Save the dataframe to a file.
@@ -76,7 +83,11 @@ class TabularDataset(Dataset):
         :return: None
         """
         prior_length = self.__len__()
-        self.df = self.df.drop([column_list])
+        #self.df = self.df.drop([column_list])
+        for col in column_list:
+            if col in list(self.df):
+                self.df = self.df.drop(col, axis=1)
+
         cur_length = self.__len__()
         logger.info(f"You have dropped {prior_length - cur_length} columns")
 
@@ -159,6 +170,9 @@ class TabularDataset(Dataset):
         :param threshold: A number between 0 and 1, representing proportion needed to drop
         :return: None
         """
+
+        #This won't work if they use our stitch dataset
+        # We may want to remove that line from stitch_dataset function.
         if threshold >= 1 or threshold <= 0:
             raise ValueError("Threshold needs to be a proportion between 0 and 1")
         num_threshold = threshold * self.__len__()
@@ -192,6 +206,7 @@ class TabularDataset(Dataset):
         :param non_numeric: Whether non-numeric columns are also considered.
         :return: None
         """
+        #Isn't this same as variance thresholding?
         raise NotImplementedError
 
     def identify_highly_correlated(self, threshold):
@@ -208,7 +223,15 @@ class TabularDataset(Dataset):
         :param threshold: Upper bound of variance needed for removal
         :return: None
         """
-        raise NotImplementedError
+        prior = len(list(self.df))
+
+        for col in self.df.columns:
+            col_var = (max(self.df[col].value_counts()) / self.df[col].value_counts().sum())
+            if col_var <= threshold:
+                self.df = self.df.drop(col, axis=1)
+        after = self.__len__()
+        res = prior - after
+        logger.info(f"Removed {res} columns")
 
     # TODO: edit this method that creates a split given different filepaths or objects so that the params match
     # taken from https://github.com/pytorch/text/blob/master/torchtext/data/dataset.py
