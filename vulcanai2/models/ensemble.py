@@ -58,7 +58,7 @@ class SnapshotNet(BaseNetwork):
 
         if n_snapshots <= 0:
             raise ValueError("n_snapshots must be >=1.")
-        self.M = n_snapshots
+        self.n_snapshots = n_snapshots
         # TODO: Should this be called self.network for continuity?
         self.network = nn.ModuleList()
 
@@ -75,7 +75,7 @@ class SnapshotNet(BaseNetwork):
             Input data and targets to train against
         val_loader : DataLoader
             Input data and targets to validate against
-        n_epochs : int
+        epochs : int
             Total number of epochs (evenly distributed between snapshots)
 
         Returns
@@ -84,15 +84,15 @@ class SnapshotNet(BaseNetwork):
 
         """
         # There must be at least one train epoch for each snapshot
-        if epochs < self.M:
+        if epochs < self.n_snapshots:
             logger.warn(
                 'Number of epochs to small for number of Snapshots. '
-                'Setting epochs to {}.'.format(self.M))
-            epochs = self.M
+                'Setting epochs to {}.'.format(self.n_snapshots))
+            epochs = self.n_snapshots
 
         T = epochs
         # How many epochs each singular network should train for
-        network_epochs = T // self.M
+        network_epochs = T // self.n_snapshots
 
         # Temporary but check if it first has an optimizer,
         # if not it will make one
@@ -104,7 +104,7 @@ class SnapshotNet(BaseNetwork):
             T_max=network_epochs
         )
 
-        for index in range(self.M):
+        for index in range(self.n_snapshots):
             self.template_network.fit(
                 train_loader=train_loader,
                 val_loader=val_loader,
@@ -163,13 +163,6 @@ class SnapshotNet(BaseNetwork):
         pred_collector = torch.stack(pred_collector)
         return torch.mean(input=pred_collector, dim=0)
 
-    def __getstate__(self):
-        """Remove Snapshot networks to only save the filename locations."""
-        snapshot_dict = dict(self.__dict__)
-        del snapshot_dict['_modules']['template_network']
-        del snapshot_dict['_modules']['network']
-        return snapshot_dict
-
     def save_model(self, save_path=None):
         """
         Save all ensembled network in a folder with ensemble name.
@@ -184,7 +177,6 @@ class SnapshotNet(BaseNetwork):
         None
 
         """
-        self.ensemble_save_paths = []
         if save_path is None:
             save_path = r"saved_models/{}_{}/".format(
                 self.name, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
@@ -193,41 +185,6 @@ class SnapshotNet(BaseNetwork):
         for network in self.network:
             logger.info("Saving network {}".format(network.name))
             network.save_model(save_path=save_path)
-            self.ensemble_save_paths.append(network.save_path)
         module_save_path = save_path + "model.pkl"
         self.save_path = module_save_path
         pickle.dump(self, open(module_save_path, "wb"), 2)
-
-    @classmethod
-    def load_model(cls, load_path):
-        """
-        Load up ensembled models given a folder location.
-
-        Will finddinfuse the snapshot_model.pkl
-
-        Parameters
-        ----------
-        load_path : str
-            Snapshot folder location containing the snapshot_model.pkl.
-
-        Returns
-        -------
-        snapshot_network : SnapshotNet
-            Returns the ensemble network to the same state
-            as it was when it was saved.
-
-        """
-        # TODO: does this break windows?? no idea.
-        if not load_path.endswith("/"):
-            load_path = load_path + "/"
-        model_file_path = load_path + "model.pkl"
-        snap_skeleton = pickle.load(open(model_file_path, 'rb'))
-        networks = nn.ModuleList()
-        for network_file in snap_skeleton.ensemble_save_paths:
-            net = BaseNetwork.load_model(network_file)
-            networks.append(net)
-        # Generate the ensemble
-        snap_skeleton.network = networks
-        # Reinstantiate the most recently trained model as the template
-        snap_skeleton.template_network = networks[-1]
-        return snap_skeleton
