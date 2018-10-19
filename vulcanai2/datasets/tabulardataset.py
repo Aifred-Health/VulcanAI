@@ -231,7 +231,7 @@ class TabularDataset(Dataset):
         :param threshold: Upper bound of variance needed for removal
         :return: None
         """
-        prior = len(list(self.df))
+        dct_low_var = {}
         scaler = preprocessing.MinMaxScaler()
         for col in self.df.columns:
             if self.df[col].dtype in ['float64', 'int64', 'float32', 'int32']:
@@ -239,10 +239,7 @@ class TabularDataset(Dataset):
                 scaled_col = scaler.fit_transform(col_float_array)
                 col_var = scaled_col.var()
                 if col_var <= threshold:
-                    self.df = self.df.drop(col, axis=1)
-        after = len(list(self.df))
-        res = prior - after
-        logger.info(f"Removed {res} columns")
+                    print(col, col_var)
 
 
     # TODO: edit this method that creates a split given different filepaths or objects so that the params match
