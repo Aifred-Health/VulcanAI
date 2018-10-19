@@ -34,7 +34,37 @@ logger = logging.getLogger(__name__)
 
 
 class BaseNetwork(nn.Module):
-    """Base class upon which all Vulcan NNs will be based."""
+    """
+    Defines the BaseNetwork object.
+
+    Parameters
+    ----------
+    name : str
+        The name of the network. Used when saving the file.
+    dimensions : list of tuples
+        The dimensions of the network.
+    config : dict
+        The configuration of the network module, as a dict.
+    save_path : str
+        The name of the file to which you would like to save this network.
+    input_network : list of BaseNetwork
+        A network object provided as input.
+    num_classes : int or None
+        The number of classes to predict.
+    activation : torch.nn.Module
+        The desired activation function for use in the network.
+    pred_activation : torch.nn.Module
+        The desired activation function for use in the prediction layer.
+    optim_spec : dict
+        A dictionary of parameters for the desired optimizer.
+    lr_scheduler : torch.optim.lr_scheduler
+        A callable torch.optim.lr_scheduler
+    early_stopping : str or None
+        So far just 'best_validation_error' is implemented.
+    criter_spec : dict
+        criterion specification with name and all its parameters.
+
+    """
 
     # TODO: not great to use mutables as arguments.
     # TODO: reorganize these.
@@ -44,37 +74,7 @@ class BaseNetwork(nn.Module):
                  optim_spec={'name': 'Adam', 'lr': 0.001},
                  lr_scheduler=None, early_stopping=None,
                  criter_spec=nn.CrossEntropyLoss()):
-        """
-        Defines the network object.
-
-        Parameters
-        ----------
-        name : str
-            The name of the network. Used when saving the file.
-        dimensions : list of tuples
-            The dimensions of the network.
-        config : dict
-            The configuration of the network module, as a dict.
-        save_path : str
-            The name of the file to which you would like to save this network.
-        input_network : list of BaseNetwork
-            A network object provided as input.
-        num_classes : int or None
-            The number of classes to predict.
-        activation : torch.nn.Module
-            The desired activation function for use in the network.
-        pred_activation : torch.nn.Module
-            The desired activation function for use in the prediction layer.
-        optim_spec : dict
-            A dictionary of parameters for the desired optimizer.
-        lr_scheduler : torch.optim.lr_scheduler
-            A callable torch.optim.lr_scheduler
-        early_stopping : str or None
-            So far just 'best_validation_error' is implemented.
-        criter_spec : dict
-            criterion specification with name and all its parameters.
-
-        """
+        """Define, initialize, and build the BaseNetwork."""
         super(BaseNetwork, self).__init__()
 
         self._name = name
@@ -167,7 +167,7 @@ class BaseNetwork(nn.Module):
         return self._early_stopping
 
     @early_stopping.setter
-    def stopping_rule(self, value):
+    def early_stopping(self, value):
         self._early_stopping = value
 
     @property
@@ -321,6 +321,7 @@ class BaseNetwork(nn.Module):
 
     def _init_trainer(self):
         self.optim = self._init_optimizer(self._optim_spec)
+        # TODO: Use logger to describe if the optimizer is changed.
         self.criterion = self._init_criterion(self._criter_spec)
 
     def fit(self, train_loader, val_loader, epochs,
@@ -335,7 +336,10 @@ class BaseNetwork(nn.Module):
         :return: None
         """
 
-        self._init_trainer()
+        # In case there is already one, don't overwrite it.
+        # Important for not removing the ref from a lr scheduler
+        if self.optim is None:
+            self._init_trainer()
 
         try:
             if plot is True:
@@ -345,6 +349,8 @@ class BaseNetwork(nn.Module):
             for epoch in trange(0, epochs, desc='Epoch: ', ncols=80):
 
                 train_loss, train_acc = self._train_epoch(train_loader, retain_graph)
+                if self.lr_scheduler is not None:
+                    self.lr_scheduler.step(epoch=epoch)
 
                 valid_loss = valid_acc = np.nan
                 if epoch % valid_interv == 0:
@@ -518,14 +524,14 @@ class BaseNetwork(nn.Module):
             save_path = save_path + "/"
 
         module_save_path = save_path + "{name}/".format(name=self.name)
-
-        os.makedirs(module_save_path)  # let this throw an error if it already exists
+        if not os.path.exists(module_save_path):
+            os.makedirs(module_save_path)  # let this throw an error if it already exists
 
         # recursive recursive recursive
         if self._input_network is not None:
             self._input_network.save_model(save_path)
 
-        self.save_path = save_path  # TODO: I don't think this is necessary
+        self.save_path = module_save_path  # TODO: I don't think this is necessary
 
         # to improve: # object.__getstate__() https://docs.python.org/3/library/pickle.html#example
         model_file_path = module_save_path + "model.pkl"
@@ -556,4 +562,3 @@ class BaseNetwork(nn.Module):
         return instance
 
         # my_tensor = my_tensor.to(torch.device('cuda')).
-

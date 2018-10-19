@@ -119,7 +119,7 @@ model1 = DenseNet(
     num_classes=10
 )
 
-model1.fit(train_loader, val_loader, 2, plot=True)
+# model1.fit(train_loader, val_loader, 2, plot=True)
 
 # model1.save_model()
 
@@ -128,19 +128,36 @@ model1.fit(train_loader, val_loader, 2, plot=True)
 #model2.fit(train_loader, val_loader, 4, plot=True)
 
 # To test saliency map generation
-model1.run_test(val_loader, plot=True)
+# model1.run_test(val_loader, plot=True)
 
 # f_pass = model1.forward_pass(val_loader, convert_to_class=True)
 
-cm = get_confusion_matrix(
-    model1.forward_pass(val_loader, convert_to_class=True),
-    val_loader.dataset.test_labels)
-display_confusion_matrix(cm, ["T-shirt/top","Trouser","Pullover","Dress","Coat","Sandal","Shirt","Sneaker","Bag","Ankle"])
+# cm = get_confusion_matrix(
+#     model1.forward_pass(val_loader, convert_to_class=True),
+#     val_loader.dataset.test_labels)
+# display_confusion_matrix(cm, ["T-shirt/top","Trouser","Pullover","Dress","Coat","Sandal","Shirt","Sneaker","Bag","Ankle"])
 
-x = train_loader.dataset.train_data[:5].float().unsqueeze(dim=1) #np.expand_dims(train_loader.dataset[:5][0], axis=0)
-y = train_loader.dataset.train_labels[:5]
-sal_map = compute_saliency_map(model1, x, y)
-display_saliency_overlay(train_loader.dataset.train_data[0], sal_map[0])
+# x = train_loader.dataset.train_data[:5].float().unsqueeze(dim=1) #np.expand_dims(train_loader.dataset[:5][0], axis=0)
+# y = train_loader.dataset.train_labels[:5]
+# sal_map = compute_saliency_map(model1, x, y)
+# display_saliency_overlay(train_loader.dataset.train_data[0], sal_map[0])
+
+from vulcanai2.models.ensemble import SnapshotNet
+
+se = SnapshotNet("snap", model1, 3)
+
+# Does it make more sense to pass the total # of epochs
+# or just how many each model should train for?
+
+se.fit(train_loader, val_loader, 3, plot=True)
+se.run_test(val_loader, plot=True)
+
+se.save_model()
+
+
+# se = SnapshotNet.load_model('saved_models/snap_2018-10-17_00-06-17')
+preds = se.forward_pass(val_loader, convert_to_class=True)
+
 
 # TODO: need to revisit this to be able to plot after training, interactive plotting is messing up
 #plotters.visualization.display_record(record=model1.record, interactive=False)

@@ -5,6 +5,7 @@ __all__ = [
     'cnn',
     'dnn',
     'layers',
+    'ensemble',
     'metrics',
     'utils'
 ]
@@ -13,3 +14,4 @@ __all__ = [
 # running test on plotters
 # from .cnn import ConvNet
 # from .dnn import DenseNet
+# from .ensemble import SnapshotNet
