@@ -8,6 +8,7 @@ import pandas as pd
 from . import utils as utils
 import logging
 from itertools import groupby
+from sklearn import preprocessing
 
 logger = logging.getLogger(__name__)
 
@@ -205,8 +206,15 @@ class TabularDataset(Dataset):
         :param non_numeric: Whether non-numeric columns are also considered.
         :return: None
         """
-        #Isn't this same as variance thresholding?
-        raise NotImplementedError
+        prior = len(list(self.df))
+
+        for col in self.df.columns:
+            col_maj = (max(self.df[col].value_counts()) / self.df[col].value_counts().sum())
+            if col_maj <= threshold:
+                self.df = self.df.drop(col, axis=1)
+        after = self.__len__()
+        res = prior - after
+        logger.info(f"Removed {res} columns")
 
     def remove_highly_correlated(self, threshold):
         """
@@ -223,14 +231,18 @@ class TabularDataset(Dataset):
         :return: None
         """
         prior = len(list(self.df))
-
+        scaler = preprocessing.MinMaxScaler()
         for col in self.df.columns:
-            col_var = (max(self.df[col].value_counts()) / self.df[col].value_counts().sum())
-            if col_var <= threshold:
-                self.df = self.df.drop(col, axis=1)
-        after = self.__len__()
+            if self.df[col].dtype in ['float64', 'int64', 'float32', 'int32']:
+                col_float_array = self.df[[col]].values.astype(float)
+                scaled_col = scaler.fit_transform(col_float_array)
+                col_var = scaled_col.var()
+                if col_var <= threshold:
+                    self.df = self.df.drop(col, axis=1)
+        after = len(list(self.df))
         res = prior - after
         logger.info(f"Removed {res} columns")
+
 
     # TODO: edit this method that creates a split given different filepaths or objects so that the params match
     # taken from https://github.com/pytorch/text/blob/master/torchtext/data/dataset.py
