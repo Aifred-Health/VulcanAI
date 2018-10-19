@@ -318,10 +318,11 @@ class BaseNetwork(nn.Module):
         ----------
         apply_inputs : boolean
             Whether to freeze all input networks recursively
-        
+
         Returns
         -------
         None
+
         """
         self._toggle_freeze(freeze=True, apply_inputs=apply_inputs)
 
@@ -333,10 +334,11 @@ class BaseNetwork(nn.Module):
         ----------
         apply_inputs : boolean
             Whether to unfreeze all input networks recursively
-        
+
         Returns
         -------
         None
+
         """
         self._toggle_freeze(freeze=False, apply_inputs=apply_inputs)
 

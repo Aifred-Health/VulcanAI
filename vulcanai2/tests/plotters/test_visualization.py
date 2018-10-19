@@ -56,10 +56,12 @@ class TestVisualization:
 
         model_copy = deepcopy(cnn_class)
         # Test shape conservation
+        cnn_class.freeze(apply_inputs=False)
         sal_map_1B = compute_saliency_map(
             cnn_class,
             test_input_1B, torch.LongTensor([2]))
         assert sal_map_1B.shape == test_input_1B.shape
+        cnn_class.unfreeze(apply_inputs=False)
         sal_map_5B = compute_saliency_map(
             cnn_class, test_input_5B,
             torch.LongTensor([0, 2, 1, 1, 0]))
@@ -81,10 +83,12 @@ class TestVisualization:
 
         model_copy = deepcopy(dnn_class)
         # Test shape conservation
+        dnn_class.freeze(apply_inputs=False)
         sal_map_1B = compute_saliency_map(
             dnn_class,
             test_input_1B, torch.LongTensor([2]))
         assert sal_map_1B.shape == test_input_1B.shape
+        dnn_class.unfreeze(apply_inputs=False)
         sal_map_5B = compute_saliency_map(
             dnn_class, test_input_5B,
             torch.LongTensor([0, 2, 1, 1, 0]))
