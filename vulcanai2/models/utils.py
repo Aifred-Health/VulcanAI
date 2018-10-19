@@ -4,31 +4,6 @@ from sklearn.metrics import confusion_matrix
 from sklearn.preprocessing import LabelBinarizer
 
 
-def get_notable_indices(feature_importances, top_k=5):
-    """
-    Return dict of top k and bottom k features useful from matrix.
-
-    Parameters
-    ----------
-    feature_importance : numpy.ndarray
-        1D numpy array to extract the top of bottom indices.
-    top_k : int
-        How many features from top and bottom to extract.
-        Defaults to 5.
-
-    Returns
-    -------
-    notable_indices : dict
-        Indices of the top most important features.
-        Indices of the bottom mos unimportant features.
-
-    """
-    important_features = feature_importances.argsort()[-top_k:][::-1]
-    unimportant_features = feature_importances.argsort()[:-1][:top_k]
-    return {'important_indices': important_features,
-            'unimportant_indices': unimportant_features}
-
-
 def round_list(raw_list, decimals=4):
     """
     Return the same list with each item rounded off.
