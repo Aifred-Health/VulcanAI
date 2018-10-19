@@ -20,7 +20,7 @@ class TestConvNet:
     def test_dataset_init_multiple_csv_correct_merge(self):
         pass
 
-    def test_dataset_init_multiple_csv_incorrect_merge(self):
+    def test_dataset_init_multiple_csv_wrong_merge_index(self):
         pass
 
     def test_datatset_init(self):

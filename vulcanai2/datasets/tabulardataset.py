@@ -199,9 +199,10 @@ class TabularDataset(Dataset):
         res = prior - after
         logger.info(f"Removed {res} columns")
 
-    def remove_unbalanced_columns(self, threshold, non_numeric=True):
+
+    def identify_unbalanced_columns(self, threshold, non_numeric=True):
         """
-        This removes columns that are highly unbalanced
+        This removes columns that are highly unbalanced, aka those
         :param threshold: Proportion needed to define unbalanced, between 0 and 1
         :param non_numeric: Whether non-numeric columns are also considered.
         :return: None
@@ -216,7 +217,7 @@ class TabularDataset(Dataset):
         res = prior - after
         logger.info(f"Removed {res} columns")
 
-    def remove_highly_correlated(self, threshold):
+    def identify_highly_correlated(self, threshold):
         """
         Remove one of those columns that are highly correlated with one-another.
         :param threshold: Amount of correlation necessary for removal.
@@ -224,7 +225,7 @@ class TabularDataset(Dataset):
         """
         raise NotImplementedError
 
-    def remove_low_variance(self, threshold):
+    def identify_low_variance(self, threshold):
         """
         Removes those columns that have low variance
         :param threshold: Upper bound of variance needed for removal
@@ -305,6 +306,8 @@ class TabularDataset(Dataset):
             raise NotImplementedError("We need to do this!")
 
         train_ratio, test_ratio, val_ratio = utils.check_split_ratio(split_ratio)
+
+        print(train_ratio, test_ratio, val_ratio)
 
         np.random.seed(random_state)
         perm = np.random.permutation(self.df.index)
