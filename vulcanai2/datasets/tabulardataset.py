@@ -18,7 +18,7 @@ class TabularDataset(Dataset):
     This defines a dataset, subclassed from torch.utils.data.Dataset. It uses pd.dataframe as the backend, with utility
     functions.
     """
-    def __init__(self, data, label_column="label", join_column=None, index_list=None):
+    def __init__(self, data, label_column=None, join_column=None, index_list=None):
         """
         Creates an instance of Tabulardataset
         :param data: Either a path to a csv file, a list of paths to csv files or a dataframe
@@ -56,9 +56,12 @@ class TabularDataset(Dataset):
         """
         # Where df.drop is used to access the dataframe without the label column, iloc gets the row, then access values
         # and convert
-        xs = self.df.drop(self.labelColumn, axis=1).iloc[[2]].values.tolist()[0]
-        y = self.df[[self.labelColumn]].iloc[[idx]].values.tolist()[0]
-        return xs, y
+        if self.labelColumn:
+            xs = self.df.drop(self.labelColumn, axis=1).iloc[[2]].values.tolist()[0]
+            y = self.df[[self.labelColumn]].iloc[[idx]].values.tolist()[0]
+            return xs, y
+        else:
+            xs = self.df.iloc[[2]].values.tolist()[0]
 
     def convert_to_dataframe(self):
         """
@@ -91,6 +94,8 @@ class TabularDataset(Dataset):
         cur_length = self.__len__()
         logger.info(f"You have dropped {prior_length - cur_length} columns")
 
+    #TODO: need to simply return those that should be proper https://forums.fast.ai/t/to-label-encode-or-one-hot-encode/6057
+    #TODO: lookup pandas categorical data and see if you can work with that
     def create_dummies(self, column_names=None):
         """
         Create one-hot encoding for all categorical features.
@@ -289,6 +294,8 @@ class TabularDataset(Dataset):
             Tuple[Dataset]: Datasets for train, validation, and
                 test splits in that order, if the splits are provided.
         """
+
+        logger.info("Please ensure that you have performed all necessary preprocessing!")
 
         if stratified:
             raise NotImplementedError("We need to do this!")
