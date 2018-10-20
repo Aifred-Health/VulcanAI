@@ -63,10 +63,10 @@ class GuidedBackprop():
     def _hook_top_layers(self):
         def hook_function(module, grad_in, grad_out):
             # TODO: Revisit dim disorder and check isinstance for classes.
-            if module.__class__.__name__ == 'Linear':
+            if isinstance(module, torch.nn.Linear):
                 # grad_in shape is (bias, input, weights)
                 self.gradients = grad_in[1]
-            elif module.__class__.__bases__[0].__name__ == '_ConvNd':
+            elif isinstance(module, torch.nn.modules.conv._ConvNd):
                 # grad_in shape is (input, weights, bias)
                 self.gradients = grad_in[0]
         # Register hook to the first layer
