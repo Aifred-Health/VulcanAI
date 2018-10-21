@@ -90,13 +90,9 @@ def get_size(summary_dict, output):
         summary_dict['output_shape'] = list(output.size())
     return summary_dict
 
-def expand_dim(tensor, max_dim=None, axis=0):
-    if max_dim is not None: 
-        if len(tensor.size()) < max_dim:
-            tensor = tensor.unsqueeze(axis)
-            tensor = expand_dim(tensor, max_dim)
-    else: 
-        tensor = tensor.unsqueeze(axis)
-        tensor = expand_dim(tensor)
-    return tensor
-    
+def cast_dim(tensor, max_dim=None):
+    # TODO: https://github.com/pytorch/pytorch/issues/9410
+    n_unsqueezes = max_dim - len(tensor.shape)
+    # For each missing dim, add dims until it
+    # is equivalient to the max dim
+    return tensor[(None,) * n_unsqueezes]
