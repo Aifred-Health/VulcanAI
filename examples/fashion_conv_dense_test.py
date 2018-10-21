@@ -108,7 +108,7 @@ dense_net_config = {
 model = ConvNet(
     name='conv_net_test',
     input_networks=None,
-    in_dim=(1, 28, 28),
+    in_dim=[(1, 28, 28)],
     config=conv_net_config,
 )
 

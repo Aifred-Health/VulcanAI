@@ -1,4 +1,5 @@
 """Define utility functions used by models."""
+import torch
 import numpy as np
 from sklearn.metrics import confusion_matrix
 from sklearn.preprocessing import LabelBinarizer
@@ -88,3 +89,14 @@ def get_size(summary_dict, output):
     else:
         summary_dict['output_shape'] = list(output.size())
     return summary_dict
+
+def expand_dim(tensor, max_dim=None, axis=0):
+    if max_dim is not None: 
+        if len(tensor.size()) < max_dim:
+            tensor = tensor.unsqueeze(axis)
+            tensor = expand_dim(tensor, max_dim)
+    else: 
+        tensor = tensor.unsqueeze(axis)
+        tensor = expand_dim(tensor)
+    return tensor
+    

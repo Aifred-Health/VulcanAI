@@ -113,7 +113,7 @@ class DenseNet(BaseNetwork, nn.Module):
                                        )
 
     def _create_network(self, **kwargs):
-
+        self._in_dim = self.in_dim
         dense_hid_layers = self._config.units
         # Build network
         self.network = self._build_dense_network(
@@ -151,7 +151,6 @@ class DenseNet(BaseNetwork, nn.Module):
         Returns
         -------
         output : torch.Tensor
-
         """
         out = []
         for x in xs:
@@ -180,7 +179,8 @@ class DenseNet(BaseNetwork, nn.Module):
 
         """
         # Specify incoming feature size for the first dense hidden layer        
-        dense_hid_layers[0]['in_features'] = sum(self.in_dim)
+        dense_hid_layers[0]['in_features'] = sum(self._in_dim)
+
         dense_layers = []
         for dense_layer_config in dense_hid_layers:
             dense_layer_config['activation'] = activation
