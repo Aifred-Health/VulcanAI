@@ -2,14 +2,15 @@
 """Defines the ConvNet class."""
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from .basenetwork import BaseNetwork
 from .layers import DenseUnit, ConvUnit
-from .utils import expand_dim
+from .utils import cast_dim
 
 import logging
 from inspect import getfullargspec
-from math import sqrt, floor
+from math import sqrt, floor, ceil
 
 logger = logging.getLogger(__name__)
 
@@ -97,37 +98,40 @@ class ConvNet(BaseNetwork, nn.Module):
         self._in_dim = self.in_dim
         conv_hid_layers = self._config.units
 
-        if len(self.in_dim) > 1:
+        if len(self.in_dim) > 1 and len(self.input_networks) > 1:
             # Calculate converged in_dim for the MultiInput ConvNet
+            # The new dimension to cast dense net into
             dim_tmp = []
             # Create empty input tensors
-            in_tensors = [torch.empty(x) for x in self.in_dim]
+            in_tensors = [torch.zeros(x) for x in self.in_dim]
             # Calculate the number of elements in each input tensor 
-            els = [t.numel() for t in in_tensors]
+            el_sizes = [t.numel() for t in in_tensors]
             #Calculate the size of each input tensor
             dim_sizes = [len(t.size()) for t in in_tensors]
+            # Get max elements from all input networks
+            max_el = max(el_sizes)
+            max_el_ind = [i for i, j in enumerate(el_sizes) if j == max_el]
+            # Get max dim from all input networks
+            max_dim = max(dim_sizes)
+            max_dim_ind = [i for i, j in enumerate(dim_sizes) if j == max_dim]
 
-            max_el_ind = els.index(max(els))
-            max_dim_ind = dim_sizes.index(max(dim_sizes))
-
-            if max_el_ind == max_dim_ind:
-                for i in range(len(in_tensors)):
-                    t = in_tensors[i]
-                    t = expand_dim(t, len(in_tensors[max_dim_ind].size()))
-                    try:
-                        t = t.view(in_tensors[max_dim_ind].size())
-                    except:
-                        t_tmp = torch.zeros(1, *in_tensors[max_dim_ind].size()[1:])
-                        if len(in_tensors[max_dim_ind].size()) == 3:
-                            k_size = floor(sqrt((t.numel())))
-                            t = t.view((1, k_size, k_size))
-                            t_tmp[0, :t.size()[1], :t.size()[2]] = t
-                        if len(in_tensors[max_dim_ind].size()) == 4:
-                            NotImplementedError
-                        t = t_tmp             
-                    dim_tmp.append(t)
-            else:
-                NotImplementedError
+            tensor_ind_size_ref = list(set(max_el_ind).intersection(set(max_dim_ind)))
+            tensor_ind_size_ref = tensor_ind_size_ref[0]
+            # TODO: Sort by number of dimensions and then by number of elements
+            # to determine what to cast all the other tensors to.
+            
+            for t in in_tensors:
+                # TODO: For dense, cast to Conv1D size e.g. (1, out_features).
+                # So we treat it as a Conv1D?
+                if len(t.shape) > 1:
+                    t = self.same_padding(t, in_tensors[tensor_ind_size_ref].size())
+                elif t.numel() is not in_tensors[tensor_ind_size_ref].numel():
+                    # Cast incoming dense to spatial dimensions of max size input Conv
+                    n_channels = ceil(t.size()[0] / in_tensors[tensor_ind_size_ref][-1, ].numel())
+                    how_much_to_pad = (in_tensors[tensor_ind_size_ref][-1:].numel() * n_channels) - in_tensors[1].size()[0]
+                    t = torch.cat([t, torch.zeros(how_much_to_pad)])
+                    t = t.view(-1, *in_tensors[tensor_ind_size_ref][-1, ].size())    
+                dim_tmp.append(t)
             self._in_dim = [torch.cat(dim_tmp, dim=0).size()]
 
         # Build Network
@@ -141,6 +145,20 @@ class ConvNet(BaseNetwork, nn.Module):
             self.out_dim = self._num_classes
             self._create_classification_layer(
                 self.conv_flat_dim, kwargs['pred_activation'])
+    
+    def same_padding(self, tensor, cast_size):
+        import numpy as np
+        # Ignore channels and focus on spatial dimensions
+        size_diff = np.array(cast_size[1:]) - np.array(tensor.size()[1:])
+        # TODO: Use tensor.expand_as?
+        padding_needed = []
+        for dim in reversed(size_diff):
+            dim_zero_padding = ceil(dim/2)
+            dim_one_padding = floor(dim/2)
+            padding_needed.append(dim_zero_padding)
+            padding_needed.append(dim_one_padding)
+        return F.pad(tensor, padding_needed)
+
     
     def _build_conv_network(self, conv_hid_layers, activation):
         """
