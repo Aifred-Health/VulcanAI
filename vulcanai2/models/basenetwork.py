@@ -130,7 +130,7 @@ class BaseNetwork(nn.Module):
 
         #print(self)
         
-        out_shapes = self.get_output_shapes(network=self.network, input_size=self.in_dim)
+        out_shapes = self.get_output_shapes(network=self.network, input_size=self._in_dim)
         self.out_dim = out_shapes[list(out_shapes)[-1]]['output_shape'][1:]
         if len(self.out_dim)>1:
             self.out_dim = tuple(self.out_dim)

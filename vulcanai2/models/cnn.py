@@ -5,9 +5,11 @@ import torch.nn as nn
 
 from .basenetwork import BaseNetwork
 from .layers import DenseUnit, ConvUnit
+from .utils import expand_dim
 
 import logging
 from inspect import getfullargspec
+from math import sqrt, floor
 
 logger = logging.getLogger(__name__)
 
@@ -92,8 +94,42 @@ class ConvNet(BaseNetwork, nn.Module):
             lr_scheduler, early_stopping, criter_spec)
 
     def _create_network(self, **kwargs):
-
+        self._in_dim = self.in_dim
         conv_hid_layers = self._config.units
+
+        if len(self.in_dim) > 1:
+            # Calculate converged in_dim for the MultiInput ConvNet
+            dim_tmp = []
+            # Create empty input tensors
+            in_tensors = [torch.empty(x) for x in self.in_dim]
+            # Calculate the number of elements in each input tensor 
+            els = [t.numel() for t in in_tensors]
+            #Calculate the size of each input tensor
+            dim_sizes = [len(t.size()) for t in in_tensors]
+
+            max_el_ind = els.index(max(els))
+            max_dim_ind = dim_sizes.index(max(dim_sizes))
+
+            if max_el_ind == max_dim_ind:
+                for i in range(len(in_tensors)):
+                    t = in_tensors[i]
+                    t = expand_dim(t, len(in_tensors[max_dim_ind].size()))
+                    try:
+                        t = t.view(in_tensors[max_dim_ind].size())
+                    except:
+                        t_tmp = torch.zeros(1, *in_tensors[max_dim_ind].size()[1:])
+                        if len(in_tensors[max_dim_ind].size()) == 3:
+                            k_size = floor(sqrt((t.numel())))
+                            t = t.view((1, k_size, k_size))
+                            t_tmp[0, :t.size()[1], :t.size()[2]] = t
+                        if len(in_tensors[max_dim_ind].size()) == 4:
+                            NotImplementedError
+                        t = t_tmp             
+                    dim_tmp.append(t)
+            else:
+                NotImplementedError
+            self._in_dim = [torch.cat(dim_tmp, dim=0).size()]
+
         # Build Network
         self.network = self._build_conv_network(
             conv_hid_layers,
@@ -105,45 +141,7 @@ class ConvNet(BaseNetwork, nn.Module):
             self.out_dim = self._num_classes
             self._create_classification_layer(
                 self.conv_flat_dim, kwargs['pred_activation'])
-            
-    def _create_classification_layer(self, dim, pred_activation):
-        self.network_tail = DenseUnit(
-            in_features=dim,
-            out_features=self.out_dim,
-            activation=pred_activation)
-
-    def _forward(self, xs, **kwargs):
-        """
-        Define the forward behaviour of the network.
-
-        If the network is defined with `num_classes` then it is
-        assumed to be the last network which contains a
-        classification layer/classifier (network tail).
-        The data ('x') will be passed through the network and
-        then through the classifier. If not, the input is passed
-        through the network and returned without passing through
-        a classification layer.
-
-        Parameters
-        ----------
-        x : torch.Tensor
-            Input tensor to pass through self.
-
-        Returns
-        -------
-        output : torch.Tensor
-
-        """
-        out = []
-        for x in xs:
-            # TODO: NotImplemented yet, but procesing of the multiple inputs shapes before concatenation
-            # Ueful tools:https://github.com/torch/torch7/blob/master/doc/maths.md
-            # https://github.com/torch/nn/blob/master/doc/table.md
-            out.append(x)
-
-        network_output = self.network(torch.cat(out, dim=1))
-        return network_output
-
+    
     def _build_conv_network(self, conv_hid_layers, activation):
         """
         Build the layers of the network into a nn.Sequential object.
@@ -161,13 +159,42 @@ class ConvNet(BaseNetwork, nn.Module):
             the conv network as a nn.Sequential object
 
         """
+        conv_hid_layers[0]['in_channels'] = self._in_dim[0][0]
         conv_layers = []
         for conv_layer_config in conv_hid_layers:
             conv_layer_config['activation'] = activation
             conv_layers.append(ConvUnit(**conv_layer_config))
         conv_network = nn.Sequential(*conv_layers)
         return conv_network
-    
+
+    def _create_classification_layer(self, dim, pred_activation):
+        self.network_tail = DenseUnit(
+            in_features=dim,
+            out_features=self.out_dim,
+            activation=pred_activation)
+
+    def _forward(self, xs, **kwargs):
+        """
+        Computation for the forward pass of the ConvNet module.
+
+        Parameters
+        ----------
+        xs : list(torch.Tensor)
+            List of input tensors to pass through self.
+
+        Returns
+        -------
+        output : torch.Tensor
+
+        """
+        out = []
+        for x in xs:
+            
+            out.append(x)
+
+        network_output = self.network(torch.cat(out, dim=1))
+        return network_output
+   
     def get_flattened_size(self, network):
         """
         Returns the flattened output size of a Single Input ConvNet's last layer.
@@ -175,7 +202,7 @@ class ConvNet(BaseNetwork, nn.Module):
         :return: The flattened output size of the conv network's last layer.
         """
         with torch.no_grad():
-            x = torch.ones(1, *self.in_dim[0])
+            x = torch.ones(1, *self._in_dim[0])
             x = network(x)
             return x.numel()
 
