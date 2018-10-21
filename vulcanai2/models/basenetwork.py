@@ -318,10 +318,11 @@ class BaseNetwork(nn.Module):
         ----------
         apply_inputs : boolean
             Whether to freeze all input networks recursively
-        
+
         Returns
         -------
         None
+
         """
         self._toggle_freeze(freeze=True, apply_inputs=apply_inputs)
 
@@ -333,27 +334,26 @@ class BaseNetwork(nn.Module):
         ----------
         apply_inputs : boolean
             Whether to unfreeze all input networks recursively
-        
+
         Returns
         -------
         None
+
         """
         self._toggle_freeze(freeze=False, apply_inputs=apply_inputs)
 
     def _toggle_freeze(self, freeze, apply_inputs):
         # Freeze core network parameters
         for params in self.network.parameters():
-            if freeze is True:
-                params.requires_grad = False
-            elif freeze is False:
-                params.requires_grad = True
+            # If freeze is True, set requires_grad to False
+            # If freeze is False, set requires_grad to True
+            params.requires_grad = not freeze
         # Freeze prediction layer parameters
         if 'network_tail' in self._modules:
             for params in self.network_tail.parameters():
-                if freeze is True:
-                    params.requires_grad = False
-                elif freeze is False:
-                    params.requires_grad = True
+                # If freeze is True, set requires_grad to False
+                # If freeze is False, set requires_grad to True
+                params.requires_grad = not freeze
         # Recursively toggle freeze on
         if apply_inputs and self._input_network is not None:
             self._input_network._toggle_freeze(
