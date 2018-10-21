@@ -1,8 +1,9 @@
 import sys
 sys.path.append('../')
 from vulcanai2 import models, datasets, plotters
-from vulcanai2.models.cnn import ConvNet
-from vulcanai2.models.dnn import DenseNet
+from vulcanai2.models import ConvNet, DenseNet, SnapshotNet
+# from vulcanai2.models.cnn import ConvNet
+# from vulcanai2.models.dnn import DenseNet
 from vulcanai2.plotters.visualization import (compute_saliency_map, 
                                               display_saliency_overlay,
                                               display_receptive_fields,
@@ -141,8 +142,6 @@ model1 = DenseNet(
 # y = train_loader.dataset.train_labels[:5]
 # sal_map = compute_saliency_map(model1, x, y)
 # display_saliency_overlay(train_loader.dataset.train_data[0], sal_map[0])
-
-from vulcanai2.models.ensemble import SnapshotNet
 
 se = SnapshotNet("snap", model1, 3)
 

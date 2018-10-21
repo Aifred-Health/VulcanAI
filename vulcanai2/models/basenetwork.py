@@ -310,6 +310,56 @@ class BaseNetwork(nn.Module):
         """
         pass
 
+    def freeze(self, apply_inputs=False):
+        """
+        Freeze network weights so training doesn't modify them.
+
+        Parameters
+        ----------
+        apply_inputs : boolean
+            Whether to freeze all input networks recursively
+        
+        Returns
+        -------
+        None
+        """
+        self._toggle_freeze(freeze=True, apply_inputs=apply_inputs)
+
+    def unfreeze(self, apply_inputs=False):
+        """
+        Unfreeze network weights so training does modify them.
+
+        Parameters
+        ----------
+        apply_inputs : boolean
+            Whether to unfreeze all input networks recursively
+        
+        Returns
+        -------
+        None
+        """
+        self._toggle_freeze(freeze=False, apply_inputs=apply_inputs)
+
+    def _toggle_freeze(self, freeze, apply_inputs):
+        # Freeze core network parameters
+        for params in self.network.parameters():
+            if freeze is True:
+                params.requires_grad = False
+            elif freeze is False:
+                params.requires_grad = True
+        # Freeze prediction layer parameters
+        if 'network_tail' in self._modules:
+            for params in self.network_tail.parameters():
+                if freeze is True:
+                    params.requires_grad = False
+                elif freeze is False:
+                    params.requires_grad = True
+        # Recursively toggle freeze on
+        if apply_inputs and self._input_network is not None:
+            self._input_network._toggle_freeze(
+                freeze=freeze,
+                apply_inputs=apply_inputs)
+
     def _init_optimizer(self, optim_spec):
         optim_class = getattr(torch.optim, optim_spec["name"])
         optim_spec = pdash.omit(optim_spec, "name")

@@ -7,8 +7,7 @@ from math import sqrt, ceil, floor
 
 import pickle
 
-from .utils import GuidedBackprop
-from ..models.utils import get_notable_indices
+from .utils import GuidedBackprop, get_notable_indices
 
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA

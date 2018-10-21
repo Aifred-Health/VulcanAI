@@ -4,6 +4,31 @@ from torch.nn import ReLU, SELU
 # from ..models.basenetwork import BaseNetwork
 
 
+def get_notable_indices(feature_importances, top_k=5):
+    """
+    Return dict of top k and bottom k features useful from matrix.
+
+    Parameters
+    ----------
+    feature_importance : numpy.ndarray
+        1D numpy array to extract the top of bottom indices.
+    top_k : int
+        How many features from top and bottom to extract.
+        Defaults to 5.
+
+    Returns
+    -------
+    notable_indices : dict
+        Indices of the top most important features.
+        Indices of the bottom mos unimportant features.
+
+    """
+    important_features = feature_importances.argsort()[-top_k:][::-1]
+    unimportant_features = feature_importances.argsort()[:-1][:top_k]
+    return {'important_indices': important_features,
+            'unimportant_indices': unimportant_features}
+
+
 class GuidedBackprop():
     """
     Generate gradients with guided back propagation w.r.t given input.
@@ -38,10 +63,10 @@ class GuidedBackprop():
     def _hook_top_layers(self):
         def hook_function(module, grad_in, grad_out):
             # TODO: Revisit dim disorder and check isinstance for classes.
-            if module.__class__.__name__ == 'Linear':
+            if isinstance(module, torch.nn.Linear):
                 # grad_in shape is (bias, input, weights)
                 self.gradients = grad_in[1]
-            elif module.__class__.__bases__[0].__name__ == '_ConvNd':
+            elif isinstance(module, torch.nn.modules.conv._ConvNd):
                 # grad_in shape is (input, weights, bias)
                 self.gradients = grad_in[0]
         # Register hook to the first layer
