@@ -161,8 +161,8 @@ def stitch_datasets(df_list, on, index_list=None):
 
         merged_df = df_groupOn.drop_duplicates(subset=on)
 
-    merged_df.fillna(-1, inplace=True)
     print("\nMerge Total columns = {totalCols}, rows = {totalRows} ".format(
         totalCols=len(list(merged_df)),
         totalRows=len(merged_df)))
     return merged_df
+
