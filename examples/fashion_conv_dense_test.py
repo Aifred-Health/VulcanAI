@@ -139,6 +139,30 @@ conv_net_config_very_big = {
                         pool_size=None,
                         dropout=0.1 # Float or None
                     ),
+                    dict(
+                        in_channels=16,
+                        out_channels=16,
+                        kernel_size=(5, 5, 5),
+                        stride=1, # Makes a big difference in training speeds
+                        padding=0,
+                        initializer=None,
+                        bias_init=None, # None or value
+                        norm=None,
+                        pool_size=None,
+                        dropout=0.1 # Float or None
+                    ),
+                    dict(
+                        in_channels=16,
+                        out_channels=64,
+                        kernel_size=(5, 5, 5),
+                        stride=1, # Makes a big difference in training speeds
+                        padding=0,
+                        initializer=None,
+                        bias_init=None, # None or value
+                        norm=None,
+                        pool_size=None,
+                        dropout=0.1 # Float or None
+                    ),
     ],
 }
 dense_net_config = {
