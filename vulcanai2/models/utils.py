@@ -113,9 +113,9 @@ def get_size(summary_dict, output):
         summary_dict['output_shape'] = list(output.size())
     return summary_dict
 
-def cast_spatial_dim_as(tensor, template_tensor):
+def cast_spatial_dim_as(tensor, cast_shape):
     # TODO: https://github.com/pytorch/pytorch/issues/9410
-    n_unsqueezes = len(template_tensor.shape) - len(tensor.shape)
+    n_unsqueezes = len(cast_shape) - len(tensor.shape)
     # For each missing dim, add dims until it
     # is equivalient to the max dim
     for _ in range(n_unsqueezes):

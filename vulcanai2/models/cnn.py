@@ -105,25 +105,25 @@ class ConvNet(BaseNetwork, nn.Module):
             # Calculate converged in_dim for the MultiInput ConvNet
             # The new dimension to cast dense net into
             dim_tmp = []
+            
+            # Ignoring the channels
+            spatial_inputs = []
+            for net in self.input_networks:
+                if isinstance(net, ConvNet):
+                    spatial_inputs.append(list(net.out_dim[1:]))
+            max_spatial_dim = len(max(spatial_inputs, key=len))
+            # Fill with zeros in missing dim to compare max size later for each dim.
+            for in_spatial_dim in spatial_inputs:
+                while(len(in_spatial_dim) < max_spatial_dim):
+                    in_spatial_dim.append(0)
+
+            # All spatial dimensions
+            max_conv_tensor_size = np.array(spatial_inputs).transpose().max(axis=1)
+            # Include channel placeholder
+            max_conv_tensor_size = np.array([1, *max_conv_tensor_size])
+            
             # Create empty input tensors
             in_tensors = [torch.ones(x) for x in self.in_dim]
-            # Calculate the number of elements in each input tensor 
-            el_sizes = [t.numel() for t in in_tensors]
-            #Calculate the size of each input tensor
-            dim_sizes = [len(t.shape) for t in in_tensors]
-            # Get max elements from all input networks
-            max_el = max(el_sizes)
-            max_el_ind = [i for i, j in enumerate(el_sizes) if j == max_el]
-            # Get max dim from all input networks
-            max_dim = max(dim_sizes)
-            max_dim_ind = [i for i, j in enumerate(dim_sizes) if j == max_dim]
-            
-            #TODO: What if we get None? meaning, if there is no intersection
-            # The ideal case would if dense_input.numel() > any of Conv input.numel()
-            tensor_ind_size_ref = list(set(max_el_ind).intersection(set(max_dim_ind)))
-            tensor_ind_size_ref = tensor_ind_size_ref[0]
-            # TODO: Sort by number of dimensions and then by number of elements
-            # to determine what to cast all the other tensors to.
             
             for t in in_tensors:
                 
@@ -131,14 +131,13 @@ class ConvNet(BaseNetwork, nn.Module):
                     # Cast Dense to size [1, out_features]]
                     t = self._convert_linear_to_conv_shape(
                         tensor=t,
-                        template_tensor=in_tensors[tensor_ind_size_ref])
+                        cast_shape=max_conv_tensor_size)
                 elif len(t.shape) > 1:
                     t = self._pad_as(
                         tensor=t,
-                        template_tensor=in_tensors[tensor_ind_size_ref])
+                        cast_shape=max_conv_tensor_size)
 
                 dim_tmp.append(t)
-
             self._in_dim = list(torch.cat(dim_tmp, dim=0).shape)
 
         # Build Network
@@ -153,24 +152,26 @@ class ConvNet(BaseNetwork, nn.Module):
             self._create_classification_layer(
                 self.conv_flat_dim, kwargs['pred_activation'])
 
-    def _convert_linear_to_conv_shape(self, tensor, template_tensor):
+    def _convert_linear_to_conv_shape(self, tensor, cast_shape):
         """Convert Linear outputs into Conv outputs."""
-        n_channels = ceil(tensor.numel() / template_tensor[-1, ].numel())
+        sequence_length = cast_shape[1:].prod()
+        n_channels = ceil(tensor.numel() / sequence_length)
         how_much_to_pad = \
-            (template_tensor[-1:].numel() * n_channels) - \
+            (sequence_length * n_channels) - \
             tensor.shape[0]
         tensor = F.pad(
             tensor,
             (ceil(how_much_to_pad/2), floor(how_much_to_pad/2)))
-        return tensor.view(-1, *template_tensor[-1, ].shape)
+        return tensor.view(-1, *cast_shape[1:])
 
-    def _pad_as(self, tensor, template_tensor):
+    def _pad_as(self, tensor, cast_shape):
+
         # Expand tensor to same spatial dimensions as template tensor
         # Ex. tensor = [12, 4] | template = [16, 8, 8] will return [12, 1, 4]
-        if len(tensor.shape) < len(template_tensor.shape):
-            tensor = cast_spatial_dim_as(tensor, template_tensor)
+        if len(tensor.shape[1:]) < len(cast_shape[1:]):
+            tensor = cast_spatial_dim_as(tensor, cast_shape)
         # Ignore channels and focus on spatial dimensions
-        size_diff = np.array(template_tensor.shape[1:]) - np.array(tensor.shape[1:])
+        size_diff = cast_shape[1:] - np.array(tensor.shape[1:])
         # TODO: Use tensor.expand_as?
         padding_needed = []
         for dim in reversed(size_diff):
