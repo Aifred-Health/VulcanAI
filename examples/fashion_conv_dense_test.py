@@ -62,7 +62,7 @@ conv_net_config_small = {
                     dict(
                         in_channels=1,
                         out_channels=16,
-                        kernel_size=(5, 5),
+                        kernel_size=(5),
                         stride=2, # Makes a big difference in training speeds
                         padding=0,
                         initializer=None,
@@ -74,7 +74,7 @@ conv_net_config_small = {
                     dict(
                         in_channels=16,
                         out_channels=32,
-                        kernel_size=(5, 5),
+                        kernel_size=(5),
                         stride=1,
                         padding=0,
                         initializer=None,
@@ -86,7 +86,7 @@ conv_net_config_small = {
                     dict(
                         in_channels=32,
                         out_channels=64,
-                        kernel_size=(5, 5),
+                        kernel_size=(5),
                         stride=1,
                         padding=0,
                         initializer=None,
@@ -125,6 +125,22 @@ conv_net_config_big = {
                     )
     ],
 }
+conv_net_config_very_big = {
+    'conv_units': [
+                    dict(
+                        in_channels=1,
+                        out_channels=16,
+                        kernel_size=(5, 5, 5),
+                        stride=2, # Makes a big difference in training speeds
+                        padding=0,
+                        initializer=None,
+                        bias_init=None, # None or value
+                        norm=None,
+                        pool_size=None,
+                        dropout=0.1 # Float or None
+                    ),
+    ],
+}
 dense_net_config = {
     'dense_units': [100, 50],
     'initializer': None,
@@ -136,7 +152,7 @@ dense_net_config = {
 conv_small = ConvNet(
     name='conv_net_small',
     input_networks=None,
-    in_dim=[(1, 28, 28)],
+    in_dim=[(1, 28)],
     config=conv_net_config_small,
 )
 conv_big = ConvNet(
@@ -144,6 +160,12 @@ conv_big = ConvNet(
     input_networks=None,
     in_dim=[(1, 28, 28)],
     config=conv_net_config_big,
+)
+conv_very_big = ConvNet(
+    name='conv_net_very_big',
+    input_networks=None,
+    in_dim=[(1, 28, 28, 28)],
+    config=conv_net_config_very_big,
 )
 
 dense_model = DenseNet(
@@ -161,8 +183,8 @@ dense_model = DenseNet(
 
 model1 = ConvNet(
     name='conv_net_test_multi_input',
-    input_networks=[conv_small, dense_model, conv_big],
-    in_dim=[conv_small.out_dim, dense_model.out_dim, conv_big.out_dim],
+    input_networks=[conv_small, dense_model, conv_big, conv_very_big],
+    in_dim=[conv_small.out_dim, dense_model.out_dim, conv_big.out_dim, conv_very_big.out_dim],
     config=conv_net_config_big,
     num_classes=10
 )
