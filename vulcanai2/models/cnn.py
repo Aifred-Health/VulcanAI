@@ -100,12 +100,12 @@ class ConvNet(BaseNetwork, nn.Module):
     def _create_network(self, **kwargs):
         self._in_dim = self.in_dim
         conv_hid_layers = self._config.units
-        
+
         if len(self.in_dim) > 1 and len(self.input_networks) > 1:
             # Calculate converged in_dim for the MultiInput ConvNet
             # The new dimension to cast dense net into
-            dim_tmp = []
-            
+            reshaped_tensors = []
+
             # Ignoring the channels
             spatial_inputs = []
             for net in self.input_networks:
@@ -118,27 +118,27 @@ class ConvNet(BaseNetwork, nn.Module):
                     in_spatial_dim.append(0)
 
             # All spatial dimensions
+            # Take the max size in each dimension.
             max_conv_tensor_size = np.array(spatial_inputs).transpose().max(axis=1)
-            # Include channel placeholder
+            # Attach channel placeholder
             max_conv_tensor_size = np.array([1, *max_conv_tensor_size])
-            
             # Create empty input tensors
             in_tensors = [torch.ones(x) for x in self.in_dim]
-            
+
             for t in in_tensors:
-                
                 if len(t.shape) == 1:
-                    # Cast Dense to size [1, out_features]]
-                    t = self._convert_linear_to_conv_shape(
+                    # Cast Linear output to largest Conv output shape
+                    t = self._cast_linear_to_conv_shape(
                         tensor=t,
                         cast_shape=max_conv_tensor_size)
                 elif len(t.shape) > 1:
+                    # Cast Conv output to largest Conv output shape
                     t = self._pad_as(
                         tensor=t,
                         cast_shape=max_conv_tensor_size)
+                reshaped_tensors.append(t)
 
-                dim_tmp.append(t)
-            self._in_dim = list(torch.cat(dim_tmp, dim=0).shape)
+            self._in_dim = list(torch.cat(reshaped_tensors, dim=0).shape)
 
         # Build Network
         self.network = self._build_conv_network(
@@ -152,36 +152,68 @@ class ConvNet(BaseNetwork, nn.Module):
             self._create_classification_layer(
                 self.conv_flat_dim, kwargs['pred_activation'])
 
-    def _convert_linear_to_conv_shape(self, tensor, cast_shape):
-        """Convert Linear outputs into Conv outputs."""
+    def _cast_linear_to_conv_shape(self, tensor, cast_shape):
+        """
+        Convert Linear outputs into Conv outputs.
+
+        Parameters
+        ----------
+        tensor : torch.Tensor
+            The Linear tensor to reshape of shape [out_features]
+        cast_shape : numpy.ndarray
+            The Conv shape to cast linear to of shape
+            [num_channels, *spatial_dimensions].
+
+        Returns
+        -------
+        tensor : torch.Tensor
+            Tensor of shape [num_channels, *spatial_dimensions]
+
+        """
+        # Equivalent to calculating tensor.numel() in pytorch.
         sequence_length = cast_shape[1:].prod()
+        # How many channels to spread the information into
         n_channels = ceil(tensor.numel() / sequence_length)
-        how_much_to_pad = \
-            (sequence_length * n_channels) - \
-            tensor.shape[0]
-        tensor = F.pad(
-            tensor,
-            (ceil(how_much_to_pad/2), floor(how_much_to_pad/2)))
+        # How much pad to add to either sides to reshape the linear tensor
+        # into cast_shape spatial dimensions.
+        how_much_pad = (sequence_length * n_channels) - tensor.shape[0]
+        tensor = F.pad(tensor, (ceil(how_much_pad/2), floor(how_much_pad/2)))
         return tensor.view(-1, *cast_shape[1:])
 
     def _pad_as(self, tensor, cast_shape):
+        """
+        Convert Conv outputs into Conv outputs.
 
+        Parameters
+        ----------
+        tensor : torch.Tensor
+            The Conv tensor to reshape of shape
+            [num_channels, *spatial_dimensions]
+        cast_shape : numpy.ndarray
+            The Conv shape to cast incoming Conv to shape
+            [num_channels, *spatial_dimensions].
+
+        Returns
+        -------
+        tensor : torch.Tensor
+            Tensor of shape [num_channels, *spatial_dimensions]
+
+        """
         # Expand tensor to same spatial dimensions as template tensor
         # Ex. tensor = [12, 4] | template = [16, 8, 8] will return [12, 1, 4]
         if len(tensor.shape[1:]) < len(cast_shape[1:]):
             tensor = cast_spatial_dim_as(tensor, cast_shape)
         # Ignore channels and focus on spatial dimensions
-        size_diff = cast_shape[1:] - np.array(tensor.shape[1:])
+        dim_size_diff = cast_shape[1:] - np.array(tensor.shape[1:])
         # TODO: Use tensor.expand_as?
         padding_needed = []
-        for dim in reversed(size_diff):
+        for dim in reversed(dim_size_diff):
             dim_zero_padding = ceil(dim/2)
             dim_one_padding = floor(dim/2)
             padding_needed.append(dim_zero_padding)
             padding_needed.append(dim_one_padding)
         return F.pad(tensor, padding_needed)
 
-    
     def _build_conv_network(self, conv_hid_layers, activation):
         """
         Build the layers of the network into a nn.Sequential object.
