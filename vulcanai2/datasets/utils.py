@@ -6,9 +6,9 @@ were all copy-pasted from torchtext because torchtext is not yet packaged
 for anaconda and is therefore not yet a reasonable dependency.
 See https://github.com/pytorch/text/blob/master/torchtext/data/dataset.py
 """
-import numpy as np
 import pandas as pd
 import logging
+import copy
 
 logger = logging.getLogger(__name__)
 
@@ -124,10 +124,10 @@ def check_split_ratio(split_ratio):
 
 # THIS IS FROM SNEHA  https://github.com/sneha-desai
 # TODO: replace with Joseph's version
-def stitch_datasets(df_list, on, index_list=None):
+def stitch_datasets(df_list, merge_on_columns, index_list=None):
     """
     Args:
-    df_list: list of dataframes to stitch together
+    df_list: dictionary of dataframes to stitch together
     on: key that specifies which features column to use in each dataset
     to identify the specific examples of all datasets
     index_list: list of feature columns to add present bit (default None)
@@ -135,33 +135,34 @@ def stitch_datasets(df_list, on, index_list=None):
     Returns: concatenated dataframe
 
     """
-    print(index_list)
-    first_column = list(df_list)[1]
-    merged_df = df_list[first_column].copy(deep=True)
+    #Get name of first key in dictionary
+    first_column = list(df_list)[0]
+    #Use dataframe name to pop that dataframe into our merged_df.
+    ## To be safe, return None if column does not exist.
+    merged_df = df_list.pop(first_column, None)
     merged_df = merged_df.apply(pd.to_numeric, errors='ignore')
 
-    count = 1
-
     for key in list(df_list):
-        if key != first_column:
-            print('Combining: {} '.format(key))
+        logger.info('Combining: {} '.format(key))
+        df_two = df_list.pop(key, None)
+        df_two = df_two.apply(pd.to_numeric, errors='ignore')
+        merged_df = merged_df.append(df_two)
 
-            count = count + 1
-            df_two = df_list[key].copy(deep=True)
-            df_two = df_two.apply(pd.to_numeric, errors='ignore')
-            merged_df = merged_df.append(df_two)
-
-    if on is not None:
+    if merge_on_columns is not None:
         # Group by keys, forward fill and backward fill missing data then remove duplicate keys
-        df_groupOn = merged_df.reset_index().groupby(on).apply(
+        df_groupOn = merged_df.reset_index().groupby(merge_on_columns).apply(
             lambda x: x.fillna(method='ffill').fillna(method='bfill'))
         if 'index' in list(df_groupOn):
             del df_groupOn['index']
-        print("\tDropping duplicates")
+        logger.info("\tDropping duplicates")
 
-        merged_df = df_groupOn.drop_duplicates(subset=on)
+        #Drop rows where there are duplicates for the merged_on_columns.
+        # We first need to dropna based on merged since drop_duplicates ignores null/na values.
+        df_groupOn = df_groupOn.dropna(subset=merge_on_columns, how='all')
+        df_groupOn = df_groupOn.drop_duplicates(subset=merge_on_columns, keep='first', inplace=False)
+        merged_df = copy.deepcopy(df_groupOn)
 
-    print("\nMerge Total columns = {totalCols}, rows = {totalRows} ".format(
+    logger.info("\nMerge Total columns = {totalCols}, rows = {totalRows} ".format(
         totalCols=len(list(merged_df)),
         totalRows=len(merged_df)))
     return merged_df
