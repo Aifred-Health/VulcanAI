@@ -123,20 +123,24 @@ class ConvNet(BaseNetwork, nn.Module):
             # to determine what to cast all the other tensors to.
             
             for t in in_tensors:
-                # TODO: For dense, cast to Conv1D size e.g. (1, out_features).
-                # So we treat it as a Conv1D?
-                if len(t.shape) > 1:
-                    t = self.same_padding(t, in_tensors[tensor_ind_size_ref].shape)
 
-                # TODO:  rework on this elif to ensure to support Conv1D type tensor
-                # and not Dense type
-                elif t.numel() is not in_tensors[tensor_ind_size_ref].numel():
+                if len(t.shape) == 1:
+                    # Cast Dense to Conv1D
+                    # Dense = [L] -> Conv1D = [C_{in}, L]
+                    t = t.unsqueeze(0)
+
+                if len(t.shape) > 2:
+                    t = self.same_padding(t, in_tensors[tensor_ind_size_ref].shape)
+                elif len(t.shape) == 2: 
+                    t = t.unsqueeze(1) # Conv1D = [C_{in}, L] -> Conv2D = [C_{in}, H, W]
                     # Cast incoming dense to spatial dimensions of max size input Conv
-                    n_channels = ceil(t.shape[0] / in_tensors[tensor_ind_size_ref][-1, ].numel())
+                    n_channels = ceil(t[-1, ].numel() / in_tensors[tensor_ind_size_ref][-1, ].numel())
                     how_much_to_pad = (in_tensors[tensor_ind_size_ref][-1:].numel() * n_channels) - in_tensors[1].shape[0]
-                    t = torch.cat([t, torch.zeros(how_much_to_pad)])
+                    t = torch.cat([t, torch.zeros(*(t.shape[:-1]), how_much_to_pad)], dim = 2)
                     t = t.view(-1, *in_tensors[tensor_ind_size_ref][-1, ].shape)    
+                
                 dim_tmp.append(t)
+
             self._in_dim = [torch.cat(dim_tmp, dim=0).shape]
 
         # Build Network
