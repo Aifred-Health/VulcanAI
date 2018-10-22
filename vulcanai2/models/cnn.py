@@ -107,14 +107,16 @@ class ConvNet(BaseNetwork, nn.Module):
             # Calculate the number of elements in each input tensor 
             el_sizes = [t.numel() for t in in_tensors]
             #Calculate the size of each input tensor
-            dim_sizes = [len(t.size()) for t in in_tensors]
+            dim_sizes = [len(t.shape) for t in in_tensors]
             # Get max elements from all input networks
             max_el = max(el_sizes)
             max_el_ind = [i for i, j in enumerate(el_sizes) if j == max_el]
             # Get max dim from all input networks
             max_dim = max(dim_sizes)
             max_dim_ind = [i for i, j in enumerate(dim_sizes) if j == max_dim]
-
+            
+            #TODO: What if we get None? meaning, if there is no intersection
+            # The ideal case would if dense_input.numel() > any of Conv input.numel()
             tensor_ind_size_ref = list(set(max_el_ind).intersection(set(max_dim_ind)))
             tensor_ind_size_ref = tensor_ind_size_ref[0]
             # TODO: Sort by number of dimensions and then by number of elements
@@ -124,15 +126,18 @@ class ConvNet(BaseNetwork, nn.Module):
                 # TODO: For dense, cast to Conv1D size e.g. (1, out_features).
                 # So we treat it as a Conv1D?
                 if len(t.shape) > 1:
-                    t = self.same_padding(t, in_tensors[tensor_ind_size_ref].size())
+                    t = self.same_padding(t, in_tensors[tensor_ind_size_ref].shape)
+
+                # TODO:  rework on this elif to ensure to support Conv1D type tensor
+                # and not Dense type
                 elif t.numel() is not in_tensors[tensor_ind_size_ref].numel():
                     # Cast incoming dense to spatial dimensions of max size input Conv
-                    n_channels = ceil(t.size()[0] / in_tensors[tensor_ind_size_ref][-1, ].numel())
-                    how_much_to_pad = (in_tensors[tensor_ind_size_ref][-1:].numel() * n_channels) - in_tensors[1].size()[0]
+                    n_channels = ceil(t.shape[0] / in_tensors[tensor_ind_size_ref][-1, ].numel())
+                    how_much_to_pad = (in_tensors[tensor_ind_size_ref][-1:].numel() * n_channels) - in_tensors[1].shape[0]
                     t = torch.cat([t, torch.zeros(how_much_to_pad)])
-                    t = t.view(-1, *in_tensors[tensor_ind_size_ref][-1, ].size())    
+                    t = t.view(-1, *in_tensors[tensor_ind_size_ref][-1, ].shape)    
                 dim_tmp.append(t)
-            self._in_dim = [torch.cat(dim_tmp, dim=0).size()]
+            self._in_dim = [torch.cat(dim_tmp, dim=0).shape]
 
         # Build Network
         self.network = self._build_conv_network(
@@ -149,7 +154,7 @@ class ConvNet(BaseNetwork, nn.Module):
     def same_padding(self, tensor, cast_size):
         import numpy as np
         # Ignore channels and focus on spatial dimensions
-        size_diff = np.array(cast_size[1:]) - np.array(tensor.size()[1:])
+        size_diff = np.array(cast_size[1:]) - np.array(tensor.shape[1:])
         # TODO: Use tensor.expand_as?
         padding_needed = []
         for dim in reversed(size_diff):
