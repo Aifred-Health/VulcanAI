@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 
 from .basenetwork import BaseNetwork
-from .layers import DenseUnit
+from .layers import DenseUnit, FlattenUnit
 
 import logging
 from inspect import getfullargspec
@@ -86,10 +86,12 @@ class DenseNet(BaseNetwork, nn.Module):
                 kwargs['pred_activation'])
 
     def _create_classification_layer(self, dim, pred_activation):
-        self.network_tail = DenseUnit(
-            in_features=dim,
-            out_features=self.out_dim,
-            activation=pred_activation)
+        self.network_tail = nn.Sequential(
+                FlattenUnit(),
+                DenseUnit(
+                    in_features=dim,
+                    out_features=self.out_dim,
+                    activation=pred_activation))
 
     def _forward(self, xs, **kwargs):
         """
@@ -106,8 +108,8 @@ class DenseNet(BaseNetwork, nn.Module):
         """
         out = []
         for x in xs:
-            if len(x.size())>2:
-                x = x.view(x.size()[0], -1)
+            # if len(x.size())>2:
+            #     x = x.view(x.size()[0], -1)
             out.append(x)
 
         network_output = self.network(torch.cat(out, dim=1))

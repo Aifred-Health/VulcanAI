@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import numpy as np
 
 from .basenetwork import BaseNetwork
-from .layers import DenseUnit, ConvUnit
+from .layers import DenseUnit, ConvUnit, FlattenUnit
 from .utils import cast_spatial_dim_as
 
 import logging
@@ -103,22 +103,26 @@ class ConvNet(BaseNetwork, nn.Module):
 
         if len(self.in_dim) > 1 and len(self.input_networks) > 1:
             # Create empty input tensors
-            in_tensors = [torch.ones(x) for x in self.in_dim]
-
+            in_tensors = []
+            for d in self.in_dim:
+                # TODO: Fix Linear in_dim
+                if isinstance(d, int):
+                    d = tuple([d, ])
+                in_tensors.append(torch.ones([1, *d]))
             output = self._merge_input_network_outputs(in_tensors)
-            self._in_dim = [tuple(output.shape)]
+            self._in_dim = [tuple(output.shape[1:])]
 
         # Build Network
         self.network = self._build_conv_network(
             conv_hid_layers,
             kwargs['activation'])
 
-        self.conv_flat_dim = self.get_flattened_size(self.network) # TODO: convert to list
-
         if self._num_classes:
+            # TODO: convert to list
+            conv_flat_dim = self.get_flattened_size()
             self.out_dim = self._num_classes
             self._create_classification_layer(
-                self.conv_flat_dim, kwargs['pred_activation'])
+                conv_flat_dim, kwargs['pred_activation'])
 
     def _get_max_incoming_resolution(self):
         # Ignoring the channels
@@ -142,24 +146,25 @@ class ConvNet(BaseNetwork, nn.Module):
         return max_conv_tensor_size
 
     def _merge_input_network_outputs(self, tensors):
+        
         # Calculate converged in_dim for the MultiInput ConvNet
         # The new dimension to cast dense net into
         reshaped_tensors = []
         # Determine what shape to cast to without losing any information.
         max_conv_tensor_size = self._get_max_incoming_resolution()
         for t in tensors:
-            if t.dim() == 1:
+            if t.dim() == 2:
                 # Cast Linear output to largest Conv output shape
                 t = self._cast_linear_to_conv_shape(
                     tensor=t,
                     cast_shape=max_conv_tensor_size)
-            elif t.dim() > 1:
+            elif t.dim() > 2:
                 # Cast Conv output to largest Conv output shape
                 t = self._pad_as(
                     tensor=t,
                     cast_shape=max_conv_tensor_size)
             reshaped_tensors.append(t)
-        return torch.cat(reshaped_tensors, dim=0)
+        return torch.cat(reshaped_tensors, dim=1)
 
     def _cast_linear_to_conv_shape(self, tensor, cast_shape):
         """
@@ -185,9 +190,9 @@ class ConvNet(BaseNetwork, nn.Module):
         n_channels = ceil(tensor.numel() / sequence_length)
         # How much pad to add to either sides to reshape the linear tensor
         # into cast_shape spatial dimensions.
-        how_much_pad = (sequence_length * n_channels) - tensor.shape[0]
+        how_much_pad = (sequence_length * n_channels) - tensor.shape[-1]
         tensor = F.pad(tensor, (ceil(how_much_pad/2), floor(how_much_pad/2)))
-        return tensor.view(-1, *cast_shape[1:])
+        return tensor.view(-1, n_channels, *cast_shape[1:])
 
     def _pad_as(self, tensor, cast_shape):
         """
@@ -208,13 +213,14 @@ class ConvNet(BaseNetwork, nn.Module):
             Tensor of shape [num_channels, *spatial_dimensions]
 
         """
-        # import pudb; pu.db
         # Expand tensor to same spatial dimensions as template tensor
-        # Ex. tensor = [12, 4] | template = [16, 8, 8] will return [12, 1, 4]
-        if len(tensor.shape[1:]) < len(cast_shape[1:]):
+        # Ex. tensor = [batch, n_channels, W] | template = [1, n_channels, W, H]
+        # will return [batch, n_channels, W, H]
+        # Ignore batch of incoming tensor
+        if len(tensor.shape[2:]) < len(cast_shape[1:]):
             tensor = cast_spatial_dim_as(tensor, cast_shape)
-        # Ignore channels and focus on spatial dimensions
-        dim_size_diff = cast_shape[1:] - np.array(tensor.shape[1:])
+        # Ignore channels and batch and focus on spatial dimensions
+        dim_size_diff = cast_shape[1:] - np.array(tensor.shape[2:])
         # TODO: Use tensor.expand_as?
         padding_needed = []
         for dim in reversed(dim_size_diff):
@@ -250,11 +256,12 @@ class ConvNet(BaseNetwork, nn.Module):
         return conv_network
 
     def _create_classification_layer(self, dim, pred_activation):
-        self.network_tail = DenseUnit(
-            in_features=dim,
-            out_features=self.out_dim,
-            activation=pred_activation)
-
+        self.network_tail = nn.Sequential(
+                FlattenUnit(),
+                DenseUnit(
+                    in_features=dim,
+                    out_features=self.out_dim,
+                    activation=pred_activation))
 
     def _forward(self, x, **kwargs):
         """
@@ -274,23 +281,20 @@ class ConvNet(BaseNetwork, nn.Module):
             output = self._merge_input_network_outputs(x)
         else:
             output = torch.cat(x, dim=1)
-        import pudb; pu.db
-        output = self.network(output)
-        if self._num_classes:
-            output = output.view(-1, self.conv_flat_dim)
 
-        return output
+        return self.network(output)
 
-    def get_flattened_size(self, network):
+    def get_flattened_size(self):
         """
         Returns the flattened output size of a Single Input ConvNet's last layer.
         :param network: The network to flatten
         :return: The flattened output size of the conv network's last layer.
         """
         with torch.no_grad():
-            x = torch.ones(1, *self._in_dim[0])
-            x = network(x)
-            return x.numel()
+            x = torch.empty(1, *self._in_dim[0])
+            x = self.network(x)
+            x = FlattenUnit()(x)
+            return x.shape[-1]
 
     def __str__(self):
         """Specify how to print network as string."""

@@ -228,13 +228,13 @@ model1 = ConvNet(
     config=conv_net_config_very_very_big,
     num_classes=10
 )
-# import pudb; pu.db
-a = model1(
+
+a = model1.forward(
     [
-        torch.ones(conv_small.in_dim),
-        torch.ones(dense_model.in_dim),
-        torch.ones(conv_big.in_dim),
-        torch.ones(conv_very_big.in_dim)
+        torch.ones([1,*model1.input_networks[0].in_dim[0]]),
+        torch.ones([1,*model1.input_networks[1].in_dim]),
+        torch.ones([1,*model1.input_networks[2].in_dim[0]]),
+        torch.ones([1,*model1.input_networks[3].in_dim[0]])
     ])
 
 # print(model1.get_output_shapes())
