@@ -260,10 +260,10 @@ class ConvNet(BaseNetwork, nn.Module):
                 FlattenUnit(),
                 DenseUnit(
                     in_features=dim,
-                    out_features=self.out_dim,
+                    out_features=self._num_classes,
                     activation=pred_activation))
 
-    def _forward(self, x, **kwargs):
+    def _forward(self, xs, **kwargs):
         """
         Computation for the forward pass of the ConvNet module.
 
@@ -277,10 +277,10 @@ class ConvNet(BaseNetwork, nn.Module):
         output : torch.Tensor
 
         """
-        if len(x) > 1 and self.input_networks is not None:
-            output = self._merge_input_network_outputs(x)
+        if len(xs) > 1 and self.input_networks is not None:
+            output = self._merge_input_network_outputs(xs)
         else:
-            output = torch.cat(x, dim=1)
+            output = torch.cat(xs, dim=1)
 
         return self.network(output)
 

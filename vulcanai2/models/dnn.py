@@ -75,6 +75,18 @@ class DenseNet(BaseNetwork, nn.Module):
     def _create_network(self, **kwargs):
         self._in_dim = self.in_dim
         dense_hid_layers = self._config.units
+
+        if len(self.in_dim) > 1 and len(self.input_networks) > 1:
+            # Create empty input tensors
+            in_tensors = []
+            for d in self.in_dim:
+                # TODO: Fix Linear in_dim
+                if isinstance(d, int):
+                    d = tuple([d, ])
+                in_tensors.append(torch.ones([1, *d]))
+            output = self._merge_input_network_outputs(in_tensors)
+            self._in_dim = output.shape[-1]
+
         # Build network
         self.network = self._build_dense_network(
             dense_hid_layers, kwargs['activation'])
@@ -90,8 +102,14 @@ class DenseNet(BaseNetwork, nn.Module):
                 FlattenUnit(),
                 DenseUnit(
                     in_features=dim,
-                    out_features=self.out_dim,
+                    out_features=self._num_classes,
                     activation=pred_activation))
+
+    def _merge_input_network_outputs(self, tensors):
+        output_tensors = []
+        for t in tensors:
+            output_tensors.append(FlattenUnit()(t))
+        return torch.cat(output_tensors, dim=1)
 
     def _forward(self, xs, **kwargs):
         """
@@ -106,14 +124,8 @@ class DenseNet(BaseNetwork, nn.Module):
         -------
         output : torch.Tensor
         """
-        out = []
-        for x in xs:
-            # if len(x.size())>2:
-            #     x = x.view(x.size()[0], -1)
-            out.append(x)
-
-        network_output = self.network(torch.cat(out, dim=1))
-        return network_output
+        output = self._merge_input_network_outputs(xs)
+        return self.network(output)
 
     def _build_dense_network(self, dense_hid_layers, activation):
         """
@@ -122,7 +134,7 @@ class DenseNet(BaseNetwork, nn.Module):
         :return: the dense network as a nn.Sequential object
         """
         # Specify incoming feature size for the first dense hidden layer        
-        dense_hid_layers[0]['in_features'] = sum(self._in_dim)
+        dense_hid_layers[0]['in_features'] = self._in_dim
 
         dense_layers = []
         for dense_layer_config in dense_hid_layers:
