@@ -172,7 +172,11 @@ class DenseNet(BaseNetwork, nn.Module):
         -------
         output : torch.Tensor
         """
-        output = self._merge_input_network_outputs(xs)
+        if self.input_networks is not None:
+            output = self._merge_input_network_outputs(xs)
+        else:
+            output = torch.cat(xs, dim=1)
+
         return self.network(output)
 
     def _build_dense_network(self, dense_hid_layers, activation):
