@@ -106,7 +106,7 @@ class ConvNet(BaseNetwork, nn.Module):
             in_tensors = [torch.ones(x) for x in self.in_dim]
 
             output = self._merge_input_network_outputs(in_tensors)
-            self._in_dim = list(output.shape)
+            self._in_dim = [tuple(output.shape)]
 
         # Build Network
         self.network = self._build_conv_network(
@@ -120,11 +120,7 @@ class ConvNet(BaseNetwork, nn.Module):
             self._create_classification_layer(
                 self.conv_flat_dim, kwargs['pred_activation'])
 
-    def _merge_input_network_outputs(self, tensors):
-        # Calculate converged in_dim for the MultiInput ConvNet
-        # The new dimension to cast dense net into
-        reshaped_tensors = []
-
+    def _get_max_incoming_resolution(self):
         # Ignoring the channels
         spatial_inputs = []
         for net in self.input_networks:
@@ -142,6 +138,15 @@ class ConvNet(BaseNetwork, nn.Module):
         max_conv_tensor_size = np.array(spatial_inputs).transpose().max(axis=1)
         # Attach channel placeholder
         max_conv_tensor_size = np.array([1, *max_conv_tensor_size])
+
+        return max_conv_tensor_size
+
+    def _merge_input_network_outputs(self, tensors):
+        # Calculate converged in_dim for the MultiInput ConvNet
+        # The new dimension to cast dense net into
+        reshaped_tensors = []
+        # Determine what shape to cast to without losing any information.
+        max_conv_tensor_size = self._get_max_incoming_resolution()
         for t in tensors:
             if t.dim() == 1:
                 # Cast Linear output to largest Conv output shape
@@ -155,7 +160,6 @@ class ConvNet(BaseNetwork, nn.Module):
                     cast_shape=max_conv_tensor_size)
             reshaped_tensors.append(t)
         return torch.cat(reshaped_tensors, dim=0)
-
 
     def _cast_linear_to_conv_shape(self, tensor, cast_shape):
         """
@@ -204,6 +208,7 @@ class ConvNet(BaseNetwork, nn.Module):
             Tensor of shape [num_channels, *spatial_dimensions]
 
         """
+        # import pudb; pu.db
         # Expand tensor to same spatial dimensions as template tensor
         # Ex. tensor = [12, 4] | template = [16, 8, 8] will return [12, 1, 4]
         if len(tensor.shape[1:]) < len(cast_shape[1:]):
@@ -250,7 +255,8 @@ class ConvNet(BaseNetwork, nn.Module):
             out_features=self.out_dim,
             activation=pred_activation)
 
-    def _forward(self, xs, **kwargs):
+
+    def _forward(self, x, **kwargs):
         """
         Computation for the forward pass of the ConvNet module.
 
@@ -264,14 +270,17 @@ class ConvNet(BaseNetwork, nn.Module):
         output : torch.Tensor
 
         """
-        out = []
-        for x in xs:
-            
-            out.append(x)
+        if len(x) > 1 and self.input_networks is not None:
+            output = self._merge_input_network_outputs(x)
+        else:
+            output = torch.cat(x, dim=1)
+        import pudb; pu.db
+        output = self.network(output)
+        if self._num_classes:
+            output = output.view(-1, self.conv_flat_dim)
 
-        network_output = self.network(torch.cat(out, dim=1))
-        return network_output
-   
+        return output
+
     def get_flattened_size(self, network):
         """
         Returns the flattened output size of a Single Input ConvNet's last layer.
