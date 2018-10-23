@@ -134,7 +134,7 @@ class DenseNet(BaseNetwork, nn.Module):
         :return: the dense network as a nn.Sequential object
         """
         # Specify incoming feature size for the first dense hidden layer        
-        dense_hid_layers[0]['in_features'] = self._in_dim
+        dense_hid_layers[0]['in_features'] = self._in_dim[0]
 
         dense_layers = []
         for dense_layer_config in dense_hid_layers:

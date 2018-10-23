@@ -141,7 +141,7 @@ class ConvNet(BaseNetwork, nn.Module):
         # Take the max size in each dimension.
         max_conv_tensor_size = np.array(spatial_inputs).transpose().max(axis=1)
         # Attach channel placeholder
-        max_conv_tensor_size = np.array([1, *max_conv_tensor_size])
+        max_conv_tensor_size = np.array(max_conv_tensor_size)
 
         return max_conv_tensor_size
 
@@ -185,14 +185,15 @@ class ConvNet(BaseNetwork, nn.Module):
 
         """
         # Equivalent to calculating tensor.numel() in pytorch.
-        sequence_length = cast_shape[1:].prod()
+        sequence_length = cast_shape.prod()
         # How many channels to spread the information into
-        n_channels = ceil(tensor.numel() / sequence_length)
+        # Ignore batch from linear
+        n_channels = ceil(tensor[-1].numel() / sequence_length)
         # How much pad to add to either sides to reshape the linear tensor
         # into cast_shape spatial dimensions.
         how_much_pad = (sequence_length * n_channels) - tensor.shape[-1]
         tensor = F.pad(tensor, (ceil(how_much_pad/2), floor(how_much_pad/2)))
-        return tensor.view(-1, n_channels, *cast_shape[1:])
+        return tensor.view(-1, n_channels, *cast_shape)
 
     def _pad_as(self, tensor, cast_shape):
         """
@@ -217,10 +218,10 @@ class ConvNet(BaseNetwork, nn.Module):
         # Ex. tensor = [batch, n_channels, W] | template = [1, n_channels, W, H]
         # will return [batch, n_channels, W, H]
         # Ignore batch of incoming tensor
-        if len(tensor.shape[2:]) < len(cast_shape[1:]):
+        if len(tensor.shape[2:]) < len(cast_shape):
             tensor = cast_spatial_dim_as(tensor, cast_shape)
         # Ignore channels and batch and focus on spatial dimensions
-        dim_size_diff = cast_shape[1:] - np.array(tensor.shape[2:])
+        dim_size_diff = cast_shape - np.array(tensor.shape[2:])
         # TODO: Use tensor.expand_as?
         padding_needed = []
         for dim in reversed(dim_size_diff):
