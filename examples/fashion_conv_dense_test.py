@@ -228,7 +228,7 @@ dense_model = DenseNet(
 #         torch.ones([1,*conv_big.in_dim[0]]),
 #         torch.ones([1,*conv_very_big.in_dim[0]])
 #     ])
-import pudb; pu.db
+
 model1 = ConvNet(
     name='conv_net_test_multi_input',
     input_networks=[conv_small, dense_model, conv_big, conv_very_big],
