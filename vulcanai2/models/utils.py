@@ -93,7 +93,7 @@ def get_size(summary_dict, output):
 def cast_spatial_dim_as(tensor, cast_shape):
     # TODO: https://github.com/pytorch/pytorch/issues/9410
     # Ignore batch for incoming tensor
-    n_unsqueezes = len(cast_shape) - len(tensor.shape[1:])
+    n_unsqueezes = len(cast_shape) - len(tensor.shape[2:])
     # For each missing dim, add dims until it
     # is equivalient to the max dim
     for _ in range(n_unsqueezes):
