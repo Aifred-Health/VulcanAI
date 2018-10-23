@@ -66,6 +66,18 @@ class BaseUnit(nn.Sequential):
             nn.init.constant_(self._kernel.bias, self.bias_init)
 
 
+class FlattenUnit(BaseUnit):
+    """Layer to reshape the input."""
+
+    def __init__(self):
+        super(FlattenUnit, self).__init__()
+
+    def forward(self, x):
+        """Maintain batch size but flatten all remaining dimensions."""
+        N, *_ = x.shape
+        return x.view(N, -1)
+
+
 class DenseUnit(BaseUnit):
     """
     Define the DenseUnit object.
@@ -288,16 +300,3 @@ class InputUnit(BaseUnit):
         else:
             output = self._kernel(input)
             return output
-
-
-class View(BaseUnit):
-    """Layer to reshape the input # TODO : Testing."""
-
-    def __init__(self, *shape):
-        """View defined."""
-        super(View, self).__init__()
-        self.shape = shape
-
-    def forward(self, input):
-        """Define forward for View."""
-        return input.view(*self.shape)

@@ -138,15 +138,6 @@ class BaseNetwork(nn.Module):
         else:
             self.out_dim = self.out_dim[0]
         if self._num_classes:
-            # import pudb; pu.db
-            # a = self(
-            #     [
-            #         torch.ones([1,*self.input_networks[0].in_dim[0]]),
-            #         torch.ones([1,*self.input_networks[1].in_dim]),
-            #         torch.ones([1,*self.input_networks[2].in_dim[0]]),
-            #         torch.ones([1,*self.input_networks[3].in_dim[0]])
-            #     ])
-            import pudb; pu.db
             out_shapes = self.get_output_shapes(
                 network=self.network_tail, input_size=self.out_dim)
             self.out_dim = out_shapes[list(out_shapes)[-1]]['output_shape'][1:]   
@@ -169,7 +160,7 @@ class BaseNetwork(nn.Module):
 
         if not isinstance(inputs, list):
                 inputs = [inputs]
-        
+
         if self.input_networks is not None:
             net_outs = []
             for net, x in zip(self.input_networks, inputs):
@@ -316,11 +307,7 @@ class BaseNetwork(nn.Module):
             # register hook
             network.apply(register_hook)
             # make a forward pass
-            # import pudb; pu.db
-            x = torch.cat(x, 1)
-            # if self._num_classes and isinstance(network._kernel, nn.Linear):
-            #     x = x.view(-1, self.conv_flat_dim)
-            network.cpu()(x) # self.network does not multiinput
+            network.cpu()(torch.cat(x, 1)) # self.network does not multiinput
 
         # remove these hooks
         for h in hooks:
