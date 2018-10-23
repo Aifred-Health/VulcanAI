@@ -102,43 +102,11 @@ class ConvNet(BaseNetwork, nn.Module):
         conv_hid_layers = self._config.units
 
         if len(self.in_dim) > 1 and len(self.input_networks) > 1:
-            # Calculate converged in_dim for the MultiInput ConvNet
-            # The new dimension to cast dense net into
-            reshaped_tensors = []
-
-            # Ignoring the channels
-            spatial_inputs = []
-            for net in self.input_networks:
-                if isinstance(net, ConvNet):
-                    spatial_inputs.append(list(net.out_dim[1:]))
-            max_spatial_dim = len(max(spatial_inputs, key=len))
-            # Fill with zeros in missing dim to compare max size later for each dim.
-            for in_spatial_dim in spatial_inputs:
-                while(len(in_spatial_dim) < max_spatial_dim):
-                    in_spatial_dim.append(0)
-
-            # All spatial dimensions
-            # Take the max size in each dimension.
-            max_conv_tensor_size = np.array(spatial_inputs).transpose().max(axis=1)
-            # Attach channel placeholder
-            max_conv_tensor_size = np.array([1, *max_conv_tensor_size])
             # Create empty input tensors
             in_tensors = [torch.ones(x) for x in self.in_dim]
 
-            for t in in_tensors:
-                if len(t.shape) == 1:
-                    # Cast Linear output to largest Conv output shape
-                    t = self._cast_linear_to_conv_shape(
-                        tensor=t,
-                        cast_shape=max_conv_tensor_size)
-                elif len(t.shape) > 1:
-                    # Cast Conv output to largest Conv output shape
-                    t = self._pad_as(
-                        tensor=t,
-                        cast_shape=max_conv_tensor_size)
-                reshaped_tensors.append(t)
-
-            self._in_dim = list(torch.cat(reshaped_tensors, dim=0).shape)
+            output = self._merge_input_network_outputs(in_tensors)
+            self._in_dim = list(output.shape)
 
         # Build Network
         self.network = self._build_conv_network(
@@ -151,6 +119,43 @@ class ConvNet(BaseNetwork, nn.Module):
             self.out_dim = self._num_classes
             self._create_classification_layer(
                 self.conv_flat_dim, kwargs['pred_activation'])
+
+    def _merge_input_network_outputs(self, tensors):
+        # Calculate converged in_dim for the MultiInput ConvNet
+        # The new dimension to cast dense net into
+        reshaped_tensors = []
+
+        # Ignoring the channels
+        spatial_inputs = []
+        for net in self.input_networks:
+            if isinstance(net, ConvNet):
+                spatial_inputs.append(list(net.out_dim[1:]))
+        max_spatial_dim = len(max(spatial_inputs, key=len))
+
+        # Fill with zeros in missing dim to compare max size later for each dim.
+        for in_spatial_dim in spatial_inputs:
+            while(len(in_spatial_dim) < max_spatial_dim):
+                in_spatial_dim.insert(0, 0)
+
+        # All spatial dimensions
+        # Take the max size in each dimension.
+        max_conv_tensor_size = np.array(spatial_inputs).transpose().max(axis=1)
+        # Attach channel placeholder
+        max_conv_tensor_size = np.array([1, *max_conv_tensor_size])
+        for t in tensors:
+            if t.dim() == 1:
+                # Cast Linear output to largest Conv output shape
+                t = self._cast_linear_to_conv_shape(
+                    tensor=t,
+                    cast_shape=max_conv_tensor_size)
+            elif t.dim() > 1:
+                # Cast Conv output to largest Conv output shape
+                t = self._pad_as(
+                    tensor=t,
+                    cast_shape=max_conv_tensor_size)
+            reshaped_tensors.append(t)
+        return torch.cat(reshaped_tensors, dim=0)
+
 
     def _cast_linear_to_conv_shape(self, tensor, cast_shape):
         """
