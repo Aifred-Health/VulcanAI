@@ -128,15 +128,27 @@ class BaseNetwork(nn.Module):
             pred_activation=pred_activation)
 
         #print(self)
+        out_shapes = self.get_output_shapes(
+            network=self.network, input_size=self._in_dim)
         
-        out_shapes = self.get_output_shapes(network=self.network, input_size=self._in_dim)
         self.out_dim = out_shapes[list(out_shapes)[-1]]['output_shape'][1:]
-        if len(self.out_dim)>1:
+        
+        if len(self.out_dim) > 1:
             self.out_dim = tuple(self.out_dim)
         else:
             self.out_dim = self.out_dim[0]
         if self._num_classes:
-            out_shapes = self.get_output_shapes(network=self.network_tail, input_size=self.out_dim)
+            # import pudb; pu.db
+            # a = self(
+            #     [
+            #         torch.ones([1,*self.input_networks[0].in_dim[0]]),
+            #         torch.ones([1,*self.input_networks[1].in_dim]),
+            #         torch.ones([1,*self.input_networks[2].in_dim[0]]),
+            #         torch.ones([1,*self.input_networks[3].in_dim[0]])
+            #     ])
+            import pudb; pu.db
+            out_shapes = self.get_output_shapes(
+                network=self.network_tail, input_size=self.out_dim)
             self.out_dim = out_shapes[list(out_shapes)[-1]]['output_shape'][1:]   
         # print(self.out_dim)
 
@@ -157,11 +169,10 @@ class BaseNetwork(nn.Module):
 
         if not isinstance(inputs, list):
                 inputs = [inputs]
-
+        
         if self.input_networks is not None:
-            networks = self.input_networks
             net_outs = []
-            for net, x in zip(networks, inputs):
+            for net, x in zip(self.input_networks, inputs):
                 net_outs.append(net(x))
             network_output = self._forward(net_outs)
         else:
@@ -257,19 +268,18 @@ class BaseNetwork(nn.Module):
             Registers a backward hook
             For more info: https://pytorch.org/docs/stable/_modules/torch/tensor.html#Tensor.register_hook
             """
-
             def hook(module, input, output):
                 """
                 https://github.com/pytorch/tutorials/blob/8afce8a213cb3712aa7de1e1cf158da765f029a7/beginner_source/former_torchies/nn_tutorial.py#L146
                 """
                 class_name = str(module.__class__).split('.')[-1].split("'")[0]
                 module_idx = len(summary)
-
+                # Test
                 m_key = '%s-%i' % (class_name, module_idx + 1)
                 summary[m_key] = odict()
                 summary[m_key]['input_shape'] = list(input[0].size())
                 summary[m_key] = get_size(summary[m_key], output)
-
+                # Test
                 params = 0
                 if hasattr(module, 'weight'):
                     params += torch.prod(torch.LongTensor(list(module.weight.size())))
@@ -279,9 +289,8 @@ class BaseNetwork(nn.Module):
                         summary[m_key]['trainable'] = False
                 if hasattr(module, 'bias'):
                     params += torch.prod(torch.LongTensor(list(module.bias.size())))
-
+                # Test
                 summary[m_key]['nb_params'] = params
-
             if not isinstance(module, nn.Sequential) and \
                     not isinstance(module, nn.ModuleList) and \
                     not (module == self):
@@ -307,7 +316,11 @@ class BaseNetwork(nn.Module):
             # register hook
             network.apply(register_hook)
             # make a forward pass
-            network.cpu()(torch.cat(x,1)) # self.network does not multiinput
+            # import pudb; pu.db
+            x = torch.cat(x, 1)
+            # if self._num_classes and isinstance(network._kernel, nn.Linear):
+            #     x = x.view(-1, self.conv_flat_dim)
+            network.cpu()(x) # self.network does not multiinput
 
         # remove these hooks
         for h in hooks:
