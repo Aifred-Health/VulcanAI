@@ -85,7 +85,7 @@ class DenseNet(BaseNetwork, nn.Module):
                     d = tuple([d, ])
                 in_tensors.append(torch.ones([1, *d]))
             output = self._merge_input_network_outputs(in_tensors)
-            self._in_dim = output.shape[-1]
+            self._in_dim = [output.shape[-1],]
 
         # Build network
         self.network = self._build_dense_network(
@@ -124,7 +124,11 @@ class DenseNet(BaseNetwork, nn.Module):
         -------
         output : torch.Tensor
         """
-        output = self._merge_input_network_outputs(xs)
+        if self.input_networks is not None:
+            output = self._merge_input_network_outputs(xs)
+        else:
+            output = torch.cat(xs, dim=1)
+
         return self.network(output)
 
     def _build_dense_network(self, dense_hid_layers, activation):

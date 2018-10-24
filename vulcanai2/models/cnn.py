@@ -281,7 +281,7 @@ class ConvNet(BaseNetwork, nn.Module):
         output : torch.Tensor
 
         """
-        if len(xs) > 1 and self.input_networks is not None:
+        if self.input_networks is not None:
             output = self._merge_input_network_outputs(xs)
         else:
             output = torch.cat(xs, dim=1)
