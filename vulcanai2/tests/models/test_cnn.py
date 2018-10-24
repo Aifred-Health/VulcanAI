@@ -54,7 +54,7 @@ class TestConvNet:
 
     def test_forward_not_nan(self, cnn_noclass):
         """Confirm out is non nan."""
-        test_input = torch.ones([1, *cnn_noclass.in_dim])
+        test_input = torch.ones([1, *cnn_noclass.in_dim[0]])
         test_dataloader = DataLoader(TensorDataset(test_input, test_input))
         output = cnn_noclass.forward_pass(
             data_loader=test_dataloader,
@@ -63,7 +63,7 @@ class TestConvNet:
     
     def test_forward_class_not_nan(self, cnn_class):
         """Confirm out is non nan."""
-        test_input = torch.ones([1, *cnn_class.in_dim])
+        test_input = torch.ones([1, *cnn_class.in_dim[0]])
         test_dataloader = DataLoader(TensorDataset(test_input, test_input))
         raw_output = cnn_class.forward_pass(
             data_loader=test_dataloader,
