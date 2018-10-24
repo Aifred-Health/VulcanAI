@@ -81,7 +81,7 @@ class ConvNetConfig:
         return unit
 
 
-class ConvNet(BaseNetwork, nn.Module):
+class ConvNet(BaseNetwork):
     """
     Subclass of BaseNetwork defining a ConvNet.
     
@@ -94,7 +94,6 @@ class ConvNet(BaseNetwork, nn.Module):
                  lr_scheduler=None, early_stopping=None,
                  criter_spec=nn.CrossEntropyLoss()):
         """Define the ConvNet object."""
-        nn.Module.__init__(self)
         super(ConvNet, self).__init__(
             name, ConvNetConfig(config), in_dim, save_path, input_networks,
             num_classes, activation, pred_activation, optim_spec,
