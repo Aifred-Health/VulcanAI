@@ -231,7 +231,7 @@ dense_model = DenseNet(
 model1 = ConvNet(
     name='conv_net_test_multi_input',
     input_networks=[conv_small, dense_model, conv_big, conv_very_big],
-    in_dim=[conv_small.out_dim, dense_model.out_dim, conv_big.out_dim, conv_very_big.out_dim],
+    #in_dim=[conv_small.out_dim, dense_model.out_dim, conv_big.out_dim, conv_very_big.out_dim],
     config=conv_net_config_very_very_big,
     num_classes=10
 )

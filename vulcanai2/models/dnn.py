@@ -63,12 +63,12 @@ class DenseNet(BaseNetwork, nn.Module):
 
     """
 
-    def __init__(self, name, in_dim, config, save_path=None, input_networks=None, num_classes=None,
+    def __init__(self, name, config, in_dim=None, save_path=None, input_networks=None, num_classes=None,
                  activation=nn.ReLU(), pred_activation=None, optim_spec={'name': 'Adam', 'lr': 0.001},
                  lr_scheduler=None, early_stopping=None, criter_spec=nn.CrossEntropyLoss()):
         
         nn.Module.__init__(self)
-        super(DenseNet, self).__init__(name, in_dim, DenseNetConfig(config), save_path, input_networks, num_classes,
+        super(DenseNet, self).__init__(name, DenseNetConfig(config), in_dim, save_path, input_networks, num_classes,
                                        activation, pred_activation, optim_spec, lr_scheduler, early_stopping, criter_spec
                                        )
 
@@ -133,7 +133,7 @@ class DenseNet(BaseNetwork, nn.Module):
         :param dims: The dimensions
         :return: the dense network as a nn.Sequential object
         """
-        # Specify incoming feature size for the first dense hidden layer        
+        # Specify incoming feature size for the first dense hidden layer    
         dense_hid_layers[0]['in_features'] = self._in_dim[0]
 
         dense_layers = []
