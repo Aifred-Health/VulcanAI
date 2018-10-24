@@ -115,7 +115,7 @@ class DenseNet(BaseNetwork):
         self._in_dim = self.in_dim
         dense_hid_layers = self._config.units
 
-        if len(self.in_dim) > 1 and len(self.input_networks) > 1:
+        if self.input_networks is not None:
             # Create empty input tensors
             in_tensors = []
             for d in self.in_dim:
@@ -195,7 +195,7 @@ class DenseNet(BaseNetwork):
             the dense network as a nn.Sequential object
 
         """
-        # Specify incoming feature size for the first dense hidden layer    
+        # Specify incoming feature size for the first dense hidden layer
         dense_hid_layers[0]['in_features'] = self._in_dim[0]
 
         dense_layers = []
