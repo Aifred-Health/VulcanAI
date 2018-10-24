@@ -103,13 +103,17 @@ class DenseNet(BaseNetwork):
 
     """
 
-    def __init__(self, name, config, in_dim=None, save_path=None, input_networks=None, num_classes=None,
-                 activation=nn.ReLU(), pred_activation=None, optim_spec={'name': 'Adam', 'lr': 0.001},
-                 lr_scheduler=None, early_stopping=None, criter_spec=nn.CrossEntropyLoss()):
-        
-        super(DenseNet, self).__init__(name, DenseNetConfig(config), in_dim, save_path, input_networks, num_classes,
-                                       activation, pred_activation, optim_spec, lr_scheduler, early_stopping, criter_spec
-                                       )
+    def __init__(self, name, config, in_dim=None, save_path=None,
+                 input_networks=None, num_classes=None,
+                 activation=nn.ReLU(), pred_activation=None,
+                 optim_spec={'name': 'Adam', 'lr': 0.001},
+                 lr_scheduler=None, early_stopping=None,
+                 criter_spec=nn.CrossEntropyLoss()):
+        """Define the DenseNet object."""
+        super(DenseNet, self).__init__(
+            name, DenseNetConfig(config), in_dim, save_path, input_networks,
+            num_classes, activation, pred_activation, optim_spec,
+            lr_scheduler, early_stopping, criter_spec)
 
     def _create_network(self, **kwargs):
         self._in_dim = self.in_dim
@@ -150,34 +154,6 @@ class DenseNet(BaseNetwork):
         for t in tensors:
             output_tensors.append(FlattenUnit()(t))
         return torch.cat(output_tensors, dim=1)
-
-    def _forward(self, xs, **kwargs):
-        """
-        Define the forward behaviour of the network.
-
-        If the network is defined with `num_classes` then it is
-        assumed to be the last network which contains a
-        classification layer/classifier (network tail).
-        The data ('x') will be passed through the network and
-        then through the classifier. If not, the input is passed
-        through the network and returned without passing through
-        a classification layer.
-
-        Parameters
-        ----------
-        x : torch.Tensor
-            Input tensor to pass through self.
-
-        Returns
-        -------
-        output : torch.Tensor
-        """
-        if self.input_networks is not None:
-            output = self._merge_input_network_outputs(xs)
-        else:
-            output = torch.cat(xs, dim=1)
-
-        return self.network(output)
 
     def _build_dense_network(self, dense_hid_layers, activation):
         """

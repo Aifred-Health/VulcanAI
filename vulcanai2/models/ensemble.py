@@ -37,10 +37,10 @@ class SnapshotNet(BaseNetwork):
         # TODO: Should these be defaulted to the values of template_network?
         super(SnapshotNet, self).__init__(
             name=name,
-            dimensions=template_network.in_dim,
             config=None,  # template_network._config
+            in_dim=template_network.in_dim,
             save_path=None,  # template_network.save_path
-            input_network=None,  # template_network._input_network
+            input_networks=None,  # template_network._input_network
             num_classes=template_network._num_classes,
             activation=None,  # template_network.network[0]._activation
             pred_activation=None,  # pred_activation
@@ -138,7 +138,7 @@ class SnapshotNet(BaseNetwork):
             self._update_network_name_stack(network._input_network, append_str)
         network.name = "{}_{}".format(network.name, append_str)
 
-    def forward(self, x):
+    def forward(self, inputs, **kwargs):
         """
         Snapshot forward function.
 
@@ -156,11 +156,31 @@ class SnapshotNet(BaseNetwork):
         """
         if len(self.network) == 0:
             raise ValueError("SnapshotNet must be trained first.")
+
+        if not isinstance(inputs, list):
+                inputs = [inputs]
+
+        if self.input_networks is not None:
+            net_outs = []
+            for net, x in zip(self.input_networks, inputs):
+                net_outs.append(net(x))
+            output = self._merge_input_network_outputs(net_outs)
+        else:
+            output = torch.cat(inputs, dim=1)
+
         pred_collector = []
         for net in self.network:
-            pred_collector.append(net(x))
+            pred_collector.append(net(output))
         # Stack outputs along a new 0 dimension to be averaged
         pred_collector = torch.stack(pred_collector)
+
+        # network_output = torch.mean(input=pred_collector, dim=0)
+
+        # if self._num_classes:
+        #     class_output = self.network_tail(network_output)
+        #     return class_output
+        # else:
+        #     return network_output
         return torch.mean(input=pred_collector, dim=0)
 
     def save_model(self, save_path=None):

@@ -94,10 +94,15 @@ class BaseNetwork(nn.Module):
         self._config = config
         self._save_path = save_path
 
+        # Turn into list if not list
+        if input_networks is not None and \
+            not isinstance(input_networks, list):
+            input_networks = [input_networks]
+
         # TODO: See if using nn.ModuleDict is faster
         if input_networks is not None and \
-           not isinstance(input_networks, nn.ModuleList):
-               self.input_networks = nn.ModuleList(input_networks)
+            not isinstance(input_networks, nn.ModuleList):
+            self.input_networks = nn.ModuleList(input_networks)
         else:
             self.input_networks = input_networks
 
@@ -394,10 +399,11 @@ class BaseNetwork(nn.Module):
                 # If freeze is False, set requires_grad to True
                 params.requires_grad = not freeze
         # Recursively toggle freeze on
-        if apply_inputs and self._input_network is not None:
-            self._input_network._toggle_freeze(
-                freeze=freeze,
-                apply_inputs=apply_inputs)
+        if apply_inputs and self.input_networks is not None:
+            for network in self.input_networks:
+                network._toggle_freeze(
+                    freeze=freeze,
+                    apply_inputs=apply_inputs)
 
     def _init_optimizer(self, optim_spec):
         optim_class = getattr(torch.optim, optim_spec["name"])
@@ -479,7 +485,7 @@ class BaseNetwork(nn.Module):
         train_accuracy_accumulator = 0.0
         pbar = trange(len(train_loader.dataset), desc='Training.. ')
         for batch_idx, (data, targets) in enumerate(train_loader):
-            
+
             data, targets = Variable(data), Variable(targets)
 
             if torch.cuda.is_available():
@@ -487,8 +493,7 @@ class BaseNetwork(nn.Module):
                 self.cuda()
 
             # Forward + Backward + Optimize
-            # TODO: Remove temp
-            predictions = self([data, data])
+            predictions = self(data)
 
             train_loss = self.criterion(predictions, targets)
             train_loss_accumulator += train_loss.item()
@@ -532,7 +537,7 @@ class BaseNetwork(nn.Module):
                 data, targets = data.cuda(), targets.cuda()
                 self.cuda()
 
-            predictions = self([data, data])
+            predictions = self(data)
 
             validation_loss = self.criterion(predictions, targets)
             val_loss_accumulator += validation_loss.item()

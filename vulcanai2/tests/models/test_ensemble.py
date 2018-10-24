@@ -15,7 +15,7 @@ class TestSnapshotNet:
         """Create intermediate conv module."""
         return ConvNet(
             name='Test_ConvNet_noclass',
-            dimensions=(1, 28, 28),
+            in_dim=(1, 28, 28),
             config={
                 'conv_units': [
                     {
@@ -39,8 +39,8 @@ class TestSnapshotNet:
         """Create dnn module prediction leaf node."""
         return DenseNet(
             name='Test_DenseNet_class',
-            input_network=cnn_noclass,
-            dimensions=cnn_noclass.conv_flat_dim,
+            input_networks=cnn_noclass,
+            in_dim=cnn_noclass.out_dim,
             config={
                 'dense_units': [100, 50],
                 'initializer': None,
@@ -53,7 +53,7 @@ class TestSnapshotNet:
 
     def test_snapshot_structure(self, cnn_noclass, dnn_class):
         """Confirm Snapshot structure is generated properly."""
-        test_input = torch.ones([3, *cnn_noclass.in_dim]).float()
+        test_input = torch.ones([3, *cnn_noclass.in_dim[0]]).float()
         test_target = torch.LongTensor([0, 2, 1])
         test_dataloader = DataLoader(TensorDataset(test_input, test_target))
         test_snap = SnapshotNet(
