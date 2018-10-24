@@ -1,8 +1,13 @@
+"""Define utilities for all networks."""
 import torch
+import torch.nn.functional as F
+
 import numpy as np
 from sklearn.metrics import confusion_matrix
 from sklearn.preprocessing import LabelBinarizer
 from collections import OrderedDict as odict
+
+from math import ceil, floor
 
 def get_notable_indices(feature_importances, top_k=5):
     """
@@ -113,13 +118,40 @@ def get_size(summary_dict, output):
         summary_dict['output_shape'] = list(output.size())
     return summary_dict
 
-def cast_spatial_dim_as(tensor, cast_shape):
-    # TODO: https://github.com/pytorch/pytorch/issues/9410
-    # Ignore batch for incoming tensor
-    n_unsqueezes = len(cast_shape) - len(tensor.shape[2:])
-    # For each missing dim, add dims until it
-    # is equivalient to the max dim
-    for _ in range(n_unsqueezes):
-        tensor = tensor.unsqueeze(dim=2)
-    # return tensor[(None,) * n_unsqueezes]
-    return tensor
+
+def pad(tensor, padded_shape):
+    """
+    Pad incoming tensor to the size of padded_shape.
+
+    tensor must have same spatial dimenison as the padded_shape.
+    Useful for combining various conv dimension outputs and to implement
+    'same' padding for conv operations.
+
+    Parameters
+    ----------
+    tensor : torch.Tensor
+        Tensor to be padded
+    padded_shape : np.array
+        Final padded tensor shape [*spatial_dimensions]
+
+    Returns
+    -------
+    tensor : torch.Tensor
+        zero padded tensor with spatial dimension as padded_shape
+
+    """
+    # Ignore channels and batch and focus on spatial dimensions
+    # from incoming tensor
+    if not isinstance(padded_shape, np.ndarray):
+        padded_shape = np.array(padded_shape)
+    n_dim = len(padded_shape)
+    # Calculate, element-wise, how much needs to be padded for each dim.
+    dims_size_diff = padded_shape - np.array(tensor.shape[-n_dim:])
+    # TODO: Use torch.nn.ConstantPadding?
+    padding_needed = []
+    for dim_diff in reversed(dims_size_diff):
+        dim_zero_padding = ceil(dim_diff/2)
+        dim_one_padding = floor(dim_diff/2)
+        padding_needed.append(dim_zero_padding)
+        padding_needed.append(dim_one_padding)
+    return F.pad(tensor, padding_needed)
