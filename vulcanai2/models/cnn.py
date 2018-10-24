@@ -266,27 +266,6 @@ class ConvNet(BaseNetwork):
                     out_features=self._num_classes,
                     activation=pred_activation))
 
-    def _forward(self, xs, **kwargs):
-        """
-        Computation for the forward pass of the ConvNet module.
-
-        Parameters
-        ----------
-        xs : list(torch.Tensor)
-            List of input tensors to pass through self.
-
-        Returns
-        -------
-        output : torch.Tensor
-
-        """
-        if self.input_networks is not None:
-            output = self._merge_input_network_outputs(xs)
-        else:
-            output = torch.cat(xs, dim=1)
-
-        return self.network(output)
-
     def get_flattened_size(self):
         """
         Returns the flattened output size of a Single Input ConvNet's last layer.
