@@ -68,9 +68,7 @@ class BaseNetwork(nn.Module):
 
     """
 
-    # TODO: not great to use mutables as arguments.
-    # TODO: reorganize these.
-    def __init__(self, name, in_dim, config, save_path=None,
+    def __init__(self, name, config, in_dim=None, save_path=None,
                  input_networks=None, num_classes=None,
                  activation=nn.ReLU(), pred_activation=None,
                  optim_spec={'name': 'Adam', 'lr': 0.001},
@@ -88,9 +86,9 @@ class BaseNetwork(nn.Module):
                 self.in_dim = in_dim
         else:
             self.in_dim = []
-            for net in self.input_networks:
-                self.in_dim.append(net.in_dim)
-        #print(self.in_dim)
+            for net in input_networks:
+                self.in_dim.append(net.out_dim)
+
         self._config = config
         self._save_path = save_path
 
@@ -127,7 +125,6 @@ class BaseNetwork(nn.Module):
             activation=activation,
             pred_activation=pred_activation)
 
-        #print(self)
         out_shapes = self.get_output_shapes(
             network=self.network, input_size=self._in_dim)
         
@@ -140,10 +137,7 @@ class BaseNetwork(nn.Module):
         if self._num_classes:
             out_shapes = self.get_output_shapes(
                 network=self.network_tail, input_size=self.out_dim)
-            self.out_dim = out_shapes[list(out_shapes)[-1]]['output_shape'][1:]   
-        # print(self.out_dim)
-
-    # TODO: where to do typechecking... just let everything fail?
+            self.out_dim = out_shapes[list(out_shapes)[-1]]['output_shape'][1:]
 
     def forward(self, inputs, **kwargs):
         """
