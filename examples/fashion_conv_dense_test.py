@@ -207,10 +207,10 @@ conv_very_big = ConvNet(
     in_dim=[(1, 28, 28, 28)],
     config=conv_net_config_very_big,
 )
-import pudb; pu.db
+
 dense_model = DenseNet(
     name='conv_net_test',
-    input_networks=[conv_small, conv_big, conv_very_big],
+    input_networks=[conv_small],
     # in_dim=[conv_small.out_dim, conv_big.out_dim, conv_very_big.out_dim],
     config={
     'dense_units': [500, 155],
@@ -221,12 +221,7 @@ dense_model = DenseNet(
     },
 )
 
-dense_output = dense_model(
-    [
-        torch.ones([5,*conv_small.in_dim[0]]),
-        torch.ones([5,*conv_big.in_dim[0]]),
-        torch.ones([5,*conv_very_big.in_dim[0]])
-    ])
+dense_output = dense_model(torch.ones([5,*conv_small.in_dim[0]]))
 
 model1 = ConvNet(
     name='conv_net_test_multi_input',
@@ -240,9 +235,7 @@ very_very_big_conv_output = model1(
     [
         torch.ones([5,*model1.input_networks[0].in_dim[0]]),
         [
-            torch.ones([5,*conv_small.in_dim[0]]),
-            torch.ones([5,*conv_big.in_dim[0]]),
-            torch.ones([5,*conv_very_big.in_dim[0]])
+            torch.ones([5,*conv_small.in_dim[0]])
         ],
         torch.ones([5,*model1.input_networks[2].in_dim[0]]),
         torch.ones([5,*model1.input_networks[3].in_dim[0]])

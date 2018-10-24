@@ -103,7 +103,7 @@ class ConvNet(BaseNetwork):
         self._in_dim = self.in_dim
         conv_hid_layers = self._config.units
 
-        if len(self.in_dim) > 1 and len(self.input_networks) > 1:
+        if self.input_networks is not None:
             # Create empty input tensors
             in_tensors = []
             for d in self.in_dim:
