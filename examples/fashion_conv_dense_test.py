@@ -235,9 +235,7 @@ model1 = ConvNet(
 very_very_big_conv_output = model1(
     [
         torch.ones([5,*model1.input_networks[0].in_dim[0]]),
-        [
-            torch.ones([5,*conv_small.in_dim[0]])
-        ],
+        torch.ones([5,*conv_small.in_dim[0]]),
         torch.ones([5,*model1.input_networks[2].in_dim[0]]),
         torch.ones([5,*model1.input_networks[3].in_dim[0]])
     ])

@@ -2,12 +2,11 @@
 """Defines the ConvNet class."""
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import numpy as np
 
 from .basenetwork import BaseNetwork
 from .layers import DenseUnit, ConvUnit, FlattenUnit
-from .utils import cast_spatial_dim_as
+from .utils import pad
 
 import logging
 from inspect import getfullargspec
@@ -148,7 +147,6 @@ class ConvNet(BaseNetwork):
         return max_conv_tensor_size
 
     def _merge_input_network_outputs(self, tensors):
-        
         # Calculate converged in_dim for the MultiInput ConvNet
         # The new dimension to cast dense net into
         reshaped_tensors = []
@@ -162,7 +160,7 @@ class ConvNet(BaseNetwork):
                     cast_shape=max_conv_tensor_size)
             elif t.dim() > 2:
                 # Cast Conv output to largest Conv output shape
-                t = self._pad_as(
+                t = self._cast_conv_to_conv_shape(
                     tensor=t,
                     cast_shape=max_conv_tensor_size)
             reshaped_tensors.append(t)
@@ -178,12 +176,12 @@ class ConvNet(BaseNetwork):
             The Linear tensor to reshape of shape [out_features]
         cast_shape : numpy.ndarray
             The Conv shape to cast linear to of shape
-            [num_channels, *spatial_dimensions].
+            [batch, num_channels, *spatial_dimensions].
 
         Returns
         -------
         tensor : torch.Tensor
-            Tensor of shape [num_channels, *spatial_dimensions]
+            Tensor of shape [batch, num_channels, *spatial_dimensions]
 
         """
         # Equivalent to calculating tensor.numel() in pytorch.
@@ -193,11 +191,11 @@ class ConvNet(BaseNetwork):
         n_channels = ceil(tensor[-1].numel() / sequence_length)
         # How much pad to add to either sides to reshape the linear tensor
         # into cast_shape spatial dimensions.
-        how_much_pad = (sequence_length * n_channels) - tensor.shape[-1]
-        tensor = F.pad(tensor, (ceil(how_much_pad/2), floor(how_much_pad/2)))
+        pad_shape = sequence_length * n_channels
+        tensor = pad(tensor=tensor, padded_shape=[pad_shape])
         return tensor.view(-1, n_channels, *cast_shape)
 
-    def _pad_as(self, tensor, cast_shape):
+    def _cast_conv_to_conv_shape(self, tensor, cast_shape):
         """
         Convert Conv outputs into Conv outputs.
 
@@ -205,33 +203,29 @@ class ConvNet(BaseNetwork):
         ----------
         tensor : torch.Tensor
             The Conv tensor to reshape of shape
-            [num_channels, *spatial_dimensions]
+            [batch, num_channels, *spatial_dimensions]
         cast_shape : numpy.ndarray
             The Conv shape to cast incoming Conv to shape
-            [num_channels, *spatial_dimensions].
+            [batch, num_channels, *spatial_dimensions].
 
         Returns
         -------
         tensor : torch.Tensor
-            Tensor of shape [num_channels, *spatial_dimensions]
+            Tensor of shape [batch, num_channels, *spatial_dimensions]
 
         """
-        # Expand tensor to same spatial dimensions as template tensor
-        # Ex. tensor = [batch, n_channels, W] | template = [1, n_channels, W, H]
-        # will return [batch, n_channels, W, H]
-        # Ignore batch of incoming tensor
-        if len(tensor.shape[2:]) < len(cast_shape):
-            tensor = cast_spatial_dim_as(tensor, cast_shape)
-        # Ignore channels and batch and focus on spatial dimensions
-        dim_size_diff = cast_shape - np.array(tensor.shape[2:])
-        # TODO: Use tensor.expand_as?
-        padding_needed = []
-        for dim in reversed(dim_size_diff):
-            dim_zero_padding = ceil(dim/2)
-            dim_one_padding = floor(dim/2)
-            padding_needed.append(dim_zero_padding)
-            padding_needed.append(dim_one_padding)
-        return F.pad(tensor, padding_needed)
+        # Extract only the spatial dimensions by ignoring the batch and channel
+        spatial_dim_idx_start = 2
+        if len(tensor.shape[spatial_dim_idx_start:]) < len(cast_shape):
+            # TODO: https://github.com/pytorch/pytorch/issues/9410
+            # Ignore batch for incoming tensor
+            # For each missing dim, add dims until it
+            # is equivalient to the max dim
+            n_unsqueezes = len(cast_shape) - \
+                len(tensor.shape[spatial_dim_idx_start:])
+            for _ in range(n_unsqueezes):
+                tensor = tensor.unsqueeze(dim=spatial_dim_idx_start)
+        return pad(tensor=tensor, padded_shape=cast_shape)
 
     def _build_conv_network(self, conv_hid_layers, activation):
         """
