@@ -207,11 +207,11 @@ conv_very_big = ConvNet(
     in_dim=[(1, 28, 28, 28)],
     config=conv_net_config_very_big,
 )
-
+import pudb; pu.db
 dense_model = DenseNet(
     name='conv_net_test',
     input_networks=[conv_small, conv_big, conv_very_big],
-    in_dim=[conv_small.out_dim, conv_big.out_dim, conv_very_big.out_dim],
+    # in_dim=[conv_small.out_dim, conv_big.out_dim, conv_very_big.out_dim],
     config={
     'dense_units': [500, 155],
     'initializer': None,

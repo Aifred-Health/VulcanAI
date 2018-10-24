@@ -110,26 +110,6 @@ class DenseNet(BaseNetwork):
             output_tensors.append(FlattenUnit()(t))
         return torch.cat(output_tensors, dim=1)
 
-    def _forward(self, xs, **kwargs):
-        """
-        Computation for the forward pass of the DenseNet module.
-        
-        Parameters
-        ----------
-        xs : list(torch.Tensor)
-            List of input tensors to pass through self.
-
-        Returns
-        -------
-        output : torch.Tensor
-        """
-        if self.input_networks is not None:
-            output = self._merge_input_network_outputs(xs)
-        else:
-            output = torch.cat(xs, dim=1)
-
-        return self.network(output)
-
     def _build_dense_network(self, dense_hid_layers, activation):
         """
         Utility function to build the layers into a nn.Sequential object.

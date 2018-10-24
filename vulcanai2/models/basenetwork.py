@@ -140,6 +140,10 @@ class BaseNetwork(nn.Module):
                 network=self.network_tail, input_size=self.out_dim)
             self.out_dim = out_shapes[list(out_shapes)[-1]]['output_shape'][1:]
 
+    @abc.abstractmethod
+    def _merge_input_network_outputs(self, inputs):
+        pass
+
     def forward(self, inputs, **kwargs):
         """
         Perform a forward pass through the module/modules.
@@ -160,10 +164,12 @@ class BaseNetwork(nn.Module):
             net_outs = []
             for net, x in zip(self.input_networks, inputs):
                 net_outs.append(net(x))
-            network_output = self._forward(net_outs)
+            output = self._merge_input_network_outputs(net_outs)
         else:
-            network_output = self._forward((inputs))
-        
+            output = torch.cat(inputs, dim=1)
+
+        network_output = self.network(output)
+
         if self._num_classes:
             class_output = self.network_tail(network_output)
             return class_output
