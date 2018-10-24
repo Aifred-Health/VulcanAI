@@ -36,7 +36,6 @@ logger = logging.getLogger(__name__)
 
 
 class BaseNetwork(nn.Module):
-<<<<<<< HEAD
     """
     Defines the BaseNetwork object.
 
@@ -68,9 +67,6 @@ class BaseNetwork(nn.Module):
         criterion specification with name and all its parameters.
 
     """
-=======
-    """Base class upon which all Vulcan NNs will be based."""
->>>>>>> c13d82c1c1678b3f78783cf820f5a6f1bfb9425b
 
     def __init__(self, name, config, in_dim=None, save_path=None,
                  input_networks=None, num_classes=None,
@@ -78,42 +74,7 @@ class BaseNetwork(nn.Module):
                  optim_spec={'name': 'Adam', 'lr': 0.001},
                  lr_scheduler=None, early_stopping=None,
                  criter_spec=nn.CrossEntropyLoss()):
-<<<<<<< HEAD
         """Define, initialize, and build the BaseNetwork."""
-=======
-        """
-        Defines the network object.
-
-        Parameters
-        ----------
-        name : str
-            The name of the network. Used when saving the file.
-        in_dim : list of tuples
-            The input dimensions of the network. If inferencing from input_networks,
-            it must be a list of either out_dim or conv_flat_dim.
-        config : dict
-            The configuration of the network module, as a dict.
-        save_path : str
-            The name of the file to which you would like to save this network.
-        input_networks : list of BaseNetwork
-            A network object provided as input.
-        num_classes : int or None
-            The number of classes to predict.
-        activation : torch.nn.Module
-            The desired activation function for use in the network.
-        pred_activation : torch.nn.Module
-            The desired activation function for use in the prediction layer.
-        optim_spec : dict
-            A dictionary of parameters for the desired optimizer.
-        lr_scheduler : torch.optim.lr_scheduler
-            A callable torch.optim.lr_scheduler
-        early_stopping : str or None
-            So far just 'best_validation_error' is implemented.
-        criter_spec : dict
-            criterion specification with name and all its parameters.
-
-        """
->>>>>>> c13d82c1c1678b3f78783cf820f5a6f1bfb9425b
         super(BaseNetwork, self).__init__()
 
         self._name = name
@@ -133,7 +94,6 @@ class BaseNetwork(nn.Module):
         self._config = config
         self._save_path = save_path
 
-<<<<<<< HEAD
         # Turn into list if not list
         if input_networks is not None and \
             not isinstance(input_networks, list):
@@ -143,12 +103,6 @@ class BaseNetwork(nn.Module):
         if input_networks is not None and \
             not isinstance(input_networks, nn.ModuleList):
             self.input_networks = nn.ModuleList(input_networks)
-=======
-        # TODO: See if using nn.ModuleDict is faster
-        if input_networks is not None and \
-           not isinstance(input_networks, nn.ModuleList):
-               self.input_networks = nn.ModuleList(input_networks)
->>>>>>> c13d82c1c1678b3f78783cf820f5a6f1bfb9425b
         else:
             self.input_networks = input_networks
 
@@ -191,21 +145,12 @@ class BaseNetwork(nn.Module):
             out_shapes = self.get_output_shapes(
                 network=self.network_tail, input_size=self.out_dim)
             self.out_dim = out_shapes[list(out_shapes)[-1]]['output_shape'][1:]
-<<<<<<< HEAD
 
     @abc.abstractmethod
     def _merge_input_network_outputs(self, inputs):
         """Abstract method used to define how to handle multi-inpus."""
         pass
 
-=======
-
-    @abc.abstractmethod
-    def _merge_input_network_outputs(self, inputs):
-        """Abstract method used to define how to handle multi-inpus."""
-        pass
-
->>>>>>> c13d82c1c1678b3f78783cf820f5a6f1bfb9425b
     def forward(self, inputs, **kwargs):
         """
         Perform a forward pass through the module/modules.
@@ -675,10 +620,6 @@ class BaseNetwork(nn.Module):
             save_path = save_path + "/"
 
         module_save_path = save_path + "{name}/".format(name=self.name)
-<<<<<<< HEAD
-=======
-
->>>>>>> c13d82c1c1678b3f78783cf820f5a6f1bfb9425b
         if not os.path.exists(module_save_path):
             os.makedirs(module_save_path)  # let this throw an error if it already exists
 
@@ -716,8 +657,4 @@ class BaseNetwork(nn.Module):
 
         instance = pickle.load(open(model_file_path, 'rb'))
 
-<<<<<<< HEAD
         return instance
-=======
-        return instance
->>>>>>> c13d82c1c1678b3f78783cf820f5a6f1bfb9425b
