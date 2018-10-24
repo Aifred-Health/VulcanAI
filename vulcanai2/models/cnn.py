@@ -125,7 +125,27 @@ class ConvNet(BaseNetwork):
             self._create_classification_layer(
                 conv_flat_dim, kwargs['pred_activation'])
 
-    def _get_max_incoming_resolution(self):
+    def _merge_input_network_outputs(self, tensors):
+        # Calculate converged in_dim for the MultiInput ConvNet
+        # The new dimension to cast dense net into
+        reshaped_tensors = []
+        # Determine what shape to cast to without losing any information.
+        max_conv_tensor_size = self._get_max_incoming_spatial_dims()
+        for t in tensors:
+            if t.dim() == 2:
+                # Cast Linear output to largest Conv output shape
+                t = self._cast_linear_to_conv_shape(
+                    tensor=t,
+                    cast_shape=max_conv_tensor_size)
+            elif t.dim() > 2:
+                # Cast Conv output to largest Conv output shape
+                t = self._cast_conv_to_conv_shape(
+                    tensor=t,
+                    cast_shape=max_conv_tensor_size)
+            reshaped_tensors.append(t)
+        return torch.cat(reshaped_tensors, dim=1)
+
+    def _get_max_incoming_spatial_dims(self):
         # Ignoring the channels
         spatial_inputs = []
         for net in self.input_networks:
@@ -141,30 +161,7 @@ class ConvNet(BaseNetwork):
         # All spatial dimensions
         # Take the max size in each dimension.
         max_conv_tensor_size = np.array(spatial_inputs).transpose().max(axis=1)
-        # Attach channel placeholder
-        max_conv_tensor_size = np.array(max_conv_tensor_size)
-
-        return max_conv_tensor_size
-
-    def _merge_input_network_outputs(self, tensors):
-        # Calculate converged in_dim for the MultiInput ConvNet
-        # The new dimension to cast dense net into
-        reshaped_tensors = []
-        # Determine what shape to cast to without losing any information.
-        max_conv_tensor_size = self._get_max_incoming_resolution()
-        for t in tensors:
-            if t.dim() == 2:
-                # Cast Linear output to largest Conv output shape
-                t = self._cast_linear_to_conv_shape(
-                    tensor=t,
-                    cast_shape=max_conv_tensor_size)
-            elif t.dim() > 2:
-                # Cast Conv output to largest Conv output shape
-                t = self._cast_conv_to_conv_shape(
-                    tensor=t,
-                    cast_shape=max_conv_tensor_size)
-            reshaped_tensors.append(t)
-        return torch.cat(reshaped_tensors, dim=1)
+        return np.array(max_conv_tensor_size)
 
     def _cast_linear_to_conv_shape(self, tensor, cast_shape):
         """

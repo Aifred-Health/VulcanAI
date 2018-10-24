@@ -78,6 +78,8 @@ class BaseNetwork(nn.Module):
         super(BaseNetwork, self).__init__()
 
         self._name = name
+        
+        # self._in_dim = self.in_dim
         if in_dim is not None:
             # Must be a list of tuples(ConvNet)/int(DenseNet)
             if isinstance(in_dim, (tuple, int)):
@@ -141,6 +143,7 @@ class BaseNetwork(nn.Module):
 
     @abc.abstractmethod
     def _merge_input_network_outputs(self, inputs):
+        """Abstract method used to define how to handle multi-inpus."""
         pass
 
     def forward(self, inputs, **kwargs):
@@ -343,6 +346,7 @@ class BaseNetwork(nn.Module):
         Defines the network. Abstract method that needs to be overridden.
         :return: None
         """
+        self.network = None
         pass
 
     def freeze(self, apply_inputs=False):
@@ -615,12 +619,9 @@ class BaseNetwork(nn.Module):
 
         # recursive recursive recursive
         if self.input_networks is not None:
-            if self._input_network:
-                self._input_network.save_model(save_path)
-            else:
-                # TODO: should rewrite the save_path structure
-                for i, input_network in enumerate(self.input_networks):
-                    input_network.save_model("MultiInputNN_"+save_path+"_{}".format(i))
+            for i, input_network in enumerate(self.input_networks):
+                # "MultiInputNN_"+save_path+"_{}".format(i)
+                input_network.save_model(module_save_path)
 
         self.save_path = module_save_path  # TODO: I don't think this is necessary
 
