@@ -9,7 +9,7 @@ class TestConvNet:
     def cnn_noclass(self): 
         return ConvNet(
             name='Test_ConvNet_noclass',
-            dimensions=(1, 28, 28),
+            in_dim=(1, 28, 28),
             config={
                 'conv_units': [
                     {
@@ -32,7 +32,7 @@ class TestConvNet:
     def cnn_class(self):
         return ConvNet(
             name='Test_ConvNet_class',
-            dimensions=(1, 28, 28),
+            in_dim=(1, 28, 28),
             config={
                 'conv_units': [
                     {

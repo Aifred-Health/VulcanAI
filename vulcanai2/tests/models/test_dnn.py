@@ -9,7 +9,7 @@ class TestDenseNet:
     def dnn_noclass(self):
         return DenseNet(
             name='Test_DenseNet_class',
-            dimensions=(200),
+            in_dim=(200),
             config={
                 'dense_units': [100, 50],
                 'dropout': [0.3, 0.5],
@@ -20,7 +20,7 @@ class TestDenseNet:
     def dnn_class(self):
         return DenseNet(
             name='Test_DenseNet_class',
-            dimensions=(200),
+            in_dim=(200),
             config={
                 'dense_units': [100, 50],
                 'dropout': 0.5,

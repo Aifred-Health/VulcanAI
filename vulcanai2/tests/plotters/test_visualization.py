@@ -12,7 +12,7 @@ class TestVisualization:
         from vulcanai2.models.cnn import ConvNet
         return ConvNet(
             name='Test_ConvNet_class',
-            dimensions=(1, 28, 28),
+            in_dim=(1, 28, 28),
             config={
                 'conv_units': [
                     {
@@ -38,7 +38,7 @@ class TestVisualization:
         from vulcanai2.models.dnn import DenseNet
         return DenseNet(
             name='Test_DenseNet_class',
-            dimensions=(200),
+            in_dim=(200),
             config={
                 'dense_units': [100, 50],
                 'dropouts': 0.3,
