@@ -613,27 +613,26 @@ class BaseNetwork(nn.Module):
         """
 
         if not save_path:
-            save_path = r"saved_models/{}_{}/".format(self.name, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
-            logger.info("No save path provided, saving to {}".format(save_path))
+            save_path = r"saved_models/"
 
         if not save_path.endswith("/"):
             save_path = save_path + "/"
 
-        module_save_path = save_path + "{name}/".format(name=self.name)
-        if not os.path.exists(module_save_path):
-            os.makedirs(module_save_path)  # let this throw an error if it already exists
-
+        save_path = save_path + "{}_{}/".format(self.name, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+        logger.info("No save path provided, saving to {}".format(save_path))
         # recursive recursive recursive
         if self.input_networks is not None:
             for i, input_network in enumerate(self.input_networks):
-                # "MultiInputNN_"+save_path+"_{}".format(i)
-                input_network.save_model(module_save_path)
+                input_network.save_model(save_path)
 
-        self.save_path = module_save_path  # TODO: I don't think this is necessary
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+
+        self.save_path = save_path  # TODO: I don't think this is necessary
 
         # to improve: # object.__getstate__() https://docs.python.org/3/library/pickle.html#example
-        model_file_path = module_save_path + "model.pkl"
-        state_dict_file_path = module_save_path + "state_dict.pkl"
+        model_file_path = save_path + "model.pkl"
+        state_dict_file_path = save_path + "state_dict.pkl"
         pickle.dump(self, open(model_file_path, "wb"), 2)
         pickle.dump(self.state_dict, open(state_dict_file_path, "wb"), 2)  # TODO: pretty sure this isn't necessary
 
