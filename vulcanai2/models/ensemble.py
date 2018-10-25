@@ -55,12 +55,11 @@ class SnapshotNet(BaseNetwork):
                 "template_network type must inherit from BaseNetwork.")
 
         self.template_network = deepcopy(template_network)
-
+        self.network = nn.ModuleList()
+        self.out_dim = self.template_network.out_dim
         if n_snapshots <= 0:
             raise ValueError("n_snapshots must be >=1.")
         self.n_snapshots = n_snapshots
-        # TODO: Should this be called self.network for continuity?
-        self.network = nn.ModuleList()
 
     def fit(self, train_loader, val_loader, epochs,
             retain_graph=None, valid_interv=4, plot=False):
