@@ -7,12 +7,17 @@ import numpy as np
 from sklearn import metrics as skl_metrics
 
 from .utils import get_confusion_matrix, round_list
-from ..plotters.visualization import display_confusion_matrix
+from ..plotters.visualization import display_confusion_matrix, display_record
+from collections import defaultdict
 
-from copy import deepcopy
 import datetime
-
+import copy
+from tqdm import tqdm, trange
 from collections import Counter
+
+import matplotlib
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 import logging
 logger = logging.getLogger(__name__)
@@ -126,7 +131,6 @@ class Metrics(object):
         elif in_matrix.shape[1] == 1:
             return np.around(in_matrix)
 
-    # TODO: Modify to use val loader
     def run_test(self, network, data_loader, figure_path=None, plot=False):
         """
         Will conduct the test suite to determine network strength.
@@ -251,63 +255,68 @@ class Metrics(object):
             'macro_auc': np.average(all_class_auc)
         }
 
-    # TODO:  Needs to be updated to use train loader
-    def k_fold_validation(self, model, train_x, train_y, k=5, epochs=10,
-                          batch_ratio=1.0, plot=False):
-        """
-        Conduct k fold cross validation on a network.
 
-        Args:
-            model: BaseNetwork object you want to cross validate
-            train_x: ndarray of shape (batch, features), train samples
-            train_y: ndarray of shape(batch, classes), train labels
-            k: int, how many folds to run
-            batch_ratio: float, 0-1 for % of total to allocate for a batch
-            epochs: int, number of epochs to train each fold
-
-        Returns final metric dictionary
+    def cross_validate(self, network, data_loader, k, epochs, return_average_results=True, retain_graph=None, valid_interv=4, plot=False, figure_path=None):
         """
+        Trains the network on the provided data.
+        :param data_loader: The DataLoader object containing the training data
+        :param k: The number of folds
+        :param epochs: The number of epochs per fold
+        :param retain_graph: Specifies whether retain_graph will be true when .backwards is called.
+        :param valid_interv: Specifies when validation should occur. Not yet implemented.
+        :return: None
+        """
+
+        all_results = defaultdict(lambda: [])
+
+        #TODO: this whole section is really clunky
+        fold_len = math.floor(data_loader.dataset.__len__() / k)
+        rem = data_loader.dataset.__len__() % k
+        fold_seq = []
+        for i in range(k-1):
+            fold_seq.append(fold_len)
+        if rem == 0:
+            fold_seq.append(fold_len)
+        else:
+            fold_seq.append(rem)
+
+        dataset_splits = torch.utils.data.random_split(data_loader.dataset, fold_seq)
+
+        batch_size = data_loader.batch_size
+        #TODO: improve the copying of parameters
+        if isinstance(data_loader.sampler, torch.utils.data.sampler.RandomSampler):
+            shuffle = True
+        else:
+            shuffle = False
+
         try:
-            model.save_name
-        except:
-            model.save_model()
-        chunk_size = int((train_x.shape[0]) / k)
-        results = []
-        timestamp = "{date:%Y-%m-%d_%H:%M:%S}".format(date=datetime.datetime.now())
-        for i in range(k):
-            val_x = train_x[i * chunk_size:(i + 1) * chunk_size]
-            val_y = train_y[i * chunk_size:(i + 1) * chunk_size]
-            tra_x = np.concatenate(
-                (train_x[:i * chunk_size], train_x[(i + 1) * chunk_size:]),
-                axis=0
-            )
-            tra_y = np.concatenate(
-                (train_y[:i * chunk_size], train_y[(i + 1) * chunk_size:]),
-                axis=0
-            )
-            net = deepcopy(model)
-            net.fit(
-                epochs=epochs,
-                train_x=tra_x,
-                train_y=tra_y,
-                val_x=val_x,
-                val_y=val_y,
-                batch_ratio=batch_ratio,
-                plot=plot
-            )
-            results += [Counter(self.run_test(
-                net,
-                val_x,
-                val_y,
-                figure_path='figures/kfold_{}_{}'.format(model.name, timestamp),
-                plot=plot))]
-            del net
-        aggregate_results = reduce(lambda x, y: x + y, results)
+            for fold in range(k):
 
-        print ('\nFinal Cross validated results')
-        print ('-----------------------------')
-        for metric_key in aggregate_results.keys():
-            aggregate_results[metric_key] /= float(k)
-            print ('{}: {:.4f}'.format(metric_key, aggregate_results[metric_key]))
+                # TODO: this may break on different devices?? test.
+                # https://discuss.pytorch.org/t/are-there-any-recommended-methods-to-clone-a-model/483/14
+                cross_val_network = copy.deepcopy(network)
 
-        return aggregate_results
+                # TODO: properly pass params
+                train_dataset = torch.utils.data.ConcatDataset(dataset_splits[:fold] + dataset_splits[fold+1:])
+                val_dataset = dataset_splits[fold]
+                data_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle)
+                val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size)
+
+                cross_val_network.fit(data_loader, val_loader, epochs,
+                                      retain_graph=retain_graph, valid_interv=valid_interv, plot=plot)
+
+                results = self.run_test(cross_val_network, val_loader, figure_path=figure_path, plot=plot)
+                for m in results:
+                    all_results[m].append(results[m])
+
+        except KeyboardInterrupt:
+            print("\n\n**********KeyboardInterrupt: Training stopped prematurely.**********\n\n")
+            #TODO: we could show something better here like calculate all the results so far
+
+        if return_average_results:
+            averaged_all_results = {}
+            for m in all_results:
+                averaged_all_results = np.mean(all_results[m])
+            return averaged_all_results
+        else:
+            return all_results

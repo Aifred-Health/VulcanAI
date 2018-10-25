@@ -23,6 +23,8 @@ import json
 from collections import OrderedDict
 import matplotlib.pyplot as plt
 
+from vulcanai2.models.metrics import Metrics
+
 sys.path.append('../')
 normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
                                      std=[x/255.0 for x in [63.0, 62.1, 66.7]])
@@ -120,7 +122,8 @@ model1 = DenseNet(
     num_classes=10
 )
 
-# model1.fit(train_loader, val_loader, 2, plot=True)
+#model1.fit(train_loader, val_loader, 2, plot=True)
+#model1.k_fold_cross_validation(train_loader, 5, 2, plot=False)
 
 # model1.save_model()
 
@@ -130,6 +133,7 @@ model1 = DenseNet(
 
 # To test saliency map generation
 # model1.run_test(val_loader, plot=True)
+model1.cross_validate(train_loader, 5, 2, plot=False, return_average_results=True)
 
 # f_pass = model1.forward_pass(val_loader, convert_to_class=True)
 
@@ -143,19 +147,18 @@ model1 = DenseNet(
 # sal_map = compute_saliency_map(model1, x, y)
 # display_saliency_overlay(train_loader.dataset.train_data[0], sal_map[0])
 
-se = SnapshotNet("snap", model1, 3)
+#se = SnapshotNet("snap", model1, 3)
 
 # Does it make more sense to pass the total # of epochs
 # or just how many each model should train for?
 
-se.fit(train_loader, val_loader, 3, plot=True)
-se.run_test(val_loader, plot=True)
+#se.fit(train_loader, val_loader, 3, plot=True)
+#se.run_test(val_loader, plot=True)
 
-se.save_model()
-
+#se.save_model()
 
 # se = SnapshotNet.load_model('saved_models/snap_2018-10-17_00-06-17')
-preds = se.forward_pass(val_loader, convert_to_class=True)
+#preds = se.forward_pass(val_loader, convert_to_class=True)
 
 
 # TODO: need to revisit this to be able to plot after training, interactive plotting is messing up
