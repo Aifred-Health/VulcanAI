@@ -42,6 +42,8 @@ train_dataset = datasets.FashionData(root=data_path,
                             download=True
                            )
 
+train_dataset = torch.utils.data.Subset(train_dataset, range(0,1000))
+
 val_dataset = datasets.FashionData(root=data_path,
                             train=False,
                             transform=transform,
@@ -133,7 +135,7 @@ model1 = DenseNet(
 
 # To test saliency map generation
 # model1.run_test(val_loader, plot=True)
-model1.cross_validate(train_loader, 5, 2, plot=False, return_average_results=True)
+print(model1.cross_validate(train_loader, 5, 2, plot=False, return_average_results=False))
 
 # f_pass = model1.forward_pass(val_loader, convert_to_class=True)
 

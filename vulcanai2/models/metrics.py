@@ -156,11 +156,12 @@ class Metrics(object):
            network._num_classes == 0:
             raise ValueError('There\'s no classification layer')
 
-        test_y = data_loader.dataset.test_labels
+        test_y = np.array([v[1] for v in data_loader.dataset])
 
         raw_prediction = network.forward_pass(
             data_loader=data_loader,
             convert_to_class=False)
+
         class_prediction = self.get_class(raw_prediction)
 
         confusion_matrix = get_confusion_matrix(
@@ -316,7 +317,7 @@ class Metrics(object):
         if return_average_results:
             averaged_all_results = {}
             for m in all_results:
-                averaged_all_results = np.mean(all_results[m])
+                averaged_all_results[m] = np.mean(all_results[m])
             return averaged_all_results
         else:
             return all_results
