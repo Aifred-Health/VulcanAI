@@ -3,6 +3,7 @@ from copy import deepcopy
 import logging
 from datetime import datetime
 import pickle
+import os
 
 import torch
 from torch import nn
@@ -198,14 +199,22 @@ class SnapshotNet(BaseNetwork):
         None
 
         """
-        if save_path is None:
-            save_path = r"saved_models/{}_{}/".format(
-                self.name, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+        if not save_path:
+            save_path = r"saved_models/"
+
         if not save_path.endswith("/"):
             save_path = save_path + "/"
+
+        save_path = save_path + "{}_{}/".format(self.name, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+        logger.info("No save path provided, saving to {}".format(save_path))
+
         for network in self.network:
             logger.info("Saving network {}".format(network.name))
             network.save_model(save_path=save_path)
-        module_save_path = save_path + "model.pkl"
-        self.save_path = module_save_path
-        pickle.dump(self, open(module_save_path, "wb"), 2)
+
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+
+        model_save_path = save_path + "model.pkl"
+        self.save_path = save_path
+        pickle.dump(self, open(model_save_path, "wb"), 2)
