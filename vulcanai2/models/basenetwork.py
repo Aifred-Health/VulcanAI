@@ -66,6 +66,10 @@ class BaseNetwork(nn.Module):
     criter_spec : dict
         criterion specification with name and all its parameters.
 
+    Returns
+    -------
+    network : BaseNetwork
+
     """
 
     def __init__(self, name, config, in_dim=None, save_path=None,
@@ -146,20 +150,28 @@ class BaseNetwork(nn.Module):
 
     @abc.abstractmethod
     def _merge_input_network_outputs(self, inputs):
-        """Abstract method used to define how to handle multi-inpus."""
+        """Abstract method used to define how to handle multi-inputs."""
         pass
 
     def forward(self, inputs, **kwargs):
         """
-        Perform a forward pass through the module/modules.
-        If the network is defined with `num_classes` then it is
-        assumed to be the last network which contains a classification
-        layer/network tail. The inputs will be passed
+        Perform a forward pass through the modules.
+
+        If the network is defined with `num_classes` then it contains a
+        classification layer/network tail. The inputs will be passed
         through the networks and then through the classifier.
         If not, the input is passed through the network and
         returned without passing through a classification layer.
-        :param x: input list(torch.Tensor)
-        :return: output torch.Tensor        
+
+        Parameters
+        ----------
+        inputs : list(torch.Tensor)
+            The inputs to pass throught the network.
+
+        Returns
+        -------
+        output : torch.Tensor
+
         """
 
         if not isinstance(inputs, list):
@@ -180,11 +192,11 @@ class BaseNetwork(nn.Module):
             return class_output
         else:
             return network_output
-        
+
     @property
     def name(self):
         """
-        Returns the name.
+        Return the name.
 
         Returns
         -------
@@ -216,8 +228,12 @@ class BaseNetwork(nn.Module):
     @property
     def lr_scheduler(self):
         """
-        Returns the lr_scheduler
-        :return: the lr_scheduler
+        Return the network lr_scheduler.
+
+        Returns
+        -------
+        lr_scheduler : torch.nn.optim.lr_scheduler
+
         """
         return self._lr_scheduler
 
@@ -228,8 +244,13 @@ class BaseNetwork(nn.Module):
     @property
     def early_stopping(self):
         """
-        Returns the stopping rule
-        :return: The stoping rule
+        Return the stopping rule
+
+        Returns
+        -------
+        stopping_rule : str
+            The stoping rule
+
         """
         return self._early_stopping
 
@@ -240,8 +261,13 @@ class BaseNetwork(nn.Module):
     @property
     def criter_spec(self):
         """
-        Returns the criterion spec.
-        :return: the criterion spec.
+        Return the criterion specification.
+
+        Returns
+        -------
+        _criter_spec : dict
+            The criterion specification.
+
         """
         return self._criter_spec
 
@@ -323,19 +349,28 @@ class BaseNetwork(nn.Module):
 
     def get_layers(self):
         """
-        Returns an ordered dict of all modules contained in this module (layers).
-        :return: OrderedDict() of all modules.
+        Returns an ordered dict of all modules in this network (layers).
+
+        Returns
+        -------
+        layers : OrderedDict()
+
         """
         return self._modules
 
     def get_weights(self):
         """
-        Returns a dictionary containing a whole state of the module
-        :return: A dictionary containing a whole state of the module
+        Return a dictionary containing a whole state of the module
+
+        Returns
+        -------
+        weights : dict
+            A dictionary containing a whole state of the module.
         """
         return self.state_dict()
 
     def print_model_structure(self):
+        """Print the entire model structure."""
         shapes = self.get_output_shapes()
         for k, v in shapes.items():
             print('{}:'.format(k))
@@ -346,8 +381,12 @@ class BaseNetwork(nn.Module):
     @abc.abstractmethod
     def _create_network(self, **kwargs):
         """
-        Defines the network. Abstract method that needs to be overridden.
-        :return: None
+        Define the network. Abstract method that needs to be overridden.
+
+        Returns
+        -------
+        None
+
         """
         self.network = None
         pass
@@ -416,17 +455,29 @@ class BaseNetwork(nn.Module):
         self.optim = self._init_optimizer(self._optim_spec)
         # TODO: Use logger to describe if the optimizer is changed.
         self.criterion = self._init_criterion(self._criter_spec)
-    
+
     def fit(self, train_loader, val_loader, epochs,
             retain_graph=None, valid_interv=4, plot=False):
         """
         Trains the network on the provided data.
-        :param train_loader: The DataLoader object containing the training data
-        :param val_loader: The DataLoader object containing the validation data
-        :param epochs: The number of epochs
-        :param retain_graph: Specifies whether retain_graph will be true when .backwards is called.
-        :param valid_interv: Specifies the number of epochs before validation occurs.
-        :return: None
+
+        Parameters
+        ----------
+        train_loader : DataLoader
+            The DataLoader object containing the training data.
+        val_loader : DataLoader
+            The DataLoader object containing the validation data.
+        epochs : int
+            The number of epochs to train for.
+        retain_graph : {None, True, False}
+            Whether retain_graph will be true when .backwards is called.
+        valid_interv : int
+            Specifies the period of epochs before validation calculation.
+
+        Returns
+        -------
+        None
+
         """
 
         # In case there is already one, don't overwrite it.
@@ -435,13 +486,14 @@ class BaseNetwork(nn.Module):
             self._init_trainer()
 
         try:
-            if plot is True:
+            if plot:
                 fig_number = plt.gcf().number + 1 if plt.fignum_exists(1) else 1
                 plt.show()
 
             for epoch in trange(0, epochs, desc='Epoch: ', ncols=80):
 
-                train_loss, train_acc = self._train_epoch(train_loader, retain_graph)
+                train_loss, train_acc = self._train_epoch(train_loader,
+                                                          retain_graph)
                 if self.lr_scheduler is not None:
                     self.lr_scheduler.step(epoch=epoch)
 
@@ -473,17 +525,32 @@ class BaseNetwork(nn.Module):
                 self.epoch += 1
 
         except KeyboardInterrupt:
-            logger.warning("\n\n**********KeyboardInterrupt: Training stopped prematurely.**********\n\n")
+            logger.warning(
+                "\n\n**********KeyboardInterrupt: "
+                "Training stopped prematurely.**********\n\n")
 
     def _train_epoch(self, train_loader, retain_graph):
+        """
+        Trains the network for 1 epoch.
 
+        Parameters
+        ----------
+        train_loader : DataLoader
+            The DataLoader object containing the dataset to train on.
+
+        Returns
+        -------
+        (train_loss, train_accuracy) : (float, float)
+            Returns the train loss and accuracy.
+
+        """
         self.train()  # Set model to training mode
 
         train_loss_accumulator = 0.0
         train_accuracy_accumulator = 0.0
         pbar = trange(len(train_loader.dataset), desc='Training.. ')
         for batch_idx, (data, targets) in enumerate(train_loader):
-            
+
             data, targets = Variable(data), Variable(targets)
 
             if torch.cuda.is_available():
@@ -506,21 +573,35 @@ class BaseNetwork(nn.Module):
                 if ((batch_idx + 10) * len(data)) <= len(train_loader.dataset):
                     pbar.update(10 * len(data))
                 else:
-                    pbar.update(len(train_loader.dataset) - int(batch_idx * len(data)))
+                    pbar.update(len(train_loader.dataset) -
+                        int(batch_idx * len(data)))
 
-            train_accuracy_accumulator += self.metrics.get_score(predictions, targets)
+            train_accuracy_accumulator += self.metrics.get_score(predictions,
+                                                                 targets)
 
         pbar.close()
 
-        train_loss = train_loss_accumulator * len(data) / len(train_loader.dataset)
-        train_accuracy = train_accuracy_accumulator * len(data) / len(train_loader.dataset)
+        train_loss = train_loss_accumulator * \
+            len(data) / len(train_loader.dataset)
+        train_accuracy = train_accuracy_accumulator * \
+            len(data) / len(train_loader.dataset)
 
         return train_loss, train_accuracy
 
     def _validate(self, val_loader):
         """
-        Validates the network on the validation data
-        :return: (val_loss, accuracy, avg_accuracy, IoU, mIoU, conf_mat) # TODO: update this
+        Validate the network on the validation data.
+
+        Parameters
+        ----------
+        val_loader : DataLoader
+            The DataLoader object containing the dataset to evaluate on
+
+        Returns
+        -------
+        (val_loss, val_accuracy) : (float, float)
+            Returns the validation loss and accuracy
+
         """
         self.eval()  # Set model to evaluate mode
 
@@ -530,7 +611,8 @@ class BaseNetwork(nn.Module):
 
         for batch_idx, (data, targets) in enumerate(val_loader):
 
-            data, targets = Variable(data, requires_grad=False), Variable(targets, requires_grad=False)
+            data, targets = Variable(data, requires_grad=False), \
+                            Variable(targets, requires_grad=False)
 
             if torch.cuda.is_available():
                 data, targets = data.cuda(), targets.cuda()
@@ -541,25 +623,25 @@ class BaseNetwork(nn.Module):
             validation_loss = self.criterion(predictions, targets)
             val_loss_accumulator += validation_loss.item()
 
-            # self.metrics.update(predictions.data.cpu().numpy(), targets.cpu().numpy())
             if batch_idx % 10 == 0:
                 # Update tqdm bar
                 if ((batch_idx + 10) * len(data)) <= len(val_loader.dataset):
                     pbar.update(10 * len(data))
                 else:
                     pbar.update(len(val_loader.dataset) - int(batch_idx * len(data)))
-            val_accuracy_accumulator += self.metrics.get_score(predictions, targets)
+            val_accuracy_accumulator += self.metrics.get_score(predictions,
+                                                               targets)
 
         pbar.close()
-        validation_loss = val_loss_accumulator * len(data) / len(val_loader.dataset)
-        validation_accuracy = val_accuracy_accumulator * len(data) / len(val_loader.dataset)
+        validation_loss = val_loss_accumulator * \
+            len(data) / len(val_loader.dataset)
+        validation_accuracy = val_accuracy_accumulator * \
+            len(data) / len(val_loader.dataset)
 
         return validation_loss, validation_accuracy
-    
+
     def run_test(self, data_loader, figure_path=None, plot=False):
-        """
-        Will conduct the test suite to determine model strength.
-        """
+        """Will conduct the test suite to determine model strength."""
         return self.metrics.run_test(
             network=self,
             data_loader=data_loader,
@@ -569,14 +651,20 @@ class BaseNetwork(nn.Module):
     # TODO: Instead of self.cpu(), use is_cuda to know if you can use gpu
     def forward_pass(self, data_loader, convert_to_class=False):
         """
-        Allow the implementer to quickly get outputs from the network.
+        Allow the user to pass data through the network.
 
-        :param data_loader: DataLoader object to make the predictions on
-        :param convert_to_class: If true, list of class predictions instead
-                                 of class probabilites
+        Parameters
+        ----------
+        data_loader : DataLoader
+            DataLoader object to make the pass with.
+        convert_to_class : boolean
+            If true, list of class predictions instead of class probabilites.
 
-        :return: Numpy matrix with the output probabilities
-                 for each class unless otherwise specified.
+        Returns
+        -------
+        outputs : numpy.ndarray
+            Numpy matrix with the output. Same shape as network out_dim.
+
         """
         self.eval()
         # prediction_shape used to aggregate network outputs

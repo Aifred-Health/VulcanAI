@@ -205,7 +205,8 @@ class SnapshotNet(BaseNetwork):
         if not save_path.endswith("/"):
             save_path = save_path + "/"
 
-        save_path = save_path + "{}_{}/".format(self.name, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+        save_path = save_path + "{}_{}/".format(
+            self.name, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
         logger.info("No save path provided, saving to {}".format(save_path))
 
         for network in self.network:

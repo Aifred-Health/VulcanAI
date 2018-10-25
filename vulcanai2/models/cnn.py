@@ -153,8 +153,7 @@ class ConvNet(BaseNetwork):
                 conv_flat_dim, kwargs['pred_activation'])
 
     def _merge_input_network_outputs(self, tensors):
-        # Calculate converged in_dim for the MultiInput ConvNet
-        # The new dimension to cast dense net into
+        """Calculate converged in_dim for the MultiInput ConvNet."""
         reshaped_tensors = []
         # Determine what shape to cast to without losing any information.
         max_conv_tensor_size = self._get_max_incoming_spatial_dims()
@@ -173,6 +172,7 @@ class ConvNet(BaseNetwork):
         return torch.cat(reshaped_tensors, dim=1)
 
     def _get_max_incoming_spatial_dims(self):
+        """Return the max spatial dimensions of the input networks."""
         # Ignoring the channels
         spatial_inputs = []
         for net in self.input_networks:
