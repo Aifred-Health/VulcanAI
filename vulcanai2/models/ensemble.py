@@ -40,7 +40,7 @@ class SnapshotNet(BaseNetwork):
             config=None,  # template_network._config
             in_dim=template_network.in_dim,
             save_path=None,  # template_network.save_path
-            input_networks=None,  # template_network._input_network
+            input_networks=None,  # template_network.input_networks
             num_classes=template_network._num_classes,
             activation=None,  # template_network.network[0]._activation
             pred_activation=None,  # pred_activation
@@ -134,8 +134,9 @@ class SnapshotNet(BaseNetwork):
             The characters to append at the end of BaseNetwork stack of names.
 
         """
-        if network._input_network is not None:
-            self._update_network_name_stack(network._input_network, append_str)
+        if network.input_networks is not None:
+            for net in network.input_networks:
+                self._update_network_name_stack(net, append_str)
         network.name = "{}_{}".format(network.name, append_str)
 
     def forward(self, inputs, **kwargs):
@@ -155,7 +156,8 @@ class SnapshotNet(BaseNetwork):
 
         """
         if len(self.network) == 0:
-            raise ValueError("SnapshotNet must be trained first.")
+            logger.warn("SnapshotNet not trained. Using template_network")
+            raise ValueError("SnapshotNet needs to be trained.")
 
         if not isinstance(inputs, list):
                 inputs = [inputs]

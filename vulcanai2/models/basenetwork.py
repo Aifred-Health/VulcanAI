@@ -78,8 +78,6 @@ class BaseNetwork(nn.Module):
         super(BaseNetwork, self).__init__()
 
         self._name = name
-        
-        # self._in_dim = self.in_dim
         if in_dim is not None:
             # Must be a list of tuples(ConvNet)/int(DenseNet)
             if isinstance(in_dim, (tuple, int)):
@@ -132,19 +130,19 @@ class BaseNetwork(nn.Module):
             activation=activation,
             pred_activation=pred_activation)
 
-        out_shapes = self.get_output_shapes(
-            network=self.network, input_size=self._in_dim)
-        
-        self.out_dim = out_shapes[list(out_shapes)[-1]]['output_shape'][1:]
-        
-        if len(self.out_dim) > 1:
-            self.out_dim = tuple(self.out_dim)
-        else:
-            self.out_dim = self.out_dim[0]
-        if self._num_classes:
+        if self.network is not None:
             out_shapes = self.get_output_shapes(
-                network=self.network_tail, input_size=self.out_dim)
+                network=self.network, input_size=self._in_dim)
             self.out_dim = out_shapes[list(out_shapes)[-1]]['output_shape'][1:]
+
+            if len(self.out_dim) > 1:
+                self.out_dim = tuple(self.out_dim)
+            else:
+                self.out_dim = self.out_dim[0]
+            if self._num_classes:
+                out_shapes = self.get_output_shapes(
+                    network=self.network_tail, input_size=self.out_dim)
+                self.out_dim = out_shapes[list(out_shapes)[-1]]['output_shape'][1:]
 
     @abc.abstractmethod
     def _merge_input_network_outputs(self, inputs):
