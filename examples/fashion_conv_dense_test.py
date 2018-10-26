@@ -15,7 +15,7 @@ import pickle
 import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, TensorDataset
 # from torchviz import make_dot
 
 import numpy as np
@@ -135,7 +135,52 @@ model1 = DenseNet(
 
 # To test saliency map generation
 # model1.run_test(val_loader, plot=True)
-print(model1.cross_validate(train_loader, 5, 2, plot=False, return_average_results=False))
+
+def cnn_class():
+    """Create ConvNet with prediction layer."""
+    return ConvNet(
+        name='Test_ConvNet_class',
+        dimensions=(1, 28, 28),
+        config={
+            'conv_units': [
+                {
+                    "in_channels": 1,
+                    "out_channels": 16,
+                    "kernel_size": (5, 5),
+                    "stride": 2
+                },
+                {
+                    "in_channels": 16,
+                    "out_channels": 1,
+                    "kernel_size": (5, 5),
+                    "stride": 1,
+                    "padding": 2
+                }]
+        },
+        num_classes=6
+    )
+
+def metrics():
+        return Metrics(
+            num_class=2
+        )
+
+test_input = torch.ones([12, *cnn_class().in_dim]).float()
+test_target = torch.LongTensor([0, 2, 1, 3, 4, 1, 2, 2, 3, 0, 4, 5])
+test_dataloader = DataLoader(TensorDataset(test_input, test_target))
+
+k = 2
+epochs = 2
+
+averaged_results = metrics().cross_validate(cnn_class(), test_dataloader, k, epochs, return_average_results=True)
+#all_results = metrics().cross_validate(cnn_class(), test_dataloader, k, epochs, return_average_results=False)
+
+print(averaged_results)
+#print(all_results)
+#assert len(averaged_results.values()[0]) == 1
+#assert len(all_results.values()[0]) == k
+
+#print(model1.cross_validate(train_loader, 5, 2, plot=False, return_average_results=False))
 
 # f_pass = model1.forward_pass(val_loader, convert_to_class=True)
 

@@ -1,29 +1,23 @@
+# coding=utf-8
 """Defines the network test suite."""
 import torch
-import torch.nn.functional as F
 
 import math
 import numpy as np
 from sklearn import metrics as skl_metrics
 
 from .utils import get_confusion_matrix, round_list
-from ..plotters.visualization import display_confusion_matrix, display_record
+from ..plotters.visualization import display_confusion_matrix
 from collections import defaultdict
 
-import datetime
 import copy
-from tqdm import tqdm, trange
-from collections import Counter
-
-import matplotlib
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 import logging
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
 
 
+# noinspection PyProtectedMember
 class Metrics(object):
     """
     A class to calculate all metrics for a BaseNetwork.
@@ -36,7 +30,7 @@ class Metrics(object):
         The number of classes the network is trying to predict.
 
     """
-
+    # TODO: why does use_unlabeled exist?
     def __init__(self, num_class, use_unlabeled=False):
         """Initialize the metrics class for a BaseNetwork."""
         self.num_class = num_class
@@ -100,20 +94,21 @@ class Metrics(object):
         if metric == 'accuracy':
             # TODO: Use get_class
             max_index = predictions.max(dim=1)[1]
-            correct = (max_index == targets).sum()
+            correct = (max_index == targets).sum() # TODO: this doesn't seem correct
             accuracy = int(correct.data) / len(targets)
             return accuracy
         else:
             raise NotImplementedError('Metric not available.')
 
     # TODO: class # should correspond with self.num_class
+    # noinspection PyMethodMayBeStatic
     def get_class(self, in_matrix):
         """
         Reformat truth matrix to be the classes in a 1D array.
 
         Parameters
         ----------
-        n_matrix : numpy.ndarray or torch.Tensor
+        in_matrix : numpy.ndarray or torch.Tensor
             One-hot matrix of shape [batch, num_classes].
 
         Returns
@@ -246,18 +241,18 @@ class Metrics(object):
             all_class_auc += [auc]
 
         return {
-            'accuracy': accuracy,
-            'macro_sensitivity': sens_macro,
-            'macro_specificity': spec_macro,
-            'avg_dice': np.average(dice),
-            'macro_ppv': ppv_macro,
-            'macro_npv': npv_macro,
-            'macro_f1': f1_macro,
-            'macro_auc': np.average(all_class_auc)
+            'accuracy': float(accuracy),
+            'macro_sensitivity': float(sens_macro),
+            'macro_specificity': float(spec_macro),
+            'avg_dice': float(np.average(dice)),
+            'macro_ppv': float(ppv_macro),
+            'macro_npv': float(npv_macro),
+            'macro_f1': float(f1_macro),
+            'macro_auc': float(np.average(all_class_auc))
         }
 
-
-    def cross_validate(self, network, data_loader, k, epochs, return_average_results=True, retain_graph=None, valid_interv=4, plot=False, figure_path=None):
+    def cross_validate(self, network, data_loader, k, epochs, return_average_results=True, retain_graph=None,
+                       valid_interv=4, plot=False, figure_path=None):
         """
         Trains the network on the provided data.
         :param data_loader: The DataLoader object containing the training data
@@ -268,12 +263,15 @@ class Metrics(object):
         :return: None
         """
 
+        from torch.utils.data import TensorDataset
+
         all_results = defaultdict(lambda: [])
 
-        #TODO: this whole section is really clunky
+        # TODO: this whole section is really clunky
         fold_len = math.floor(data_loader.dataset.__len__() / k)
         rem = data_loader.dataset.__len__() % k
         fold_seq = []
+
         for i in range(k-1):
             fold_seq.append(fold_len)
         if rem == 0:
@@ -284,7 +282,8 @@ class Metrics(object):
         dataset_splits = torch.utils.data.random_split(data_loader.dataset, fold_seq)
 
         batch_size = data_loader.batch_size
-        #TODO: improve the copying of parameters
+
+        # #TODO: improve the copying of parameters
         if isinstance(data_loader.sampler, torch.utils.data.sampler.RandomSampler):
             shuffle = True
         else:
@@ -294,16 +293,16 @@ class Metrics(object):
             for fold in range(k):
 
                 # TODO: this may break on different devices?? test.
-                # https://discuss.pytorch.org/t/are-there-any-recommended-methods-to-clone-a-model/483/14
                 cross_val_network = copy.deepcopy(network)
 
                 # TODO: properly pass params
                 train_dataset = torch.utils.data.ConcatDataset(dataset_splits[:fold] + dataset_splits[fold+1:])
                 val_dataset = dataset_splits[fold]
-                data_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle)
+
+                train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle)
                 val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size)
 
-                cross_val_network.fit(data_loader, val_loader, epochs,
+                cross_val_network.fit(train_loader, val_loader, epochs,
                                       retain_graph=retain_graph, valid_interv=valid_interv, plot=plot)
 
                 results = self.run_test(cross_val_network, val_loader, figure_path=figure_path, plot=plot)
@@ -312,7 +311,7 @@ class Metrics(object):
 
         except KeyboardInterrupt:
             print("\n\n**********KeyboardInterrupt: Training stopped prematurely.**********\n\n")
-            #TODO: we could show something better here like calculate all the results so far
+            # TODO: we could show something better here like calculate all the results so far
 
         if return_average_results:
             averaged_all_results = {}
