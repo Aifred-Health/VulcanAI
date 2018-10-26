@@ -7,6 +7,7 @@ for anaconda and is therefore not yet a reasonable dependency.
 See https://github.com/pytorch/text/blob/master/torchtext/data/dataset.py
 """
 import pandas as pd
+import random
 import logging
 import copy
 
@@ -130,30 +131,25 @@ def stitch_datasets(df_list, merge_on_columns, index_list=None):
     df_list: dictionary of dataframes to stitch together
     on: key that specifies which features column to use in each dataset
     to identify the specific examples of all datasets
-    index_list: list of feature columns to add present bit (default None)
+    index_list: list of feature columns to index on when stitching(default None)
 
     Returns: concatenated dataframe
 
     """
-    #Get name of first key in dictionary
+    #Get name of a dataframe to extract
     first_column = list(df_list)[0]
-    #Use dataframe name to pop that dataframe into our merged_df.
-    ## To be safe, return None if column does not exist.
-    merged_df = df_list.pop(first_column, None)
+    merged_df = df_list.pop(first_column)
     merged_df = merged_df.apply(pd.to_numeric, errors='ignore')
-
     for key in list(df_list):
-        logger.info('Combining: {} '.format(key))
-        df_two = df_list.pop(key, None)
-        df_two = df_two.apply(pd.to_numeric, errors='ignore')
-        merged_df = merged_df.append(df_two)
+        logger.info('Combining: {}'.format(key))
+        df_two = df_list.pop(key)
+        merged_df = pd.concat([merged_df, df_two])
 
     if merge_on_columns is not None:
         # Group by keys, forward fill and backward fill missing data then remove duplicate keys
-        df_groupOn = merged_df.reset_index().groupby(merge_on_columns).apply(
-            lambda x: x.fillna(method='ffill').fillna(method='bfill'))
-        if 'index' in list(df_groupOn):
-            del df_groupOn['index']
+        merged_df = merged_df.apply(pd.to_numeric, errors='ignore')
+        df_groupOn = merged_df.reset_index(drop=True).groupby(merge_on_columns).apply(
+            lambda x: x.bfill().ffill())
         logger.info("\tDropping duplicates")
 
         #Drop rows where there are duplicates for the merged_on_columns.
@@ -161,6 +157,9 @@ def stitch_datasets(df_list, merge_on_columns, index_list=None):
         df_groupOn = df_groupOn.dropna(subset=merge_on_columns, how='all')
         df_groupOn = df_groupOn.drop_duplicates(subset=merge_on_columns, keep='first', inplace=False)
         merged_df = copy.deepcopy(df_groupOn)
+
+    if index_list is not None:
+        merged_df = merged_df.set_index(index_list, inplace=False)
 
     logger.info("\nMerge Total columns = {totalCols}, rows = {totalRows} ".format(
         totalCols=len(list(merged_df)),
