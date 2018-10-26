@@ -31,7 +31,7 @@ class TestSnapshotNet:
                         "stride": 1,
                         "padding": 2
                     }]
-            }
+            },
         )
 
     @pytest.fixture

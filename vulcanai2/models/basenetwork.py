@@ -232,7 +232,7 @@ class BaseNetwork(nn.Module):
 
         Returns
         -------
-        lr_scheduler : torch.nn.optim.lr_scheduler
+        lr_scheduler : torch.optim.lr_scheduler
 
         """
         return self._lr_scheduler
