@@ -126,19 +126,15 @@ class ConvNet(BaseNetwork):
             lr_scheduler, early_stopping, criter_spec)
 
     def _create_network(self, **kwargs):
-        self._in_dim = self.in_dim
         conv_hid_layers = self._config.units
 
         if self.input_networks is not None:
             # Create empty input tensors
             in_tensors = []
-            for d in self.in_dim:
-                # TODO: Fix Linear in_dim
-                if isinstance(d, int):
-                    d = tuple([d, ])
-                in_tensors.append(torch.ones([1, *d]))
+            for d in self.input_networks:
+                in_tensors.append(torch.ones([1, *d.out_dim]))
             output = self._merge_input_network_outputs(in_tensors)
-            self._in_dim = [tuple(output.shape[1:])]
+            self.in_dim = tuple(output.shape[1:])
 
         # Build Network
         self.network = self._build_conv_network(
@@ -268,7 +264,7 @@ class ConvNet(BaseNetwork):
             the conv network as a nn.Sequential object
 
         """
-        conv_hid_layers[0]['in_channels'] = self._in_dim[0][0]
+        conv_hid_layers[0]['in_channels'] = self.in_dim[0]
         conv_layers = []
         for conv_layer_config in conv_hid_layers:
             conv_layer_config['activation'] = activation
@@ -291,7 +287,7 @@ class ConvNet(BaseNetwork):
         :return: The flattened output size of the conv network's last layer.
         """
         with torch.no_grad():
-            x = torch.empty(1, *self._in_dim[0])
+            x = torch.empty(1, *self.in_dim)
             x = self.network(x)
             x = FlattenUnit()(x)
             return x.shape[-1]

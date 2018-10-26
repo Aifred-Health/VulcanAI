@@ -8,7 +8,7 @@ from torch import nn
 
 # Vulcan imports
 from .layers import *
-from .utils import get_size
+from .utils import network_summary
 from .metrics import Metrics
 from ..plotters.visualization import display_record
 
@@ -43,13 +43,14 @@ class BaseNetwork(nn.Module):
     ----------
     name : str
         The name of the network. Used when saving the file.
-    dimensions : list of tuples
-        The dimensions of the network.
     config : dict
         The configuration of the network module, as a dict.
+    in_dim : tuple
+        The input dimensions of the network. Not required to specify when the
+        network has input_networks.
     save_path : str
         The name of the file to which you would like to save this network.
-    input_network : list of BaseNetwork
+    input_networks : list of BaseNetwork
         A network object provided as input.
     num_classes : int or None
         The number of classes to predict.
@@ -83,15 +84,14 @@ class BaseNetwork(nn.Module):
 
         self._name = name
         if in_dim is not None:
-            # Must be a list of tuples(ConvNet)/int(DenseNet)
-            if isinstance(in_dim, (tuple, int)):
-                self.in_dim = [in_dim] 
+            if isinstance(in_dim, int):
+                self.in_dim = tuple([in_dim])
             else:
                 self.in_dim = in_dim
         else:
-            self.in_dim = []
-            for net in input_networks:
-                self.in_dim.append(net.out_dim)
+            if input_networks is None:
+                raise ValueError("BaseNetwork must have either in_dim or \
+                                input_networks")
 
         self._config = config
         self._save_path = save_path
@@ -101,7 +101,6 @@ class BaseNetwork(nn.Module):
             not isinstance(input_networks, list):
             input_networks = [input_networks]
 
-        # TODO: See if using nn.ModuleDict is faster
         if input_networks is not None and \
             not isinstance(input_networks, nn.ModuleList):
             self.input_networks = nn.ModuleList(input_networks)
@@ -130,23 +129,21 @@ class BaseNetwork(nn.Module):
             validation_accuracy=[]
         )
 
+        # Creates the Network, and re-writes the self.in_dim
         self._create_network(
             activation=activation,
             pred_activation=pred_activation)
 
+        # Compute self.out_dim of the network
         if self.network is not None:
-            out_shapes = self.get_output_shapes(
-                network=self.network, input_size=self._in_dim)
-            self.out_dim = out_shapes[list(out_shapes)[-1]]['output_shape'][1:]
-
-            if len(self.out_dim) > 1:
-                self.out_dim = tuple(self.out_dim)
-            else:
-                self.out_dim = self.out_dim[0]
+            out_shapes = network_summary(
+                network=self.network, input_size=self.in_dim)
+            self.out_dim = tuple(out_shapes[list(out_shapes)[-1]]['output_shape'][1:])
+            
             if self._num_classes:
-                out_shapes = self.get_output_shapes(
+                out_shapes = network_summary(
                     network=self.network_tail, input_size=self.out_dim)
-                self.out_dim = out_shapes[list(out_shapes)[-1]]['output_shape'][1:]
+                self.out_dim = tuple(out_shapes[list(out_shapes)[-1]]['output_shape'][1:])
 
     @abc.abstractmethod
     def _merge_input_network_outputs(self, inputs):
@@ -275,78 +272,6 @@ class BaseNetwork(nn.Module):
     def criter_spec(self, value):
         self._criter_spec = value
 
-    def get_output_shapes(self, network=None, input_size=None):
-        """
-        Returns the summary of shapes of all layers in the network
-        :return: OrderedDict of shape of each layer in the network
-        """
-        if not input_size:
-            input_size = self.in_dim
-        # input_size must be a list
-        if isinstance(input_size, (tuple, int)):
-            input_size = [input_size]
-
-        def register_hook(module):
-            """
-            Registers a backward hook
-            For more info: https://pytorch.org/docs/stable/_modules/torch/tensor.html#Tensor.register_hook
-            """
-            def hook(module, input, output):
-                """
-                https://github.com/pytorch/tutorials/blob/8afce8a213cb3712aa7de1e1cf158da765f029a7/beginner_source/former_torchies/nn_tutorial.py#L146
-                """
-                class_name = str(module.__class__).split('.')[-1].split("'")[0]
-                module_idx = len(summary)
-                # Test
-                m_key = '%s-%i' % (class_name, module_idx + 1)
-                summary[m_key] = odict()
-                summary[m_key]['input_shape'] = list(input[0].size())
-                summary[m_key] = get_size(summary[m_key], output)
-                # Test
-                params = 0
-                if hasattr(module, 'weight'):
-                    params += torch.prod(torch.LongTensor(list(module.weight.size())))
-                    if module.weight.requires_grad:
-                        summary[m_key]['trainable'] = True
-                    else:
-                        summary[m_key]['trainable'] = False
-                if hasattr(module, 'bias'):
-                    params += torch.prod(torch.LongTensor(list(module.bias.size())))
-                # Test
-                summary[m_key]['nb_params'] = params
-            if not isinstance(module, nn.Sequential) and \
-                    not isinstance(module, nn.ModuleList) and \
-                    not (module == self):
-                hooks.append(module.register_forward_hook(hook))
-
-        x = []
-        for in_size in input_size:
-            if isinstance(in_size, tuple):
-                x.append(Variable(torch.rand(1, *in_size)))
-            else: 
-                x.append(Variable(torch.rand(1, *[in_size])))
-        
-        # create properties
-        summary = odict()
-        hooks = []
-
-        if not network:
-            # register hook
-            self.apply(register_hook)
-            # make a forward pass
-            self.cpu()(x)
-        else:
-            # register hook
-            network.apply(register_hook)
-            # make a forward pass
-            network.cpu()(torch.cat(x, 1)) # self.network does not multiinput
-
-        # remove these hooks
-        for h in hooks:
-            h.remove()
-
-        return summary
-
     def get_layers(self):
         """
         Returns an ordered dict of all modules in this network (layers).
@@ -368,15 +293,6 @@ class BaseNetwork(nn.Module):
             A dictionary containing a whole state of the module.
         """
         return self.state_dict()
-
-    def print_model_structure(self):
-        """Print the entire model structure."""
-        shapes = self.get_output_shapes()
-        for k, v in shapes.items():
-            print('{}:'.format(k))
-            if isinstance(v, odict):
-                for k2, v2 in v.items():
-                    print('\t {}: {}'.format(k2, v2))
 
     @abc.abstractmethod
     def _create_network(self, **kwargs):
@@ -559,7 +475,7 @@ class BaseNetwork(nn.Module):
 
             # Forward + Backward + Optimize
             # TODO: Remove temp
-            predictions = self([data, data])
+            predictions = self(data)
 
             train_loss = self.criterion(predictions, targets)
             train_loss_accumulator += train_loss.item()
@@ -618,7 +534,7 @@ class BaseNetwork(nn.Module):
                 data, targets = data.cuda(), targets.cuda()
                 self.cuda()
 
-            predictions = self([data, data])
+            predictions = self(data)
 
             validation_loss = self.criterion(predictions, targets)
             val_loss_accumulator += validation_loss.item()

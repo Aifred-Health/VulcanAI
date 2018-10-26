@@ -2,6 +2,7 @@
 from math import ceil, floor
 import torch
 import torch.nn.functional as F
+from torch.autograd import Variable
 
 import numpy as np
 from sklearn.metrics import confusion_matrix
@@ -81,19 +82,6 @@ def get_one_hot(in_matrix):
     lb = LabelBinarizer()
     return np.array(lb.fit_transform(custom_array), dtype='float32')
 
-def get_size(summary_dict, output):
-    """
-    Helper function for the BaseNetwork's get_output_shapes
-    """
-    if isinstance(output, tuple):
-        for i in range(len(output)):
-            summary_dict[i] = odict()
-            summary_dict[i] = get_size(summary_dict[i], output[i])
-    else:
-        summary_dict['output_shape'] = list(output.size())
-    return summary_dict
-
-
 def pad(tensor, padded_shape):
     """
     Pad incoming tensor to the size of padded_shape.
@@ -130,3 +118,95 @@ def pad(tensor, padded_shape):
         padding_needed.append(dim_zero_padding)
         padding_needed.append(dim_one_padding)
     return F.pad(tensor, padding_needed)
+
+def network_summary(network, input_size=None):
+    """
+    Returns the summary of shapes of all layers in the network
+    :return: OrderedDict of shape of each layer in the network
+    """
+    if not input_size:
+        input_size=[]
+        for net in network.input_networks:
+            input_size.append(net.in_dim)
+    # input_size must be a list
+    if isinstance(input_size, (tuple, int)):
+        input_size = [input_size]
+    
+    def get_size(summary_dict, output):
+        """
+        Helper function for the BaseNetwork's get_output_shapes
+        """
+        if isinstance(output, tuple):
+            for i in range(len(output)):
+                summary_dict[i] = odict()
+                summary_dict[i] = get_size(summary_dict[i], output[i])
+        else:
+            summary_dict['output_shape'] = tuple(output.size())
+        return summary_dict
+
+    def register_hook(module):
+        """
+        Registers a backward hook
+        For more info: https://pytorch.org/docs/stable/_modules/torch/tensor.html#Tensor.register_hook
+        """
+        def hook(module, input, output):
+            """
+            https://github.com/pytorch/tutorials/blob/8afce8a213cb3712aa7de1e1cf158da765f029a7/beginner_source/former_torchies/nn_tutorial.py#L146
+            """
+            class_name = str(module.__class__).split('.')[-1].split("'")[0]
+            module_idx = len(summary)
+            # Test
+            m_key = '%s-%i' % (class_name, module_idx + 1)
+            summary[m_key] = odict()
+            summary[m_key]['input_shape'] = tuple(input[0].size())
+            summary[m_key] = get_size(summary[m_key], output)
+            # Test
+            params = 0
+            if hasattr(module, 'weight'):
+                params += torch.prod(torch.LongTensor(tuple(module.weight.size())))
+                if module.weight.requires_grad:
+                    summary[m_key]['trainable'] = True
+                else:
+                    summary[m_key]['trainable'] = False
+            if hasattr(module, 'bias'):
+                params += torch.prod(torch.LongTensor(tuple(module.bias.size())))
+            # Test
+            summary[m_key]['nb_params'] = params
+        if not isinstance(module, torch.nn.Sequential) and \
+                not isinstance(module, torch.nn.ModuleList) and \
+                not (module == network):
+            hooks.append(module.register_forward_hook(hook))
+
+    x = []
+    for in_size in input_size:
+        if isinstance(in_size, tuple):
+            x.append(Variable(torch.rand(1, *in_size)))
+        else: 
+            x.append(Variable(torch.rand(1, *[in_size])))
+    
+    if len(x)==1:
+        x = x[0]
+        
+    # create properties
+    summary = odict()
+    hooks = []
+
+    # register hook
+    network.apply(register_hook)
+    # make a forward pass
+    network.cpu()(x) # self.network does not multiinput
+
+    # remove these hooks
+    for h in hooks:
+        h.remove()
+
+    return summary
+
+def print_model_structure(self):
+    """Print the entire model structure."""
+    shapes = get_output_shapes()
+    for k, v in shapes.items():
+        print('{}:'.format(k))
+        if isinstance(v, odict):
+            for k2, v2 in v.items():
+                print('\t {}: {}'.format(k2, v2))

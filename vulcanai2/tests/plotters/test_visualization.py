@@ -51,8 +51,8 @@ class TestVisualization:
         Confirm hooks are removed, and gradient shape is the same as input.
         For ConvNets.
         """
-        test_input_1B = np.ones([1, *cnn_class.in_dim[0]], dtype=np.float32)
-        test_input_5B = np.ones([5, *cnn_class.in_dim[0]], dtype=np.float32)
+        test_input_1B = np.ones([1, *cnn_class.in_dim], dtype=np.float32)
+        test_input_5B = np.ones([5, *cnn_class.in_dim], dtype=np.float32)
 
         model_copy = deepcopy(cnn_class)
         # Test shape conservation
