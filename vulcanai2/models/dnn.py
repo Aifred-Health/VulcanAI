@@ -116,20 +116,16 @@ class DenseNet(BaseNetwork):
             lr_scheduler, early_stopping, criter_spec)
 
     def _create_network(self, **kwargs):
-        self._in_dim = self.in_dim
         dense_hid_layers = self._config.units
 
         if self.input_networks is not None:
             # Create empty input tensors
             in_tensors = []
-            for d in self.in_dim:
-                # TODO: Fix Linear in_dim
-                if isinstance(d, int):
-                    d = tuple([d, ])
-                in_tensors.append(torch.ones([1, *d]))
+            for d in self.input_networks:
+                in_tensors.append(torch.ones([1, *d.out_dim]))
             output = self._merge_input_network_outputs(in_tensors)
             # Override self.in_dim instead @Robert
-            self._in_dim = [output.shape[-1],]
+            self.in_dim = tuple([output.shape[-1]])
 
         # Build network
         self.network = self._build_dense_network(
@@ -173,7 +169,7 @@ class DenseNet(BaseNetwork):
 
         """
         # Specify incoming feature size for the first dense hidden layer
-        dense_hid_layers[0]['in_features'] = self._in_dim[0]
+        dense_hid_layers[0]['in_features'] = self.in_dim[0]
 
         dense_layers = []
         for dense_layer_config in dense_hid_layers:
