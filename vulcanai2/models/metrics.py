@@ -272,12 +272,13 @@ class Metrics(object):
         rem = data_loader.dataset.__len__() % k
         fold_seq = []
 
+        print(fold_seq)
         for i in range(k-1):
             fold_seq.append(fold_len)
         if rem == 0:
             fold_seq.append(fold_len)
         else:
-            fold_seq.append(rem)
+            fold_seq.append(fold_len+rem)
 
         dataset_splits = torch.utils.data.random_split(data_loader.dataset, fold_seq)
 

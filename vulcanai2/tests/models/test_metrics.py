@@ -51,8 +51,8 @@ class TestMetrics:
 
     def test_cross_validate_outputs(self, metrics, cnn_class):
         """Tests that the cross-validate outputs are in the correct form."""
-        test_input = torch.ones([12, *cnn_class.in_dim]).float()
-        test_target = torch.LongTensor([0, 2, 1, 3, 4, 1, 2, 2, 3, 0, 4, 5])
+        test_input = torch.ones([13, *cnn_class.in_dim]).float()
+        test_target = torch.LongTensor([0, 2, 1, 3, 4, 1, 2, 2, 3, 0, 4, 5, 0])
         test_dataloader = DataLoader(TensorDataset(test_input, test_target))
 
         k = 2
