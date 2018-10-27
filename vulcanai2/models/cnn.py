@@ -10,7 +10,7 @@ from .utils import pad
 
 import logging
 from inspect import getfullargspec
-from math import sqrt, floor, ceil
+from math import ceil, floor
 
 logger = logging.getLogger(__name__)
 

@@ -176,13 +176,6 @@ class SnapshotNet(BaseNetwork):
         # Stack outputs along a new 0 dimension to be averaged
         pred_collector = torch.stack(pred_collector)
 
-        # network_output = torch.mean(input=pred_collector, dim=0)
-
-        # if self._num_classes:
-        #     class_output = self.network_tail(network_output)
-        #     return class_output
-        # else:
-        #     return network_output
         return torch.mean(input=pred_collector, dim=0)
 
     def save_model(self, save_path=None):

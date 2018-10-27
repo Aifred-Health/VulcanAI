@@ -146,9 +146,7 @@ class DenseNet(BaseNetwork):
                     activation=pred_activation))
 
     def _merge_input_network_outputs(self, tensors):
-        output_tensors = []
-        for t in tensors:
-            output_tensors.append(FlattenUnit()(t))
+        output_tensors = [FlattenUnit()(t) for t in tensors]
         return torch.cat(output_tensors, dim=1)
 
     def _build_dense_network(self, dense_hid_layers, activation):

@@ -70,12 +70,12 @@ class FlattenUnit(BaseUnit):
     """Layer to reshape the input."""
 
     def __init__(self):
+        """Initialize flatten layer."""
         super(FlattenUnit, self).__init__()
 
     def forward(self, x):
         """Maintain batch size but flatten all remaining dimensions."""
-        N, *_ = x.shape
-        return x.view(N, -1)
+        return x.view(x.shape[0], -1)
 
 
 class DenseUnit(BaseUnit):

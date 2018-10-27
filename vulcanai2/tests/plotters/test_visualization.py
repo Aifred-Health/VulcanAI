@@ -60,12 +60,15 @@ class TestVisualization:
         sal_map_1B = compute_saliency_map(
             cnn_class,
             test_input_1B, torch.LongTensor([2]))
-        assert sal_map_1B.shape == test_input_1B.shape
+        for sal_map, test_input in zip(sal_map_1B, [test_input_1B]):
+            assert sal_map.shape == test_input.shape
+
         cnn_class.unfreeze(apply_inputs=False)
         sal_map_5B = compute_saliency_map(
             cnn_class, test_input_5B,
             torch.LongTensor([0, 2, 1, 1, 0]))
-        assert sal_map_5B.shape == test_input_5B.shape
+        for sal_map, test_input in zip(sal_map_5B, [test_input_5B]):
+            assert sal_map.shape == test_input.shape
 
         # Check that all gradients are not 0
         assert ~np.all(sal_map_5B == 0.)
@@ -87,12 +90,15 @@ class TestVisualization:
         sal_map_1B = compute_saliency_map(
             dnn_class,
             test_input_1B, torch.LongTensor([2]))
-        assert sal_map_1B.shape == test_input_1B.shape
+        for sal_map, test_input in zip(sal_map_1B, [test_input_1B]):
+            assert sal_map.shape == test_input.shape
+
         dnn_class.unfreeze(apply_inputs=False)
         sal_map_5B = compute_saliency_map(
             dnn_class, test_input_5B,
             torch.LongTensor([0, 2, 1, 1, 0]))
-        assert sal_map_5B.shape == test_input_5B.shape
+        for sal_map, test_input in zip(sal_map_5B, [test_input_5B]):
+            assert sal_map.shape == test_input.shape
 
         # Check that all gradients are not 0
         assert ~np.all(sal_map_5B == 0.)

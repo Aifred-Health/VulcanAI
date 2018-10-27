@@ -241,7 +241,7 @@ class BaseNetwork(nn.Module):
     @property
     def early_stopping(self):
         """
-        Return the stopping rule
+        Return the stopping rule.
 
         Returns
         -------
@@ -620,7 +620,8 @@ class BaseNetwork(nn.Module):
         if not save_path.endswith("/"):
             save_path = save_path + "/"
 
-        save_path = save_path + "{}_{}/".format(self.name, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+        save_path = save_path + "{}_{}/".format(
+            self.name, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
         logger.info("No save path provided, saving to {}".format(save_path))
         # recursive recursive recursive
         if self.input_networks is not None:
