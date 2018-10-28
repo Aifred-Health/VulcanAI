@@ -7,14 +7,23 @@ for anaconda and is therefore not yet a reasonable dependency.
 See https://github.com/pytorch/text/blob/master/torchtext/data/dataset.py
 """
 import pandas as pd
-import random
 import logging
 import copy
 
 logger = logging.getLogger(__name__)
 
 
-#TODO: change the bits of this you don't understand
+# TODO: implement
+def clean_dataframe(df):
+    """
+    Goes through and ensures that all nonsensical values are encoded as NaNs
+    :param df:
+    :return:
+    """
+
+    return df
+
+
 def check_split_ratio(split_ratio):
     """
     Check that the split ratio argument is not malformed
@@ -27,22 +36,22 @@ def check_split_ratio(split_ratio):
         # Assert in bounds, validation size is zero
         assert 0. < split_ratio < 1., (
             "Split ratio {} not between 0 and 1".format(split_ratio))
+
         test_ratio = 1. - split_ratio
         return split_ratio, test_ratio, valid_ratio
-
     elif isinstance(split_ratio, list):
         # A list of relative ratios is provided
         length = len(split_ratio)
         assert length == 2 or length == 3, (
             "Length of split ratio list should be 2 or 3, got {}".format(split_ratio))
+
         # Normalize if necessary
         ratio_sum = sum(split_ratio)
         if not ratio_sum == 1.:
-            logger.warning("Changed malformed ratios")
             split_ratio = [float(ratio) / ratio_sum for ratio in split_ratio]
+
         if length == 2:
             return tuple(split_ratio + [valid_ratio])
-        logger.info("Split ratio {} verified".format(str(split_ratio)))
         return tuple(split_ratio)
     else:
         raise ValueError('Split ratio must be float or a list, got {}'
@@ -124,8 +133,6 @@ def check_split_ratio(split_ratio):
 #             return random.sample(data, len(data))
 
 
-# THIS IS FROM SNEHA  https://github.com/sneha-desai
-# TODO: replace with Joseph's version
 def stitch_datasets(df_list, merge_on_columns, index_list=None):
     """
     Args:
@@ -166,4 +173,3 @@ def stitch_datasets(df_list, merge_on_columns, index_list=None):
         totalCols=len(list(merged_df)),
         totalRows=len(merged_df)))
     return merged_df
-

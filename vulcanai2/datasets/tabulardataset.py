@@ -13,7 +13,6 @@ from sklearn import preprocessing
 logger = logging.getLogger(__name__)
 
 
-# TODO: add more logging statements as appropriate
 class TabularDataset(Dataset):
     """
     This defines a dataset, subclassed from torch.utils.data.Dataset. It uses pd.dataframe as the backend, with utility
@@ -39,6 +38,8 @@ class TabularDataset(Dataset):
             self.df = pd.read_csv(data)
         self.labelColumn = label_column
 
+        self.df = utils.clean_dataframe(self.df)
+
         dataset_length = self.__len__()
         logger.info(f"You have created a new dataset with {dataset_length} rows")
 
@@ -63,6 +64,7 @@ class TabularDataset(Dataset):
             return xs, y
         else:
             xs = self.df.iloc[[2]].values.tolist()[0]
+            return xs
 
     def convert_to_dataframe(self):
         """
@@ -80,6 +82,62 @@ class TabularDataset(Dataset):
         self.df.to_csv(file_path, encoding='utf-8', index=True)
         logger.info(f"You have saved the dataframe as a csv to {file_path}")
 
+    def list_all_features(self):
+        """
+        Lists all features (columns)
+        :return: returns a list of all features.
+        """
+        return list(self.df)
+
+    def replace_value_in_column(self, columns, current_values, target_values):
+        """
+        Replace one or more values in either a single column or a list of columns.
+        :param columns: Either a single column or list of columns where you want the values to be replaced
+        :param current_values: Either a single value or a list of values that you want to be replaced
+        :param target_values: Either a single value or a list of values you want the current value to be replaced with
+        :return: None
+        """
+
+        if not isinstance(columns, list):
+            columns = [columns]
+
+        if not isinstance(current_values, list):
+            current_values = [current_values]
+            target_values = [target_values]
+
+        if len(current_values) != len(target_values):
+            raise ValueError("Length of current values and target values must be the same")
+
+        self.df[columns] = self.df[columns].replace(current_values, target_values)
+
+        logger.info(f"replaced values in {columns}")
+
+    def list_all_column_values(self, column_name):
+        """
+        List all values in this column
+        :param column_name:
+        :return:
+        """
+        return list(getattr(self.df, column_name)().unique())
+
+    # TODO: this is really slow make it faster
+    def identify_all_numerical_features(self):
+        """
+        Returns all columns that contain numeric values
+        :return: all columns that contain numeric values
+        """
+        return [key for key in dict(self.df.dtypes)
+                if dict(self.df.dtypes)[key] in ['float64', 'int64', 'float32', 'int32']]
+
+    # TODO: this is really slow make it faster
+    def identify_all_categorical_features(self):
+        """
+        Returns all columns that contain categorical values
+        :return: all columns that contain categorical values
+        """
+        return [key for key in dict(self.df.dtypes)
+                if dict(self.df.dtypes)[key] not in ['float64', 'int64', 'float32', 'int32']]
+
     def delete_columns(self, column_list):
         """
         Deletes columns in the list
@@ -87,7 +145,6 @@ class TabularDataset(Dataset):
         :return: None
         """
         prior_length = self.__len__()
-        #self.df = self.df.drop([column_list])
         for col in column_list:
             if col in list(self.df):
                 self.df = self.df.drop(col, axis=1)
@@ -95,34 +152,56 @@ class TabularDataset(Dataset):
         cur_length = self.__len__()
         logger.info(f"You have dropped {prior_length - cur_length} columns")
 
-    def create_dummies(self, column_list):
+    def create_label_encoding(self, column, ordered_values):
         """
-        Create one-hot encoding for all provided features. Deliberatly doesn't make any decisions for you.
-        :param column_names: All columns that you want to one-hot encode.
+        Create label encoding for
+        Used for those categorical features where order does matter.
+        :param ordered_values: Either an ordered list of possible column values. Or a mapping of column value to \
+        label value. Must include all possible values.
+        :return:
+        """
+
+        if isinstance(ordered_values, list):
+            ordered_values = dict(map(lambda t: (t[1], t[0]), enumerate(ordered_values)))
+        elif not isinstance(ordered_values, dict):
+            raise ValueError("Must be either a list or dictionary")
+
+        column_vals = ordered_values.keys()
+
+        if len(column_vals) != len(set(column_vals)):
+            raise ValueError("Ordered_value_list contains non-unique values")
+
+        if set(column_vals) != self.list_all_column_values(column):
+            raise ValueError("Not all column values are included")
+
+        self.df = getattr(self.df, column)().map(ordered_values)
+
+        logger.info(f"Successfully remapped {column}")
+
+    def create_one_hot_encoding(self, column, prefix_sep="@"):
+        """
+        Create one-hot encoding for the provided column. Deliberatly doesn't make any decisions for you.
+        :param column: The name of the column you want to one-hot encode
+        :param prefix_sep: The prefix seperator.
         :return: None
         """
-        if column_list:
-            for col in column_list:
-                if col in list(self.df):
-                    self.df = pd.get_dummies(self.df, dummy_na=True, columns=[col])
+        if column in list(self.df):
+                self.df = pd.get_dummies(self.df, dummy_na=True, columns=[column], prefix_sep=prefix_sep)
         else:
-            logger.warning("You must provide a non-empty column list")
+                logger.info(f"Col {column} does not exist")
 
-    # TODO: check cause this may cause problems with vars originally containing underscores
-    # taken from https://stackoverflow.com/questions/34523111/the-most-elegant-way-to-get-back-from-pandas-df-dummies
-    def reverse_create_dummies(self):
+    def reverse_create_one_hot_encoding(self, prefix_sep="@"):
         """
-        Undoes the process of creating dummies
+        Ensure prefix sep only exists for dummy columns
         :return: None
         """
-
         result_series = {}
 
         # Find dummy columns and build pairs (category, category_value)
-        dummy_tuples = [(col.split("_")[0], col) for col in self.df.columns if "_" in col]
+        dummy_tuples = [(col.split(prefix_sep)[0], col) for col in self.df.columns if prefix_sep in col]
 
         # Find non-dummy columns that do not have a _
-        non_dummy_cols = [col for col in self.df.columns if "_" not in col]
+        non_dummy_cols = [col for col in self.df.columns if prefix_sep not in col]
 
         # For each category column group use idxmax to find the value.
         for dummy, cols in groupby(dummy_tuples, lambda item: item[0]):
@@ -133,7 +212,7 @@ class TabularDataset(Dataset):
             max_columns = dummy_df.idxmax(axis=1)
 
             # Remove category_ prefix
-            result_series[dummy] = max_columns.apply(lambda item: item.split("_")[1])
+            result_series[dummy] = max_columns.apply(lambda item: item.split(prefix_sep)[1])
 
         # Copy non-dummy columns over.
         for col in non_dummy_cols:
@@ -142,31 +221,6 @@ class TabularDataset(Dataset):
         self.df = pd.DataFrame(result_series)
 
         logger.info(f"Successfully converted {len(dummy_tuples)} columns back from dummy format.")
-
-    def list_all_features(self):
-        """
-        lists all features
-        :return: returns a list of all features.
-        """
-        return list(self.df)
-
-    # TODO: this is really slow make it faster
-    def list_all_numeric_features(self):
-        """
-        Returns all columns that contain numeric values
-        :return: all columns that contain numeric values
-        """
-        return [key for key in dict(self.df.dtypes)
-                if dict(self.df.dtypes)[key] in ['float64', 'int64', 'float32', 'int32']]
-
-    # TODO: this is really slow make it faster
-    def list_all_categorical_features(self):
-        """
-        Returns all columns that contain categorical values
-        :return: all columns that contain categorical values
-        """
-        return [key for key in dict(self.df.dtypes)
-                if dict(self.df.dtypes)[key] not in ['float64', 'int64', 'float32', 'int32']]
 
     def identify_majority_null(self, threshold):
         """
@@ -193,16 +247,14 @@ class TabularDataset(Dataset):
                 column_list.append(col)
         return column_list
 
-
+    # TODO: add in non_numeric
     def identify_unbalanced_columns(self, threshold, non_numeric=True):
         """
-<<<<<<< HEAD
-        This removes columns that are highly unbalanced, aka those
+        This returns columns that are highly unbalanced, aka those that have a disproportionate amount of one value
         :param threshold: Proportion needed to define unbalanced, between 0 and 1
         :param non_numeric: Whether non-numeric columns are also considered.
         :return: The column list
         """
-
         column_list = []
         for col in self.df.columns:
             col_maj = (max(self.df[col].value_counts()) / self.df[col].value_counts().sum())
@@ -232,52 +284,10 @@ class TabularDataset(Dataset):
                 scaled_col = scaler.fit_transform(col_float_array)
                 col_var = scaled_col.var()
                 if col_var <= threshold:
-                    print(col, col_var)
-
-
-    # TODO: edit this method that creates a split given different filepaths or objects so that the params match
-    # taken from https://github.com/pytorch/text/blob/master/torchtext/data/dataset.py
-    # @classmethod
-    # def splits(cls, path=None, root='.data', train=None, validation=None,
-    #            test=None, **kwargs):
-    #     """Create Dataset objects for multiple splits of a dataset.
-    #     Arguments:
-    #         path (str): Common prefix of the splits' file paths, or None to use
-    #             the result of cls.download(root).
-    #         root (str): Root dataset storage directory. Default is '.data'.
-    #         train (str): Suffix to add to path for the train set, or None for no
-    #             train set. Default is None.
-    #         validation (str): Suffix to add to path for the validation set, or None
-    #             for no validation set. Default is None.
-    #         test (str): Suffix to add to path for the test set, or None for no test
-    #             set. Default is None.
-    #         Remaining keyword arguments: Passed to the constructor of the
-    #             Dataset (sub)class being used.
-    #     Returns:
-    #         Tuple[Dataset]: Datasets for train, validation, and
-    #             test splits in that order, if provided.
-    #     """
-    #     if path is None:
-    #         path = cls.download(root)
-    #     train_data = None if train is None else cls(
-    #         os.path.join(path, train), **kwargs)
-    #     val_data = None if validation is None else cls(
-    #         os.path.join(path, validation), **kwargs)
-    #     test_data = None if test is None else cls(
-    #         os.path.join(path, test), **kwargs)
-    #     return tuple(d for d in (train_data, val_data, test_data)
-    #                  if d is not None)
-        dct_low_var = {}
-        scaler = preprocessing.MinMaxScaler()
-        for col in self.df.columns:
-            if self.df[col].dtype in ['float64', 'int64', 'float32', 'int32']:
-                col_float_array = self.df[[col]].values.astype(float)
-                scaled_col = scaler.fit_transform(col_float_array)
-                col_var = scaled_col.var()
-                if col_var <= threshold:
                     dct_low_var[col] = col_var
         return dct_low_var
 
+    # future improvements could come from https://github.com/pytorch/text/blob/master/torchtext/data/dataset.py
     # noinspection PyUnusedLocal
     def split(self, split_ratio=0.7, stratified=False, strata_field='label',
               random_state=None):
@@ -302,10 +312,8 @@ class TabularDataset(Dataset):
                 test splits in that order, if the splits are provided.
         """
 
-        logger.info("Please ensure that you have performed all necessary preprocessing!")
-
         if stratified:
-            raise NotImplementedError("We need to do this!")
+            raise NotImplementedError("We still need to get to this!")
 
         train_ratio, test_ratio, val_ratio = utils.check_split_ratio(split_ratio)
 
