@@ -3,7 +3,7 @@
 import pytest
 import numpy as np
 
-class TestConvNet:
+class TestTabularDataset:
 
     @pytest.fixture
     def split_data(self):

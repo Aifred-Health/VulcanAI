@@ -95,17 +95,18 @@ class TabularDataset(Dataset):
         cur_length = self.__len__()
         logger.info(f"You have dropped {prior_length - cur_length} columns")
 
-    #TODO: need to simply return those that should be proper https://forums.fast.ai/t/to-label-encode-or-one-hot-encode/6057
-    #TODO: lookup pandas categorical data and see if you can work with that
-    def create_dummies(self, column_names=None):
+    def create_dummies(self, column_list):
         """
-        Create one-hot encoding for all categorical features.
+        Create one-hot encoding for all provided features. Deliberatly doesn't make any decisions for you.
         :param column_names: All columns that you want to one-hot encode.
-        You should probably use this if you have columns like patientID
         :return: None
         """
-        self.df = pd.get_dummies(self.df, dummy_na=True, columns=column_names)
-        # TODO: insert logging statements
+        if column_list:
+            for col in column_list:
+                if col in list(self.df):
+                    self.df = pd.get_dummies(self.df, dummy_na=True, columns=[col])
+        else:
+            logger.warning("You must provide a non-empty column list")
 
     # TODO: check cause this may cause problems with vars originally containing underscores
     # taken from https://stackoverflow.com/questions/34523111/the-most-elegant-way-to-get-back-from-pandas-df-dummies
@@ -142,8 +143,6 @@ class TabularDataset(Dataset):
 
         logger.info(f"Successfully converted {len(dummy_tuples)} columns back from dummy format.")
 
-        # TODO: insert other logging statements
-
     def list_all_features(self):
         """
         lists all features
@@ -169,58 +168,47 @@ class TabularDataset(Dataset):
         return [key for key in dict(self.df.dtypes)
                 if dict(self.df.dtypes)[key] not in ['float64', 'int64', 'float32', 'int32']]
 
-    # TODO: check this doesn't operate in place... damn
-    def remove_majority_null(self, threshold):
+    def identify_majority_null(self, threshold):
         """
-        Remove columns where the number of values as determined by the threshold are null
+        Return columns where the number of values as determined by the threshold are null
         :param threshold: A number between 0 and 1, representing proportion needed to drop
-        :return: None
+        :return: A list of those columns with threshold percentage null values
         """
-
-        #This won't work if they use our stitch dataset
-        # We may want to remove that line from stitch_dataset function.
         if threshold >= 1 or threshold <= 0:
             raise ValueError("Threshold needs to be a proportion between 0 and 1")
         num_threshold = threshold * self.__len__()
-        prior = self.__len__()
-        self.df = self.df.dropna(thresh=num_threshold, axis=1)
-        after = self.__len__()
-        res = prior-after
-        logger.info(f"Removed {res} columns")
+        tmp = self.df.dropna(thresh=num_threshold, axis=1)
+        cols = list(set(tmp.columns).difference(set(self.df.columns)))
+        return cols
 
-    # TODO: turn this into a percentage too? currently it's not
-    def remove_unique(self, threshold):
+    def identify_unique(self, threshold):
         """
-        Removes columns that have less than threshold number of unique values
+        Returns columns that have less than threshold number of unique values
         :param threshold: All columns that have threshold or less unique values will be removed.
-        :return:
+        :return: The column list
         """
-        prior = self.__len__()  # TODO: probably bad to use this?
-
+        column_list = []
         for col in self.df.columns:
             if len(self.df[col].unique()) <= threshold:
-                self.df = self.df.drop(col, axis=1)
-        after = self.__len__()
-        res = prior - after
-        logger.info(f"Removed {res} columns")
+                column_list.append(col)
+        return column_list
 
 
     def identify_unbalanced_columns(self, threshold, non_numeric=True):
         """
+<<<<<<< HEAD
         This removes columns that are highly unbalanced, aka those
         :param threshold: Proportion needed to define unbalanced, between 0 and 1
         :param non_numeric: Whether non-numeric columns are also considered.
-        :return: None
+        :return: The column list
         """
-        prior = len(list(self.df))
 
+        column_list = []
         for col in self.df.columns:
             col_maj = (max(self.df[col].value_counts()) / self.df[col].value_counts().sum())
             if col_maj <= threshold:
-                self.df = self.df.drop(col, axis=1)
-        after = self.__len__()
-        res = prior - after
-        logger.info(f"Removed {res} columns")
+                column_list.append(col)
+        return column_list
 
     def identify_highly_correlated(self, threshold):
         """
@@ -234,7 +222,7 @@ class TabularDataset(Dataset):
         """
         Removes those columns that have low variance
         :param threshold: Upper bound of variance needed for removal
-        :return: None
+        :return: A dictionary of column names, with the value being their variance
         """
         dct_low_var = {}
         scaler = preprocessing.MinMaxScaler()
@@ -279,6 +267,16 @@ class TabularDataset(Dataset):
     #         os.path.join(path, test), **kwargs)
     #     return tuple(d for d in (train_data, val_data, test_data)
     #                  if d is not None)
+        dct_low_var = {}
+        scaler = preprocessing.MinMaxScaler()
+        for col in self.df.columns:
+            if self.df[col].dtype in ['float64', 'int64', 'float32', 'int32']:
+                col_float_array = self.df[[col]].values.astype(float)
+                scaled_col = scaler.fit_transform(col_float_array)
+                col_var = scaled_col.var()
+                if col_var <= threshold:
+                    dct_low_var[col] = col_var
+        return dct_low_var
 
     # noinspection PyUnusedLocal
     def split(self, split_ratio=0.7, stratified=False, strata_field='label',
