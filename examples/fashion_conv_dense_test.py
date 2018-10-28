@@ -113,7 +113,7 @@ conv_net_config_big = {
                     ),
                     dict(
                         in_channels=16,
-                        out_channels=64,
+                        out_channels=32,
                         kernel_size=(5, 5),
                         stride=1,
                         padding=0,
@@ -122,7 +122,19 @@ conv_net_config_big = {
                         norm=None,
                         pool_size=None,
                         dropout=0.1 # Float or None
-                    )
+                    ),
+                    dict(
+                        in_channels=32,
+                        out_channels=64,
+                        kernel_size=(5, 5),
+                        stride=1,
+                        padding=0,
+                        initializer=None,
+                        bias_init=None, # None or value
+                        norm=None,
+                        pool_size=2,
+                        dropout=0.1 # Float or None
+                        )
     ],
 }
 conv_net_config_very_big = {
@@ -193,36 +205,49 @@ dense_net_config = {
 conv_small = ConvNet(
     name='conv_net_small',
     input_networks=None,
-    in_dim=[(1, 28)],
+    in_dim=(1, 28),
     config=conv_net_config_small,
 )
 conv_big = ConvNet(
     name='conv_net_big',
     input_networks=None,
-    in_dim=[(1, 28, 28)],
+    in_dim=(1, 28, 28),
     config=conv_net_config_big,
+    # num_classes=10
 )
 conv_very_big = ConvNet(
     name='conv_net_very_big',
     input_networks=None,
-    in_dim=[(1, 28, 28, 28)],
+    in_dim=(1, 28, 28, 28),
     config=conv_net_config_very_big,
 )
 
 dense_model = DenseNet(
     name='conv_net_test',
-    input_networks=[conv_small],
-    # in_dim=[conv_small.out_dim, conv_big.out_dim, conv_very_big.out_dim],
-    config={
-    'dense_units': [500, 155],
-    'initializer': None,
-    'bias_init': None,
-    'norm': None,
-    'dropout': 0.5,  # Single value or List
-    },
+    input_networks=None,
+    in_dim=150,
+    config=dense_net_config,
+    # num_classes=10
 )
 
-dense_output = dense_model(torch.ones([5,*conv_small.in_dim[0]]))
+# dense_output = dense_model(torch.ones([5,*conv_big.in_dim]))
+
+x = train_loader.dataset.train_data[:5].float().unsqueeze(dim=1) #np.expand_dims(train_loader.dataset[:5][0], axis=0)
+y = train_loader.dataset.train_labels[:5]
+
+# x = [
+#         torch.ones([5,*conv_big.in_dim]),
+#         torch.ones([5,*conv_small.in_dim])]
+x = [
+        torch.ones([5,*conv_small.in_dim]),
+        torch.ones([5,*dense_model.in_dim]),
+        torch.ones([5,*conv_big.in_dim]),
+        torch.ones([5,*conv_very_big.in_dim])
+    ]
+import pudb; pu.db
+sal_map = compute_saliency_map(model1, x, y)
+import pudb; pu.db
+display_saliency_overlay(train_loader.dataset.train_data[0], sal_map[0][0])
 
 model1 = ConvNet(
     name='conv_net_test_multi_input',
@@ -231,13 +256,17 @@ model1 = ConvNet(
     config=conv_net_config_very_very_big,
     num_classes=10
 )
-
+# snap = SnapshotNet("snap", dense_model, 3)
+conv_big.fit(train_loader, val_loader, 3, plot=True)
+# snap.save_model()
+import pudb; pu.db
+model1.save_model()
 very_very_big_conv_output = model1(
     [
-        torch.ones([5,*model1.input_networks[0].in_dim[0]]),
-        torch.ones([5,*conv_small.in_dim[0]]),
-        torch.ones([5,*model1.input_networks[2].in_dim[0]]),
-        torch.ones([5,*model1.input_networks[3].in_dim[0]])
+        torch.ones([5,*model1.input_networks[0].in_dim]),
+        torch.ones([5,*conv_small.in_dim]),
+        torch.ones([5,*model1.input_networks[2].in_dim]),
+        torch.ones([5,*model1.input_networks[3].in_dim])
     ])
 
 # print(model1.get_output_shapes())
@@ -296,24 +325,24 @@ model1.fit(train_loader, val_loader, 2, plot=False)
 #     val_loader.dataset.test_labels)
 # display_confusion_matrix(cm, ["T-shirt/top","Trouser","Pullover","Dress","Coat","Sandal","Shirt","Sneaker","Bag","Ankle"])
 
-# x = train_loader.dataset.train_data[:5].float().unsqueeze(dim=1) #np.expand_dims(train_loader.dataset[:5][0], axis=0)
-# y = train_loader.dataset.train_labels[:5]
-# sal_map = compute_saliency_map(model1, x, y)
-# display_saliency_overlay(train_loader.dataset.train_data[0], sal_map[0])
+x = train_loader.dataset.train_data[:5].float().unsqueeze(dim=1) #np.expand_dims(train_loader.dataset[:5][0], axis=0)
+y = train_loader.dataset.train_labels[:5]
+sal_map = compute_saliency_map(dense_model, x, y)
+display_saliency_overlay(train_loader.dataset.train_data[0], sal_map[0])
 
-se = SnapshotNet("snap", model1, 3)
+se = SnapshotNet("snap", dense_model, 3)
 
 # Does it make more sense to pass the total # of epochs
 # or just how many each model should train for?
 
-se.fit(train_loader, val_loader, 3, plot=True)
-se.run_test(val_loader, plot=True)
+snap.fit(train_loader, val_loader, 3, plot=True)
+snap.run_test(val_loader, plot=True)
 
-se.save_model()
+snap.save_model()
 
 
 # se = SnapshotNet.load_model('saved_models/snap_2018-10-17_00-06-17')
-preds = se.forward_pass(val_loader, convert_to_class=True)
+preds = snap.forward_pass(val_loader, convert_to_class=True)
 
 
 # TODO: need to revisit this to be able to plot after training, interactive plotting is messing up
