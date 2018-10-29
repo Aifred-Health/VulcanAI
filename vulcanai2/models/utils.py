@@ -179,14 +179,11 @@ def network_summary(network, input_size=None):
 
     x = []
     for in_size in input_size:
-        if isinstance(in_size, tuple):
-            x.append(Variable(torch.rand(1, *in_size)))
-        else: 
-            x.append(Variable(torch.rand(1, *[in_size])))
+        x.append(torch.empty(1, *in_size))
     
     if len(x)==1:
-        x = x[0]
-        
+        x = torch.cat(x,dim=1)
+
     # create properties
     summary = odict()
     hooks = []
@@ -194,7 +191,7 @@ def network_summary(network, input_size=None):
     # register hook
     network.apply(register_hook)
     # make a forward pass
-    network.cpu()(x) # self.network does not multiinput
+    network.cpu()(x)
 
     # remove these hooks
     for h in hooks:
@@ -202,9 +199,12 @@ def network_summary(network, input_size=None):
 
     return summary
 
-def print_model_structure(self):
-    """Print the entire model structure."""
-    shapes = get_output_shapes()
+def print_model_structure(network, input_size=None):
+    """
+    Print the entire model structure.
+    
+    """
+    shapes = network_summary(network)
     for k, v in shapes.items():
         print('{}:'.format(k))
         if isinstance(v, odict):

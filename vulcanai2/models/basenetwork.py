@@ -173,7 +173,7 @@ class BaseNetwork(nn.Module):
         """
 
         if not isinstance(inputs, list):
-                inputs = [inputs]
+            inputs = [inputs]
 
         if self.input_networks is not None:
             net_outs = []
