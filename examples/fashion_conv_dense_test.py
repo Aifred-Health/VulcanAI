@@ -259,13 +259,13 @@ model1 = ConvNet(
     num_classes=10
 )
 # a = model1.forward_pass(multi)
-# import pudb; pu.db
+
 dense_model.fit(train_loader, val_loader, 2)
-import pudb; pu.db
+
 # snap = SnapshotNet("snap", dense_model, 3)
 conv_big.fit(train_loader, val_loader, 3, plot=True)
 # snap.save_model()
-import pudb; pu.db
+#import pudb; pu.db
 model1.save_model()
 very_very_big_conv_output = model1(
     [
@@ -295,9 +295,6 @@ very_very_big_conv_output = model1(
 
 #model1.fit(train_loader, val_loader, 10)
 
-# NOTE: in_dim must be list of tuples or ints | out_dim must represent for single output so just tuple or int
-print(model.in_dim, model.out_dim, dense_model.in_dim, dense_model.out_dim, model1.in_dim, model1.out_dim)
-print(model1.get_output_shapes(input_size = [(1,28,28), 784])) #TODO: Ensure to make this work without specifying the input size
 
 model1.fit(train_loader, val_loader, 2, plot=False)
 
@@ -308,11 +305,6 @@ model1.fit(train_loader, val_loader, 2, plot=False)
 
 
 #model1.fit(train_loader, val_loader, 10)
-
-# NOTE: in_dim must be list of tuples or ints | out_dim must represent for single output so just tuple or int
-print(model.in_dim, model.out_dim, dense_model.in_dim, dense_model.out_dim, model1.in_dim, model1.out_dim)
-print(model1.get_output_shapes(input_size = [(1,28,28), 784])) #TODO: Ensure to make this work without specifying the input size
-
 model1.fit(train_loader, val_loader, 2, plot=False)
 
 #model1.save_model()
