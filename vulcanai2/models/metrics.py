@@ -1,6 +1,7 @@
 # coding=utf-8
 """Defines the network test suite."""
 import torch
+from torch.utils import data
 
 import math
 import numpy as np
@@ -250,41 +251,57 @@ class Metrics(object):
             'macro_auc': float(np.average(all_class_auc))
         }
 
-    def cross_validate(self, network, data_loader, k, epochs, return_average_results=True, retain_graph=None,
+    def cross_validate(self, network, data_loader, k, epochs,
+                       average_results=True, retain_graph=None,
                        valid_interv=4, plot=False, figure_path=None):
         """
         Trains the network on the provided data.
-        :param data_loader: The DataLoader object containing the training data
-        :param k: The number of folds
-        :param epochs: The number of epochs per fold
-        :param retain_graph: Specifies whether retain_graph will be true when .backwards is called.
-        :param valid_interv: Specifies when validation should occur. Not yet implemented.
-        :return: None
+
+        Parameters
+        ----------
+        data_loader : torch.utils.data.DataLoader
+            The DataLoader object containing the totality of the data to use
+            for k-fold cross validation.
+        k : int
+            The number of folds to split the training into.
+        epochs : int
+            The number of epochs to train the network per fold.
+        average_results : boolean
+            Whether or not to return results from all folds or just an average.
+        retain_graph : {None, boolean}
+            Whether retain_graph will be true when .backwards is called.
+        valid_interv : int
+            Specifies after how many epochs validation should occur.
+
+        Returns
+        -------
+        results : dict
+            If average_results is on, return dict of floats.
+            If average_results is off, return dict of float lists.
+
         """
-
-        from torch.utils.data import TensorDataset
-
         all_results = defaultdict(lambda: [])
 
         # TODO: this whole section is really clunky
         # Getting the fold sequence.
-        fold_len = math.floor(data_loader.dataset.__len__() / k)
-        rem = data_loader.dataset.__len__() % k
+        fold_len = math.floor(len(data_loader.dataset) / k)
+        rem = len(data_loader.dataset) % k
         fold_seq = []
 
-        for i in range(k-1):
+        for _ in range(k-1):
             fold_seq.append(fold_len)
         if rem == 0:
             fold_seq.append(fold_len)
         else:
-            fold_seq.append(fold_len+rem) #last one is the longest if unequal
+            fold_seq.append(fold_len+rem)  # last one is the longest if unequal
 
-        dataset_splits = torch.utils.data.random_split(data_loader.dataset, fold_seq)
+        dataset_splits = data.random_split(data_loader.dataset,
+                                           fold_seq)
 
         batch_size = data_loader.batch_size
 
         # #TODO: improve the copying of parameters
-        if isinstance(data_loader.sampler, torch.utils.data.sampler.RandomSampler):
+        if isinstance(data_loader.sampler, data.sampler.RandomSampler):
             shuffle = True
         else:
             shuffle = False
@@ -293,27 +310,38 @@ class Metrics(object):
             for fold in range(k):
 
                 # TODO: this may break on different devices?? test.
+                # TODO: Re-initialize instead of deepcopy?
                 cross_val_network = copy.deepcopy(network)
 
                 # TODO: properly pass params
-                train_dataset = torch.utils.data.ConcatDataset(dataset_splits[:fold] + dataset_splits[fold+1:])
+                train_dataset = data.ConcatDataset(
+                    dataset_splits[:fold] + dataset_splits[fold+1:])
                 val_dataset = dataset_splits[fold]
 
-                train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle)
-                val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size)
+                train_loader = data.DataLoader(
+                    train_dataset, batch_size=batch_size, shuffle=shuffle)
+                val_loader = data.DataLoader(
+                    val_dataset, batch_size=batch_size)
 
-                cross_val_network.fit(train_loader, val_loader, epochs,
-                                      retain_graph=retain_graph, valid_interv=valid_interv, plot=plot)
+                cross_val_network.fit(
+                    train_loader, val_loader, epochs,
+                    retain_graph=retain_graph,
+                    valid_interv=valid_interv, plot=plot)
 
-                results = self.run_test(cross_val_network, val_loader, figure_path=figure_path, plot=plot)
+                results = self.run_test(
+                    cross_val_network, val_loader,
+                    figure_path=figure_path, plot=plot)
+
+                logger.info(results)
                 for m in results:
                     all_results[m].append(results[m])
 
-        # TODO: we could show something better here like calculate all the results so far
+        # TODO: we could show something better here like calculate
+        # all the results so far
         except KeyboardInterrupt:
             print("\n\n**********KeyboardInterrupt: Training stopped prematurely.**********\n\n")
 
-        if return_average_results:
+        if average_results:
             averaged_all_results = {}
             for m in all_results:
                 averaged_all_results[m] = np.mean(all_results[m])

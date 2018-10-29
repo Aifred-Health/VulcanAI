@@ -59,8 +59,12 @@ class TestMetrics:
         k = 2
         epochs = 2
 
-        averaged_results = metrics.cross_validate(cnn_class, test_dataloader, k, epochs, return_average_results=True)
-        all_results = metrics.cross_validate(cnn_class, test_dataloader, k, epochs, return_average_results=False)
+        averaged_results = metrics.cross_validate(
+            cnn_class, test_dataloader, k, epochs,
+            average_results=True)
+        all_results = metrics.cross_validate(
+            cnn_class, test_dataloader, k, epochs,
+            average_results=False)
 
         for k in averaged_results:
             assert isinstance(averaged_results[k], float)

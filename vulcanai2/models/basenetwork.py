@@ -528,16 +528,16 @@ class BaseNetwork(nn.Module):
             figure_path=figure_path,
             plot=plot)
 
-    def cross_validate(self, data_loader, k, epochs, return_average_results=True, retain_graph=None, valid_interv=4, plot=False, figure_path=None):
-        """
-        Will conduct the test suite to determine model strength.
-        """
+    def cross_validate(self, data_loader, k, epochs,
+                       average_results=True, retain_graph=None,
+                       valid_interv=4, plot=False, figure_path=None):
+        """Will conduct the test suite to determine model strength."""
         return self.metrics.cross_validate(
             network=self,
             data_loader=data_loader,
             k=k,
             epochs=epochs,
-            return_average_results=return_average_results,
+            average_results=average_results,
             retain_graph=retain_graph,
             valid_interv=valid_interv,
             plot=plot,

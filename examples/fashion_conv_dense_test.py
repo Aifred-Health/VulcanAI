@@ -136,9 +136,7 @@ model1 = DenseNet(
 # To test saliency map generation
 # model1.run_test(val_loader, plot=True)
 
-def cnn_class():
-    """Create ConvNet with prediction layer."""
-    return ConvNet(
+cnn_class = ConvNet(
         name='Test_ConvNet_class',
         dimensions=(1, 28, 28),
         config={
@@ -157,30 +155,21 @@ def cnn_class():
                     "padding": 2
                 }]
         },
-        num_classes=6
+        num_classes=10
     )
-
-def metrics():
-        return Metrics(
-            num_class=2
-        )
-
-test_input = torch.ones([12, *cnn_class().in_dim]).float()
-test_target = torch.LongTensor([0, 2, 1, 3, 4, 1, 2, 2, 3, 0, 4, 5])
-test_dataloader = DataLoader(TensorDataset(test_input, test_target))
 
 k = 2
 epochs = 2
 
-averaged_results = metrics().cross_validate(cnn_class(), test_dataloader, k, epochs, return_average_results=True)
-#all_results = metrics().cross_validate(cnn_class(), test_dataloader, k, epochs, return_average_results=False)
+averaged_results = cnn_class.cross_validate(train_loader, k, epochs, average_results=True)
+#all_results = cnn_class.cross_validate(test_dataloader, k, epochs, average_results=False)
 
 print(averaged_results)
 #print(all_results)
 #assert len(averaged_results.values()[0]) == 1
 #assert len(all_results.values()[0]) == k
 
-#print(model1.cross_validate(train_loader, 5, 2, plot=False, return_average_results=False))
+#print(model1.cross_validate(train_loader, 5, 2, plot=False, average_results=False))
 
 # f_pass = model1.forward_pass(val_loader, convert_to_class=True)
 
