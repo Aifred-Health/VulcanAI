@@ -97,7 +97,8 @@ class Metrics(object):
             accuracy = int(correct.data) / len(targets)
             return accuracy
         else:
-            raise NotImplementedError('Metric not available.')
+            raise NotImplementedError(
+                'Metric {} not available.'.format(metric))
 
     # TODO: class # should correspond with self.num_class
     # noinspection PyMethodMayBeStatic
@@ -274,6 +275,10 @@ class Metrics(object):
             Whether retain_graph will be true when .backwards is called.
         valid_interv : int
             Specifies after how many epochs validation should occur.
+        plot : boolean
+            Whether or not to plot all results in prompt and charts.
+        figure_path : str
+            Where to save all figures and results.
 
         Returns
         -------
@@ -314,20 +319,24 @@ class Metrics(object):
                 cross_val_network = copy.deepcopy(network)
 
                 # TODO: properly pass params
+
+                # Generate fold training set.
                 train_dataset = data.ConcatDataset(
                     dataset_splits[:fold] + dataset_splits[fold+1:])
+                # Generate fold validation set.
                 val_dataset = dataset_splits[fold]
-
+                # Generate fold training data loader object.
                 train_loader = data.DataLoader(
                     train_dataset, batch_size=batch_size, shuffle=shuffle)
+                # Generate fold validation data loader object.
                 val_loader = data.DataLoader(
                     val_dataset, batch_size=batch_size)
-
+                # Train network on fold training data loader.
                 cross_val_network.fit(
                     train_loader, val_loader, epochs,
                     retain_graph=retain_graph,
                     valid_interv=valid_interv, plot=plot)
-
+                # Validate network performance on validation data loader.
                 results = self.run_test(
                     cross_val_network, val_loader,
                     figure_path=figure_path, plot=plot)
