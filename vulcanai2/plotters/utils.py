@@ -67,7 +67,7 @@ class GuidedBackprop():
 
     def _hook_top_layers(self):
         def hook_function(module, grad_in, grad_out):
-            # TODO: Revisit dim disorder and check isinstance for classes.
+            # TODO: Revisit dim disorder.
             if isinstance(module, torch.nn.Linear):
                 # grad_in shape is (bias, input, weights)
                 self.gradients.append(grad_in[1])
@@ -89,14 +89,14 @@ class GuidedBackprop():
                 all_top_layers.append(network.network[0]._kernel)
             return all_top_layers
 
-        top_layers = get_top_layers(self.network)
-
         def flatten_list(l):
             """Flatten arbitrarily nested lists to get just the top layers."""
             if isinstance(l, collections.Iterable):
                 return [itm for sublist in l for itm in flatten_list(sublist)]
             else:
                 return [l]
+
+        top_layers = get_top_layers(self.network)
 
         top_layers = flatten_list(top_layers)
         # Extract only unique top layers
@@ -117,6 +117,8 @@ class GuidedBackprop():
             """If there is a negative gradient, changes it to zero."""
             if isinstance(module, ReLU) or isinstance(module, SELU):
                 return (torch.clamp(grad_in[0], min=0.0),)
+            else:
+                raise NotImplementedError("Only ReLU and SELU supported.")
 
         def hook_all_networks(network):
             self.hooks.append(
