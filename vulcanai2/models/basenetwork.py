@@ -429,9 +429,10 @@ class BaseNetwork(nn.Module):
                     plt.ion()
                     plt.figure(fig_number)
                     display_record(record=self.record)
+                self.epoch += 1
 
         except KeyboardInterrupt:
-            print("\n\n**********KeyboardInterrupt: Training stopped prematurely.**********\n\n")
+            print("\n\n***KeyboardInterrupt: Training stopped prematurely.***\n\n")
 
 
     def _train_epoch(self, train_loader, retain_graph):

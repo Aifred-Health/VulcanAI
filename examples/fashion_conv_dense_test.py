@@ -158,10 +158,10 @@ cnn_class = ConvNet(
         num_classes=10
     )
 
-k = 2
-epochs = 2
+k = 3
+epochs = 10
 
-averaged_results = cnn_class.cross_validate(train_loader, k, epochs, average_results=True)
+averaged_results = cnn_class.cross_validate(train_loader, k, epochs, average_results=True, plot=True)
 #all_results = cnn_class.cross_validate(test_dataloader, k, epochs, average_results=False)
 
 print(averaged_results)
