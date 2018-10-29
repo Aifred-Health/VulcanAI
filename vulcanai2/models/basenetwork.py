@@ -466,12 +466,16 @@ class BaseNetwork(nn.Module):
         train_loss_accumulator = 0.0
         train_accuracy_accumulator = 0.0
         pbar = trange(len(train_loader.dataset), desc='Training.. ')
-        for batch_idx, (data, targets) in enumerate(train_loader):
+        for batch_idx, (*data, targets) in enumerate(train_loader):
 
-            data, targets = Variable(data), Variable(targets)
+            for idx, d in enumerate(data):
+                data[idx] = Variable(d, requires_grad=True)
+            targets = Variable(targets)
 
             if torch.cuda.is_available():
-                data, targets = data.cuda(), targets.cuda()
+                for idx, d in enumerate(data):
+                    data[idx] = d.cuda()
+                targets = targets.cuda()
                 self.cuda()
 
             # Forward + Backward + Optimize
@@ -485,13 +489,15 @@ class BaseNetwork(nn.Module):
             train_loss.backward(retain_graph=retain_graph)
             self.optim.step()
 
+            batch_len = len(data[0])
+
             if batch_idx % 10 == 0:
                 # Update tqdm bar
-                if ((batch_idx + 10) * len(data)) <= len(train_loader.dataset):
-                    pbar.update(10 * len(data))
+                if ((batch_idx + 10) * batch_len) <= len(train_loader.dataset):
+                    pbar.update(10 * batch_len)
                 else:
                     pbar.update(len(train_loader.dataset) -
-                        int(batch_idx * len(data)))
+                        int(batch_idx * batch_len))
 
             train_accuracy_accumulator += self.metrics.get_score(predictions,
                                                                  targets)
@@ -499,9 +505,9 @@ class BaseNetwork(nn.Module):
         pbar.close()
 
         train_loss = train_loss_accumulator * \
-            len(data) / len(train_loader.dataset)
+            train_loader.batch_size / len(train_loader.dataset)
         train_accuracy = train_accuracy_accumulator * \
-            len(data) / len(train_loader.dataset)
+            train_loader.batch_size / len(train_loader.dataset)
 
         return train_loss, train_accuracy
 
@@ -526,13 +532,16 @@ class BaseNetwork(nn.Module):
         val_accuracy_accumulator = 0.0
         pbar = trange(len(val_loader.dataset), desc='Validating.. ')
 
-        for batch_idx, (data, targets) in enumerate(val_loader):
+        for batch_idx, (*data, targets) in enumerate(val_loader):
 
-            data, targets = Variable(data, requires_grad=False), \
-                            Variable(targets, requires_grad=False)
+            for idx, d in enumerate(data):
+                data[idx] = Variable(d, requires_grad=False)
+            targets = Variable(targets, requires_grad=False)
 
             if torch.cuda.is_available():
-                data, targets = data.cuda(), targets.cuda()
+                for idx, d in enumerate(data):
+                    data[idx] = d.cuda()
+                targets = targets.cuda()
                 self.cuda()
 
             predictions = self(data)
@@ -540,20 +549,22 @@ class BaseNetwork(nn.Module):
             validation_loss = self.criterion(predictions, targets)
             val_loss_accumulator += validation_loss.item()
 
+            batch_len = len(data[0])
+
             if batch_idx % 10 == 0:
                 # Update tqdm bar
-                if ((batch_idx + 10) * len(data)) <= len(val_loader.dataset):
-                    pbar.update(10 * len(data))
+                if ((batch_idx + 10) * batch_len) <= len(val_loader.dataset):
+                    pbar.update(10 * batch_len)
                 else:
-                    pbar.update(len(val_loader.dataset) - int(batch_idx * len(data)))
+                    pbar.update(len(val_loader.dataset) - int(batch_idx * batch_len))
             val_accuracy_accumulator += self.metrics.get_score(predictions,
                                                                targets)
 
         pbar.close()
         validation_loss = val_loss_accumulator * \
-            len(data) / len(val_loader.dataset)
+            val_loader.batch_size / len(val_loader.dataset)
         validation_accuracy = val_accuracy_accumulator * \
-            len(data) / len(val_loader.dataset)
+            val_loader.batch_size / len(val_loader.dataset)
 
         return validation_loss, validation_accuracy
 
@@ -587,7 +598,7 @@ class BaseNetwork(nn.Module):
         # prediction_shape used to aggregate network outputs
         # (e.g. with or without class conversion)
         pred_collector = torch.tensor([])
-        for batch_idx, (data, _) in enumerate(data_loader):
+        for batch_idx, (*data, _) in enumerate(data_loader):
             if torch.cuda.is_available():
                 data = data.cuda()
                 self.cuda()

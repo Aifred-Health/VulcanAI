@@ -2,8 +2,7 @@ import sys
 sys.path.append('../')
 from vulcanai2 import models, datasets, plotters
 from vulcanai2.models import ConvNet, DenseNet, SnapshotNet
-# from vulcanai2.models.cnn import ConvNet
-# from vulcanai2.models.dnn import DenseNet
+from vulcanai2.datasets import MultiDataset
 from vulcanai2.plotters.visualization import (compute_saliency_map, 
                                               display_saliency_overlay,
                                               display_receptive_fields,
@@ -15,7 +14,7 @@ import pickle
 import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, TensorDataset
 # from torchviz import make_dot
 
 import numpy as np
@@ -239,15 +238,18 @@ y = train_loader.dataset.train_labels[:5]
 #         torch.ones([5,*conv_big.in_dim]),
 #         torch.ones([5,*conv_small.in_dim])]
 x = [
-        torch.ones([5,*conv_small.in_dim]),
-        torch.ones([5,*dense_model.in_dim]),
-        torch.ones([5,*conv_big.in_dim]),
-        torch.ones([5,*conv_very_big.in_dim])
+        (TensorDataset(torch.ones([10000,*conv_small.in_dim])), True, False),
+        (TensorDataset(torch.ones([10000,*dense_model.in_dim])), True, False),
+        (val_loader.dataset, True, True),
+        (TensorDataset(torch.ones([10000,*conv_very_big.in_dim])), True, False),
     ]
-import pudb; pu.db
-sal_map = compute_saliency_map(model1, x, y)
-import pudb; pu.db
-display_saliency_overlay(train_loader.dataset.train_data[0], sal_map[0][0])
+
+multi = DataLoader(MultiDataset(x), batch_size=100)
+
+# import pudb; pu.db
+# sal_map = compute_saliency_map(model1, x, y)
+# import pudb; pu.db
+# display_saliency_overlay(train_loader.dataset.train_data[0], sal_map[0][0])
 
 model1 = ConvNet(
     name='conv_net_test_multi_input',
@@ -256,6 +258,10 @@ model1 = ConvNet(
     config=conv_net_config_very_very_big,
     num_classes=10
 )
+# a = model1.forward_pass(multi)
+# import pudb; pu.db
+dense_model.fit(train_loader, val_loader, 2)
+import pudb; pu.db
 # snap = SnapshotNet("snap", dense_model, 3)
 conv_big.fit(train_loader, val_loader, 3, plot=True)
 # snap.save_model()

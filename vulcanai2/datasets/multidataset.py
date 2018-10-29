@@ -43,14 +43,16 @@ class MultiDataset(Dataset):
         target_items = []
 
         for t in self._datasets:
+            # Extract input data
             if t[1]:
                 ds = t[0]
-                input_data_items.append(ds.__getitem__(idx)[0])  # this assumes input_data is returned first
-
-        for t in self._datasets:
+                # Assumes input_data is stored in the first slot of tuple.
+                input_data_items.append(ds.__getitem__(idx)[0])
+            # Extract target data
             if t[2]:
                 ds = t[0]
-                target_items.append(ds.__getitem__(idx)[0])
+                # Assumes target is stored in the second slot of tuple.
+                target_items.append(ds.__getitem__(idx)[1])
 
-        vals = tuple(input_data_items + target_items)
-        return vals
+        values = tuple(input_data_items + target_items)
+        return values
