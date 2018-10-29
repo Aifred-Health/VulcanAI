@@ -26,16 +26,14 @@ class Metrics(object):
 
     Parameters
     ----------
-    num_class : int
-        The number of classes the network is trying to predict.
-
     """
     # TODO: why does use_unlabeled exist?
-    def __init__(self, num_class, use_unlabeled=False):
+    #def __init__(self, use_unlabeled=False):
+    def __init__(self):
         """Initialize the metrics class for a BaseNetwork."""
-        self.num_class = num_class
+        #self.num_class = num_class
         # self.mat = np.zeros((self.num_class, self.num_class), dtype=np.float)
-        self.list_classes = list(range(self.num_class))
+        #self.list_classes = list(range(self.num_class))
 
     # def update(self, predictions, targets):
     #     if not(isinstance(predictions, np.ndarray)) or not(isinstance(targets, np.ndarray)):
@@ -151,6 +149,7 @@ class Metrics(object):
            network._num_classes == 0:
             raise ValueError('There\'s no classification layer')
 
+        # getting just the y values out of the dataset
         test_y = np.array([v[1] for v in data_loader.dataset])
 
         raw_prediction = network.forward_pass(
@@ -268,17 +267,17 @@ class Metrics(object):
         all_results = defaultdict(lambda: [])
 
         # TODO: this whole section is really clunky
+        # Getting the fold sequence.
         fold_len = math.floor(data_loader.dataset.__len__() / k)
         rem = data_loader.dataset.__len__() % k
         fold_seq = []
 
-        print(fold_seq)
         for i in range(k-1):
             fold_seq.append(fold_len)
         if rem == 0:
             fold_seq.append(fold_len)
         else:
-            fold_seq.append(fold_len+rem)
+            fold_seq.append(fold_len+rem) #last one is the longest if unequal
 
         dataset_splits = torch.utils.data.random_split(data_loader.dataset, fold_seq)
 
@@ -310,9 +309,9 @@ class Metrics(object):
                 for m in results:
                     all_results[m].append(results[m])
 
+        # TODO: we could show something better here like calculate all the results so far
         except KeyboardInterrupt:
             print("\n\n**********KeyboardInterrupt: Training stopped prematurely.**********\n\n")
-            # TODO: we could show something better here like calculate all the results so far
 
         if return_average_results:
             averaged_all_results = {}

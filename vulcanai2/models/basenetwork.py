@@ -94,7 +94,7 @@ class BaseNetwork(nn.Module):
         self._criter_spec = criter_spec
 
         if self._num_classes:
-            self.metrics = Metrics(self._num_classes)
+            self.metrics = Metrics()
 
         self.optim = None
         self.criterion = None
@@ -114,8 +114,6 @@ class BaseNetwork(nn.Module):
         self._create_network(
             activation=activation,
             pred_activation=pred_activation)
-
-    # TODO: where to do typechecking... just let everything fail?
 
     @property
     def name(self):
