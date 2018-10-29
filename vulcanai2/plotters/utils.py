@@ -2,6 +2,10 @@
 import numpy as np
 import torch
 from torch.nn import ReLU, SELU
+import logging
+import collections
+
+logger = logging.getLogger(__name__)
 # from ..models.basenetwork import BaseNetwork
 
 
@@ -79,17 +83,32 @@ class GuidedBackprop():
             """In-order traversal to get only top layers of network."""
             all_top_layers = []
             if network.input_networks is not None:
-                for net in self.network.input_networks:
+                for net in network.input_networks:
                     all_top_layers.append(get_top_layers(net))
             else:
                 all_top_layers.append(network.network[0]._kernel)
             return all_top_layers
 
         top_layers = get_top_layers(self.network)
-        if isinstance(top_layers[0], list):
-            top_layers = [item for sublist in top_layers for item in sublist]
-        # Register hook to the first layer
+
+        def flatten_list(l):
+            """Flatten arbitrarily nested lists to get just the top layers."""
+            if isinstance(l, collections.Iterable):
+                return [itm for sublist in l for itm in flatten_list(sublist)]
+            else:
+                return [l]
+
+        top_layers = flatten_list(top_layers)
+        # Extract only unique top layers
+        # This comes in handy if you have several inputs from the same network
+        # at different depths and not return duplicated gradients.
+        unique_top_layers = []
         for layer in top_layers:
+            if layer not in unique_top_layers:
+                unique_top_layers.append(layer)
+
+        # Register hook to the first layers only
+        for layer in unique_top_layers:
             self.hooks.append(layer.register_backward_hook(hook_function))
 
     def _crop_negative_gradients(self):
@@ -103,8 +122,9 @@ class GuidedBackprop():
             self.hooks.append(
                     network.network[0]._activation.
                     register_backward_hook(activation_hook_function))
+            logging.info("Cropping gradients in {}.".format(network.name))
             if network.input_networks is not None:
-                for net in self.network.input_networks:
+                for net in network.input_networks:
                     hook_all_networks(net)
 
         hook_all_networks(self.network)
