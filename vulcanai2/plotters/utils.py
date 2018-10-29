@@ -170,7 +170,7 @@ class GuidedBackprop():
         # Target for backprop
         one_hot_zeros = torch.zeros(
             network_output.size()[0],
-            network_output.size()[-1])
+            self.network._num_classes)
         one_hot_output = one_hot_zeros.scatter_(1, targets.unsqueeze(dim=1), 1)
         # Backward pass
         network_output.backward(gradient=one_hot_output)
