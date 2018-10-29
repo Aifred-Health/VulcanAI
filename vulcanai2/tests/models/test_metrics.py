@@ -8,11 +8,12 @@ from vulcanai2.models.ensemble import SnapshotNet
 from torch.utils.data import TensorDataset, DataLoader
 
 class TestMetrics:
+
+    #note that the number of classes needs to stay consistent
+
     @pytest.fixture
     def metrics(self):
-        return Metrics(
-            num_class=2
-        )
+        return Metrics()
 
     @pytest.fixture
     def cnn_class(self):
