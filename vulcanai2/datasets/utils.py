@@ -6,9 +6,10 @@ were all copy-pasted from torchtext because torchtext is not yet packaged
 for anaconda and is therefore not yet a reasonable dependency.
 See https://github.com/pytorch/text/blob/master/torchtext/data/dataset.py
 """
-import numpy as np
 import pandas as pd
+import random
 import logging
+import copy
 
 logger = logging.getLogger(__name__)
 
@@ -122,71 +123,44 @@ def check_split_ratio(split_ratio):
 #             return random.sample(data, len(data))
 
 
-# THIS IS FROM SNEHA  https://github.com/sneha-desai
-# TODO: replace with Joseph's version
-# TODO: this should actually be a part of ConcatDataset called by _add see below
-# TODO: https://pytorch.org/docs/stable/_modules/torch/utils/data/dataset.html#Dataset
-def stitch_datasets(df_list, on, index_list=None):
+def stitch_datasets(df_list, merge_on_columns, index_list=None):
     """
     Args:
-    df_list: list of dataframes to stitch together
+    df_list: dictionary of dataframes to stitch together
     on: key that specifies which features column to use in each dataset
     to identify the specific examples of all datasets
-    index_list: list of feature columns to add present bit (default None)
+    index_list: list of feature columns to index on when stitching(default None)
 
     Returns: concatenated dataframe
 
     """
-    print(index_list)
-    # change column names to all caps
-    for i in range(len(df_list)):
-        df_list[i].columns = map(str.lower, df_list[i].columns)
+    #Get name of a dataframe to extract
+    first_column = list(df_list)[0]
+    merged_df = df_list.pop(first_column)
+    merged_df = merged_df.apply(pd.to_numeric, errors='ignore')
+    for key in list(df_list):
+        logger.info('Combining: {}'.format(key))
+        df_two = df_list.pop(key)
+        merged_df = pd.concat([merged_df, df_two])
 
-    # create an empty Dataframe and set first column to on
-    merged_df = pd.DataFrame(columns=[on])
+    if merge_on_columns is not None:
+        # Group by keys, forward fill and backward fill missing data then remove duplicate keys
+        merged_df = merged_df.apply(pd.to_numeric, errors='ignore')
+        df_groupOn = merged_df.reset_index(drop=True).groupby(merge_on_columns).apply(
+            lambda x: x.bfill().ffill())
+        logger.info("\tDropping duplicates")
 
-    # if indexes are not specified, create an added column for each feature
-    # otherwise, only create extra column for features in list
-    if index_list is None:
-        for i in range(len(df_list)):
-            col_list_1 = list(df_list[i].columns)
-            df = pd.DataFrame(1, index=df_list[i].index,
-                              columns=np.arange(len(df_list[i].columns) - 1))
-            col_list_2 = list(df.columns)
-            df_list[i] = pd.concat([df_list[i], df], axis=1)
-            concat_list = [None] * (len(col_list_1) + len(col_list_2))
-            concat_list[0] = col_list_1[0]
-            col_list_1 = col_list_1[1:(len(col_list_1))]
-            concat_list[1::2] = col_list_1
-            concat_list[2::2] = col_list_2
-            df_list[i] = df_list[i][concat_list]
-    else:
-        print(df_list[0])
-        print(df_list[1])
-        frequency = [0] * len(df_list)
-        for j in range(len(df_list)):
-            for k in range(len(index_list)):
-                for l in range(len(df_list[j].columns)):
-                    if (list(df_list[j].columns))[l] == index_list[k]:
-                        frequency[j] += 1
-        for i in range(len(df_list)):
-            if frequency[i] == 0:
-                df_list[i] = df_list[i]
-            else:
-                col_list_1 = list(df_list[i].columns)
-                df = pd.DataFrame(1, index=df_list[i].index, columns=np.arange(frequency[i]))
-                col_list_2 = list(df.columns)
-                df_list[i] = pd.concat([df_list[i], df], axis=1)
-                concat_list = [None] * (len(col_list_1) + len(col_list_2))
-                concat_list[0] = col_list_1[0]
-                col_list_1 = col_list_1[1:(len(col_list_1))]
-                concat_list[1::2] = col_list_1
-                concat_list[2::2] = col_list_2
-                df_list[i] = df_list[i][concat_list]
+        #Drop rows where there are duplicates for the merged_on_columns.
+        # We first need to dropna based on merged since drop_duplicates ignores null/na values.
+        df_groupOn = df_groupOn.dropna(subset=merge_on_columns, how='all')
+        df_groupOn = df_groupOn.drop_duplicates(subset=merge_on_columns, keep='first', inplace=False)
+        merged_df = copy.deepcopy(df_groupOn)
 
-    for j in range(len(df_list)):
-        merged_df = pd.merge(merged_df, df_list[j], how='outer', on=on)
+    if index_list is not None:
+        merged_df = merged_df.set_index(index_list, inplace=False)
 
-    merged_df.fillna(0, inplace=True)
-
+    logger.info("\nMerge Total columns = {totalCols}, rows = {totalRows} ".format(
+        totalCols=len(list(merged_df)),
+        totalRows=len(merged_df)))
     return merged_df
+
