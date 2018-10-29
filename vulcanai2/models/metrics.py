@@ -255,10 +255,12 @@ class Metrics(object):
                        average_results=True, retain_graph=None,
                        valid_interv=4, plot=False, figure_path=None):
         """
-        Trains the network on the provided data.
+        Perform k-fold cross validation given a Network and DataLoader object.
 
         Parameters
         ----------
+        network : BaseNetwork
+            Network descendant of BaseNetwork.
         data_loader : torch.utils.data.DataLoader
             The DataLoader object containing the totality of the data to use
             for k-fold cross validation.
@@ -301,10 +303,8 @@ class Metrics(object):
         batch_size = data_loader.batch_size
 
         # #TODO: improve the copying of parameters
-        if isinstance(data_loader.sampler, data.sampler.RandomSampler):
-            shuffle = True
-        else:
-            shuffle = False
+        # Set to true if RandomSampler exists.
+        shuffle = isinstance(data_loader.sampler, data.sampler.RandomSampler)
 
         try:
             for fold in range(k):
@@ -339,7 +339,7 @@ class Metrics(object):
         # TODO: we could show something better here like calculate
         # all the results so far
         except KeyboardInterrupt:
-            print("\n\n**********KeyboardInterrupt: Training stopped prematurely.**********\n\n")
+            print("\n\n***KeyboardInterrupt: Cross validate stopped prematurely.***\n\n")
 
         if average_results:
             averaged_all_results = {}
