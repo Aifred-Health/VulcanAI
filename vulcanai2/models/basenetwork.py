@@ -136,15 +136,7 @@ class BaseNetwork(nn.Module):
             pred_activation=pred_activation)
 
         # Compute self.out_dim of the network
-        if self.network is not None:
-            out_shapes = network_summary(
-                network=self.network, input_size=self.in_dim)
-            self.out_dim = tuple(out_shapes[list(out_shapes)[-1]]['output_shape'][1:])
-            
-            if self._num_classes:
-                out_shapes = network_summary(
-                    network=self.network_tail, input_size=self.out_dim)
-                self.out_dim = tuple(out_shapes[list(out_shapes)[-1]]['output_shape'][1:])
+        self.out_dim = self._compute_out_dim()
 
     @abc.abstractmethod
     def _merge_input_network_outputs(self, inputs):
@@ -190,6 +182,13 @@ class BaseNetwork(nn.Module):
             return class_output
         else:
             return network_output
+
+    def _compute_out_dim(self):
+        if self.network is not None:
+            out_dim = self.network(torch.ones([1, *self.in_dim])).shape
+            if self._num_classes:
+                out_dim = self.network_tail(torch.ones(out_dim)).shape
+        return tuple(out_dim)
 
     @property
     def name(self):

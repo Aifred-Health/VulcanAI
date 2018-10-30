@@ -246,9 +246,8 @@ x = [
 
 multi = DataLoader(MultiDataset(x), batch_size=100)
 
-# import pudb; pu.db
 # sal_map = compute_saliency_map(model1, x, y)
-# import pudb; pu.db
+
 # display_saliency_overlay(train_loader.dataset.train_data[0], sal_map[0][0])
 
 model1 = ConvNet(
@@ -260,17 +259,17 @@ model1 = ConvNet(
 )
 # a = model1.forward_pass(multi)
 
-dense_model.fit(train_loader, val_loader, 2)
+#model1.fit(multi, multi, 2)
 
 # snap = SnapshotNet("snap", dense_model, 3)
-conv_big.fit(train_loader, val_loader, 3, plot=True)
+#conv_big.fit(train_loader, val_loader, 3, plot=True)
 # snap.save_model()
 #import pudb; pu.db
-model1.save_model()
+#model1.save_model()
 very_very_big_conv_output = model1(
     [
         torch.ones([5,*model1.input_networks[0].in_dim]),
-        torch.ones([5,*conv_small.in_dim]),
+        torch.ones([5,*model1.input_networks[1].in_dim]),
         torch.ones([5,*model1.input_networks[2].in_dim]),
         torch.ones([5,*model1.input_networks[3].in_dim])
     ])
