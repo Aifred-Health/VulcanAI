@@ -184,14 +184,13 @@ class BaseNetwork(nn.Module):
             return network_output
 
     def _compute_out_dim(self):
-        out_dim = None
         if self.network is not None:
-            out_dim = self.network(torch.ones([1, *self.in_dim])).shape
+            out = self.network(torch.ones([1, *self.in_dim]))
             if self._num_classes:
-                out_dim = self.network_tail(torch.ones(out_dim)).shape
-        if out_dim is None:
-            raise ValueError("'out_dim' cannot be None")
-        return tuple(out_dim)
+                out = self.network_tail(out)
+            return tuple(out.shape[1:])
+        else:
+            return None
 
     @property
     def name(self):
