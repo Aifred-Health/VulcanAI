@@ -479,7 +479,7 @@ class BaseNetwork(nn.Module):
                 self.cuda()
 
             # Forward + Backward + Optimize
-            # TODO: Remove temp
+            import pudb; pu.db
             predictions = self(data)
 
             train_loss = self.criterion(predictions, targets)
@@ -534,9 +534,9 @@ class BaseNetwork(nn.Module):
 
         for batch_idx, (*data, targets) in enumerate(val_loader):
 
-            for idx, d in enumerate(data):
-                data[idx] = Variable(d, requires_grad=False)
-            targets = Variable(targets, requires_grad=False)
+            # for idx, d in enumerate(data):
+            #     data[idx] = Variable(d, requires_grad=False)
+            # targets = Variable(targets, requires_grad=False)
 
             if torch.cuda.is_available():
                 for idx, d in enumerate(data):
@@ -599,6 +599,7 @@ class BaseNetwork(nn.Module):
         # (e.g. with or without class conversion)
         pred_collector = torch.tensor([])
         for batch_idx, (*data, _) in enumerate(data_loader):
+
             if torch.cuda.is_available():
                 data = data.cuda()
                 self.cuda()

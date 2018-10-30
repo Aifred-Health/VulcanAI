@@ -223,7 +223,7 @@ conv_very_big = ConvNet(
 
 dense_model = DenseNet(
     name='conv_net_test',
-    input_networks=None,
+    input_networks=[conv_big, conv_small],
     in_dim=150,
     config=dense_net_config,
     # num_classes=10
@@ -237,9 +237,16 @@ y = train_loader.dataset.train_labels[:5]
 # x = [
 #         torch.ones([5,*conv_big.in_dim]),
 #         torch.ones([5,*conv_small.in_dim])]
+multi_dense = [
+    (val_loader.dataset, True, False),
+    (TensorDataset(torch.ones([10000,*conv_small.in_dim])), True, False)
+]
+
+m = MultiDataset(multi_dense)
+
 x = [
         (TensorDataset(torch.ones([10000,*conv_small.in_dim])), True, False),
-        (TensorDataset(torch.ones([10000,*dense_model.in_dim])), True, False),
+        m,
         (val_loader.dataset, True, True),
         (TensorDataset(torch.ones([10000,*conv_very_big.in_dim])), True, False),
     ]
@@ -259,7 +266,8 @@ model1 = ConvNet(
     num_classes=10
 )
 # a = model1.forward_pass(multi)
-# import pudb; pu.db
+model1.fit(multi, multi, 30, plot=True)
+import pudb; pu.db
 dense_model.fit(train_loader, val_loader, 2)
 import pudb; pu.db
 # snap = SnapshotNet("snap", dense_model, 3)

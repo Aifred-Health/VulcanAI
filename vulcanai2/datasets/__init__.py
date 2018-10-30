@@ -9,5 +9,6 @@ __all__ = [
     'tabulardataset',
     'utils',
     'FashionData',
-    'TabularDataset'
+    'TabularDataset',
+    'MultiDataset'
 ]
