@@ -253,9 +253,8 @@ x = [
 
 multi = DataLoader(MultiDataset(x), batch_size=100)
 
-# import pudb; pu.db
 # sal_map = compute_saliency_map(model1, x, y)
-# import pudb; pu.db
+
 # display_saliency_overlay(train_loader.dataset.train_data[0], sal_map[0][0])
 
 model1 = ConvNet(
@@ -271,14 +270,14 @@ import pudb; pu.db
 dense_model.fit(train_loader, val_loader, 2)
 import pudb; pu.db
 # snap = SnapshotNet("snap", dense_model, 3)
-conv_big.fit(train_loader, val_loader, 3, plot=True)
+#conv_big.fit(train_loader, val_loader, 3, plot=True)
 # snap.save_model()
-import pudb; pu.db
-model1.save_model()
+#import pudb; pu.db
+#model1.save_model()
 very_very_big_conv_output = model1(
     [
         torch.ones([5,*model1.input_networks[0].in_dim]),
-        torch.ones([5,*conv_small.in_dim]),
+        torch.ones([5,*model1.input_networks[1].in_dim]),
         torch.ones([5,*model1.input_networks[2].in_dim]),
         torch.ones([5,*model1.input_networks[3].in_dim])
     ])
@@ -303,9 +302,6 @@ very_very_big_conv_output = model1(
 
 #model1.fit(train_loader, val_loader, 10)
 
-# NOTE: in_dim must be list of tuples or ints | out_dim must represent for single output so just tuple or int
-print(model.in_dim, model.out_dim, dense_model.in_dim, dense_model.out_dim, model1.in_dim, model1.out_dim)
-print(model1.get_output_shapes(input_size = [(1,28,28), 784])) #TODO: Ensure to make this work without specifying the input size
 
 model1.fit(train_loader, val_loader, 2, plot=False)
 
@@ -316,11 +312,6 @@ model1.fit(train_loader, val_loader, 2, plot=False)
 
 
 #model1.fit(train_loader, val_loader, 10)
-
-# NOTE: in_dim must be list of tuples or ints | out_dim must represent for single output so just tuple or int
-print(model.in_dim, model.out_dim, dense_model.in_dim, dense_model.out_dim, model1.in_dim, model1.out_dim)
-print(model1.get_output_shapes(input_size = [(1,28,28), 784])) #TODO: Ensure to make this work without specifying the input size
-
 model1.fit(train_loader, val_loader, 2, plot=False)
 
 #model1.save_model()
