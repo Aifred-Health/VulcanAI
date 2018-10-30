@@ -467,10 +467,10 @@ class BaseNetwork(nn.Module):
         train_accuracy_accumulator = 0.0
         pbar = trange(len(train_loader.dataset), desc='Training.. ')
         for batch_idx, (*data, targets) in enumerate(train_loader):
-
-            for idx, d in enumerate(data):
-                data[idx] = Variable(d, requires_grad=True)
-            targets = Variable(targets)
+            # import pudb; pu.db
+            # for idx, d in enumerate(data):
+            #     data[idx] = Variable(d, requires_grad=True)
+            # targets = Variable(targets)
 
             if torch.cuda.is_available():
                 for idx, d in enumerate(data):
