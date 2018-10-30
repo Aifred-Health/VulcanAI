@@ -156,12 +156,12 @@ class ConvNet(BaseNetwork):
         for t in tensors:
             if t.dim() == 2:
                 # Cast Linear output to largest Conv output shape
-                t = self._cast_linear_to_conv_shape(
+                t = self._cast_linear_to_shape(
                     tensor=t,
                     cast_shape=max_conv_tensor_size)
             elif t.dim() > 2:
                 # Cast Conv output to largest Conv output shape
-                t = self._cast_conv_to_conv_shape(
+                t = self._cast_conv_to_shape(
                     tensor=t,
                     cast_shape=max_conv_tensor_size)
             reshaped_tensors.append(t)
@@ -186,7 +186,7 @@ class ConvNet(BaseNetwork):
         max_conv_tensor_size = np.array(spatial_inputs).transpose().max(axis=1)
         return np.array(max_conv_tensor_size)
 
-    def _cast_linear_to_conv_shape(self, tensor, cast_shape):
+    def _cast_linear_to_shape(self, tensor, cast_shape):
         """
         Convert Linear outputs into Conv outputs.
 
@@ -215,7 +215,7 @@ class ConvNet(BaseNetwork):
         tensor = pad(tensor=tensor, padded_shape=[pad_shape])
         return tensor.view(-1, n_channels, *cast_shape)
 
-    def _cast_conv_to_conv_shape(self, tensor, cast_shape):
+    def _cast_conv_to_shape(self, tensor, cast_shape):
         """
         Convert Conv outputs into Conv outputs.
 
