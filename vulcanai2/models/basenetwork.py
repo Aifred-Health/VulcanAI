@@ -480,8 +480,8 @@ class BaseNetwork(nn.Module):
                 self.cuda()
 
             # Forward + Backward + Optimize
-            import pudb; pu.db
-            predictions = self(data)
+            # import pudb; pu.db
+            predictions = self(data[0])
 
             train_loss = self.criterion(predictions, targets)
             train_loss_accumulator += train_loss.item()
