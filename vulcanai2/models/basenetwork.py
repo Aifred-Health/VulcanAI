@@ -136,7 +136,7 @@ class BaseNetwork(nn.Module):
             pred_activation=pred_activation)
 
         # Compute self.out_dim of the network
-        self.out_dim = self._compute_out_dim()
+        self.out_dim = self._get_out_dim()
 
     @abc.abstractmethod
     def _merge_input_network_outputs(self, inputs):
@@ -163,7 +163,6 @@ class BaseNetwork(nn.Module):
         output : torch.Tensor
 
         """
-
         if not isinstance(inputs, list):
             inputs = [inputs]
 
@@ -183,7 +182,7 @@ class BaseNetwork(nn.Module):
         else:
             return network_output
 
-    def _compute_out_dim(self):
+    def _get_out_dim(self):
         if self.network is not None:
             out = self.network(torch.ones([1, *self.in_dim]))
             if self._num_classes:

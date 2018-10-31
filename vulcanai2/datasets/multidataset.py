@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 class MultiDataset(Dataset):
     """
-    Defines a dataset for multi input networks.
+    Define a dataset for multi input networks.
 
     Takes in a list of datasets, and whether or not their input_data
     and target data should be output.
@@ -16,8 +16,11 @@ class MultiDataset(Dataset):
     Parameters
     ----------
     datasets : list of tuple(Dataset, use_data_boolean, use_target_boolean)
-        A list of tuples, where each tuple is in the form.
-        Can only specificy one target at a time.
+        A list of tuples, wherein each tuple should have the Dataset in the
+        zero index, a boolean of whether or not to include the input_data in
+        the first index, and a boolean of whether or not to include the target
+        data in the second index. You can only specificy one target at a time
+        Throughout all incoming datasets.
 
     Returns
     -------
@@ -28,7 +31,7 @@ class MultiDataset(Dataset):
     # TODO: is datasets a reasonable name?
     # TODO: would be better to make these namedtuples...
     def __init__(self, datasets):
-        """Initializes a dataset for multi input networks."""
+        """Initialize a dataset for multi input networks."""
         def get_total_targets(multi_datasets):
             num_targets = 0
             for ds in multi_datasets:
