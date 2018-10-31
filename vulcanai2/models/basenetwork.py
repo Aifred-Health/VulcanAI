@@ -539,8 +539,7 @@ class BaseNetwork(nn.Module):
 
         for batch_idx, t in enumerate(val_loader):
 
-            data = t[0]
-            targets = t[1]
+            data, targets = t
 
             # for idx, d in enumerate(data):
             #     data[idx] = Variable(d, requires_grad=False)
