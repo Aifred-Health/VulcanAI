@@ -275,7 +275,13 @@ class TabularDataset(Dataset):
         :param threshold: Amount of correlation necessary for removal.
         :return: None
         """
-        raise NotImplementedError
+        column_list = set()
+        featuresCorrelation = self.df.corr().abs()
+        corr_pairs = featuresCorrelation.unstack()
+        for index, val in corr_pairs.items():
+            if val > threshold and (index[0] != index[1]):
+                column_list.add((index,val))
+        return column_list
 
     def identify_low_variance(self, threshold):
         """
