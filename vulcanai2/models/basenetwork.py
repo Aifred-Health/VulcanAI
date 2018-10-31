@@ -467,11 +467,15 @@ class BaseNetwork(nn.Module):
         train_loss_accumulator = 0.0
         train_accuracy_accumulator = 0.0
         pbar = trange(len(train_loader.dataset), desc='Training.. ')
-        for batch_idx, (*data, targets) in enumerate(train_loader):
+
+
+        for batch_idx, t in enumerate(train_loader):
             # import pudb; pu.db
             # for idx, d in enumerate(data):
             #     data[idx] = Variable(d, requires_grad=True)
             # targets = Variable(targets)
+
+            data, targets = t
 
             if torch.cuda.is_available():
                 for idx, d in enumerate(data):
@@ -481,7 +485,7 @@ class BaseNetwork(nn.Module):
 
             # Forward + Backward + Optimize
             # import pudb; pu.db
-            predictions = self(data[0])
+            predictions = self(data)
 
             train_loss = self.criterion(predictions, targets)
             train_loss_accumulator += train_loss.item()
@@ -533,7 +537,10 @@ class BaseNetwork(nn.Module):
         val_accuracy_accumulator = 0.0
         pbar = trange(len(val_loader.dataset), desc='Validating.. ')
 
-        for batch_idx, (*data, targets) in enumerate(val_loader):
+        for batch_idx, t in enumerate(val_loader):
+
+            data = t[0]
+            targets = t[1]
 
             # for idx, d in enumerate(data):
             #     data[idx] = Variable(d, requires_grad=False)

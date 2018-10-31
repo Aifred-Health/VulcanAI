@@ -26,6 +26,7 @@ class MultiDataset(Dataset):
                 else:
                     num_targets += int(ds[2])
             return num_targets
+
         self._datasets = datasets
         # must always have exactly one target.
         total_num_targets = get_total_targets(self._datasets)
@@ -71,21 +72,20 @@ class MultiDataset(Dataset):
 
         """
         input_data_items = []
-        target_items = []
+        target_item = None
 
         for t in self._datasets:
             if isinstance(t, MultiDataset):
                 # import pudb; pu.db
-
                 input_data_items.append(t.__getitem__(idx)[0])
                 try:
-                    target_items.append(t.__getitem__(idx)[1])
+                    target_item = t.__getitem__(idx)[1]
                 except IndexError:
                     # Targets don't exist
                     pass
             # Extract input data
             else:
-                if t[1]:
+                if t[1]: #TODO: rename these
                     ds = t[0]
                     # Assumes input_data is stored in the first slot of tuple.
                     input_data_items.append(ds.__getitem__(idx)[0])
@@ -93,7 +93,7 @@ class MultiDataset(Dataset):
                 if t[2]:
                     ds = t[0]
                     # Assumes target is stored in the second slot of tuple.
-                    target_items.append(ds.__getitem__(idx)[1])
+                    target_item = ds.__getitem__(idx)[1] #technically would re-write if they had 2 targets...
 
-        values = tuple([input_data_items] + target_items)
+        values = input_data_items, target_item
         return values
