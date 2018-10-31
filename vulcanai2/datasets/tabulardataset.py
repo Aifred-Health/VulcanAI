@@ -126,8 +126,7 @@ class TabularDataset(Dataset):
         Returns all columns that contain numeric values
         :return: all columns that contain numeric values
         """
-        return [key for key in dict(self.df.dtypes)
-                if dict(self.df.dtypes)[key] in ['float64', 'int64', 'float32', 'int32']]
+        return list(self.df.select_dtypes(include=np.number))
 
     # TODO: this is really slow make it faster
     def identify_all_categorical_features(self):
@@ -135,8 +134,7 @@ class TabularDataset(Dataset):
         Returns all columns that contain categorical values
         :return: all columns that contain categorical values
         """
-        return [key for key in dict(self.df.dtypes)
-                if dict(self.df.dtypes)[key] not in ['float64', 'int64', 'float32', 'int32']]
+        return list(self.df.select_dtypes(exclude=np.number))
 
     def delete_columns(self, column_list):
         """
@@ -247,7 +245,6 @@ class TabularDataset(Dataset):
                 column_list.append(col)
         return column_list
 
-    # TODO: add in non_numeric
     def identify_unbalanced_columns(self, threshold, non_numeric=True):
         """
         This returns columns that are highly unbalanced, aka those that have a disproportionate amount of one value
@@ -271,7 +268,7 @@ class TabularDataset(Dataset):
 
     def identify_highly_correlated(self, threshold):
         """
-        Remove one of those columns that are highly correlated with one-another.
+        Identify columns that are highly correlated with one-another.
         :param threshold: Amount of correlation necessary for removal.
         :return: None
         """
@@ -285,7 +282,7 @@ class TabularDataset(Dataset):
 
     def identify_low_variance(self, threshold):
         """
-        Removes those columns that have low variance
+        Identify those columns that have low variance
         :param threshold: Upper bound of variance needed for removal
         :return: A dictionary of column names, with the value being their variance
         """
