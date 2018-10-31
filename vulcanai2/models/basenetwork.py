@@ -468,14 +468,11 @@ class BaseNetwork(nn.Module):
         train_accuracy_accumulator = 0.0
         pbar = trange(len(train_loader.dataset), desc='Training.. ')
 
+        for batch_idx, (data, targets) in enumerate(train_loader):
 
-        for batch_idx, t in enumerate(train_loader):
-            # import pudb; pu.db
             # for idx, d in enumerate(data):
             #     data[idx] = Variable(d, requires_grad=True)
             # targets = Variable(targets)
-
-            data, targets = t
 
             if torch.cuda.is_available():
                 for idx, d in enumerate(data):
@@ -494,7 +491,7 @@ class BaseNetwork(nn.Module):
             train_loss.backward(retain_graph=retain_graph)
             self.optim.step()
 
-            batch_len = len(data[0])
+            batch_len = train_loader.batch_size
 
             if batch_idx % 10 == 0:
                 # Update tqdm bar
@@ -537,9 +534,7 @@ class BaseNetwork(nn.Module):
         val_accuracy_accumulator = 0.0
         pbar = trange(len(val_loader.dataset), desc='Validating.. ')
 
-        for batch_idx, t in enumerate(val_loader):
-
-            data, targets = t
+        for batch_idx, (data, targets) in enumerate(val_loader):
 
             # for idx, d in enumerate(data):
             #     data[idx] = Variable(d, requires_grad=False)
@@ -556,7 +551,7 @@ class BaseNetwork(nn.Module):
             validation_loss = self.criterion(predictions, targets)
             val_loss_accumulator += validation_loss.item()
 
-            batch_len = len(data[0])
+            batch_len = val_loader.batch_size
 
             if batch_idx % 10 == 0:
                 # Update tqdm bar
