@@ -9,15 +9,26 @@ logger = logging.getLogger(__name__)
 class MultiDataset(Dataset):
     """
     Defines a dataset for multi input networks.
+
+    Takes in a list of datasets, and whether or not their input_data
+    and target data should be output.
+
+    Parameters
+    ----------
+    datasets : list of tuple(Dataset, use_data_boolean, use_target_boolean)
+        A list of tuples, where each tuple is in the form.
+        Can only specificy one target at a time.
+
+    Returns
+    -------
+    multi_dataset : torch.utils.data.Dataset
+
     """
+
     # TODO: is datasets a reasonable name?
     # TODO: would be better to make these namedtuples...
     def __init__(self, datasets):
-        """
-        Takes in a list of datasets, and whether or not their input_data and target data should be output
-        :param datasets: A list of tuples, where each tuple is in the form. Can only ever specificy one target.
-        (Dataset Object, input_data_boolean, target_data_boolean)
-        """
+        """Initializes a dataset for multi input networks."""
         def get_total_targets(multi_datasets):
             num_targets = 0
             for ds in multi_datasets:
@@ -38,7 +49,15 @@ class MultiDataset(Dataset):
     def __len__(self):
         """
         Denotes the total number of samples.
-        :return: None
+
+        Will look for the dataset with the smallest number of samples and
+        default the length to that so as to avoid getting a sample that doesn't
+        exist in another dataset.
+
+        Returns
+        -------
+        length : int
+
         """
         logger.warning("Defaulting to the length of the smallest dataset")
 
@@ -57,7 +76,7 @@ class MultiDataset(Dataset):
 
     def __getitem__(self, idx):
         """
-        Overrides getitem used by DataLoader required by torch Dataset.
+        Override getitem used by DataLoader required by torch Dataset.
 
         Parameters
         ----------
