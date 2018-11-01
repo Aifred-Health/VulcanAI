@@ -282,9 +282,14 @@ class ConvNet(BaseNetwork):
 
     def get_flattened_size(self):
         """
-        Returns the flattened output size of a Single Input ConvNet's last layer.
-        :param network: The network to flatten
-        :return: The flattened output size of the conv network's last layer.
+        Return the flattened output size of conv network.
+
+        Returns
+        -------
+        shape : tuple
+            The flattened output size of the conv network's last layer. Does
+            not include batch size.
+
         """
         with torch.no_grad():
             x = torch.empty(1, *self.in_dim)
@@ -293,6 +298,7 @@ class ConvNet(BaseNetwork):
             return x.shape[-1]
 
     def __str__(self):
+        """Specify how to print network."""
         if self.optim is not None:
             return super(ConvNet, self).__str__() + f'\noptim: {self.optim}'
         else:

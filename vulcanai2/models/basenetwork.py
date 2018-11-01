@@ -209,9 +209,13 @@ class BaseNetwork(nn.Module):
 
     @property
     def save_path(self):
-        """
-        Returns the save path
-        :return: the save path of the network
+        """Return the save path of the network.
+
+        Returns
+        -------
+        save_path : string
+            The save path of the network.
+
         """
         return self._save_path
 
@@ -497,8 +501,8 @@ class BaseNetwork(nn.Module):
                 if ((batch_idx + 10) * batch_len) <= len(train_loader.dataset):
                     pbar.update(10 * batch_len)
                 else:
-                    pbar.update(len(train_loader.dataset) -
-                        int(batch_idx * batch_len))
+                    pbar.update(
+                        len(train_loader.dataset) - int(batch_idx * batch_len))
 
             train_accuracy_accumulator += self.metrics.get_score(predictions,
                                                                  targets)
@@ -557,7 +561,8 @@ class BaseNetwork(nn.Module):
                 if ((batch_idx + 10) * batch_len) <= len(val_loader.dataset):
                     pbar.update(10 * batch_len)
                 else:
-                    pbar.update(len(val_loader.dataset) - int(batch_idx * batch_len))
+                    pbar.update(
+                        len(val_loader.dataset) - int(batch_idx * batch_len))
             val_accuracy_accumulator += self.metrics.get_score(predictions,
                                                                targets)
 
@@ -611,7 +616,8 @@ class BaseNetwork(nn.Module):
                 predictions = nn.Softmax(dim=1)(predictions)
                 if convert_to_class:
                     predictions = torch.tensor(
-                        self.metrics.get_class(in_matrix=predictions.cpu())).float()
+                        self.metrics.get_class(
+                            in_matrix=predictions.cpu())).float()
             # Aggregate predictions
             pred_collector = torch.cat([pred_collector, predictions.cpu()])
         # Tensor comes in as float so convert back to int if returning classes
@@ -623,11 +629,19 @@ class BaseNetwork(nn.Module):
 
     def save_model(self, save_path=None):
         """
-        Save the model (and its' input networks)
-        :param save_path: The save directory (not a file)
-        :return: save path, for recursive purposes
-        """
+        Save the model (and it's input networks)
 
+        Parameters
+        ----------
+        ave_path : str
+            The save directory (not a file)
+
+        Returns
+        -------
+        save_path : str
+            The save path.
+
+        """
         if not save_path:
             save_path = r"saved_models/"
 
@@ -637,39 +651,46 @@ class BaseNetwork(nn.Module):
         save_path = save_path + "{}_{}/".format(
             self.name, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
         logger.info("No save path provided, saving to {}".format(save_path))
-        # recursive recursive recursive
+        # Recursively save the input networks as well.
         if self.input_networks is not None:
-            for i, input_network in enumerate(self.input_networks):
+            for input_network in self.input_networks:
                 input_network.save_model(save_path)
 
         if not os.path.exists(save_path):
             os.makedirs(save_path)
 
-        self.save_path = save_path  # TODO: I don't think this is necessary
+        self.save_path = save_path
 
-        # to improve: # object.__getstate__() https://docs.python.org/3/library/pickle.html#example
+        # TODO: to improve: # object.__getstate__()
         model_file_path = save_path + "model.pkl"
         state_dict_file_path = save_path + "state_dict.pkl"
         pickle.dump(self, open(model_file_path, "wb"), 2)
-        pickle.dump(self.state_dict, open(state_dict_file_path, "wb"), 2)  # TODO: pretty sure this isn't necessary
+        pickle.dump(self.state_dict, open(state_dict_file_path, "wb"), 2)
+        return self.save_path
 
-    # TODO: update the state dict and push to the appropriate device.
-    # TODO: caitrin save the optimizers state dict? even though this is included with our instance?
-    # https://pytorch.org/tutorials/beginner/saving_loading_models.html#what-is-a-state-dict
-    # TODO: implement, add in classification and input layers?
     @classmethod
     def load_model(cls, load_path, load_complete_model_stack=True):
         """
         Load the model from the given directory.
-        :param load_path: The load directory (not a file)
-        :param load_ensemble: Whether to load all parent networks as well. Not yet implemented.
-        :return: a network object
-        """
 
-        if not load_path.endswith("/"):  # TODO: does this break windows?? no idea.
+        Parameters
+        ----------
+        load_path : str
+            The load directory (not a file)
+        load_complete_model_stack : boolean
+            Whether to load all parent networks as well. Not yet implemented.
+
+        Returns
+        -------
+        network : BaseNetwork
+            A network object with all components intact.
+
+        """
+        # TODO: does this break windows?? no idea.
+        if not load_path.endswith("/"):
             load_path = load_path + "/"
 
-        model_file_path = load_path + "model.pkl"  # TODO: is it dumb to have a constant name?
+        model_file_path = load_path + "model.pkl"
 
         instance = pickle.load(open(model_file_path, 'rb'))
 
