@@ -1,32 +1,22 @@
-#TODO: all methods need to be updated to work with new dataset
-__author__="RobertFratila"
-
-"""Contains auxilliary methods."""
+"""Contains all visualization methods."""
 import os
 
 import numpy as np
-
-import pandas as pd
 
 from math import sqrt, ceil, floor
 
 import pickle
 
-from datetime import datetime
+from .utils import GuidedBackprop, get_notable_indices
 
-import torch
-from torch.autograd import Variable
-
-from sklearn.metrics import confusion_matrix
-from sklearn.preprocessing import LabelBinarizer
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 
 import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
-sns.set_style('darkgrid')
 
+import itertools
 import logging
 logger = logging.getLogger(__name__)
 
@@ -35,9 +25,19 @@ def display_record(record=None, load_path=None, interactive=True):
     """
     Display the training curve for a network training session.
 
-    Args:
-        record: the record dictionary for dynamic graphs during training
-        load_path: the saved record .pickle file to load
+    Parameters
+    ----------
+    record : dict
+        the network record dictionary for dynamic graphs during training.
+    load_path : str
+        (deprecated) Where records could be loaded from.
+    interactive : boolean
+        To display during training or afterwards.
+
+    Returns
+    -------
+    None
+
     """
     title = 'Training curve'
     if load_path is not None:
@@ -57,6 +57,8 @@ def display_record(record=None, load_path=None, interactive=True):
         '-mo',
         label='Train Error'
     )
+    # val_error = \
+    # [i if ~np.isnan(i) else None for i in record['validation_error']]
     validation_error, = plt.plot(
         record['epoch'],
         record['validation_error'],
@@ -95,37 +97,47 @@ def display_record(record=None, load_path=None, interactive=True):
         plt.draw()
         plt.pause(1e-17)
 
-def display_pca(train_x, train_y, label_map=None):
+
+def display_pca(input_data, targets, label_map=None):
+    """Calculate pca reduction and plot it."""
     pca = PCA(n_components=2, random_state=0)
-    x_transform = pca.fit_transform(train_x)
+    x_transform = pca.fit_transform(input_data)
     _plot_reduction(
         x_transform,
-        train_y,
+        targets,
         label_map=label_map,
         title='PCA Visualization')
 
-def display_tsne(train_x, train_y, label_map=None):
+
+def display_tsne(input_data, targets, label_map=None):
     """
     t-distributed Stochastic Neighbor Embedding (t-SNE) visualization [1].
 
     [1]: Maaten, L., Hinton, G. (2008). Visualizing Data using t-SNE.
             JMLR 9(Nov):2579--2605.
 
-    Args:
-        train_x: 2d numpy array (batch, features) of samples
-        train_y: 2d numpy array (batch, labels) for samples
-        label_map: a dict of labelled (str(int), string) key, value pairs
+    Parameters
+    ----------
+    input_data : numpy.dnarray
+        Input data to reduce in dimensions.
+    targets : numpy.ndarray
+        size (batch, labels) for samples.
+    label_map : dict
+        labelled {str(int), string} key, value pairs.
+
     """
     tsne = TSNE(n_components=2, random_state=0)
-    x_transform = tsne.fit_transform(train_x)
+    x_transform = tsne.fit_transform(input_data)
     _plot_reduction(
         x_transform,
-        train_y,
+        targets,
         label_map=label_map,
         title='t-SNE Visualization')
 
-def _plot_reduction(x_transform, train_y, label_map, title='Dim Reduction'):
-    y_unique = np.unique(train_y)
+
+def _plot_reduction(x_transform, targets, label_map, title):
+    """Once PCA and t-SNE has been calculated, this is used to plot."""
+    y_unique = np.unique(targets)
     if label_map is None:
         label_map = {str(i): str(i) for i in y_unique}
     elif not isinstance(label_map, dict):
@@ -134,8 +146,8 @@ def _plot_reduction(x_transform, train_y, label_map, title='Dim Reduction'):
     colours = np.array(sns.color_palette("hls", len(y_unique)))
     plt.figure()
     for index, cl in enumerate(y_unique):
-        plt.scatter(x=x_transform[train_y == cl, 0],
-                    y=x_transform[train_y == cl, 1],
+        plt.scatter(x=x_transform[targets == cl, 0],
+                    y=x_transform[targets == cl, 1],
                     s=100,
                     c=colours[index],
                     alpha=0.5,
@@ -148,105 +160,176 @@ def _plot_reduction(x_transform, train_y, label_map, title='Dim Reduction'):
     plt.title(title)
     plt.show(False)
 
+
+def display_confusion_matrix(cm, class_list=None):
+    """
+    Print and plot the confusion matrix.
+
+    inspired from: https://github.com/zaidalyafeai/Machine-Learning
+
+    Parameters
+    ----------
+    cm : numpy.ndarray
+        2D confustion_matrix obtained using utils.get_confusion_matrix
+    class_list : list
+        Actual class labels (e.g.: MNIST - [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    """
+    if class_list is None:
+        class_list = list(range(cm.shape[0]))
+    if not isinstance(class_list, list):
+        raise ValueError("class_list must be of type list.")
+    plt.figure()
+    plt.imshow(cm, interpolation='nearest', cmap='Blues', origin='lower')
+    plt.title('Confusion matrix')
+    plt.colorbar()
+    tick_marks = np.arange(len(class_list))
+    plt.xticks(tick_marks, class_list, rotation=45)
+    plt.yticks(tick_marks, class_list)
+    # Plot number overlay
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, format(cm[i, j], 'd'),
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
+    # Plot labels
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    plt.show(False)
+
+
+def compute_saliency_map(network, input_data, targets):
+    """
+    Return the saliency map using the guided backpropagation method [1].
+
+    [1]: Springgenberg, J.T., Dosovitskiy, A., Brox, T., Riedmiller, M. (2015).
+         Striving for Simplicity: The All Convolutional Net. ICLR 2015
+         (https://arxiv.org/pdf/1412.6806.pdf)
+
+    Parameters
+    ----------
+    network : BaseNetwork
+        A network to get saliency maps on.
+    input_data : numpy.ndarray
+        Input array of shape (batch, channel, width, height) or
+        (batch, channel, width, height, depth).
+    targets : numpy.ndarray
+        1D array with class targets of size [batch].
+
+    Returns
+    -------
+    saliency_map : numpy.ndarray
+        Top layer gradients of the same shape as input data.
+
+    """
+    guided_backprop = GuidedBackprop(network)
+    saliency_map = guided_backprop.generate_gradients(input_data, targets)
+    return saliency_map
+
+
 def display_saliency_overlay(image, saliency_map, shape=(28, 28)):
     """
     Plot overlay saliency map over image.
 
-    Args:
-        image: numpy array (1d vector) for single image
-        saliency_map: numpy array (1d vector) for image
-        shape: the dimensions of the image. defaults to mnist.
+    Parameters
+    ----------
+    image : numpy.ndarray
+        (1D, 2D, 3D) for single image or linear output.
+    saliency_map: numpy.ndarray
+        (1D, 2D, 3D) for single image or linear output.
+    shape : tuple, list
+        The dimensions of the image. Defaults to mnist.
+
     """
-    if len(image.shape) == 3 or len(saliency_map.shape) == 3:
-        image = image[0]
-        saliency_map = saliency_map[0]
-    elif len(image.shape) == 1 or len(saliency_map.shape) == 1:
+    # Handle different colour channels and shapes for image input
+    if len(image.shape) == 3:
+        if image.shape[0] == 1:
+            # For 1 colour channel, remove it
+            image = image[0]
+        elif image.shape[0] == 3 or image.shape[0] == 4:
+            # For 3 or 4 colour channels, move to end for plotting
+            image = np.moveaxis(image, 0, -1)
+        else:
+            raise ValueError("Invalid number of colour channels in input.")
+    elif len(image.shape) == 1:
         image = np.reshape(image, shape)
+
+    # Handle different colour channels and shapes for saliency map
+    if len(saliency_map.shape) == 3:
+        if saliency_map.shape[0] == 1:
+            # For 1 colour channel, remove it
+            saliency_map = saliency_map[0]
+        elif saliency_map.shape[0] == 3 or saliency_map.shape[0] == 4:
+            # For 3 or 4 colour channels, move to end for plotting
+            saliency_map = np.moveaxis(saliency_map, 0, -1)
+        else:
+            raise ValueError("Invalid number of channels in saliency map.")
+    elif len(saliency_map.shape) == 1:
         saliency_map = np.reshape(saliency_map, shape)
 
     fig = plt.figure()
+    fig.suptitle("Saliency Map")
+    # Plot original image
     fig.add_subplot(1, 2, 1)
     plt.imshow(image, cmap='gray')
+    # Plot original with saliency overlay
     fig.add_subplot(1, 2, 2)
     plt.imshow(image, cmap='binary')
-    plt.imshow(abs(saliency_map), cmap='hot_r', alpha=0.7)
+    # Optional: get the absolute values of the saliency map here
+    plt.imshow(saliency_map, cmap='Blues', alpha=0.7)
     plt.colorbar()
     plt.show(False)
 
-def compute_saliency_map(model, input_x, input_y):
-    
-    if not isinstance(input_x, Variable):
-        input_x = Variable(input_x, requires_grad=True)
-    elif not input_x.requires_grad:
-        input_x.requires_grad = True
 
-    # Freeze params, no need to update weights
-    for p in model.parameters():
-        p.requires_grad = False
+def display_receptive_fields(network, top_k=5):
+    """
+    Display receptive fields of layers from a network [1].
 
-    # forward pass
-    try:
-        scores = model(input_x)
-    except RuntimeError:
-        model = model.cuda()
-        scores = model(input_x.cuda())
+    [1]: Luo, W., Li, Y., Urtason, R., Zemel, R. (2016).
+         Understanding the Effective Receptive Field in Deep
+         Convolutional Neural Networks. Advances in Neural Information
+         Processing Systems, 29 (NIPS 2016)
 
-    scores = scores.gather(1, input_y.view(-1, 1)).squeeze()
+    network : BaseNetwork
+        Network to get receptive fields of.
+    top_k : int
+        To return the most and least k important features from field
 
-    # backward pass
-    scores.backward(torch.ones(scores.shape))
+    Returns
+    -------
+    k_features: dict
+        A dict of the top k and bottom k important features.
 
-    sal_map = input_x.grad.data
-    sal_map = sal_map.abs()
-    sal_map, _ = torch.max(sal_map, dim = 1) # get max abs from all (3) channels 
+    """
+    if type(network).__name__ == "ConvNet":
+        raise NotImplementedError
+    elif '_input_network' in network._modules:
+        if type(network._modules['_input_network']).__name__ == "ConvNet":
+            raise NotImplementedError
 
-    return sal_map
-
-# def display_receptive_fields(network, layer_list=None, top_k=5):
-#     """
-#     Display receptive fields of layers from a network [1].
-#
-#     [1]: Luo, W., Li, Y., Urtason, R., Zemel, R. (2016).
-#          Understanding the Effective Receptive Field in Deep
-#          Convolutional Neural Networks. Advances in Neural Information
-#          Processing Systems, 29 (NIPS 2016)
-#
-#
-#     Args:
-#         network: Network object
-#         layer: list of layer indices to get fields from
-#         top_k: most and least k important features from field
-#
-#     Returns a dict of the top k and bottom k important features.
-#     """
-#     if layer_list is None:
-#         layer_list = range(len(network.layers))
-#     if not isinstance(layer_list, list):
-#         raise ValueError('layer_list must be a list of int')
-#     layers = []
-#     # Filter out layers with no weights. e.g. input, dropout
-#     for index in layer_list:
-#         try:
-#             network.layers[index].W
-#         except:
-#             print ('Skipping layer: {}'.format(network.layers[index].name))
-#             continue
-#         else:
-#             layers.append(network.layers[index])
-#     # Get fields for filtered layers
-#     feature_importance = {}
-#     fig = plt.figure()
-#     for i, l in enumerate(layers):
-#         raw_field = l.W.container.storage[0]
-#         field = np.average(raw_field, axis=1)  # average all outgoing
-#         field_shape = [int(sqrt(field.shape[0]))] * 2
-#         fig.add_subplot(floor(sqrt(len(layers))),
-#                         ceil(sqrt(len(layers))),
-#                         i + 1)
-#         feats = get_notable_indices(abs(field), top_k=top_k)
-#         feature_importance.update({'{}'.format(l.name): feats})
-#         plt.title(l.name)
-#         plt.imshow(np.reshape(abs(field), field_shape), cmap='hot_r')
-#         plt.colorbar()
-#     plt.show(False)
-#     return feature_importance
+    feature_importance = {}
+    fig = plt.figure()
+    fig.suptitle("Feature importance")
+    num_layers = len(network._modules['network'])
+    for i, layer in enumerate(network._modules['network']):
+        raw_field = layer.kernel._parameters['weight'].detach().numpy()
+        field = np.average(raw_field, axis=0)  # average all outgoing
+        field_shape = [
+            floor(sqrt(field.shape[0])),
+            ceil(sqrt(field.shape[0]))
+            ]
+        fig.add_subplot(
+            floor(sqrt(num_layers)),
+            ceil(sqrt(num_layers)),
+            i + 1)
+        field = abs(field)
+        feats = get_notable_indices(field, top_k=top_k)
+        unit_type = type(layer).__name__
+        layer_name = '{}_{}'.format(unit_type, i)
+        feature_importance.update({layer_name: feats})
+        plt.title(layer_name)
+        plt.imshow(np.resize(field, field_shape), cmap='Blues')
+        plt.colorbar()
+    plt.show(False)
+    return feature_importance

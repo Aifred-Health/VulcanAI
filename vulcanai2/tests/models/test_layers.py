@@ -29,13 +29,14 @@ class TestConvUnit:
         return ConvUnit(
             conv_dim=2,
             in_channels=10,
-            out_channels=10
+            out_channels=10,
+            kernel_size=(5,5)
         )
     
     def test_forward(self, conv_unit):
         """Confirm size is expected after forward."""
         test_input = torch.ones([1, conv_unit.in_channels, 28, 28])
         output = conv_unit.forward(test_input)
-        # Get's padded by 2 in every dim by default
-        assert output.size() == torch.ones([1, conv_unit.out_channels, 30, 30]).size()
+        # No padding with 2 5x5 kernels leads from 28x28 -> 24x24
+        assert output.size() == torch.ones([1, conv_unit.out_channels, 24, 24]).size()
 
