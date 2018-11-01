@@ -642,13 +642,13 @@ class BaseNetwork(nn.Module):
 
         Parameters
         ----------
-        ave_path : str
+        save_path : str
             The save directory (not a file)
 
         Returns
         -------
         save_path : str
-            The save path.
+            The save path where you'll find the model directly.
 
         """
         if not save_path:
