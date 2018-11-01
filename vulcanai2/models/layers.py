@@ -243,7 +243,7 @@ class ConvUnit(BaseUnit):
                     '_dropout', nn.AlphaDropout(self.dropout))
             else:
                 self.add_module(
-                    '_dropout', nn.Dropout(self.dropout))
+                    '_dropout', self.dropout_layer(self.dropout))
 
     def _init_layers(self):
         if self.conv_dim == 1:
@@ -251,21 +251,25 @@ class ConvUnit(BaseUnit):
             self.batch_norm = nn.BatchNorm1d
             self.instance_norm = nn.InstanceNorm1d
             self.pool_layer = nn.MaxPool1d
+            self.dropout_layer = nn.Dropout
         elif self.conv_dim == 2:
             self.conv_layer = nn.Conv2d
             self.batch_norm = nn.BatchNorm2d
             self.instance_norm = nn.InstanceNorm2d
             self.pool_layer = nn.MaxPool2d
+            self.dropout_layer = nn.Dropout2d
         elif self.conv_dim == 3:
             self.conv_layer = nn.Conv3d
             self.batch_norm = nn.BatchNorm3d
             self.instance_norm = nn.InstanceNorm3d
             self.pool_layer = nn.MaxPool3d
+            self.dropout_layer = nn.Dropout3d
         else:
             self.conv_layer = None
             self.batch_norm = None
             self.instance_norm = None
             self.pool_layer = None
+            self.dropout_layer = None
             raise ValueError(
                 "Convolution is only supported for"
                 " one of the first three dimensions.")
