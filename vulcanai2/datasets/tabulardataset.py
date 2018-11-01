@@ -2,6 +2,7 @@
 """
 This file defines the TabularDataset Class
 """
+import torch
 from torch.utils.data import Dataset
 import numpy as np
 import pandas as pd
@@ -56,8 +57,11 @@ class TabularDataset(Dataset):
         """
         # Where df.drop is used to access the dataframe without the label column, iloc gets the row, then access values
         # and convert
+
         xs = self.df.drop(self.labelColumn, axis=1).iloc[[2]].values.tolist()[0]
-        y = self.df[[self.labelColumn]].iloc[[idx]].values.tolist()[0]
+        xs = torch.tensor(xs, dtype=torch.float)
+        y = self.df[[self.labelColumn]].iloc[[idx]].values.tolist()[0][0]
+        y = torch.tensor(y)
         return xs, y
 
     def save_dataframe(self, file_path):
