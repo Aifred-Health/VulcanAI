@@ -96,26 +96,17 @@ class MultiDataset(Dataset):
         input_data_items = []
         target_item = None
 
-        for t in self._datasets:
-            if isinstance(t, MultiDataset):
-                # import pudb; pu.db
-                input_data_items.append(t.__getitem__(idx)[0])
-                try:
-                    target_item = t.__getitem__(idx)[1]
-                except IndexError:
-                    # Targets don't exist
-                    pass
-            # Extract input data
-            else:
-                if t[1]: #TODO: rename these
-                    ds = t[0]
-                    # Assumes input_data is stored in the first slot of tuple.
-                    input_data_items.append(ds.__getitem__(idx)[0])
-                # Extract target data
-                if t[2]:
-                    ds = t[0]
-                    # Assumes target is stored in the second slot of tuple.
-                    target_item = ds.__getitem__(idx)[1] #technically would re-write if they had 2 targets...
+        for tup in self._datasets:
+
+            ds = tup[0]
+            include_data = tup[1]
+            include_target = tup[2]
+
+            if include_data:
+                input_data_items.append(ds.__getitem__(idx)[0])
+
+            if include_target:
+                target_item = ds.__getitem__(idx)[1] #technically will overwrite if you have two targets..
 
         values = input_data_items, target_item
         return values
