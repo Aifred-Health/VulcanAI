@@ -150,11 +150,9 @@ class ConvNet(BaseNetwork):
             kwargs['activation'])
 
         if self._num_classes:
-            # TODO: convert to list
-            conv_flat_dim = self.get_flattened_size()
-            self.out_dim = self._num_classes
-            self._create_classification_layer(
-                conv_flat_dim, kwargs['pred_activation'])
+            self._add_classification_layer(
+                dim=self.get_flattened_size(),
+                pred_activation=kwargs['pred_activation'])
 
     def _merge_input_network_outputs(self, tensors):
         """Calculate converged in_dim for the MultiInput ConvNet."""
@@ -281,7 +279,7 @@ class ConvNet(BaseNetwork):
         conv_network = nn.Sequential(conv_layers)
         return conv_network
 
-    def _create_classification_layer(self, dim, pred_activation):
+    def _add_classification_layer(self, dim, pred_activation):
         self.network.add_module(
             'flatten', FlattenUnit())
         self.network.add_module(

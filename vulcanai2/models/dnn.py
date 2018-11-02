@@ -140,12 +140,11 @@ class DenseNet(BaseNetwork):
             dense_hid_layers, kwargs['activation'])
 
         if self._num_classes:
-            self.out_dim = self._num_classes
-            self._create_classification_layer(
-                dense_hid_layers[-1]['out_features'],
-                kwargs['pred_activation'])
+            self._add_classification_layer(
+                dim=dense_hid_layers[-1]['out_features'],
+                pred_activation=kwargs['pred_activation'])
 
-    def _create_classification_layer(self, dim, pred_activation):
+    def _add_classification_layer(self, dim, pred_activation):
         self.network.add_module(
             'flatten', FlattenUnit())
         self.network.add_module(
