@@ -67,7 +67,14 @@ class BaseUnit(nn.Sequential):
 
 
 class FlattenUnit(BaseUnit):
-    """Layer to reshape the input."""
+    """
+    Layer to flatten the input.
+
+    Returns
+    -------
+    flatten_unit : 
+        A flatten layer.
+    """
 
     def __init__(self):
         """Initialize flatten layer."""

@@ -30,8 +30,6 @@ transform = transforms.Compose([transforms.ToTensor(),
                                 transforms.Normalize((0.1307,), (0.3081,))])
 
 
-#data_path = r'C:\WORK\Aifred\Vulcan2\master\Vulcan2\data'
-#data_path = r'/Users/robertfratila/Code/Aifred_Health/Vulcan2/data'
 data_path = "../data"
 train_dataset = datasets.FashionData(root=data_path,
                             train=True,
@@ -56,7 +54,7 @@ val_loader = DataLoader(dataset=val_dataset,
                                           shuffle=False)
 
 
-conv_net_config_small = {
+conv_1D_config = {
     'conv_units': [
                     dict(
                         in_channels=1,
@@ -96,7 +94,7 @@ conv_net_config_small = {
                         )
     ],
 }
-conv_net_config_big = {
+conv_2D_config = {
     'conv_units': [
                     dict(
                         in_channels=1,
@@ -136,7 +134,7 @@ conv_net_config_big = {
                         )
     ],
 }
-conv_net_config_very_big = {
+conv_3D_config = {
     'conv_units': [
                     dict(
                         in_channels=1,
@@ -177,7 +175,7 @@ conv_net_config_very_big = {
     ],
 }
 
-conv_net_config_very_very_big = {
+multi_input_conv_3D_config = {
     'conv_units': [
                     dict(
                         in_channels=1,
@@ -193,7 +191,7 @@ conv_net_config_very_very_big = {
                     ),
     ],
 }
-dense_net_config = {
+dense_config = {
     'dense_units': [100, 50],
     'initializer': None,
     'bias_init': None,
@@ -201,153 +199,61 @@ dense_net_config = {
     'dropout': 0.5,  # Single value or List
 }
 
-conv_small = ConvNet(
-    name='conv_net_small',
+conv_1D = ConvNet(
+    name='conv_1D',
     input_networks=None,
     in_dim=(1, 28),
-    config=conv_net_config_small,
+    config=conv_1D_config,
 )
-conv_big = ConvNet(
-    name='conv_net_big',
+conv_2D = ConvNet(
+    name='conv_2D',
     input_networks=None,
     in_dim=(1, 28, 28),
-    config=conv_net_config_big,
-    # num_classes=10
+    config=conv_2D_config
 )
-conv_very_big = ConvNet(
-    name='conv_net_very_big',
+conv_3D = ConvNet(
+    name='conv_3D',
     input_networks=None,
     in_dim=(1, 28, 28, 28),
-    config=conv_net_config_very_big,
+    config=conv_3D_config,
 )
 
 dense_model = DenseNet(
-    name='conv_net_test',
-    input_networks=[conv_big, conv_small],
-    in_dim=150,
-    config=dense_net_config,
-    # num_classes=10
+    name='dense_model',
+    input_networks=[conv_2D, conv_1D],
+    config=dense_config
 )
 
-# dense_output = dense_model(torch.ones([5,*conv_big.in_dim]))
+multi_input_conv_3D = ConvNet(
+    name='multi_input_conv_3D',
+    input_networks=[conv_1D, dense_model, conv_2D, conv_3D],
+    config=multi_input_conv_3D_config,
+    num_classes=10
+)
 
-x = train_loader.dataset.train_data[:5].float().unsqueeze(dim=1) #np.expand_dims(train_loader.dataset[:5][0], axis=0)
-y = train_loader.dataset.train_labels[:5]
 
-# x = [
-#         torch.ones([5,*conv_big.in_dim]),
-#         torch.ones([5,*conv_small.in_dim])]
 multi_dense = [
     (val_loader.dataset, True, False),
-    (TensorDataset(torch.ones([10000,*conv_small.in_dim])), True, False)
+    (TensorDataset(torch.ones([10000, *conv_1D.in_dim])), True, False)
 ]
 
 m = MultiDataset(multi_dense)
 
 x = [
-        (TensorDataset(torch.ones([10000,*conv_small.in_dim])), True, False),
+        (TensorDataset(torch.ones([10000, *conv_1D.in_dim])), True, False),
         m,
         (val_loader.dataset, True, True),
-        (TensorDataset(torch.ones([10000,*conv_very_big.in_dim])), True, False),
+        (TensorDataset(torch.ones([10000, *conv_3D.in_dim])), True, False),
     ]
 
-multi = DataLoader(MultiDataset(x), batch_size=100)
+multi_dataset = MultiDataset(x)
 
-# sal_map = compute_saliency_map(model1, x, y)
+train_multi = torch.utils.data.Subset(
+    multi_dataset, range(len(multi_dataset)//2))
+val_multi = torch.utils.data.Subset(
+    multi_dataset, range(len(multi_dataset)//2, len(multi_dataset)))
 
-# display_saliency_overlay(train_loader.dataset.train_data[0], sal_map[0][0])
-# import pudb; pu.db
-model1 = ConvNet(
-    name='conv_net_test_multi_input',
-    input_networks=[conv_small, dense_model, conv_big, conv_very_big],
-    #in_dim=[conv_small.out_dim, dense_model.out_dim, conv_big.out_dim, conv_very_big.out_dim],
-    config=conv_net_config_very_very_big,
-    num_classes=10
-)
-# a = model1.forward_pass(multi)
-model1.fit(multi, multi, 30, plot=True)
+train_loader_multi = DataLoader(train_multi, batch_size=100)
+val_loader_multi = DataLoader(val_multi, batch_size=100)
 
-# snap = SnapshotNet('snap', model1)
-# import pudb; pu.db
-# snap.fit(multi, multi, 2)
-# import pudb; pu.db
-# snap = SnapshotNet("snap", dense_model, 3)
-#conv_big.fit(train_loader, val_loader, 3, plot=True)
-# snap.save_model()
-#import pudb; pu.db
-#model1.save_model()
-
-# print(model1.get_output_shapes())
-# d = DenseNet(
-#             name='Test_DenseNet_class',
-#             in_dim=(200),
-#             config={
-#                 'dense_units': [100],
-#                 'dropouts': [0.3],
-#             },
-#             num_classes=3
-#         )
-# rf = display_receptive_fields(d)
-
-# test_input_1B = np.ones([1, d.in_dim], dtype=np.float32)
-# sal_map_1B = compute_saliency_map(
-#             d,
-#             test_input_1B, torch.tensor([2]))
-
-
-#model1.fit(train_loader, val_loader, 10)
-
-
-model1.fit(train_loader, val_loader, 2, plot=False)
-
-# test_input_1B = np.ones([1, d.in_dim], dtype=np.float32)
-# sal_map_1B = compute_saliency_map(
-#             d,
-#             test_input_1B, torch.tensor([2]))
-
-
-#model1.fit(train_loader, val_loader, 10)
-model1.fit(train_loader, val_loader, 2, plot=False)
-
-#model1.save_model()
-
-#model2 = models.DenseNet.load_ensemble("/home/caitrin/Vulcan2/Vulcan2/examples/2018-10-04_19:12:36/dense_net_test")
-
-#model2.fit(train_loader, val_loader, 4, plot=True)
-
-# To test saliency map generation
-# model1.run_test(val_loader, plot=True)
-
-# f_pass = model1.forward_pass(val_loader, convert_to_class=True)
-
-# cm = get_confusion_matrix(
-#     model1.forward_pass(val_loader, convert_to_class=True),
-#     val_loader.dataset.test_labels)
-# display_confusion_matrix(cm, ["T-shirt/top","Trouser","Pullover","Dress","Coat","Sandal","Shirt","Sneaker","Bag","Ankle"])
-
-x = train_loader.dataset.train_data[:5].float().unsqueeze(dim=1) #np.expand_dims(train_loader.dataset[:5][0], axis=0)
-y = train_loader.dataset.train_labels[:5]
-sal_map = compute_saliency_map(dense_model, x, y)
-display_saliency_overlay(train_loader.dataset.train_data[0], sal_map[0])
-
-se = SnapshotNet("snap", dense_model, 3)
-
-# Does it make more sense to pass the total # of epochs
-# or just how many each model should train for?
-
-snap.fit(train_loader, val_loader, 3, plot=True)
-snap.run_test(val_loader, plot=True)
-
-snap.save_model()
-
-
-# se = SnapshotNet.load_model('saved_models/snap_2018-10-17_00-06-17')
-preds = snap.forward_pass(val_loader, convert_to_class=True)
-
-
-# TODO: need to revisit this to be able to plot after training, interactive plotting is messing up
-#plotters.visualization.display_record(record=model1.record, interactive=False)
-#plt.show()
-
-#model1.print_model_structure()
-
+multi_input_conv_3D.fit(train_loader_multi, val_loader_multi, 3, plot=True)

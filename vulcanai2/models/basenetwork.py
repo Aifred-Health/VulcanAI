@@ -183,6 +183,15 @@ class BaseNetwork(nn.Module):
             return network_output
 
     def _get_out_dim(self):
+        """
+        Return the shape of the output of network by performing 
+        a single forward pass using built-up data.
+
+        Returns
+        -------
+        shape : tuple
+            The output shape of the network.
+        """
         if self.network is not None:
             out = self.network(torch.ones([1, *self.in_dim]))
             if self._num_classes:
@@ -633,13 +642,13 @@ class BaseNetwork(nn.Module):
 
         Parameters
         ----------
-        ave_path : str
+        save_path : str
             The save directory (not a file)
 
         Returns
         -------
         save_path : str
-            The save path.
+            The save path where you'll find the model directly.
 
         """
         if not save_path:
