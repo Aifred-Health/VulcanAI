@@ -84,16 +84,12 @@ class TestConvNet:
         cnn_class.freeze(apply_inputs=False)
         for params in cnn_class.network.parameters():
             assert params.requires_grad is False
-        for params in cnn_class.network_tail.parameters():
-            assert params.requires_grad is False
 
     def test_unfreeze_class(self, cnn_class):
         """Test class network unfreezing."""
         cnn_class.freeze(apply_inputs=False)
         cnn_class.unfreeze(apply_inputs=False)
         for params in cnn_class.network.parameters():
-            assert params.requires_grad is True
-        for params in cnn_class.network_tail.parameters():
             assert params.requires_grad is True
 
     def test_freeze_noclass(self, cnn_noclass):

@@ -12,6 +12,8 @@ import logging
 from inspect import getfullargspec
 from math import ceil, floor
 
+from collections import OrderedDict
+
 logger = logging.getLogger(__name__)
 
 
@@ -271,20 +273,22 @@ class ConvNet(BaseNetwork):
 
         """
         conv_hid_layers[0]['in_channels'] = self.in_dim[0]
-        conv_layers = []
-        for conv_layer_config in conv_hid_layers:
+        conv_layers = OrderedDict()
+        for idx, conv_layer_config in enumerate(conv_hid_layers):
             conv_layer_config['activation'] = activation
-            conv_layers.append(ConvUnit(**conv_layer_config))
-        conv_network = nn.Sequential(*conv_layers)
+            layer_name = 'conv_{}'.format(idx)
+            conv_layers[layer_name] = ConvUnit(**conv_layer_config)
+        conv_network = nn.Sequential(conv_layers)
         return conv_network
 
     def _create_classification_layer(self, dim, pred_activation):
-        self.network_tail = nn.Sequential(
-                FlattenUnit(),
-                DenseUnit(
-                    in_features=dim,
-                    out_features=self._num_classes,
-                    activation=pred_activation))
+        self.network.add_module(
+            'flatten', FlattenUnit())
+        self.network.add_module(
+            'classify', DenseUnit(
+                in_features=dim,
+                out_features=self._num_classes,
+                activation=pred_activation))
 
     def get_flattened_size(self):
         """

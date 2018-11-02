@@ -176,17 +176,11 @@ class BaseNetwork(nn.Module):
         else:
             output = torch.cat(inputs, dim=1)
 
-        network_output = self.network(output)
-
-        if self._num_classes:
-            class_output = self.network_tail(network_output)
-            return class_output
-        else:
-            return network_output
+        return self.network(output)
 
     def _get_out_dim(self):
         """
-        Return the shape of the output of network by performing 
+        Return the shape of the output of network by performing
         a single forward pass using built-up data.
 
         Returns
@@ -196,8 +190,6 @@ class BaseNetwork(nn.Module):
         """
         if self.network is not None:
             out = self.network(torch.ones([1, *self.in_dim]))
-            if self._num_classes:
-                out = self.network_tail(out)
             return tuple(out.shape[1:])
         else:
             return None
@@ -361,12 +353,6 @@ class BaseNetwork(nn.Module):
             # If freeze is True, set requires_grad to False
             # If freeze is False, set requires_grad to True
             params.requires_grad = not freeze
-        # Freeze prediction layer parameters
-        if 'network_tail' in self._modules:
-            for params in self.network_tail.parameters():
-                # If freeze is True, set requires_grad to False
-                # If freeze is False, set requires_grad to True
-                params.requires_grad = not freeze
         # Recursively toggle freeze on
         if apply_inputs and self.input_networks is not None:
             for network in self.input_networks:
@@ -495,7 +481,7 @@ class BaseNetwork(nn.Module):
                 self.cuda()
 
             # Forward + Backward + Optimize
-            # import pudb; pu.db
+
             predictions = self(data)
 
             train_loss = self.criterion(predictions, targets)

@@ -9,6 +9,8 @@ from .layers import DenseUnit, FlattenUnit
 import logging
 from inspect import getfullargspec
 
+from collections import OrderedDict
+
 logger = logging.getLogger(__name__)
 
 
@@ -144,12 +146,13 @@ class DenseNet(BaseNetwork):
                 kwargs['pred_activation'])
 
     def _create_classification_layer(self, dim, pred_activation):
-        self.network_tail = nn.Sequential(
-                FlattenUnit(),
-                DenseUnit(
-                    in_features=dim,
-                    out_features=self._num_classes,
-                    activation=pred_activation))
+        self.network.add_module(
+            'flatten', FlattenUnit())
+        self.network.add_module(
+            'classify', DenseUnit(
+                in_features=dim,
+                out_features=self._num_classes,
+                activation=pred_activation))
 
     def _merge_input_network_outputs(self, tensors):
         output_tensors = [FlattenUnit()(t) for t in tensors]
@@ -174,12 +177,12 @@ class DenseNet(BaseNetwork):
         """
         # Specify incoming feature size for the first dense hidden layer
         dense_hid_layers[0]['in_features'] = self.in_dim[0]
-
-        dense_layers = []
-        for dense_layer_config in dense_hid_layers:
+        dense_layers = OrderedDict()
+        for idx, dense_layer_config in enumerate(dense_hid_layers):
             dense_layer_config['activation'] = activation
-            dense_layers.append(DenseUnit(**dense_layer_config))
-        dense_network = nn.Sequential(*dense_layers)
+            layer_name = 'dense_{}'.format(idx)
+            dense_layers[layer_name] = DenseUnit(**dense_layer_config)
+        dense_network = nn.Sequential(dense_layers)
         return dense_network
 
     def __str__(self):
