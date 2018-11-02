@@ -66,6 +66,25 @@ class BaseUnit(nn.Sequential):
             nn.init.constant_(self._kernel.bias, self.bias_init)
 
 
+class FlattenUnit(BaseUnit):
+    """
+    Layer to flatten the input.
+
+    Returns
+    -------
+    flatten_unit : 
+        A flatten layer.
+    """
+
+    def __init__(self):
+        """Initialize flatten layer."""
+        super(FlattenUnit, self).__init__()
+
+    def forward(self, x):
+        """Maintain batch size but flatten all remaining dimensions."""
+        return x.view(x.shape[0], -1)
+
+
 class DenseUnit(BaseUnit):
     """
     Define the DenseUnit object.
@@ -231,7 +250,7 @@ class ConvUnit(BaseUnit):
                     '_dropout', nn.AlphaDropout(self.dropout))
             else:
                 self.add_module(
-                    '_dropout', nn.Dropout(self.dropout))
+                    '_dropout', self.dropout_layer(self.dropout))
 
     def _init_layers(self):
         if self.conv_dim == 1:
@@ -239,21 +258,25 @@ class ConvUnit(BaseUnit):
             self.batch_norm = nn.BatchNorm1d
             self.instance_norm = nn.InstanceNorm1d
             self.pool_layer = nn.MaxPool1d
+            self.dropout_layer = nn.Dropout
         elif self.conv_dim == 2:
             self.conv_layer = nn.Conv2d
             self.batch_norm = nn.BatchNorm2d
             self.instance_norm = nn.InstanceNorm2d
             self.pool_layer = nn.MaxPool2d
+            self.dropout_layer = nn.Dropout2d
         elif self.conv_dim == 3:
             self.conv_layer = nn.Conv3d
             self.batch_norm = nn.BatchNorm3d
             self.instance_norm = nn.InstanceNorm3d
             self.pool_layer = nn.MaxPool3d
+            self.dropout_layer = nn.Dropout3d
         else:
             self.conv_layer = None
             self.batch_norm = None
             self.instance_norm = None
             self.pool_layer = None
+            self.dropout_layer = None
             raise ValueError(
                 "Convolution is only supported for"
                 " one of the first three dimensions.")
@@ -287,16 +310,3 @@ class InputUnit(BaseUnit):
         else:
             output = self._kernel(input)
             return output
-
-
-class View(BaseUnit):
-    """Layer to reshape the input # TODO : Testing."""
-
-    def __init__(self, *shape):
-        """View defined."""
-        super(View, self).__init__()
-        self.shape = shape
-
-    def forward(self, input):
-        """Define forward for View."""
-        return input.view(*self.shape)
