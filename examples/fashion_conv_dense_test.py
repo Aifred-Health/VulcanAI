@@ -61,34 +61,19 @@ conv_1D_config = {
                         out_channels=16,
                         kernel_size=(5),
                         stride=2, # Makes a big difference in training speeds
-                        padding=0,
-                        initializer=None,
-                        bias_init=None, # None or value
-                        norm=None,
-                        pool_size=None,
                         dropout=0.1 # Float or None
                     ),
                     dict(
                         in_channels=16,
                         out_channels=32,
                         kernel_size=(5),
-                        stride=1,
                         padding=0,
-                        initializer=None,
-                        bias_init=None, # None or value
-                        norm=None,
-                        pool_size=None,
                         dropout=0.1 # Float or None
                     ),
                     dict(
                         in_channels=32,
                         out_channels=64,
                         kernel_size=(5),
-                        stride=1,
-                        padding=0,
-                        initializer=None,
-                        bias_init=None, # None or value
-                        norm=None,
                         pool_size=2,
                         dropout=0.1 # Float or None
                         )
@@ -101,34 +86,18 @@ conv_2D_config = {
                         out_channels=16,
                         kernel_size=(5, 5),
                         stride=2, # Makes a big difference in training speeds
-                        padding=0,
-                        initializer=None,
-                        bias_init=None, # None or value
-                        norm=None,
-                        pool_size=None,
                         dropout=0.1 # Float or None
                     ),
                     dict(
                         in_channels=16,
                         out_channels=32,
                         kernel_size=(5, 5),
-                        stride=1,
-                        padding=0,
-                        initializer=None,
-                        bias_init=None, # None or value
-                        norm=None,
-                        pool_size=None,
                         dropout=0.1 # Float or None
                     ),
                     dict(
                         in_channels=32,
                         out_channels=64,
                         kernel_size=(5, 5),
-                        stride=1,
-                        padding=0,
-                        initializer=None,
-                        bias_init=None, # None or value
-                        norm=None,
                         pool_size=2,
                         dropout=0.1 # Float or None
                         )
@@ -141,11 +110,6 @@ conv_3D_config = {
                         out_channels=16,
                         kernel_size=(5, 5, 5),
                         stride=2, # Makes a big difference in training speeds
-                        padding=0,
-                        initializer=None,
-                        bias_init=None, # None or value
-                        norm=None,
-                        pool_size=None,
                         dropout=0.1 # Float or None
                     ),
                     dict(
@@ -153,23 +117,12 @@ conv_3D_config = {
                         out_channels=16,
                         kernel_size=(5, 5, 5),
                         stride=1, # Makes a big difference in training speeds
-                        padding=0,
-                        initializer=None,
-                        bias_init=None, # None or value
-                        norm=None,
-                        pool_size=None,
                         dropout=0.1 # Float or None
                     ),
                     dict(
                         in_channels=16,
                         out_channels=64,
                         kernel_size=(5, 5, 5),
-                        stride=1, # Makes a big difference in training speeds
-                        padding=0,
-                        initializer=None,
-                        bias_init=None, # None or value
-                        norm=None,
-                        pool_size=None,
                         dropout=0.1 # Float or None
                     ),
     ],
@@ -182,11 +135,6 @@ multi_input_conv_3D_config = {
                         out_channels=16,
                         kernel_size=(3, 3, 3),
                         stride=2, # Makes a big difference in training speeds
-                        padding=0,
-                        initializer=None,
-                        bias_init=None, # None or value
-                        norm=None,
-                        pool_size=None,
                         dropout=0.1 # Float or None
                     ),
     ],
@@ -257,3 +205,6 @@ train_loader_multi = DataLoader(train_multi, batch_size=100)
 val_loader_multi = DataLoader(val_multi, batch_size=100)
 
 multi_input_conv_3D.fit(train_loader_multi, val_loader_multi, 3, plot=True)
+
+multi_input_conv_3D.run_test(val_loader_multi, plot=True)
+multi_input_conv_3D.save_model()
