@@ -15,7 +15,7 @@ class MultiDataset(Dataset):
 
     Parameters
     ----------
-    datasets : list of tuple(Dataset, use_data_boolean, use_target_boolean)
+    dataset_tuples : list tuple(Dataset, use_data_boolean, use_target_boolean)
         A list of tuples, wherein each tuple should have the Dataset in the
         zero index, a boolean of whether or not to include the input_data in
         the first index, and a boolean of whether or not to include the target
@@ -28,22 +28,20 @@ class MultiDataset(Dataset):
 
     """
 
-    # TODO: is datasets a reasonable name?
-    # TODO: would be better to make these namedtuples...
-    def __init__(self, datasets):
+    def __init__(self, dataset_tuples):
         """Initialize a dataset for multi input networks."""
         def get_total_targets(multi_datasets):
             num_targets = 0
-            for ds in multi_datasets:
-                if isinstance(ds, MultiDataset):
-                    num_targets += get_total_targets(ds._datasets)
+            for tup in multi_datasets:
+                if isinstance(tup, MultiDataset):
+                    num_targets += get_total_targets(tup._dataset_tuples)
                 else:
-                    num_targets += int(ds[2])
+                    num_targets += int(tup[2])
             return num_targets
 
-        self._datasets = datasets
+        self._dataset_tuples = dataset_tuples
         # must always have exactly one target.
-        total_num_targets = get_total_targets(self._datasets)
+        total_num_targets = get_total_targets(self._dataset_tuples)
         if total_num_targets > 1:
             raise ValueError(
                 "You may specify at most one target."
@@ -66,16 +64,16 @@ class MultiDataset(Dataset):
 
         def get_min_length(multi_datasets):
             min_length = float('inf')
-            for ds in multi_datasets:
-                if isinstance(ds, MultiDataset):
-                    length = get_min_length(ds._datasets)
+            for tup in multi_datasets:
+                if isinstance(tup, MultiDataset):
+                    length = get_min_length(tup._dataset_tuples)
                 else:
-                    length = len(ds[0])
+                    length = len(tup[0])
                 if length < min_length:
                     min_length = length
             return min_length
 
-        return get_min_length(self._datasets)
+        return get_min_length(self._dataset_tuples)
 
     def __getitem__(self, idx):
         """
@@ -96,9 +94,7 @@ class MultiDataset(Dataset):
         input_data_items = []
         target_item = None
 
-        #print(self._datasets)
-
-        for tup in self._datasets:
+        for tup in self._dataset_tuples:
 
             include_data = tup[1]
             include_target = tup[2]
@@ -112,8 +108,6 @@ class MultiDataset(Dataset):
                 input_data_items.append(ds.__getitem__(idx)[0])
 
             if include_target:
-                target_item = ds.__getitem__(idx)[1] #technically will overwrite if you have two targets..
+                target_item = ds.__getitem__(idx)[1]
 
-       # print(input_data_items, target_item)
-        values = input_data_items, target_item
-        return values
+        return input_data_items, target_item
