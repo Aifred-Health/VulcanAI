@@ -96,11 +96,17 @@ class MultiDataset(Dataset):
         input_data_items = []
         target_item = None
 
+        #print(self._datasets)
+
         for tup in self._datasets:
 
-            ds = tup[0]
             include_data = tup[1]
             include_target = tup[2]
+
+            if isinstance(tup, MultiDataset):
+                ds = tup
+            else:
+                ds = tup[0]
 
             if include_data:
                 input_data_items.append(ds.__getitem__(idx)[0])
@@ -108,5 +114,6 @@ class MultiDataset(Dataset):
             if include_target:
                 target_item = ds.__getitem__(idx)[1] #technically will overwrite if you have two targets..
 
+       # print(input_data_items, target_item)
         values = input_data_items, target_item
         return values
