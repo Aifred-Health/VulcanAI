@@ -88,13 +88,14 @@ class ConvNet(BaseNetwork):
     ----------
     name : str
         The name of the network. Used when saving the file.
-    dimensions : list of tuples
-        The dimensions of the network.
     config : dict
         The configuration of the network module, as a dict.
+    in_dim : tuple
+        The input dimensions of the network. Not required to specify when the
+        network has input_networks.
     save_path : str
         The name of the file to which you would like to save this network.
-    input_network : list of BaseNetwork
+    input_networks : list of BaseNetwork
         A network object provided as input.
     num_classes : int or None
         The number of classes to predict.
@@ -110,6 +111,11 @@ class ConvNet(BaseNetwork):
         So far just 'best_validation_error' is implemented.
     criter_spec : dict
         criterion specification with name and all its parameters.
+
+    Returns
+    -------
+    network : ConvNet
+        A network of type BaseNetwork.
 
     """
 
