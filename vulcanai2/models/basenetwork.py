@@ -23,6 +23,7 @@ import pickle
 import time
 from collections import OrderedDict as odict
 import numpy as np
+import math
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -116,10 +117,11 @@ class BaseNetwork(nn.Module):
         self._criter_spec = criter_spec
 
         if self._num_classes:
-            self.metrics = Metrics(self._num_classes)
+            self.metrics = Metrics()
 
         self.optim = None
         self.criterion = None
+
         self.epoch = 0
 
         self.record = dict(
@@ -420,7 +422,7 @@ class BaseNetwork(nn.Module):
                 fig_number = plt.gcf().number + 1 if plt.fignum_exists(1) else 1
                 plt.show()
 
-            for epoch in trange(0, epochs, desc='Epoch: ', ncols=80):
+            for epoch in trange(epochs, desc='Epoch: ', ncols=80):
 
                 train_loss, train_acc = self._train_epoch(train_loader,
                                                           retain_graph)
@@ -451,10 +453,10 @@ class BaseNetwork(nn.Module):
                     plt.ion()
                     plt.figure(fig_number)
                     display_record(record=self.record)
-
                 self.epoch += 1
 
         except KeyboardInterrupt:
+
             logger.warning(
                 "\n\n**********KeyboardInterrupt: "
                 "Training stopped prematurely.**********\n\n")
@@ -507,6 +509,7 @@ class BaseNetwork(nn.Module):
 
             if batch_idx % 10 == 0:
                 # Update tqdm bar
+
                 if ((batch_idx + 10) * batch_len) <= len(train_loader.dataset):
                     pbar.update(10 * batch_len)
                 else:
@@ -567,6 +570,7 @@ class BaseNetwork(nn.Module):
 
             if batch_idx % 10 == 0:
                 # Update tqdm bar
+
                 if ((batch_idx + 10) * batch_len) <= len(val_loader.dataset):
                     pbar.update(10 * batch_len)
                 else:
@@ -576,6 +580,7 @@ class BaseNetwork(nn.Module):
                                                                targets)
 
         pbar.close()
+
         validation_loss = val_loss_accumulator * \
             val_loader.batch_size / len(val_loader.dataset)
         validation_accuracy = val_accuracy_accumulator * \
@@ -590,6 +595,21 @@ class BaseNetwork(nn.Module):
             data_loader=data_loader,
             figure_path=figure_path,
             plot=plot)
+
+    def cross_validate(self, data_loader, k, epochs,
+                       average_results=True, retain_graph=None,
+                       valid_interv=4, plot=False, figure_path=None):
+        """Will conduct the test suite to determine model strength."""
+        return self.metrics.cross_validate(
+            network=self,
+            data_loader=data_loader,
+            k=k,
+            epochs=epochs,
+            average_results=average_results,
+            retain_graph=retain_graph,
+            valid_interv=valid_interv,
+            plot=plot,
+            figure_path=figure_path)  # TODO: deal with repeated default parameters
 
     # TODO: Instead of self.cpu(), use is_cuda to know if you can use gpu
     def forward_pass(self, data_loader, convert_to_class=False):

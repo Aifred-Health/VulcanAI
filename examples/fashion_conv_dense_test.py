@@ -22,6 +22,8 @@ import json
 from collections import OrderedDict as odict
 import matplotlib.pyplot as plt
 
+from vulcanai2.models.metrics import Metrics
+
 sys.path.append('../')
 normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
                                      std=[x/255.0 for x in [63.0, 62.1, 66.7]])
@@ -36,6 +38,8 @@ train_dataset = datasets.FashionData(root=data_path,
                             transform=transform,
                             download=True
                            )
+
+train_dataset = torch.utils.data.Subset(train_dataset, range(0,1000))
 
 val_dataset = datasets.FashionData(root=data_path,
                             train=False,

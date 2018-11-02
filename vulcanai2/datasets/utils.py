@@ -123,8 +123,6 @@ def check_split_ratio(split_ratio):
 #             return random.sample(data, len(data))
 
 
-# THIS IS FROM SNEHA  https://github.com/sneha-desai
-# TODO: replace with Joseph's version
 def stitch_datasets(df_list, merge_on_columns, index_list=None):
     """
     Args:
