@@ -12,7 +12,7 @@ from itertools import groupby
 
 logger = logging.getLogger(__name__)
 
-
+# TODO: give option to mirror train/target
 # TODO: add more logging statements as appropriate
 class TabularDataset(Dataset):
     """

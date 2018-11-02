@@ -14,7 +14,7 @@ class TestConvNet:
         """Create ConvNet with no prediction layer."""
         return ConvNet(
             name='Test_ConvNet_noclass',
-            dimensions=(1, 28, 28),
+            in_dim=(1, 28, 28),
             config={
                 'conv_units': [
                     {
@@ -38,7 +38,7 @@ class TestConvNet:
         """Create ConvNet with prediction layer."""
         return ConvNet(
             name='Test_ConvNet_class',
-            dimensions=(1, 28, 28),
+            in_dim=(1, 28, 28),
             config={
                 'conv_units': [
                     {

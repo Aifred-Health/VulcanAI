@@ -18,3 +18,4 @@ examples/saved_models
 *.network
 *.json
 *.zip
+*.cache

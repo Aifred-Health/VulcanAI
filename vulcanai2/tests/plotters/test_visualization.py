@@ -12,7 +12,7 @@ class TestVisualization:
         from vulcanai2.models.cnn import ConvNet
         return ConvNet(
             name='Test_ConvNet_class',
-            dimensions=(1, 28, 28),
+            in_dim=(1, 28, 28),
             config={
                 'conv_units': [
                     {
@@ -38,7 +38,7 @@ class TestVisualization:
         from vulcanai2.models.dnn import DenseNet
         return DenseNet(
             name='Test_DenseNet_class',
-            dimensions=(200),
+            in_dim=(200),
             config={
                 'dense_units': [100, 50],
                 'dropouts': 0.3,
@@ -60,12 +60,15 @@ class TestVisualization:
         sal_map_1B = compute_saliency_map(
             cnn_class,
             test_input_1B, torch.LongTensor([2]))
-        assert sal_map_1B.shape == test_input_1B.shape
+        for sal_map, test_input in zip(sal_map_1B, [test_input_1B]):
+            assert sal_map.shape == test_input.shape
+
         cnn_class.unfreeze(apply_inputs=False)
         sal_map_5B = compute_saliency_map(
             cnn_class, test_input_5B,
             torch.LongTensor([0, 2, 1, 1, 0]))
-        assert sal_map_5B.shape == test_input_5B.shape
+        for sal_map, test_input in zip(sal_map_5B, [test_input_5B]):
+            assert sal_map.shape == test_input.shape
 
         # Check that all gradients are not 0
         assert ~np.all(sal_map_5B == 0.)
@@ -78,8 +81,8 @@ class TestVisualization:
         Confirm hooks are removed, and gradient shape is the same as input.
         For DenseNets.
         """
-        test_input_1B = np.ones([1, dnn_class.in_dim], dtype=np.float32)
-        test_input_5B = np.ones([5, dnn_class.in_dim], dtype=np.float32)
+        test_input_1B = np.ones([1, *dnn_class.in_dim], dtype=np.float32)
+        test_input_5B = np.ones([5, *dnn_class.in_dim], dtype=np.float32)
 
         model_copy = deepcopy(dnn_class)
         # Test shape conservation
@@ -87,12 +90,15 @@ class TestVisualization:
         sal_map_1B = compute_saliency_map(
             dnn_class,
             test_input_1B, torch.LongTensor([2]))
-        assert sal_map_1B.shape == test_input_1B.shape
+        for sal_map, test_input in zip(sal_map_1B, [test_input_1B]):
+            assert sal_map.shape == test_input.shape
+
         dnn_class.unfreeze(apply_inputs=False)
         sal_map_5B = compute_saliency_map(
             dnn_class, test_input_5B,
             torch.LongTensor([0, 2, 1, 1, 0]))
-        assert sal_map_5B.shape == test_input_5B.shape
+        for sal_map, test_input in zip(sal_map_5B, [test_input_5B]):
+            assert sal_map.shape == test_input.shape
 
         # Check that all gradients are not 0
         assert ~np.all(sal_map_5B == 0.)

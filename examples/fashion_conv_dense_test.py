@@ -2,8 +2,7 @@ import sys
 sys.path.append('../')
 from vulcanai2 import models, datasets, plotters
 from vulcanai2.models import ConvNet, DenseNet, SnapshotNet
-# from vulcanai2.models.cnn import ConvNet
-# from vulcanai2.models.dnn import DenseNet
+from vulcanai2.datasets import MultiDataset
 from vulcanai2.plotters.visualization import (compute_saliency_map, 
                                               display_saliency_overlay,
                                               display_receptive_fields,
@@ -20,7 +19,7 @@ from torch.utils.data import DataLoader, TensorDataset
 
 import numpy as np
 import json
-from collections import OrderedDict
+from collections import OrderedDict as odict
 import matplotlib.pyplot as plt
 
 from vulcanai2.models.metrics import Metrics
@@ -33,8 +32,6 @@ transform = transforms.Compose([transforms.ToTensor(),
                                 transforms.Normalize((0.1307,), (0.3081,))])
 
 
-#data_path = r'C:\WORK\Aifred\Vulcan2\master\Vulcan2\data'
-#data_path = r'/Users/robertfratila/Code/Aifred_Health/Vulcan2/data'
 data_path = "../data"
 train_dataset = datasets.FashionData(root=data_path,
                             train=True,
@@ -61,47 +58,92 @@ val_loader = DataLoader(dataset=val_dataset,
                                           shuffle=False)
 
 
-conv_net_config = {
+conv_1D_config = {
+    'conv_units': [
+                    dict(
+                        in_channels=1,
+                        out_channels=16,
+                        kernel_size=(5),
+                        stride=2, # Makes a big difference in training speeds
+                        dropout=0.1 # Float or None
+                    ),
+                    dict(
+                        in_channels=16,
+                        out_channels=32,
+                        kernel_size=(5),
+                        padding=0,
+                        dropout=0.1 # Float or None
+                    ),
+                    dict(
+                        in_channels=32,
+                        out_channels=64,
+                        kernel_size=(5),
+                        pool_size=2,
+                        dropout=0.1 # Float or None
+                        )
+    ],
+}
+conv_2D_config = {
     'conv_units': [
                     dict(
                         in_channels=1,
                         out_channels=16,
                         kernel_size=(5, 5),
                         stride=2, # Makes a big difference in training speeds
-                        padding=0,
-                        initializer=None,
-                        bias_init=None, # None or value
-                        norm=None,
-                        pool_size=None,
                         dropout=0.1 # Float or None
                     ),
                     dict(
                         in_channels=16,
                         out_channels=32,
                         kernel_size=(5, 5),
-                        stride=1,
-                        padding=0,
-                        initializer=None,
-                        bias_init=None, # None or value
-                        norm=None,
-                        pool_size=None,
                         dropout=0.1 # Float or None
                     ),
                     dict(
                         in_channels=32,
                         out_channels=64,
                         kernel_size=(5, 5),
-                        stride=1,
-                        padding=0,
-                        initializer=None,
-                        bias_init=None, # None or value
-                        norm=None,
                         pool_size=2,
                         dropout=0.1 # Float or None
                         )
     ],
 }
-dense_net_config = {
+conv_3D_config = {
+    'conv_units': [
+                    dict(
+                        in_channels=1,
+                        out_channels=16,
+                        kernel_size=(5, 5, 5),
+                        stride=2, # Makes a big difference in training speeds
+                        dropout=0.1 # Float or None
+                    ),
+                    dict(
+                        in_channels=16,
+                        out_channels=16,
+                        kernel_size=(5, 5, 5),
+                        stride=1, # Makes a big difference in training speeds
+                        dropout=0.1 # Float or None
+                    ),
+                    dict(
+                        in_channels=16,
+                        out_channels=64,
+                        kernel_size=(5, 5, 5),
+                        dropout=0.1 # Float or None
+                    ),
+    ],
+}
+
+multi_input_conv_3D_config = {
+    'conv_units': [
+                    dict(
+                        in_channels=1,
+                        out_channels=16,
+                        kernel_size=(3, 3, 3),
+                        stride=2, # Makes a big difference in training speeds
+                        dropout=0.1 # Float or None
+                    ),
+    ],
+}
+dense_config = {
     'dense_units': [100, 50],
     'initializer': None,
     'bias_init': None,
@@ -109,97 +151,64 @@ dense_net_config = {
     'dropout': 0.5,  # Single value or List
 }
 
-model = ConvNet(
-    name='conv_net_test',
-    input_network=None,
-    dimensions=(1, 28, 28),
-    config=conv_net_config,
+conv_1D = ConvNet(
+    name='conv_1D',
+    input_networks=None,
+    in_dim=(1, 28),
+    config=conv_1D_config,
+)
+conv_2D = ConvNet(
+    name='conv_2D',
+    input_networks=None,
+    in_dim=(1, 28, 28),
+    config=conv_2D_config
+)
+conv_3D = ConvNet(
+    name='conv_3D',
+    input_networks=None,
+    in_dim=(1, 28, 28, 28),
+    config=conv_3D_config,
 )
 
-model1 = DenseNet(
-    name='dense_net_test',
-    input_network=model,
-    dimensions=model.conv_flat_dim,
-    config=dense_net_config,
+dense_model = DenseNet(
+    name='dense_model',
+    input_networks=[conv_2D, conv_1D],
+    config=dense_config
+)
+
+multi_input_conv_3D = ConvNet(
+    name='multi_input_conv_3D',
+    input_networks=[conv_1D, dense_model, conv_2D, conv_3D],
+    config=multi_input_conv_3D_config,
     num_classes=10
 )
 
-#model1.fit(train_loader, val_loader, 2, plot=True)
-#model1.k_fold_cross_validation(train_loader, 5, 2, plot=False)
 
-# model1.save_model()
+multi_dense = [
+    (val_loader.dataset, True, False),
+    (TensorDataset(torch.ones([10000, *conv_1D.in_dim])), True, False)
+]
 
-#model2 = models.DenseNet.load_ensemble("/home/caitrin/Vulcan2/Vulcan2/examples/2018-10-04_19:12:36/dense_net_test")
+m = MultiDataset(multi_dense)
 
-#model2.fit(train_loader, val_loader, 4, plot=True)
+x = [
+        (TensorDataset(torch.ones([10000, *conv_1D.in_dim])), True, False),
+        m,
+        (val_loader.dataset, True, True),
+        (TensorDataset(torch.ones([10000, *conv_3D.in_dim])), True, False),
+    ]
 
-# To test saliency map generation
-# model1.run_test(val_loader, plot=True)
+multi_dataset = MultiDataset(x)
 
-cnn_class = ConvNet(
-        name='Test_ConvNet_class',
-        dimensions=(1, 28, 28),
-        config={
-            'conv_units': [
-                {
-                    "in_channels": 1,
-                    "out_channels": 16,
-                    "kernel_size": (5, 5),
-                    "stride": 2
-                },
-                {
-                    "in_channels": 16,
-                    "out_channels": 1,
-                    "kernel_size": (5, 5),
-                    "stride": 1,
-                    "padding": 2
-                }]
-        },
-        num_classes=10
-    )
+train_multi = torch.utils.data.Subset(
+    multi_dataset, range(len(multi_dataset)//2))
+val_multi = torch.utils.data.Subset(
+    multi_dataset, range(len(multi_dataset)//2, len(multi_dataset)))
 
-k = 3
-epochs = 10
+train_loader_multi = DataLoader(train_multi, batch_size=100)
+val_loader_multi = DataLoader(val_multi, batch_size=100)
 
-averaged_results = cnn_class.cross_validate(train_loader, k, epochs, average_results=True, plot=True)
-#all_results = cnn_class.cross_validate(test_dataloader, k, epochs, average_results=False)
+multi_input_conv_3D.fit(train_loader_multi, val_loader_multi, 3, plot=True)
 
-print(averaged_results)
-#print(all_results)
-#assert len(averaged_results.values()[0]) == 1
-#assert len(all_results.values()[0]) == k
-
-#print(model1.cross_validate(train_loader, 5, 2, plot=False, average_results=False))
-
-# f_pass = model1.forward_pass(val_loader, convert_to_class=True)
-
-# cm = get_confusion_matrix(
-#     model1.forward_pass(val_loader, convert_to_class=True),
-#     val_loader.dataset.test_labels)
-# display_confusion_matrix(cm, ["T-shirt/top","Trouser","Pullover","Dress","Coat","Sandal","Shirt","Sneaker","Bag","Ankle"])
-
-# x = train_loader.dataset.train_data[:5].float().unsqueeze(dim=1) #np.expand_dims(train_loader.dataset[:5][0], axis=0)
-# y = train_loader.dataset.train_labels[:5]
-# sal_map = compute_saliency_map(model1, x, y)
-# display_saliency_overlay(train_loader.dataset.train_data[0], sal_map[0])
-
-#se = SnapshotNet("snap", model1, 3)
-
-# Does it make more sense to pass the total # of epochs
-# or just how many each model should train for?
-
-#se.fit(train_loader, val_loader, 3, plot=True)
-#se.run_test(val_loader, plot=True)
-
-#se.save_model()
-
-# se = SnapshotNet.load_model('saved_models/snap_2018-10-17_00-06-17')
-#preds = se.forward_pass(val_loader, convert_to_class=True)
-
-
-# TODO: need to revisit this to be able to plot after training, interactive plotting is messing up
-#plotters.visualization.display_record(record=model1.record, interactive=False)
-#plt.show()
-
-#model1.print_model_structure()
-
+multi_input_conv_3D.run_test(val_loader_multi, plot=True)
+multi_input_conv_3D.save_model()

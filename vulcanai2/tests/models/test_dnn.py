@@ -14,7 +14,7 @@ class TestDenseNet:
         """Create DenseNet with no prediction layer."""
         return DenseNet(
             name='Test_DenseNet_class',
-            dimensions=(200),
+            in_dim=(200),
             config={
                 'dense_units': [100, 50],
                 'dropout': [0.3, 0.5],
@@ -26,7 +26,7 @@ class TestDenseNet:
         """Create DenseNet with prediction layer."""
         return DenseNet(
             name='Test_DenseNet_class',
-            dimensions=(200),
+            in_dim=(200),
             config={
                 'dense_units': [100, 50],
                 'dropout': 0.5,
@@ -36,7 +36,7 @@ class TestDenseNet:
 
     def test_forward_not_nan(self, dnn_noclass):
         """Confirm out is non nan."""
-        test_input = torch.ones([5, dnn_noclass.in_dim])
+        test_input = torch.ones([5, *dnn_noclass.in_dim])
         test_dataloader = DataLoader(TensorDataset(test_input, test_input))
         output = dnn_noclass.forward_pass(
             data_loader=test_dataloader,
@@ -45,7 +45,7 @@ class TestDenseNet:
 
     def test_forward_class_not_nan(self, dnn_class):
         """Confirm out is non nan."""
-        test_input = torch.ones([5, dnn_class.in_dim])
+        test_input = torch.ones([5, *dnn_class.in_dim])
         test_dataloader = DataLoader(TensorDataset(test_input, test_input))
         raw_output = dnn_class.forward_pass(
             data_loader=test_dataloader,
