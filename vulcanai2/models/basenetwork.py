@@ -85,16 +85,6 @@ class BaseNetwork(nn.Module):
         super(BaseNetwork, self).__init__()
 
         self._name = name
-        if in_dim is not None:
-            if isinstance(in_dim, int):
-                self.in_dim = tuple([in_dim])
-            else:
-                self.in_dim = in_dim
-        else:
-            if input_networks is None:
-                raise ValueError("BaseNetwork must have either in_dim or \
-                                input_networks")
-
         self._config = config
         self._save_path = save_path
 
@@ -131,6 +121,16 @@ class BaseNetwork(nn.Module):
             validation_error=[],
             validation_accuracy=[]
         )
+
+        if in_dim is not None:
+            if isinstance(in_dim, int):
+                self.in_dim = tuple([in_dim])
+            else:
+                self.in_dim = in_dim
+        else:
+            if input_networks is None:
+                raise ValueError("BaseNetwork must have either in_dim or \
+                                input_networks")
 
         # Creates the Network, and re-writes the self.in_dim
         self._create_network(
@@ -180,19 +180,41 @@ class BaseNetwork(nn.Module):
 
     def _get_out_dim(self):
         """
-        Return the shape of the output of network by performing
-        a single forward pass using built-up data.
+        Return the shape of the output of network.
+
+        Perform a single forward pass using made-up data.
 
         Returns
         -------
         shape : tuple
             The output shape of the network.
+
         """
         if self.network is not None:
             out = self.network(torch.ones([1, *self.in_dim]))
             return tuple(out.shape[1:])
         else:
             return None
+
+    def _get_in_dim(self):
+        """
+        Return the network input shape by performing
+
+        Perform a single forward pass through all the input networks
+        and merge together to get input shape of this network.
+
+        Returns
+        -------
+        shape : tuple
+            The input shape of the network.
+
+        """
+        # Create empty input tensors
+        in_tensors = []
+        for d in self.input_networks:
+            in_tensors.append(torch.ones([1, *d.out_dim]))
+        output = self._merge_input_network_outputs(in_tensors)
+        return tuple(output.shape[1:])
 
     @property
     def name(self):

@@ -137,12 +137,7 @@ class ConvNet(BaseNetwork):
         conv_hid_layers = self._config.units
 
         if self.input_networks is not None:
-            # Create empty input tensors
-            in_tensors = []
-            for d in self.input_networks:
-                in_tensors.append(torch.ones([1, *d.out_dim]))
-            output = self._merge_input_network_outputs(in_tensors)
-            self.in_dim = tuple(output.shape[1:])
+            self.in_dim = self._get_in_dim()
 
         # Build Network
         self._build_conv_network(conv_hid_layers, **kwargs)
