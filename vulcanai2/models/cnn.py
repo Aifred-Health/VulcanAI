@@ -145,14 +145,7 @@ class ConvNet(BaseNetwork):
             self.in_dim = tuple(output.shape[1:])
 
         # Build Network
-        self.network = self._build_conv_network(
-            conv_hid_layers,
-            kwargs['activation'])
-
-        if self._num_classes:
-            self._add_classification_layer(
-                dim=self.get_flattened_size(),
-                pred_activation=kwargs['pred_activation'])
+        self._build_conv_network(conv_hid_layers, **kwargs)
 
     def _merge_input_network_outputs(self, tensors):
         """Calculate converged in_dim for the MultiInput ConvNet."""
@@ -253,7 +246,7 @@ class ConvNet(BaseNetwork):
                 tensor = tensor.unsqueeze(dim=spatial_dim_idx_start)
         return pad(tensor=tensor, padded_shape=cast_shape)
 
-    def _build_conv_network(self, conv_hid_layers, activation):
+    def _build_conv_network(self, conv_hid_layers, **kwargs):
         """
         Build the layers of the network into a nn.Sequential object.
 
@@ -273,37 +266,19 @@ class ConvNet(BaseNetwork):
         conv_hid_layers[0]['in_channels'] = self.in_dim[0]
         conv_layers = OrderedDict()
         for idx, conv_layer_config in enumerate(conv_hid_layers):
-            conv_layer_config['activation'] = activation
+            conv_layer_config['activation'] = kwargs['activation']
             layer_name = 'conv_{}'.format(idx)
             conv_layers[layer_name] = ConvUnit(**conv_layer_config)
-        conv_network = nn.Sequential(conv_layers)
-        return conv_network
+        self.network = nn.Sequential(conv_layers)
 
-    def _add_classification_layer(self, dim, pred_activation):
-        self.network.add_module(
-            'flatten', FlattenUnit())
-        self.network.add_module(
-            'classify', DenseUnit(
-                in_features=dim,
-                out_features=self._num_classes,
-                activation=pred_activation))
-
-    def get_flattened_size(self):
-        """
-        Return the flattened output size of conv network.
-
-        Returns
-        -------
-        shape : tuple
-            The flattened output size of the conv network's last layer. Does
-            not include batch size.
-
-        """
-        with torch.no_grad():
-            x = torch.empty(1, *self.in_dim)
-            x = self.network(x)
-            x = FlattenUnit()(x)
-            return x.shape[-1]
+        if self._num_classes:
+            self.network.add_module(
+                'flatten', FlattenUnit())
+            self.network.add_module(
+                'classify', DenseUnit(
+                    in_features=self._get_out_dim()[0],
+                    out_features=self._num_classes,
+                    activation=kwargs['pred_activation']))
 
     def __str__(self):
         """Specify how to print network."""

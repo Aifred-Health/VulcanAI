@@ -132,32 +132,16 @@ class DenseNet(BaseNetwork):
             for d in self.input_networks:
                 in_tensors.append(torch.ones([1, *d.out_dim]))
             output = self._merge_input_network_outputs(in_tensors)
-            # Override self.in_dim instead @Robert
             self.in_dim = tuple([output.shape[-1]])
 
         # Build network
-        self.network = self._build_dense_network(
-            dense_hid_layers, kwargs['activation'])
-
-        if self._num_classes:
-            self._add_classification_layer(
-                dim=dense_hid_layers[-1]['out_features'],
-                pred_activation=kwargs['pred_activation'])
-
-    def _add_classification_layer(self, dim, pred_activation):
-        self.network.add_module(
-            'flatten', FlattenUnit())
-        self.network.add_module(
-            'classify', DenseUnit(
-                in_features=dim,
-                out_features=self._num_classes,
-                activation=pred_activation))
+        self._build_dense_network(dense_hid_layers, **kwargs)
 
     def _merge_input_network_outputs(self, tensors):
         output_tensors = [FlattenUnit()(t) for t in tensors]
         return torch.cat(output_tensors, dim=1)
 
-    def _build_dense_network(self, dense_hid_layers, activation):
+    def _build_dense_network(self, dense_hid_layers, **kwargs):
         """
         Build the layers of the network into a nn.Sequential object.
 
@@ -178,11 +162,19 @@ class DenseNet(BaseNetwork):
         dense_hid_layers[0]['in_features'] = self.in_dim[0]
         dense_layers = OrderedDict()
         for idx, dense_layer_config in enumerate(dense_hid_layers):
-            dense_layer_config['activation'] = activation
+            dense_layer_config['activation'] = kwargs['activation']
             layer_name = 'dense_{}'.format(idx)
             dense_layers[layer_name] = DenseUnit(**dense_layer_config)
-        dense_network = nn.Sequential(dense_layers)
-        return dense_network
+        self.network = nn.Sequential(dense_layers)
+
+        if self._num_classes:
+            self.network.add_module(
+                'flatten', FlattenUnit())
+            self.network.add_module(
+                'classify', DenseUnit(
+                    in_features=self._get_out_dim()[0],
+                    out_features=self._num_classes,
+                    activation=kwargs['pred_activation']))
 
     def __str__(self):
         if self.optim is not None:
