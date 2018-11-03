@@ -180,7 +180,7 @@ class BaseNetwork(nn.Module):
 
     def _get_out_dim(self):
         """
-        Return the shape of the output of network.
+        Return the network output shape.
 
         Perform a single forward pass using made-up data.
 
@@ -198,7 +198,7 @@ class BaseNetwork(nn.Module):
 
     def _get_in_dim(self):
         """
-        Return the network input shape by performing
+        Return the network input shape.
 
         Perform a single forward pass through all the input networks
         and merge together to get input shape of this network.

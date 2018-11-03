@@ -124,19 +124,6 @@ class DenseNet(BaseNetwork):
             lr_scheduler, early_stopping, criter_spec)
 
     def _create_network(self, **kwargs):
-        dense_hid_layers = self._config.units
-
-        if self.input_networks is not None:
-            self.in_dim = self._get_in_dim()
-
-        # Build network
-        self._build_dense_network(dense_hid_layers, **kwargs)
-
-    def _merge_input_network_outputs(self, tensors):
-        output_tensors = [FlattenUnit()(t) for t in tensors]
-        return torch.cat(output_tensors, dim=1)
-
-    def _build_dense_network(self, dense_hid_layers, **kwargs):
         """
         Build the layers of the network into a nn.Sequential object.
 
@@ -153,6 +140,12 @@ class DenseNet(BaseNetwork):
             the dense network as a nn.Sequential object
 
         """
+        dense_hid_layers = self._config.units
+
+        if self.input_networks is not None:
+            self.in_dim = self._get_in_dim()
+
+        # Build network
         # Specify incoming feature size for the first dense hidden layer
         dense_hid_layers[0]['in_features'] = self.in_dim[0]
         dense_layers = OrderedDict()
@@ -170,6 +163,10 @@ class DenseNet(BaseNetwork):
                     in_features=self._get_out_dim()[0],
                     out_features=self._num_classes,
                     activation=kwargs['pred_activation']))
+
+    def _merge_input_network_outputs(self, tensors):
+        output_tensors = [FlattenUnit()(t) for t in tensors]
+        return torch.cat(output_tensors, dim=1)
 
     def __str__(self):
         if self.optim is not None:

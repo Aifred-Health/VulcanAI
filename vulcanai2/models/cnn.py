@@ -134,13 +134,43 @@ class ConvNet(BaseNetwork):
             lr_scheduler, early_stopping, criter_spec)
 
     def _create_network(self, **kwargs):
+        """
+        Build the layers of the network into a nn.Sequential object.
+
+        Parameters
+        ----------
+        conv_hid_layers : ConvNetConfig.units (list of dict)
+            The hidden layers specification
+        activation : torch.nn.Module
+            the non-linear activation to apply to each layer
+
+        Returns
+        -------
+        output : torch.nn.Sequential
+            the conv network as a nn.Sequential object
+
+        """
         conv_hid_layers = self._config.units
 
         if self.input_networks is not None:
             self.in_dim = self._get_in_dim()
 
-        # Build Network
-        self._build_conv_network(conv_hid_layers, **kwargs)
+        conv_hid_layers[0]['in_channels'] = self.in_dim[0]
+        conv_layers = OrderedDict()
+        for idx, conv_layer_config in enumerate(conv_hid_layers):
+            conv_layer_config['activation'] = kwargs['activation']
+            layer_name = 'conv_{}'.format(idx)
+            conv_layers[layer_name] = ConvUnit(**conv_layer_config)
+        self.network = nn.Sequential(conv_layers)
+
+        if self._num_classes:
+            self.network.add_module(
+                'flatten', FlattenUnit())
+            self.network.add_module(
+                'classify', DenseUnit(
+                    in_features=self._get_out_dim()[0],
+                    out_features=self._num_classes,
+                    activation=kwargs['pred_activation']))
 
     def _merge_input_network_outputs(self, tensors):
         """Calculate converged in_dim for the MultiInput ConvNet."""
@@ -240,40 +270,6 @@ class ConvNet(BaseNetwork):
             for _ in range(n_unsqueezes):
                 tensor = tensor.unsqueeze(dim=spatial_dim_idx_start)
         return pad(tensor=tensor, padded_shape=cast_shape)
-
-    def _build_conv_network(self, conv_hid_layers, **kwargs):
-        """
-        Build the layers of the network into a nn.Sequential object.
-
-        Parameters
-        ----------
-        conv_hid_layers : ConvNetConfig.units (list of dict)
-            The hidden layers specification
-        activation : torch.nn.Module
-            the non-linear activation to apply to each layer
-
-        Returns
-        -------
-        output : torch.nn.Sequential
-            the conv network as a nn.Sequential object
-
-        """
-        conv_hid_layers[0]['in_channels'] = self.in_dim[0]
-        conv_layers = OrderedDict()
-        for idx, conv_layer_config in enumerate(conv_hid_layers):
-            conv_layer_config['activation'] = kwargs['activation']
-            layer_name = 'conv_{}'.format(idx)
-            conv_layers[layer_name] = ConvUnit(**conv_layer_config)
-        self.network = nn.Sequential(conv_layers)
-
-        if self._num_classes:
-            self.network.add_module(
-                'flatten', FlattenUnit())
-            self.network.add_module(
-                'classify', DenseUnit(
-                    in_features=self._get_out_dim()[0],
-                    out_features=self._num_classes,
-                    activation=kwargs['pred_activation']))
 
     def __str__(self):
         """Specify how to print network."""
