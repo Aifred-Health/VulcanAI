@@ -78,9 +78,9 @@ class GuidedBackprop():
                     network.network[0]._activation.
                     register_backward_hook(activation_hook_function))
             logging.info("Cropping gradients in {}.".format(network.name))
-            if network.input_networks is not None:
-                for net in network.input_networks:
-                    hook_all_networks(net)
+            if network.input_networks:
+                for in_net in network.input_networks.values():
+                    hook_all_networks(in_net)
 
         hook_all_networks(self.network)
 

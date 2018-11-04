@@ -152,7 +152,7 @@ class ConvNet(BaseNetwork):
         """
         conv_hid_layers = self._config.units
 
-        if self.input_networks is not None:
+        if self.input_networks:
             self.in_dim = self._get_in_dim()
 
         conv_hid_layers[0]['in_channels'] = self.in_dim[0]
@@ -195,9 +195,9 @@ class ConvNet(BaseNetwork):
         """Return the max spatial dimensions of the input networks."""
         # Ignoring the channels
         spatial_inputs = []
-        for net in self.input_networks:
-            if isinstance(net, ConvNet):
-                spatial_inputs.append(list(net.out_dim[1:]))
+        for in_net in self.input_networks.values():
+            if isinstance(in_net, ConvNet):
+                spatial_inputs.append(list(in_net.out_dim[1:]))
         max_spatial_dim = len(max(spatial_inputs, key=len))
 
         # Fill with zeros in missing dim to compare max size later for each dim.

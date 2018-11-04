@@ -142,7 +142,7 @@ class DenseNet(BaseNetwork):
         """
         dense_hid_layers = self._config.units
 
-        if self.input_networks is not None:
+        if self.input_networks:
             self.in_dim = self._get_in_dim()
 
         # Build network
