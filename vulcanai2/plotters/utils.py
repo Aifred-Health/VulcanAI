@@ -132,10 +132,7 @@ class GuidedBackprop():
             self.network._num_classes)
         one_hot_output = one_hot_zeros.scatter_(1, targets.unsqueeze(dim=1), 1)
         # Backward pass
-
         network_output.backward(gradient=one_hot_output)
-        # Convert Pytorch variable to numpy array
-        # Will return batch dimension as well
 
         def extract_input_gradients_multidataset(input_data):
             for data in input_data:
@@ -143,6 +140,7 @@ class GuidedBackprop():
                     extract_input_gradients_multidataset(data)
                 else:
                     self.gradients.append(data.grad.data.numpy())
+
         if isinstance(input_data, list):
             extract_input_gradients_multidataset(input_data)
         else:

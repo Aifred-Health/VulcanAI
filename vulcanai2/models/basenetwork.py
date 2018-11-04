@@ -21,7 +21,7 @@ import logging
 import os
 import pickle
 import time
-from collections import OrderedDict as odict
+from collections import OrderedDict
 import numpy as np
 import math
 
@@ -92,8 +92,11 @@ class BaseNetwork(nn.Module):
         if input_networks and not isinstance(input_networks, list):
             input_networks = [input_networks]
 
-        if input_networks and not isinstance(input_networks, nn.ModuleList):
-            self.input_networks = nn.ModuleList(input_networks)
+        if input_networks:
+            temp_input_network_dict = OrderedDict()
+            for in_net in input_networks:
+                temp_input_network_dict[in_net.name] = in_net
+            self.input_networks = nn.ModuleDict(temp_input_network_dict)
         else:
             self.input_networks = input_networks
 
@@ -168,8 +171,8 @@ class BaseNetwork(nn.Module):
 
         if self.input_networks:
             net_outs = []
-            for net, x in zip(self.input_networks, inputs):
-                net_outs.append(net(x))
+            for in_net, x in zip(self.input_networks.values(), inputs):
+                net_outs.append(in_net(x))
             output = self._merge_input_network_outputs(net_outs)
         else:
             output = torch.cat(inputs, dim=1)
@@ -209,8 +212,8 @@ class BaseNetwork(nn.Module):
         """
         # Create empty input tensors
         in_tensors = []
-        for d in self.input_networks:
-            in_tensors.append(torch.ones([1, *d.out_dim]))
+        for in_net in self.input_networks.values():
+            in_tensors.append(torch.ones([1, *in_net.out_dim]))
         output = self._merge_input_network_outputs(in_tensors)
         return tuple(output.shape[1:])
 
@@ -375,8 +378,8 @@ class BaseNetwork(nn.Module):
             params.requires_grad_(not freeze)
         # Recursively toggle freeze on
         if apply_inputs and self.input_networks:
-            for network in self.input_networks:
-                network._toggle_freeze(
+            for in_net in self.input_networks.values():
+                in_net._toggle_freeze(
                     freeze=freeze,
                     apply_inputs=apply_inputs)
 
@@ -699,8 +702,8 @@ class BaseNetwork(nn.Module):
         logger.info("No save path provided, saving to {}".format(save_path))
         # Recursively save the input networks as well.
         if self.input_networks:
-            for input_network in self.input_networks:
-                input_network.save_model(save_path)
+            for in_net in self.input_networks.values():
+                in_net.save_model(save_path)
 
         if not os.path.exists(save_path):
             os.makedirs(save_path)

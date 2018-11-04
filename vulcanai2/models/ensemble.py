@@ -134,9 +134,9 @@ class SnapshotNet(BaseNetwork):
             The characters to append at the end of BaseNetwork stack of names.
 
         """
-        if network.input_networks is not None:
-            for net in network.input_networks:
-                self._update_network_name_stack(net, append_str)
+        if network.input_networks:
+            for in_net in network.input_networks.values():
+                self._update_network_name_stack(in_net, append_str)
         network.name = "{}_{}".format(network.name, append_str)
 
     def forward(self, inputs, **kwargs):
@@ -162,10 +162,10 @@ class SnapshotNet(BaseNetwork):
         if not isinstance(inputs, list):
                 inputs = [inputs]
 
-        if self.input_networks is not None:
+        if self.input_networks:
             net_outs = []
-            for net, x in zip(self.input_networks, inputs):
-                net_outs.append(net(x))
+            for in_net, x in zip(self.input_networks.values(), inputs):
+                net_outs.append(in_net(x))
             output = self._merge_input_network_outputs(net_outs)
         else:
             output = torch.cat(inputs, dim=1)
