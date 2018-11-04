@@ -374,7 +374,7 @@ class BaseNetwork(nn.Module):
         for params in self.network.parameters():
             # If freeze is True, set requires_grad to False
             # If freeze is False, set requires_grad to True
-            params.requires_grad = not freeze
+            params.requires_grad_(not freeze)
         # Recursively toggle freeze on
         if apply_inputs and self.input_networks is not None:
             for network in self.input_networks:
@@ -490,11 +490,19 @@ class BaseNetwork(nn.Module):
         train_accuracy_accumulator = 0.0
         pbar = trange(len(train_loader.dataset), desc='Training.. ')
 
+        def requires_grad_multidataset(data_list):
+            for d in data_list:
+                if isinstance(d, list):
+                    requires_grad_multidataset(d)
+                else:
+                    d.requires_grad_()
+
         for batch_idx, (data, targets) in enumerate(train_loader):
 
-            # for idx, d in enumerate(data):
-            #     data[idx] = Variable(d, requires_grad=True)
-            # targets = Variable(targets)
+            if isinstance(data, list):
+                requires_grad_multidataset(data)
+            else:
+                data.requires_grad_()
 
             if torch.cuda.is_available():
                 for idx, d in enumerate(data):
@@ -503,9 +511,7 @@ class BaseNetwork(nn.Module):
                 self.cuda()
 
             # Forward + Backward + Optimize
-
             predictions = self(data)
-
             train_loss = self.criterion(predictions, targets)
             train_loss_accumulator += train_loss.item()
 
@@ -558,10 +564,6 @@ class BaseNetwork(nn.Module):
         pbar = trange(len(val_loader.dataset), desc='Validating.. ')
 
         for batch_idx, (data, targets) in enumerate(val_loader):
-
-            # for idx, d in enumerate(data):
-            #     data[idx] = Variable(d, requires_grad=False)
-            # targets = Variable(targets, requires_grad=False)
 
             if torch.cuda.is_available():
                 for idx, d in enumerate(data):
@@ -641,8 +643,8 @@ class BaseNetwork(nn.Module):
         # prediction_shape used to aggregate network outputs
         # (e.g. with or without class conversion)
         pred_collector = torch.tensor([])
-        for batch_idx, (*data, _) in enumerate(data_loader):
-
+        pbar = trange(len(data_loader.dataset), desc='Forward passing.. ')
+        for batch_idx, (data, _) in enumerate(data_loader):
             if torch.cuda.is_available():
                 data = data.cuda()
                 self.cuda()
@@ -657,6 +659,16 @@ class BaseNetwork(nn.Module):
                             in_matrix=predictions.cpu())).float()
             # Aggregate predictions
             pred_collector = torch.cat([pred_collector, predictions.cpu()])
+            batch_len = data_loader.batch_size
+            if batch_idx % 10 == 0:
+                # Update tqdm bar
+
+                if ((batch_idx + 10) * batch_len) <= len(data_loader.dataset):
+                    pbar.update(10 * batch_len)
+                else:
+                    pbar.update(
+                        len(data_loader.dataset) - int(batch_idx * batch_len))
+        pbar.close()
         # Tensor comes in as float so convert back to int if returning classes
         if self._num_classes and convert_to_class:
             pred_collector = pred_collector.long()

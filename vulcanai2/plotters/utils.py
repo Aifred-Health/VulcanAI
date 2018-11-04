@@ -153,20 +153,24 @@ class GuidedBackprop():
             Gradient numpy array with same shape as input images.
 
         """
-        if not isinstance(input_data, list):
-            input_data = [input_data]
-        # To properly pass the gradients
-        for idx, t in enumerate(input_data):
-            if not isinstance(t, torch.Tensor):
-                input_data[idx] = torch.tensor(t, requires_grad=True)
-            else:
-                if not t.requires_grad:
-                    t.requires_grad = True
+        assert isinstance(targets, torch.LongTensor)
 
-        if not isinstance(targets, torch.LongTensor):
-            targets = torch.LongTensor(targets)
+        def requires_grad_multidataset(data_list):
+            for d in data_list:
+                if isinstance(d, list):
+                    requires_grad_multidataset(d)
+                else:
+                    assert isinstance(d, torch.Tensor)
+                    d.requires_grad_()
+
+        if isinstance(input_data, list):
+            requires_grad_multidataset(input_data)
+        else:
+            assert isinstance(input_data, torch.Tensor)
+            input_data.requires_grad_()
+
         # Forward pass
-        network_output = self.network.cpu()(input_data)
+        network_output = self.network(input_data)
         # Zero gradients
         self.network.zero_grad()
         # Target for backprop
