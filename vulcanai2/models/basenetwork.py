@@ -491,19 +491,7 @@ class BaseNetwork(nn.Module):
         train_accuracy_accumulator = 0.0
         pbar = trange(len(train_loader.dataset), desc='Training.. ')
 
-        def requires_grad_multidataset(data_list):
-            for d in data_list:
-                if isinstance(d, list):
-                    requires_grad_multidataset(d)
-                else:
-                    d.requires_grad_()
-
         for batch_idx, (data, targets) in enumerate(train_loader):
-
-            if isinstance(data, list):
-                requires_grad_multidataset(data)
-            else:
-                data.requires_grad_()
 
             if torch.cuda.is_available():
                 for idx, d in enumerate(data):
