@@ -40,7 +40,6 @@ logger = logging.getLogger(__name__)
 class BaseNetwork(nn.Module):
     """
     Defines the BaseNetwork object.
-
     Parameters
     ----------
     name : str
@@ -68,11 +67,9 @@ class BaseNetwork(nn.Module):
         So far just 'best_validation_error' is implemented.
     criter_spec : dict
         criterion specification with name and all its parameters.
-
     Returns
     -------
     network : BaseNetwork
-
     """
 
     def __init__(self, name, config, in_dim=None, save_path=None,
@@ -85,6 +82,16 @@ class BaseNetwork(nn.Module):
         super(BaseNetwork, self).__init__()
 
         self._name = name
+        if in_dim is not None:
+            if isinstance(in_dim, int):
+                self.in_dim = tuple([in_dim])
+            else:
+                self.in_dim = in_dim
+        else:
+            if input_networks is None:
+                raise ValueError("BaseNetwork must have either in_dim or \
+                                input_networks")
+
         self._config = config
         self._save_path = save_path
 
@@ -122,16 +129,6 @@ class BaseNetwork(nn.Module):
             validation_accuracy=[]
         )
 
-        if in_dim is not None:
-            if isinstance(in_dim, int):
-                self.in_dim = tuple([in_dim])
-            else:
-                self.in_dim = in_dim
-        else:
-            if input_networks is None:
-                raise ValueError("BaseNetwork must have either in_dim or \
-                                input_networks")
-
         # Creates the Network, and re-writes the self.in_dim
         self._create_network(
             activation=activation,
@@ -148,22 +145,18 @@ class BaseNetwork(nn.Module):
     def forward(self, inputs, **kwargs):
         """
         Perform a forward pass through the modules.
-
         If the network is defined with `num_classes` then it contains a
         classification layer/network tail. The inputs will be passed
         through the networks and then through the classifier.
         If not, the input is passed through the network and
         returned without passing through a classification layer.
-
         Parameters
         ----------
         inputs : list(torch.Tensor)
             The inputs to pass throught the network.
-
         Returns
         -------
         output : torch.Tensor
-
         """
         if not isinstance(inputs, list):
             inputs = [inputs]
@@ -176,51 +169,35 @@ class BaseNetwork(nn.Module):
         else:
             output = torch.cat(inputs, dim=1)
 
-        return self.network(output)
+        network_output = self.network(output)
+
+        if self._num_classes:
+            class_output = self.network_tail(network_output)
+            return class_output
+        else:
+            return network_output
 
     def _get_out_dim(self):
         """
-        Return the network output shape.
-
-        Perform a single forward pass using made-up data.
-
+        Return the shape of the output of network by performing 
+        a single forward pass using built-up data.
         Returns
         -------
         shape : tuple
             The output shape of the network.
-
         """
         if self.network is not None:
             out = self.network(torch.ones([1, *self.in_dim]))
+            if self._num_classes:
+                out = self.network_tail(out)
             return tuple(out.shape[1:])
         else:
             return None
-
-    def _get_in_dim(self):
-        """
-        Return the network input shape.
-
-        Perform a single forward pass through all the input networks
-        and merge together to get input shape of this network.
-
-        Returns
-        -------
-        shape : tuple
-            The input shape of the network.
-
-        """
-        # Create empty input tensors
-        in_tensors = []
-        for d in self.input_networks:
-            in_tensors.append(torch.ones([1, *d.out_dim]))
-        output = self._merge_input_network_outputs(in_tensors)
-        return tuple(output.shape[1:])
 
     @property
     def name(self):
         """
         Return the name.
-
         Returns
         -------
         name : string
@@ -235,12 +212,10 @@ class BaseNetwork(nn.Module):
     @property
     def save_path(self):
         """Return the save path of the network.
-
         Returns
         -------
         save_path : string
             The save path of the network.
-
         """
         return self._save_path
 
@@ -256,11 +231,9 @@ class BaseNetwork(nn.Module):
     def lr_scheduler(self):
         """
         Return the network lr_scheduler.
-
         Returns
         -------
         lr_scheduler : torch.optim.lr_scheduler
-
         """
         return self._lr_scheduler
 
@@ -272,12 +245,10 @@ class BaseNetwork(nn.Module):
     def early_stopping(self):
         """
         Return the stopping rule.
-
         Returns
         -------
         stopping_rule : str
             The stoping rule
-
         """
         return self._early_stopping
 
@@ -289,12 +260,10 @@ class BaseNetwork(nn.Module):
     def criter_spec(self):
         """
         Return the criterion specification.
-
         Returns
         -------
         _criter_spec : dict
             The criterion specification.
-
         """
         return self._criter_spec
 
@@ -305,18 +274,15 @@ class BaseNetwork(nn.Module):
     def get_layers(self):
         """
         Returns an ordered dict of all modules in this network (layers).
-
         Returns
         -------
         layers : OrderedDict()
-
         """
         return self._modules
 
     def get_weights(self):
         """
         Return a dictionary containing a whole state of the module
-
         Returns
         -------
         weights : dict
@@ -328,11 +294,9 @@ class BaseNetwork(nn.Module):
     def _create_network(self, **kwargs):
         """
         Define the network. Abstract method that needs to be overridden.
-
         Returns
         -------
         None
-
         """
         self.network = None
         pass
@@ -340,32 +304,26 @@ class BaseNetwork(nn.Module):
     def freeze(self, apply_inputs=False):
         """
         Freeze network weights so training doesn't modify them.
-
         Parameters
         ----------
         apply_inputs : boolean
             Whether to freeze all input networks recursively
-
         Returns
         -------
         None
-
         """
         self._toggle_freeze(freeze=True, apply_inputs=apply_inputs)
 
     def unfreeze(self, apply_inputs=False):
         """
         Unfreeze network weights so training does modify them.
-
         Parameters
         ----------
         apply_inputs : boolean
             Whether to unfreeze all input networks recursively
-
         Returns
         -------
         None
-
         """
         self._toggle_freeze(freeze=False, apply_inputs=apply_inputs)
 
@@ -375,6 +333,12 @@ class BaseNetwork(nn.Module):
             # If freeze is True, set requires_grad to False
             # If freeze is False, set requires_grad to True
             params.requires_grad = not freeze
+        # Freeze prediction layer parameters
+        if 'network_tail' in self._modules:
+            for params in self.network_tail.parameters():
+                # If freeze is True, set requires_grad to False
+                # If freeze is False, set requires_grad to True
+                params.requires_grad = not freeze
         # Recursively toggle freeze on
         if apply_inputs and self.input_networks is not None:
             for network in self.input_networks:
