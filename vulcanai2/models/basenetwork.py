@@ -89,12 +89,10 @@ class BaseNetwork(nn.Module):
         self._save_path = save_path
 
         # Turn into list if not list
-        if input_networks is not None and \
-            not isinstance(input_networks, list):
+        if input_networks and not isinstance(input_networks, list):
             input_networks = [input_networks]
 
-        if input_networks is not None and \
-            not isinstance(input_networks, nn.ModuleList):
+        if input_networks and not isinstance(input_networks, nn.ModuleList):
             self.input_networks = nn.ModuleList(input_networks)
         else:
             self.input_networks = input_networks
@@ -122,7 +120,7 @@ class BaseNetwork(nn.Module):
             validation_accuracy=[]
         )
 
-        if in_dim is not None:
+        if in_dim:
             if isinstance(in_dim, int):
                 self.in_dim = tuple([in_dim])
             else:
@@ -168,7 +166,7 @@ class BaseNetwork(nn.Module):
         if not isinstance(inputs, list):
             inputs = [inputs]
 
-        if self.input_networks is not None:
+        if self.input_networks:
             net_outs = []
             for net, x in zip(self.input_networks, inputs):
                 net_outs.append(net(x))
@@ -190,7 +188,7 @@ class BaseNetwork(nn.Module):
             The output shape of the network.
 
         """
-        if self.network is not None:
+        if self.network:
             out = self.network(torch.ones([1, *self.in_dim]))
             return tuple(out.shape[1:])
         else:
@@ -376,7 +374,7 @@ class BaseNetwork(nn.Module):
             # If freeze is False, set requires_grad to True
             params.requires_grad_(not freeze)
         # Recursively toggle freeze on
-        if apply_inputs and self.input_networks is not None:
+        if apply_inputs and self.input_networks:
             for network in self.input_networks:
                 network._toggle_freeze(
                     freeze=freeze,
@@ -434,7 +432,7 @@ class BaseNetwork(nn.Module):
 
                 train_loss, train_acc = self._train_epoch(train_loader,
                                                           retain_graph)
-                if self.lr_scheduler is not None:
+                if self.lr_scheduler:
                     self.lr_scheduler.step(epoch=epoch)
 
                 valid_loss = valid_acc = np.nan
@@ -700,7 +698,7 @@ class BaseNetwork(nn.Module):
             self.name, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
         logger.info("No save path provided, saving to {}".format(save_path))
         # Recursively save the input networks as well.
-        if self.input_networks is not None:
+        if self.input_networks:
             for input_network in self.input_networks:
                 input_network.save_model(save_path)
 
