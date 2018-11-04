@@ -180,7 +180,8 @@ multi_input_conv_3D = ConvNet(
     name='multi_input_conv_3D',
     input_networks=[conv_1D, dense_model, conv_2D, conv_3D],
     config=multi_input_conv_3D_config,
-    num_classes=10
+    num_classes=10,
+    device="cuda:0"
 )
 
 
@@ -210,8 +211,7 @@ val_loader_multi = DataLoader(val_multi, batch_size=100)
 
 multi_input_conv_3D.fit(train_loader_multi, val_loader_multi,
                         epochs=3,
-                        #plot=True,
-                        device="cuda:0"
+                        #plot=True
                         )
 multi_input_conv_3D.run_test(val_loader_multi, plot=True)
 multi_input_conv_3D.save_model()

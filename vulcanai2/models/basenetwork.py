@@ -9,7 +9,7 @@ import sys
 
 # Vulcan imports
 from .layers import *
-from .utils import network_summary, set_device, convert_tensor
+from .utils import network_summary, set_tensor_device
 from .metrics import Metrics
 from ..plotters.visualization import display_record
 
@@ -80,7 +80,8 @@ class BaseNetwork(nn.Module):
                  activation=nn.ReLU(), pred_activation=None,
                  optim_spec={'name': 'Adam', 'lr': 0.001},
                  lr_scheduler=None, early_stopping=None,
-                 criter_spec=nn.CrossEntropyLoss()):
+                 criter_spec=nn.CrossEntropyLoss(),
+                 device="cpu"):
         """Define, initialize, and build the BaseNetwork."""
         super(BaseNetwork, self).__init__()
 
@@ -139,6 +140,8 @@ class BaseNetwork(nn.Module):
 
         # Compute self.out_dim of the network
         self.out_dim = self._get_out_dim()
+
+        self.device = torch.device(device if torch.cuda.is_available() else "cpu")
 
     @abc.abstractmethod
     def _merge_input_network_outputs(self, inputs):
@@ -392,8 +395,7 @@ class BaseNetwork(nn.Module):
         self.criterion = self._init_criterion(self._criter_spec)
 
     def fit(self, train_loader, val_loader, epochs,
-            retain_graph=None, valid_interv=4, plot=False,
-            device=None, non_blocking=False):
+            retain_graph=None, valid_interv=4, plot=False):
         """
         Trains the network on the provided data.
 
@@ -409,11 +411,7 @@ class BaseNetwork(nn.Module):
             Whether retain_graph will be true when .backwards is called.
         valid_interv : int
             Specifies the period of epochs before validation calculation.
-        device : str (eg: "cuda:0" or "cuda:1"...) or torch.device
-            Specifies the desired device to use for data and model.
-        non_blocking : boolean
-            refer: https://pytorch.org/docs/stable/_modules/torch/nn/modules/module.html#Module.to
-
+ 
         Returns
         -------
         None
@@ -433,17 +431,13 @@ class BaseNetwork(nn.Module):
             for epoch in trange(epochs, desc='Epoch: ', ncols=80):
 
                 train_loss, train_acc = self._train_epoch(train_loader,
-                                                          retain_graph,
-                                                          device,
-                                                          non_blocking)
+                                                          retain_graph)
                 if self.lr_scheduler is not None:
                     self.lr_scheduler.step(epoch=epoch)
 
                 valid_loss = valid_acc = np.nan
                 if epoch % valid_interv == 0:
-                    valid_loss, valid_acc = self._validate(val_loader,
-                                                           device,
-                                                           non_blocking)
+                    valid_loss, valid_acc = self._validate(val_loader)
 
                 tqdm.write("\n Epoch {}:\n"
                            "Train Loss: {:.6f} | Test Loss: {:.6f} |"
@@ -473,8 +467,7 @@ class BaseNetwork(nn.Module):
                 "\n\n**********KeyboardInterrupt: "
                 "Training stopped prematurely.**********\n\n")
 
-    def _train_epoch(self, train_loader, retain_graph,
-                     device, non_blocking):
+    def _train_epoch(self, train_loader, retain_graph):
         """
         Trains the network for 1 epoch.
 
@@ -482,10 +475,6 @@ class BaseNetwork(nn.Module):
         ----------
         train_loader : DataLoader
             The DataLoader object containing the dataset to train on.
-        device : str (eg: "cuda:0" or "cuda:1"...) or torch.device
-            Specifies the desired device to use for data and model.
-        non_blocking : boolean
-            refer: https://pytorch.org/docs/stable/_modules/torch/nn/modules/module.html#Module.to
 
         Returns
         -------
@@ -501,12 +490,9 @@ class BaseNetwork(nn.Module):
 
         for batch_idx, (data, targets) in enumerate(train_loader):
 
-            if torch.cuda.is_available() and device is not None:
-                self.to(device=device, non_blocking=non_blocking)
-                data = set_device(data, device=device,
-                                  non_blocking=non_blocking)
-                targets = convert_tensor(targets, device=device,
-                                     non_blocking=non_blocking)
+            self.to(device=self.device)
+            data = set_tensor_device(data, device=self.device)
+            targets = set_tensor_device(targets, device=self.device)
 
             # Forward + Backward + Optimize
 
@@ -542,7 +528,7 @@ class BaseNetwork(nn.Module):
 
         return train_loss, train_accuracy
 
-    def _validate(self, val_loader, device, non_blocking):
+    def _validate(self, val_loader):
         """
         Validate the network on the validation data.
 
@@ -550,10 +536,6 @@ class BaseNetwork(nn.Module):
         ----------
         val_loader : DataLoader
             The DataLoader object containing the dataset to evaluate on
-        device : str (eg: "cuda:0" or "cuda:1"...) or torch.device
-            Specifies the desired device to use for data and model.
-        non_blocking : boolean
-            refer: https://pytorch.org/docs/stable/_modules/torch/nn/modules/module.html#Module.to
 
         Returns
         -------
@@ -569,12 +551,9 @@ class BaseNetwork(nn.Module):
 
         for batch_idx, (data, targets) in enumerate(val_loader):
 
-            if torch.cuda.is_available() and device is not None:
-                self.to(device=device, non_blocking=non_blocking)
-                data = set_device(data, device=device,
-                                  non_blocking=non_blocking)
-                targets = convert_tensor(targets, device=device,
-                                     non_blocking=non_blocking)
+            self.to(device=self.device)
+            data = set_tensor_device(data, device=self.device)
+            targets = set_tensor_device(targets, device=self.device)
 
             predictions = self(data)
 
@@ -651,10 +630,8 @@ class BaseNetwork(nn.Module):
         pred_collector = torch.tensor([])
         for batch_idx, (*data, _) in enumerate(data_loader):
 
-            if torch.cuda.is_available() and device is not None:
-                self.to(device=device, non_blocking=non_blocking)
-                data = set_device(data, device=device,
-                                  non_blocking=non_blocking)
+            self.to(device=self.device)
+            data = set_tensor_device(data, device=self.device)
             # Get raw network output
             predictions = self(data)
             if self._num_classes:

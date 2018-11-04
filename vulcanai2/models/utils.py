@@ -211,51 +211,27 @@ def print_model_structure(network, input_size=None):
             for k2, v2 in v.items():
                 print('\t {}: {}'.format(k2, v2))
 
-def set_device(data, device=None, non_blocking=False):
+def set_tensor_device(data, device=None):
     """
     Helper function to convert list of data to
     relevant device
 
     Parameters
     ----------
-    data : list
+    data : torch.tensor or list
         data to be converted to the relevant device.
     device : str or torch.device
         the desired device
-    non_blocking : boolean
-        refer: https://pytorch.org/docs/stable/_modules/torch/nn/modules/module.html#Module.to
 
     Returns
     -------
-    data : list
+    data : torch.tensor or list
         data converted to the relevant device
 
     """
-    for idx, d in enumerate(data):
-        if isinstance(d, (list, tuple)):
-            data[idx]= set_device(d, device=device,
-                                   non_blocking=non_blocking)
-        else:
-            data[idx] = convert_tensor(d, device=device,
-                                    non_blocking=non_blocking)
+    if not isinstance(data, (list, tuple)):
+        data = data.to(device=device)
+    else:
+        for idx, d in enumerate(data):
+            data[idx] = set_tensor_device(d, device=device)
     return data
-
-def convert_tensor(tensor, device=None, non_blocking=False):
-    """
-    Move tensors to relevant device.
-
-    Parameters
-    ----------
-    tensor : torch.tensor
-        tensor to be converted to the relevant device.
-    device : str or torch.device
-        the desired device
-    non_blocking : boolean
-        refer: https://pytorch.org/docs/stable/_modules/torch/nn/modules/module.html#Module.to
-
-    Returns
-    -------
-    tensor : torch.tensor
-        tensor converted to the relevant device
-    """
-    return tensor.to(device=device, non_blocking=non_blocking)
