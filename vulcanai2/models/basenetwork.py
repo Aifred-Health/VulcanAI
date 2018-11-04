@@ -72,6 +72,7 @@ class BaseNetwork(nn.Module):
     Returns
     -------
     network : BaseNetwork
+
     """
 
     def __init__(self, name, config, in_dim=None, save_path=None,
@@ -147,6 +148,7 @@ class BaseNetwork(nn.Module):
     def forward(self, inputs, **kwargs):
         """
         Perform a forward pass through the modules.
+
         If the network is defined with `num_classes` then it contains a
         classification layer/network tail. The inputs will be passed
         through the networks and then through the classifier.
@@ -161,6 +163,7 @@ class BaseNetwork(nn.Module):
         Returns
         -------
         output : torch.Tensor
+
         """
         if not isinstance(inputs, list):
             inputs = [inputs]
@@ -190,6 +193,7 @@ class BaseNetwork(nn.Module):
         -------
         shape : tuple
             The output shape of the network.
+
         """
         if self.network is not None:
             out = self.network(torch.ones([1, *self.in_dim]))
@@ -208,6 +212,7 @@ class BaseNetwork(nn.Module):
         -------
         name : string
             The name of the network.
+
         """
         return self._name
 
@@ -223,6 +228,7 @@ class BaseNetwork(nn.Module):
         -------
         save_path : string
             The save path of the network.
+
         """
         return self._save_path
 
@@ -242,6 +248,7 @@ class BaseNetwork(nn.Module):
         Returns
         -------
         lr_scheduler : torch.optim.lr_scheduler
+
         """
         return self._lr_scheduler
 
@@ -258,6 +265,7 @@ class BaseNetwork(nn.Module):
         -------
         stopping_rule : str
             The stoping rule
+
         """
         return self._early_stopping
 
@@ -274,6 +282,7 @@ class BaseNetwork(nn.Module):
         -------
         _criter_spec : dict
             The criterion specification.
+
         """
         return self._criter_spec
 
@@ -288,6 +297,7 @@ class BaseNetwork(nn.Module):
         Returns
         -------
         layers : OrderedDict()
+
         """
         return self._modules
 
@@ -299,6 +309,7 @@ class BaseNetwork(nn.Module):
         -------
         weights : dict
             A dictionary containing a whole state of the module.
+
         """
         return self.state_dict()
 
@@ -310,6 +321,7 @@ class BaseNetwork(nn.Module):
         Returns
         -------
         None
+
         """
         self.network = None
         pass
@@ -326,6 +338,7 @@ class BaseNetwork(nn.Module):
         Returns
         -------
         None
+
         """
         self._toggle_freeze(freeze=True, apply_inputs=apply_inputs)
 
@@ -341,6 +354,7 @@ class BaseNetwork(nn.Module):
         Returns
         -------
         None
+
         """
         self._toggle_freeze(freeze=False, apply_inputs=apply_inputs)
 
