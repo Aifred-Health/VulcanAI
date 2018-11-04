@@ -9,20 +9,12 @@ from vulcanai2.plotters.visualization import (compute_saliency_map,
                                               display_confusion_matrix)
 from vulcanai2.models.utils import get_confusion_matrix
 
-
-import pickle
 import torch
-import torch.nn as nn
+
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader, TensorDataset
 # from torchviz import make_dot
 
-import numpy as np
-import json
-from collections import OrderedDict as odict
-import matplotlib.pyplot as plt
-
-from vulcanai2.models.metrics import Metrics
 
 sys.path.append('../')
 normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
@@ -208,7 +200,11 @@ val_multi = torch.utils.data.Subset(
 train_loader_multi = DataLoader(train_multi, batch_size=100)
 val_loader_multi = DataLoader(val_multi, batch_size=100)
 
-multi_input_conv_3D.fit(train_loader_multi, val_loader_multi, 3, plot=True)
+multi_input_conv_3D.fit(train_loader_multi, val_loader_multi,
+                        epochs=3,
+                        plot=True#,
+                        #device="cuda:0"
+                        )
 
 multi_input_conv_3D.run_test(val_loader_multi, plot=True)
 multi_input_conv_3D.save_model()

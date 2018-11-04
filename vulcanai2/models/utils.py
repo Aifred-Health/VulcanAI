@@ -210,3 +210,52 @@ def print_model_structure(network, input_size=None):
         if isinstance(v, odict):
             for k2, v2 in v.items():
                 print('\t {}: {}'.format(k2, v2))
+
+def set_device(data, device=None, non_blocking=False):
+    """
+    Helper function to convert list of data to
+    relevant device
+
+    Parameters
+    ----------
+    data : list
+        data to be converted to the relevant device.
+    device : str or torch.device
+        the desired device
+    non_blocking : boolean
+        refer: https://pytorch.org/docs/stable/_modules/torch/nn/modules/module.html#Module.to
+
+    Returns
+    -------
+    data : list
+        data converted to the relevant device
+
+    """
+    for idx, d in enumerate(data):
+        if isinstance(d, (list, tuple)):
+            data[idx]= set_device(d, device=device,
+                                   non_blocking=non_blocking)
+        else:
+            data[idx] = convert_tensor(d, device=device,
+                                    non_blocking=non_blocking)
+    return data
+
+def convert_tensor(tensor, device=None, non_blocking=False):
+    """
+    Move tensors to relevant device.
+
+    Parameters
+    ----------
+    tensor : torch.tensor
+        tensor to be converted to the relevant device.
+    device : str or torch.device
+        the desired device
+    non_blocking : boolean
+        refer: https://pytorch.org/docs/stable/_modules/torch/nn/modules/module.html#Module.to
+
+    Returns
+    -------
+    tensor : torch.tensor
+        tensor converted to the relevant device
+    """
+    return tensor.to(device=device, non_blocking=non_blocking)
