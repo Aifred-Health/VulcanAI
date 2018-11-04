@@ -662,7 +662,6 @@ class BaseNetwork(nn.Module):
             batch_len = data_loader.batch_size
             if batch_idx % 10 == 0:
                 # Update tqdm bar
-
                 if ((batch_idx + 10) * batch_len) <= len(data_loader.dataset):
                     pbar.update(10 * batch_len)
                 else:
