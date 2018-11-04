@@ -40,6 +40,7 @@ logger = logging.getLogger(__name__)
 class BaseNetwork(nn.Module):
     """
     Defines the BaseNetwork object.
+
     Parameters
     ----------
     name : str
@@ -67,6 +68,7 @@ class BaseNetwork(nn.Module):
         So far just 'best_validation_error' is implemented.
     criter_spec : dict
         criterion specification with name and all its parameters.
+
     Returns
     -------
     network : BaseNetwork
@@ -150,10 +152,12 @@ class BaseNetwork(nn.Module):
         through the networks and then through the classifier.
         If not, the input is passed through the network and
         returned without passing through a classification layer.
+
         Parameters
         ----------
         inputs : list(torch.Tensor)
             The inputs to pass throught the network.
+
         Returns
         -------
         output : torch.Tensor
@@ -181,6 +185,7 @@ class BaseNetwork(nn.Module):
         """
         Return the shape of the output of network by performing 
         a single forward pass using built-up data.
+
         Returns
         -------
         shape : tuple
@@ -198,6 +203,7 @@ class BaseNetwork(nn.Module):
     def name(self):
         """
         Return the name.
+
         Returns
         -------
         name : string
@@ -212,6 +218,7 @@ class BaseNetwork(nn.Module):
     @property
     def save_path(self):
         """Return the save path of the network.
+
         Returns
         -------
         save_path : string
@@ -231,6 +238,7 @@ class BaseNetwork(nn.Module):
     def lr_scheduler(self):
         """
         Return the network lr_scheduler.
+
         Returns
         -------
         lr_scheduler : torch.optim.lr_scheduler
@@ -245,6 +253,7 @@ class BaseNetwork(nn.Module):
     def early_stopping(self):
         """
         Return the stopping rule.
+
         Returns
         -------
         stopping_rule : str
@@ -260,6 +269,7 @@ class BaseNetwork(nn.Module):
     def criter_spec(self):
         """
         Return the criterion specification.
+
         Returns
         -------
         _criter_spec : dict
@@ -274,6 +284,7 @@ class BaseNetwork(nn.Module):
     def get_layers(self):
         """
         Returns an ordered dict of all modules in this network (layers).
+
         Returns
         -------
         layers : OrderedDict()
@@ -283,6 +294,7 @@ class BaseNetwork(nn.Module):
     def get_weights(self):
         """
         Return a dictionary containing a whole state of the module
+
         Returns
         -------
         weights : dict
@@ -294,6 +306,7 @@ class BaseNetwork(nn.Module):
     def _create_network(self, **kwargs):
         """
         Define the network. Abstract method that needs to be overridden.
+
         Returns
         -------
         None
@@ -304,10 +317,12 @@ class BaseNetwork(nn.Module):
     def freeze(self, apply_inputs=False):
         """
         Freeze network weights so training doesn't modify them.
+
         Parameters
         ----------
         apply_inputs : boolean
             Whether to freeze all input networks recursively
+
         Returns
         -------
         None
@@ -317,10 +332,12 @@ class BaseNetwork(nn.Module):
     def unfreeze(self, apply_inputs=False):
         """
         Unfreeze network weights so training does modify them.
+
         Parameters
         ----------
         apply_inputs : boolean
             Whether to unfreeze all input networks recursively
+
         Returns
         -------
         None
