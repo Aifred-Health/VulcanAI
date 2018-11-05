@@ -6,7 +6,6 @@ import torch
 from torch import nn
 
 # Vulcan imports
-from .layers import ConvUnit, DenseUnit, FlattenUnit
 from .metrics import Metrics
 from ..plotters.visualization import display_record
 
@@ -174,6 +173,7 @@ class BaseNetwork(nn.Module):
 
         return self.network(output)
 
+    @torch.no_grad()
     def _get_out_dim(self):
         """
         Return the network output shape.
@@ -192,6 +192,7 @@ class BaseNetwork(nn.Module):
         else:
             return None
 
+    @torch.no_grad()
     def _get_in_dim(self):
         """
         Return the network input shape.
@@ -415,7 +416,6 @@ class BaseNetwork(nn.Module):
         None
 
         """
-
         # In case there is already one, don't overwrite it.
         # Important for not removing the ref from a lr scheduler
         if self.optim is None:
@@ -526,6 +526,7 @@ class BaseNetwork(nn.Module):
 
         return train_loss, train_accuracy
 
+    @torch.no_grad()
     def _validate(self, val_loader):
         """
         Validate the network on the validation data.
@@ -606,6 +607,7 @@ class BaseNetwork(nn.Module):
             figure_path=figure_path)  # TODO: deal with repeated default parameters
 
     # TODO: Instead of self.cpu(), use is_cuda to know if you can use gpu
+    @torch.no_grad()
     def forward_pass(self, data_loader, convert_to_class=False):
         """
         Allow the user to pass data through the network.

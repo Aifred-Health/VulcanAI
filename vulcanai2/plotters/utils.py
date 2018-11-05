@@ -34,7 +34,7 @@ def get_notable_indices(feature_importances, top_k=5):
             'unimportant_indices': unimportant_features}
 
 
-class GuidedBackprop():
+class GuidedBackprop(object):
     """
     Generate gradients with guided back propagation w.r.t given input.
 
