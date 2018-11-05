@@ -3,13 +3,10 @@
 # Core imports
 import abc
 import torch
-from torch.autograd import Variable
 from torch import nn
-import sys
 
 # Vulcan imports
-from .layers import *
-from .utils import network_summary
+from .layers import ConvUnit, DenseUnit, FlattenUnit
 from .metrics import Metrics
 from ..plotters.visualization import display_record
 
@@ -20,10 +17,8 @@ from datetime import datetime
 import logging
 import os
 import pickle
-import time
 from collections import OrderedDict
 import numpy as np
-import math
 
 import matplotlib
 import matplotlib.pyplot as plt

@@ -18,6 +18,9 @@ class SnapshotNet(BaseNetwork):
     """
     Initialize snapshot ensemble given a template network.
 
+    A wrapper class for any Network inheriting from BaseNetwork to
+    train the template network using Snapshot Ensembling.
+
     Parameters
     ----------
     name : str
@@ -156,23 +159,11 @@ class SnapshotNet(BaseNetwork):
 
         """
         if len(self.network) == 0:
-            logger.warn("SnapshotNet not trained. Using template_network")
             raise ValueError("SnapshotNet needs to be trained.")
-
-        if not isinstance(inputs, list):
-                inputs = [inputs]
-
-        if self.input_networks:
-            net_outs = []
-            for in_net, x in zip(self.input_networks.values(), inputs):
-                net_outs.append(in_net(x))
-            output = self._merge_input_network_outputs(net_outs)
-        else:
-            output = torch.cat(inputs, dim=1)
 
         pred_collector = []
         for net in self.network:
-            pred_collector.append(net(output))
+            pred_collector.append(net(inputs))
         # Stack outputs along a new 0 dimension to be averaged
         pred_collector = torch.stack(pred_collector)
 

@@ -10,7 +10,7 @@ from .utils import pad
 
 import logging
 from inspect import getfullargspec
-from math import ceil, floor
+from math import ceil
 
 from collections import OrderedDict
 
