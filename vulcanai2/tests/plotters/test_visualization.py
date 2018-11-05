@@ -1,3 +1,4 @@
+"""Will test visualization functions."""
 import pytest
 import numpy as np
 import torch
@@ -5,10 +6,13 @@ from copy import deepcopy
 
 from vulcanai2.plotters.visualization import compute_saliency_map
 
+
 class TestVisualization:
+    """Test all visualization functionality."""
 
     @pytest.fixture
     def cnn_class(self):
+        """Create ConvNet with classes fixture."""
         from vulcanai2.models.cnn import ConvNet
         return ConvNet(
             name='Test_ConvNet_class',
@@ -16,18 +20,18 @@ class TestVisualization:
             config={
                 'conv_units': [
                     {
-                        "in_channels":1,
-                        "out_channels":16,
-                        "kernel_size":(5, 5),
-                        "stride":1,
-                        "padding":2
+                        "in_channels": 1,
+                        "out_channels": 16,
+                        "kernel_size": (5, 5),
+                        "stride": 1,
+                        "padding": 2
                     },
                     {
-                        "in_channels":16,
-                        "out_channels":1,
-                        "kernel_size":(5, 5),
-                        "stride":1,
-                        "padding":2
+                        "in_channels": 16,
+                        "out_channels": 1,
+                        "kernel_size": (5, 5),
+                        "stride": 1,
+                        "padding": 2
                     }]
             },
             num_classes=3
@@ -35,6 +39,7 @@ class TestVisualization:
 
     @pytest.fixture
     def dnn_class(self):
+        """Create DenseNet with classes fixture."""
         from vulcanai2.models.dnn import DenseNet
         return DenseNet(
             name='Test_DenseNet_class',
@@ -47,10 +52,7 @@ class TestVisualization:
         )
 
     def test_compute_saliency_map_cnn(self, cnn_class):
-        """
-        Confirm hooks are removed, and gradient shape is the same as input.
-        For ConvNets.
-        """
+        """Confirm hooks are removed, and gradient shape."""
         test_input_1B = torch.ones([1, *cnn_class.in_dim])
         test_input_5B = torch.ones([5, *cnn_class.in_dim])
 
@@ -77,10 +79,7 @@ class TestVisualization:
         assert cnn_class._backward_hooks == model_copy._backward_hooks
 
     def test_compute_saliency_map_dnn(self, dnn_class):
-        """
-        Confirm hooks are removed, and gradient shape is the same as input.
-        For DenseNets.
-        """
+        """Confirm hooks are removed, and gradient shape."""
         test_input_1B = torch.ones([1, *dnn_class.in_dim])
         test_input_5B = torch.ones([5, *dnn_class.in_dim])
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Defines the basenetwork class"""
+"""Defines the basenetwork class."""
 # Core imports
 import abc
 import torch
@@ -138,7 +138,7 @@ class BaseNetwork(nn.Module):
     @abc.abstractmethod
     def _merge_input_network_outputs(self, inputs):
         """Abstract method used to define how to handle multi-inputs."""
-        pass
+        raise NotImplementedError
 
     def forward(self, inputs, **kwargs):
         """
@@ -301,7 +301,7 @@ class BaseNetwork(nn.Module):
 
     def get_layers(self):
         """
-        Returns an ordered dict of all modules in this network (layers).
+        Return an ordered dict of all modules in this network (layers).
 
         Returns
         -------
@@ -312,12 +312,13 @@ class BaseNetwork(nn.Module):
 
     def get_weights(self):
         """
-        Return a dictionary containing a whole state of the module
+        Return a dictionary containing a whole state of the module.
 
         Returns
         -------
         weights : dict
             A dictionary containing a whole state of the module.
+
         """
         return self.state_dict()
 
@@ -437,15 +438,15 @@ class BaseNetwork(nn.Module):
                 if epoch % valid_interv == 0:
                     valid_loss, valid_acc = self._validate(val_loader)
 
-                tqdm.write("\n Epoch {}:\n"
-                           "Train Loss: {:.6f} | Test Loss: {:.6f} |"
-                           "Train Acc: {:.4f} | Test Acc: {:.4f}".format(
-                    self.epoch,
-                    train_loss,
-                    valid_loss,
-                    train_acc,
-                    valid_acc
-                ))
+                tqdm.write(
+                    "\n Epoch {}:\n"
+                    "Train Loss: {:.6f} | Test Loss: {:.6f} |"
+                    "Train Acc: {:.4f} | Test Acc: {:.4f}".format(
+                        self.epoch,
+                        train_loss,
+                        valid_loss,
+                        train_acc,
+                        valid_acc))
 
                 self.record['epoch'].append(self.epoch)
                 self.record['train_error'].append(train_loss)
