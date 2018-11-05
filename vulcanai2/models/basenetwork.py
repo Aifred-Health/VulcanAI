@@ -502,12 +502,9 @@ class BaseNetwork(nn.Module):
             self.optim.zero_grad()
             train_loss.backward(retain_graph=retain_graph)
             self.optim.step()
-
-            pbar.update(train_loader.batch_size)
-
             train_accuracy_accumulator += self.metrics.get_score(predictions,
                                                                  targets)
-
+            pbar.update(train_loader.batch_size)
         pbar.close()
 
         train_loss = train_loss_accumulator * \
@@ -548,15 +545,11 @@ class BaseNetwork(nn.Module):
                 self.cuda()
 
             predictions = self(data)
-
             validation_loss = self.criterion(predictions, targets)
             val_loss_accumulator += validation_loss.item()
-
-            pbar.update(val_loader.batch_size)
-
             val_accuracy_accumulator += self.metrics.get_score(predictions,
                                                                targets)
-
+            pbar.update(val_loader.batch_size)
         pbar.close()
 
         validation_loss = val_loss_accumulator * \
@@ -628,8 +621,7 @@ class BaseNetwork(nn.Module):
                             in_matrix=predictions.cpu())).float()
             # Aggregate predictions
             pred_collector = torch.cat([pred_collector, predictions.cpu()])
-            batch_len = data_loader.batch_size
-            pbar.update(batch_len)
+            pbar.update(data_loader.batch_size)
         pbar.close()
         # Tensor comes in as float so convert back to int if returning classes
         if self._num_classes and convert_to_class:
