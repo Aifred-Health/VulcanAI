@@ -426,7 +426,7 @@ class BaseNetwork(nn.Module):
                 fig_number = plt.gcf().number + 1 if plt.fignum_exists(1) else 1
                 plt.show()
 
-            for epoch in trange(epochs, desc='Epoch: ', ncols=80):
+            for epoch in trange(epochs, desc='Epoch: '):
 
                 train_loss, train_acc = self._train_epoch(train_loader,
                                                           retain_graph)
@@ -486,7 +486,7 @@ class BaseNetwork(nn.Module):
         train_accuracy_accumulator = 0.0
         pbar = trange(len(train_loader.dataset), desc='Training.. ')
 
-        for batch_idx, (data, targets) in enumerate(train_loader):
+        for data, targets in train_loader:
 
             if torch.cuda.is_available():
                 for idx, d in enumerate(data):
@@ -503,16 +503,7 @@ class BaseNetwork(nn.Module):
             train_loss.backward(retain_graph=retain_graph)
             self.optim.step()
 
-            batch_len = train_loader.batch_size
-
-            if batch_idx % 10 == 0:
-                # Update tqdm bar
-
-                if ((batch_idx + 10) * batch_len) <= len(train_loader.dataset):
-                    pbar.update(10 * batch_len)
-                else:
-                    pbar.update(
-                        len(train_loader.dataset) - int(batch_idx * batch_len))
+            pbar.update(train_loader.batch_size)
 
             train_accuracy_accumulator += self.metrics.get_score(predictions,
                                                                  targets)
@@ -548,7 +539,7 @@ class BaseNetwork(nn.Module):
         val_accuracy_accumulator = 0.0
         pbar = trange(len(val_loader.dataset), desc='Validating.. ')
 
-        for batch_idx, (data, targets) in enumerate(val_loader):
+        for data, targets in val_loader:
 
             if torch.cuda.is_available():
                 for idx, d in enumerate(data):
@@ -561,16 +552,8 @@ class BaseNetwork(nn.Module):
             validation_loss = self.criterion(predictions, targets)
             val_loss_accumulator += validation_loss.item()
 
-            batch_len = val_loader.batch_size
+            pbar.update(val_loader.batch_size)
 
-            if batch_idx % 10 == 0:
-                # Update tqdm bar
-
-                if ((batch_idx + 10) * batch_len) <= len(val_loader.dataset):
-                    pbar.update(10 * batch_len)
-                else:
-                    pbar.update(
-                        len(val_loader.dataset) - int(batch_idx * batch_len))
             val_accuracy_accumulator += self.metrics.get_score(predictions,
                                                                targets)
 
@@ -630,7 +613,7 @@ class BaseNetwork(nn.Module):
         # (e.g. with or without class conversion)
         pred_collector = torch.tensor([])
         pbar = trange(len(data_loader.dataset), desc='Forward passing.. ')
-        for batch_idx, (data, _) in enumerate(data_loader):
+        for data, _ in data_loader:
             if torch.cuda.is_available():
                 data = data.cuda()
                 self.cuda()
@@ -646,13 +629,7 @@ class BaseNetwork(nn.Module):
             # Aggregate predictions
             pred_collector = torch.cat([pred_collector, predictions.cpu()])
             batch_len = data_loader.batch_size
-            if batch_idx % 10 == 0:
-                # Update tqdm bar
-                if ((batch_idx + 10) * batch_len) <= len(data_loader.dataset):
-                    pbar.update(10 * batch_len)
-                else:
-                    pbar.update(
-                        len(data_loader.dataset) - int(batch_idx * batch_len))
+            pbar.update(batch_len)
         pbar.close()
         # Tensor comes in as float so convert back to int if returning classes
         if self._num_classes and convert_to_class:
