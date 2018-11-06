@@ -78,6 +78,7 @@ class BaseNetwork(nn.Module):
         """Define, initialize, and build the BaseNetwork."""
         super(BaseNetwork, self).__init__()
 
+        assert isinstance(name, str)
         self._name = name
         self._config = config
         self._save_path = save_path
@@ -87,10 +88,9 @@ class BaseNetwork(nn.Module):
             input_networks = [input_networks]
 
         if input_networks:
-            temp_input_network_dict = OrderedDict()
+            self.input_networks = nn.ModuleDict()
             for in_net in input_networks:
-                temp_input_network_dict[in_net.name] = in_net
-            self.input_networks = nn.ModuleDict(temp_input_network_dict)
+                self.add_input_network(in_net)
         else:
             self.input_networks = input_networks
 
@@ -134,6 +134,27 @@ class BaseNetwork(nn.Module):
 
         # Compute self.out_dim of the network
         self.out_dim = self._get_out_dim()
+
+    def add_input_network(self, in_network):
+        """
+        Utility function to add a new network as an input for this network.
+
+        New input network will exist at the end of the current set of
+        input_networks which will need to correspond with .
+
+        Parameters
+        ----------
+        in_network : BaseNetwork
+            A network to append to the set of self.input_networks.
+
+        Returns
+        -------
+        None
+
+        """
+        assert isinstance(in_network, BaseNetwork)
+        assert isinstance(self.input_networks, nn.ModuleDict)
+        self.input_networks[in_network.name] = in_network
 
     @abc.abstractmethod
     def _merge_input_network_outputs(self, inputs):
