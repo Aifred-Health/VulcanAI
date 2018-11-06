@@ -137,7 +137,7 @@ class BaseNetwork(nn.Module):
 
     def add_input_network(self, in_network):
         """
-        Utility function to add a new network as an input for this network.
+        Add a new network to  an input for this network.
 
         New input network will exist at the end of the current set of
         input_networks which will need to correspond with .
@@ -152,9 +152,12 @@ class BaseNetwork(nn.Module):
         None
 
         """
+        if self.input_networks is None:
+            self.input_networks = nn.ModuleDict()
         assert isinstance(in_network, BaseNetwork)
         assert isinstance(self.input_networks, nn.ModuleDict)
         self.input_networks[in_network.name] = in_network
+        self.in_dim = self._get_in_dim()
 
     @abc.abstractmethod
     def _merge_input_network_outputs(self, inputs):
