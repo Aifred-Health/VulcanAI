@@ -80,3 +80,9 @@ class TestDenseNet:
         dnn_noclass.unfreeze(apply_inputs=False)
         for params in dnn_noclass.network.parameters():
             assert params.requires_grad is True
+
+    def test_add_input_network(self, dnn_noclass, dnn_class):
+        """Test add input Network functionality."""
+        dnn_class.add_input_network(dnn_noclass)
+        assert dnn_class.input_networks[dnn_noclass.name] is dnn_noclass
+        assert dnn_class.in_dim == dnn_noclass.out_dim

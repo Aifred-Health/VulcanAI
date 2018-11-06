@@ -104,3 +104,9 @@ class TestConvNet:
         cnn_noclass.unfreeze(apply_inputs=False)
         for params in cnn_noclass.network.parameters():
             assert params.requires_grad is True
+
+    def test_add_input_network(self, cnn_noclass, cnn_class):
+        """Test add input Network functionality."""
+        cnn_class.add_input_network(cnn_noclass)
+        assert cnn_class.input_networks[cnn_noclass.name] is cnn_noclass
+        assert cnn_class.in_dim == cnn_noclass.out_dim
