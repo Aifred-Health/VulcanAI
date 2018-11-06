@@ -125,7 +125,7 @@ class ConvNet(BaseNetwork):
                  optim_spec={'name': 'Adam', 'lr': 0.001},
                  lr_scheduler=None, early_stopping=None,
                  criter_spec=nn.CrossEntropyLoss(),
-                 device="cpu"):
+                 device="cuda:0"):
         """Define the ConvNet object."""
         super(ConvNet, self).__init__(
             name, ConvNetConfig(config), in_dim, save_path, input_networks,

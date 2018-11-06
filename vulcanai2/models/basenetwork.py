@@ -645,9 +645,7 @@ class BaseNetwork(nn.Module):
             plot=plot,
             figure_path=figure_path)  # TODO: deal with repeated default parameters
 
-    # TODO: Instead of self.cpu(), use is_cuda to know if you can use gpu
-    def forward_pass(self, data_loader, convert_to_class=False,
-                     device=None, non_blocking=False):
+    def forward_pass(self, data_loader, convert_to_class=False):
         """
         Allow the user to pass data through the network.
 
