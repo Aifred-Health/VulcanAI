@@ -1,7 +1,7 @@
 """Contains all visualization utilities."""
 import numpy as np
 import torch
-from torch.nn import ReLU, SELU
+from torch.nn import ReLU, SELU, ModuleList
 import logging
 import collections
 
@@ -81,8 +81,12 @@ class GuidedBackprop(object):
             if network.input_networks:
                 for in_net in network.input_networks.values():
                     hook_all_networks(in_net)
-
-        hook_all_networks(self.network)
+        # For Snapshot Networks
+        if isinstance(self.network.network, ModuleList):
+            for net in self.network.network:
+                hook_all_networks(net)
+        else:
+            hook_all_networks(self.network)
 
     def _remove_hooks(self):
         """Remove all previously placed hooks from model."""

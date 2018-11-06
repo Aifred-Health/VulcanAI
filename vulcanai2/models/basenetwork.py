@@ -16,7 +16,6 @@ from datetime import datetime
 import logging
 import os
 import pickle
-from collections import OrderedDict
 import numpy as np
 
 import matplotlib
@@ -597,6 +596,7 @@ class BaseNetwork(nn.Module):
                        average_results=True, retain_graph=None,
                        valid_interv=4, plot=False, figure_path=None):
         """Will conduct the test suite to determine model strength."""
+        # TODO: deal with repeated default parameters
         return self.metrics.cross_validate(
             network=self,
             data_loader=data_loader,
@@ -606,7 +606,7 @@ class BaseNetwork(nn.Module):
             retain_graph=retain_graph,
             valid_interv=valid_interv,
             plot=plot,
-            figure_path=figure_path)  # TODO: deal with repeated default parameters
+            figure_path=figure_path)
 
     # TODO: Instead of self.cpu(), use is_cuda to know if you can use gpu
     @torch.no_grad()

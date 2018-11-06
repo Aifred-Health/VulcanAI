@@ -200,7 +200,8 @@ class ConvNet(BaseNetwork):
                 spatial_inputs.append(list(in_net.out_dim[1:]))
         max_spatial_dim = len(max(spatial_inputs, key=len))
 
-        # Fill with zeros in missing dim to compare max size later for each dim.
+        # Fill with zeros in missing dim to compare
+        # max size later for each dim.
         for in_spatial_dim in spatial_inputs:
             while(len(in_spatial_dim) < max_spatial_dim):
                 in_spatial_dim.insert(0, 0)
