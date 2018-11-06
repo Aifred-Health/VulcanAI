@@ -68,6 +68,9 @@ class BaseNetwork(nn.Module):
         So far just 'best_validation_error' is implemented.
     criter_spec : dict
         criterion specification with name and all its parameters.
+    device : str or torch.device
+        Sets the network module to the relevant device. If cuda available 
+        in the host console, "cuda:0" will be run which can be overriden.
 
     Returns
     -------
@@ -81,7 +84,7 @@ class BaseNetwork(nn.Module):
                  optim_spec={'name': 'Adam', 'lr': 0.001},
                  lr_scheduler=None, early_stopping=None,
                  criter_spec=nn.CrossEntropyLoss(),
-                 device="cpu"):
+                 device="cuda:0"):
         """Define, initialize, and build the BaseNetwork."""
         super(BaseNetwork, self).__init__()
 
@@ -141,7 +144,7 @@ class BaseNetwork(nn.Module):
         # Compute self.out_dim of the network
         self.out_dim = self._get_out_dim()
 
-        self.device = torch.device(device if torch.cuda.is_available() else "cpu")
+        self._device = torch.device(device if torch.cuda.is_available() else "cpu")
 
     @abc.abstractmethod
     def _merge_input_network_outputs(self, inputs):
@@ -205,6 +208,44 @@ class BaseNetwork(nn.Module):
             return tuple(out.shape[1:])
         else:
             return None
+
+    @property
+    def device(self):
+        """
+        Return the relevant device associalted with the 
+        network module.
+
+        Returns
+        -------
+        device : torch.device
+            Relevant device associalted with the network module.
+
+        """
+        return self._device
+
+    @device.setter
+    def device(self, device):
+        """
+        If the user specifies invalid device id, raises
+        RuntimeError for invalid device ordinal.
+        """
+        self._device = torch.device(device if torch.cuda.is_available() else "cpu")
+        self.to(device=self._device)
+        return self._device
+    
+    @property
+    def is_cuda(self):
+        """
+        Return  boolean that specifies whether the network is 
+        in gpu or not.
+
+        Returns
+        -------
+        is_cuda : boolean
+            Specifies whether the network is in gpu or not.
+
+        """
+        return next(self.parameters()).is_cuda
 
     @property
     def name(self):
