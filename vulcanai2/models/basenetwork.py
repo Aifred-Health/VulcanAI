@@ -145,6 +145,7 @@ class BaseNetwork(nn.Module):
         self.out_dim = self._get_out_dim()
 
         self._device = torch.device(device if torch.cuda.is_available() else "cpu")
+        self.to(device=self._device)
 
     @abc.abstractmethod
     def _merge_input_network_outputs(self, inputs):
@@ -531,7 +532,6 @@ class BaseNetwork(nn.Module):
 
         for batch_idx, (data, targets) in enumerate(train_loader):
 
-            self.to(device=self.device)
             data = set_tensor_device(data, device=self.device)
             targets = set_tensor_device(targets, device=self.device)
 
@@ -592,7 +592,6 @@ class BaseNetwork(nn.Module):
 
         for batch_idx, (data, targets) in enumerate(val_loader):
 
-            self.to(device=self.device)
             data = set_tensor_device(data, device=self.device)
             targets = set_tensor_device(targets, device=self.device)
 
