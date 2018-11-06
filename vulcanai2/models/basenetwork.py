@@ -246,6 +246,7 @@ class BaseNetwork(nn.Module):
         -------
         name : string
             The name of the network.
+
         """
         return self._name
 
@@ -658,7 +659,7 @@ class BaseNetwork(nn.Module):
 
     def save_model(self, save_path=None):
         """
-        Save the model (and it's input networks)
+        Save the model (and it's input networks).
 
         Parameters
         ----------
