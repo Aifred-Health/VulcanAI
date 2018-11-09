@@ -72,8 +72,9 @@ class FlattenUnit(BaseUnit):
 
     Returns
     -------
-    flatten_unit : 
+    flatten_unit : torch.Sequential
         A flatten layer.
+
     """
 
     def __init__(self):

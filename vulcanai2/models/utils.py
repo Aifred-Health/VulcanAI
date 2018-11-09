@@ -126,7 +126,7 @@ def network_summary(network, input_size=None):
     """
     if not input_size:
         input_size=[]
-        for net in network.input_networks:
+        for net in network.input_networks.values():
             input_size.append(net.in_dim)
     # input_size must be a list
     if isinstance(input_size, (tuple, int)):
