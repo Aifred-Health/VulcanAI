@@ -165,8 +165,9 @@ class GuidedBackprop():
 
         if not isinstance(targets, torch.LongTensor):
             targets = torch.LongTensor(targets)
+
         # Forward pass
-        network_output = self.network.cpu()(input_data)
+        network_output = self.network(input_data)
         # Zero gradients
         self.network.zero_grad()
         # Target for backprop
@@ -174,11 +175,12 @@ class GuidedBackprop():
             network_output.size()[0],
             self.network._num_classes)
         one_hot_output = one_hot_zeros.scatter_(1, targets.unsqueeze(dim=1), 1)
+        one_hot_output = one_hot_output.to(self.network.device)
         # Backward pass
         network_output.backward(gradient=one_hot_output)
         # Convert Pytorch variable to numpy array
         # Will return batch dimension as well
         gradients_as_arr = \
-            [grad.data.numpy() for grad in reversed(self.gradients)]
+            [grad.data for grad in reversed(self.gradients)]
         self._remove_hooks()
         return gradients_as_arr

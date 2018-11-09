@@ -144,8 +144,7 @@ class BaseNetwork(nn.Module):
         # Compute self.out_dim of the network
         self.out_dim = self._get_out_dim()
 
-        self._device = torch.device(device if torch.cuda.is_available() else "cpu")
-        self.to(device=self._device)
+        self.device = device
 
     @abc.abstractmethod
     def _merge_input_network_outputs(self, inputs):
@@ -183,6 +182,7 @@ class BaseNetwork(nn.Module):
         else:
             output = torch.cat(inputs, dim=1)
 
+        output = set_tensor_device(output, device=self.device)
         network_output = self.network(output)
 
         if self._num_classes:
@@ -232,7 +232,7 @@ class BaseNetwork(nn.Module):
         """
         self._device = torch.device(device if torch.cuda.is_available() else "cpu")
         self.to(device=self._device)
-        return self._device
+        # return self._device
     
     @property
     def is_cuda(self):
@@ -665,11 +665,9 @@ class BaseNetwork(nn.Module):
         self.eval()
         # prediction_shape used to aggregate network outputs
         # (e.g. with or without class conversion)
-        pred_collector = torch.tensor([])
-        for batch_idx, (*data, _) in enumerate(data_loader):
-
-            self.to(device=self.device)
-            data = set_tensor_device(data, device=self.device)
+        dtype = torch.long if convert_to_class else torch.float
+        pred_collector = torch.tensor([], dtype=dtype, device=self.device)
+        for batch_idx, (data, _) in enumerate(data_loader):
             # Get raw network output
             predictions = self(data)
             if self._num_classes:
@@ -677,16 +675,12 @@ class BaseNetwork(nn.Module):
                 predictions = nn.Softmax(dim=1)(predictions)
                 if convert_to_class:
                     predictions = torch.tensor(
-                        self.metrics.get_class(
-                            in_matrix=predictions.cpu())).float()
+                        self.metrics.get_class(in_matrix=predictions),
+                        device=self.device)
             # Aggregate predictions
-            pred_collector = torch.cat([pred_collector, predictions.cpu()])
-        # Tensor comes in as float so convert back to int if returning classes
-        if self._num_classes and convert_to_class:
-            pred_collector = pred_collector.long()
-        if isinstance(pred_collector, torch.Tensor):
-                pred_collector = pred_collector.detach().numpy()
-        return pred_collector
+            pred_collector = torch.cat([pred_collector, predictions])
+        # TODO: DO we need to return a numpy object?
+        return pred_collector.data.to('cpu').numpy()
 
     def save_model(self, save_path=None):
         """

@@ -118,9 +118,7 @@ class Metrics(object):
 
         """
         if isinstance(in_matrix, torch.Tensor):
-            if in_matrix.device.type == 'cuda':
-                in_matrix = set_tensor_device(in_matrix, device='cpu')
-            in_matrix = in_matrix.detach().numpy()
+            in_matrix = in_matrix.detach().to('cpu').numpy()
         # For one-hot encoded entries
         if in_matrix.shape[1] > 1:
             return np.argmax(in_matrix, axis=1)
