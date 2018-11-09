@@ -7,7 +7,7 @@ import math
 import numpy as np
 from sklearn import metrics as skl_metrics
 
-from .utils import get_confusion_matrix, round_list
+from .utils import get_confusion_matrix, round_list, set_tensor_device
 from ..plotters.visualization import display_confusion_matrix
 from collections import defaultdict
 
@@ -118,6 +118,8 @@ class Metrics(object):
 
         """
         if isinstance(in_matrix, torch.Tensor):
+            if in_matrix.device.type == 'cuda':
+                in_matrix = set_tensor_device(in_matrix, device='cpu')
             in_matrix = in_matrix.detach().numpy()
         # For one-hot encoded entries
         if in_matrix.shape[1] > 1:
