@@ -189,6 +189,10 @@ class BaseNetwork(nn.Module):
 
         if self.input_networks:
             net_outs = []
+            # Loop through all input networks and pass through respective
+            # input data tensors to collect their outputs. Use the specified
+            # merge_inputs functionality to combine all the outputs to create
+            # the input for this network.
             for in_net, x in zip(self.input_networks.values(), inputs):
                 net_outs.append(in_net(x))
             output = self._merge_input_network_outputs(net_outs)
