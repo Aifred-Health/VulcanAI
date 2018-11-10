@@ -94,7 +94,7 @@ class Metrics(object):
             # TODO: Use get_class
             max_index = predictions.max(dim=1)[1]
             correct = (max_index == targets).sum() # TODO: this doesn't seem correct
-            accuracy = int(correct.data) / len(targets)
+            accuracy = int(correct.data) / len(targets) # TODO: should we use .data? https://discuss.pytorch.org/t/cpu-detach-numpy-vs-data-cpu-numpy/20036
             return accuracy
         else:
             raise NotImplementedError(
@@ -118,7 +118,7 @@ class Metrics(object):
 
         """
         if isinstance(in_matrix, torch.Tensor):
-            in_matrix = in_matrix.detach().to('cpu').numpy()
+            in_matrix = in_matrix.cpu().detach().numpy()
         # For one-hot encoded entries
         if in_matrix.shape[1] > 1:
             return np.argmax(in_matrix, axis=1)
