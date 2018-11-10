@@ -192,6 +192,12 @@ class BaseNetwork(nn.Module):
             return class_output
         else:
             return network_output
+    def extra_repr(self):
+        """
+        Set the extra representation of the module
+
+        """
+        return '(device): torch.'+self.device.__repr__()
 
     def _get_out_dim(self):
         """
