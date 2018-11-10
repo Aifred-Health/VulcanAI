@@ -174,7 +174,7 @@ class BaseNetwork(nn.Module):
         if not isinstance(inputs, list):
             inputs = [inputs]
 
-        if self.input_networks is not None:
+        if self.input_networks:
             net_outs = []
             for net, x in zip(self.input_networks, inputs):
                 net_outs.append(net(x))
@@ -186,7 +186,9 @@ class BaseNetwork(nn.Module):
         network_output = self.network(output)
 
         if self._num_classes:
-            class_output = self.network_tail(network_output)
+            # TODO: temporary fix for casting network_tail to 
+            # device, not necessary when this PR is merged with master
+            class_output = self.network_tail.to(device=self.device)(network_output)
             return class_output
         else:
             return network_output
@@ -222,7 +224,7 @@ class BaseNetwork(nn.Module):
             Relevant device associalted with the network module.
 
         """
-        return self._device
+        return next(self.network.parameters()).device
 
     @device.setter
     def device(self, device):
@@ -230,9 +232,7 @@ class BaseNetwork(nn.Module):
         If the user specifies invalid device id, raises
         RuntimeError for invalid device ordinal.
         """
-        self._device = torch.device(device if torch.cuda.is_available() else "cpu")
-        self.to(device=self._device)
-        # return self._device
+        self.network.to(device=device)
     
     @property
     def is_cuda(self):
@@ -246,7 +246,7 @@ class BaseNetwork(nn.Module):
             Specifies whether the network is in gpu or not.
 
         """
-        return next(self.parameters()).is_cuda
+        return next(self.network.parameters()).is_cuda
 
     @property
     def name(self):
@@ -645,6 +645,7 @@ class BaseNetwork(nn.Module):
             plot=plot,
             figure_path=figure_path)  # TODO: deal with repeated default parameters
 
+    @torch.no_grad()
     def forward_pass(self, data_loader, convert_to_class=False):
         """
         Allow the user to pass data through the network.

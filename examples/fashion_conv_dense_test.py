@@ -215,3 +215,9 @@ multi_input_conv_3D.fit(train_loader_multi, val_loader_multi,
                         )
 multi_input_conv_3D.run_test(val_loader_multi, plot=True)
 multi_input_conv_3D.save_model()
+
+loaded_model = multi_input_conv_3D.load_model(load_path = multi_input_conv_3D.save_path)
+loaded_model.device = "cpu" # Note the input_networks remain 
+                            # in default device, in this case
+                            # cuda:0
+loaded_model.run_test(val_loader_multi, plot=True)
