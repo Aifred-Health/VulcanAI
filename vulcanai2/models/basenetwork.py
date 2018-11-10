@@ -192,11 +192,9 @@ class BaseNetwork(nn.Module):
             return class_output
         else:
             return network_output
-    def extra_repr(self):
-        """
-        Set the extra representation of the module
 
-        """
+    def extra_repr(self):
+        """Set the extra representation of the module."""
         return '(device): torch.'+self.device.__repr__()
 
     def _get_out_dim(self):
@@ -221,8 +219,7 @@ class BaseNetwork(nn.Module):
     @property
     def device(self):
         """
-        Return the relevant device associalted with the 
-        network module.
+        Return the relevant device associalted with network module.
 
         Returns
         -------
@@ -235,10 +232,20 @@ class BaseNetwork(nn.Module):
     @device.setter
     def device(self, device):
         """
+        Network device setter.
+
         If the user specifies invalid device id, raises
         RuntimeError for invalid device ordinal.
+
+        Parameters
+        ----------
+        device : str or torch.device
+            The device to transfer network to.
+
         """
-        self.network.to(device=device)
+        device = torch.device(device if torch.cuda.is_available() else 'cpu')
+        if self.network:
+            self.network.to(device=device)
     
     @property
     def is_cuda(self):
