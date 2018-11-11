@@ -13,8 +13,6 @@ from sklearn import preprocessing
 
 logger = logging.getLogger(__name__)
 
-# TODO: give option to mirror train/target
-# TODO: add more logging statements as appropriate
 class TabularDataset(Dataset):
     """
     This defines a dataset, subclassed from torch.utils.data.Dataset. It uses pd.dataframe as the backend, with utility
@@ -120,23 +118,23 @@ class TabularDataset(Dataset):
         """
         return list(getattr(self.df, column_name)().unique())
 
-    # TODO: this is really slow make it faster
     def identify_all_numerical_features(self):
         """
-        Returns all columns that contain numeric values
+        Returns all column names that contain numeric values
         :return: all columns that contain numeric values
         """
-        return [key for key in dict(self.df.dtypes)
-                if dict(self.df.dtypes)[key] in ['float64', 'int64', 'float32', 'int32']]
+        select = self.df.select_dtypes(include='number')
+        return select.columns.values.tolist() # much faster than casting to a list as in list(df)
 
-    # TODO: this is really slow make it faster
+    # TODO: datetime categorical?
     def identify_all_categorical_features(self):
         """
-        Returns all columns that contain categorical values
+        Returns all columns that do not contain numeric values (and we therefore consider categorical.
+        Note that this includes datetime.
         :return: all columns that contain categorical values
         """
-        return [key for key in dict(self.df.dtypes)
-                if dict(self.df.dtypes)[key] not in ['float64', 'int64', 'float32', 'int32']]
+        select = self.df.select_dtypes(exclude='number')
+        return select.columns.values.tolist() # much faster than casting to a list as in list(df)
 
     def delete_columns(self, column_list):
         """
@@ -154,7 +152,7 @@ class TabularDataset(Dataset):
 
     def create_label_encoding(self, column, ordered_values):
         """
-        Create label encoding for
+        Create label encoding for the provided column.
         Used for those categorical features where order does matter.
         :param ordered_values: Either an ordered list of possible column values. Or a mapping of column value to \
         label value. Must include all possible values.
@@ -186,9 +184,11 @@ class TabularDataset(Dataset):
         :return: None
         """
         if column in list(self.df):
-                self.df = pd.get_dummies(self.df, dummy_na=True, columns=[column], prefix_sep=prefix_sep)
+            self.df = pd.get_dummies(self.df, dummy_na=True, columns=[column], prefix_sep=prefix_sep)
+            logger.info(f"Successfully encoded {column}")
+
         else:
-                logger.info(f"Col {column} does not exist")
+            logger.info(f"Col {column} does not exist")
 
     def reverse_create_one_hot_encoding(self, prefix_sep="@"):
         """
