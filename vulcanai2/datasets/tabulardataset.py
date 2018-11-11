@@ -247,7 +247,6 @@ class TabularDataset(Dataset):
                 column_list.append(col)
         return column_list
 
-    # TODO: add in non_numeric
     def identify_unbalanced_columns(self, threshold, non_numeric=True):
         """
         This returns columns that are highly unbalanced, aka those that have a disproportionate amount of one value
@@ -255,24 +254,37 @@ class TabularDataset(Dataset):
         :param non_numeric: Whether non-numeric columns are also considered.
         :return: The column list
         """
+        if non_numeric:
+            columns = list(self.df.columns)
+        else:
+            columns = list(self.df.select_dtypes(include=np.number))
         column_list = []
-        for col in self.df.columns:
-            col_maj = (max(self.df[col].value_counts()) / self.df[col].value_counts().sum())
-            if col_maj <= threshold:
-                column_list.append(col)
+        for col in columns:
+            #Check amount of null values, because if column is entirely null, max won't work.
+            num_of_null = self.df[col].isnull().sum()
+            if num_of_null != self.__len__():
+                col_maj = (max(self.df[col].value_counts()) / self.df[col].value_counts().sum())
+                if col_maj <= threshold:
+                    column_list.append(col)
         return column_list
 
     def identify_highly_correlated(self, threshold):
         """
-        Remove one of those columns that are highly correlated with one-another.
+        Identify columns that are highly correlated with one-another.
         :param threshold: Amount of correlation necessary for removal.
         :return: None
         """
-        raise NotImplementedError
+        column_list = set()
+        featuresCorrelation = self.df.corr().abs()
+        corr_pairs = featuresCorrelation.unstack()
+        for index, val in corr_pairs.items():
+            if val > threshold and (index[0] != index[1]):
+                column_list.add((index,val))
+        return column_list
 
     def identify_low_variance(self, threshold):
         """
-        Removes those columns that have low variance
+        Identify those columns that have low variance
         :param threshold: Upper bound of variance needed for removal
         :return: A dictionary of column names, with the value being their variance
         """
