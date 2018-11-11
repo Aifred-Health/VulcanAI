@@ -3,6 +3,7 @@ from copy import deepcopy
 import logging
 from datetime import datetime
 import pickle
+import os
 
 import torch
 from torch import nn
@@ -16,6 +17,9 @@ logger = logging.getLogger(__name__)
 class SnapshotNet(BaseNetwork):
     """
     Initialize snapshot ensemble given a template network.
+
+    A wrapper class for any Network inheriting from BaseNetwork to
+    train the template network using Snapshot Ensembling.
 
     Parameters
     ----------
@@ -37,10 +41,10 @@ class SnapshotNet(BaseNetwork):
         # TODO: Should these be defaulted to the values of template_network?
         super(SnapshotNet, self).__init__(
             name=name,
-            dimensions=template_network.in_dim,
             config=None,  # template_network._config
+            in_dim=template_network.in_dim,
             save_path=None,  # template_network.save_path
-            input_network=None,  # template_network._input_network
+            input_networks=None,  # template_network.input_networks
             num_classes=template_network._num_classes,
             activation=None,  # template_network.network[0]._activation
             pred_activation=None,  # pred_activation
@@ -55,12 +59,11 @@ class SnapshotNet(BaseNetwork):
                 "template_network type must inherit from BaseNetwork.")
 
         self.template_network = deepcopy(template_network)
-
+        self.network = nn.ModuleList()
+        self.out_dim = self.template_network.out_dim
         if n_snapshots <= 0:
             raise ValueError("n_snapshots must be >=1.")
         self.n_snapshots = n_snapshots
-        # TODO: Should this be called self.network for continuity?
-        self.network = nn.ModuleList()
 
     def fit(self, train_loader, val_loader, epochs,
             retain_graph=None, valid_interv=4, plot=False):
@@ -134,11 +137,12 @@ class SnapshotNet(BaseNetwork):
             The characters to append at the end of BaseNetwork stack of names.
 
         """
-        if network._input_network is not None:
-            self._update_network_name_stack(network._input_network, append_str)
+        if network.input_networks:
+            for in_net in network.input_networks.values():
+                self._update_network_name_stack(in_net, append_str)
         network.name = "{}_{}".format(network.name, append_str)
 
-    def forward(self, x):
+    def forward(self, inputs, **kwargs):
         """
         Snapshot forward function.
 
@@ -155,12 +159,14 @@ class SnapshotNet(BaseNetwork):
 
         """
         if len(self.network) == 0:
-            raise ValueError("SnapshotNet must be trained first.")
+            raise ValueError("SnapshotNet needs to be trained.")
+
         pred_collector = []
         for net in self.network:
-            pred_collector.append(net(x))
+            pred_collector.append(net(inputs))
         # Stack outputs along a new 0 dimension to be averaged
         pred_collector = torch.stack(pred_collector)
+
         return torch.mean(input=pred_collector, dim=0)
 
     def save_model(self, save_path=None):
@@ -177,14 +183,23 @@ class SnapshotNet(BaseNetwork):
         None
 
         """
-        if save_path is None:
-            save_path = r"saved_models/{}_{}/".format(
-                self.name, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+        if not save_path:
+            save_path = r"saved_models/"
+
         if not save_path.endswith("/"):
             save_path = save_path + "/"
+
+        save_path = save_path + "{}_{}/".format(
+            self.name, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+        logger.info("No save path provided, saving to {}".format(save_path))
+
         for network in self.network:
             logger.info("Saving network {}".format(network.name))
             network.save_model(save_path=save_path)
-        module_save_path = save_path + "model.pkl"
-        self.save_path = module_save_path
-        pickle.dump(self, open(module_save_path, "wb"), 2)
+
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+
+        model_save_path = save_path + "model.pkl"
+        self.save_path = save_path
+        pickle.dump(self, open(model_save_path, "wb"), 2)

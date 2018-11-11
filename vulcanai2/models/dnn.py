@@ -4,10 +4,12 @@ import torch
 import torch.nn as nn
 
 from .basenetwork import BaseNetwork
-from .layers import DenseUnit
+from .layers import DenseUnit, FlattenUnit
 
 import logging
 from inspect import getfullargspec
+
+from collections import OrderedDict
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +72,7 @@ class DenseNetConfig:
             self.units.append(temp_unit)
 
 
-class DenseNet(BaseNetwork, nn.Module):
+class DenseNet(BaseNetwork):
     """
     Subclass of BaseNetwork defining a DenseNet.
 
@@ -78,13 +80,14 @@ class DenseNet(BaseNetwork, nn.Module):
     ----------
     name : str
         The name of the network. Used when saving the file.
-    dimensions : list of tuples
-        The dimensions of the network.
     config : dict
         The configuration of the network module, as a dict.
+    in_dim : tuple
+        The input dimensions of the network. Not required to specify when the
+        network has input_networks.
     save_path : str
         The name of the file to which you would like to save this network.
-    input_network : list of BaseNetwork
+    input_networks : list of BaseNetwork
         A network object provided as input.
     num_classes : int or None
         The number of classes to predict.
@@ -101,99 +104,26 @@ class DenseNet(BaseNetwork, nn.Module):
     criter_spec : dict
         criterion specification with name and all its parameters.
 
+    Returns
+    -------
+    network : DenseNet
+        A network of type BaseNetwork.
+
     """
 
-    def __init__(self, name, dimensions, config, save_path=None,
-                 input_network=None, num_classes=None,
+    def __init__(self, name, config, in_dim=None, save_path=None,
+                 input_networks=None, num_classes=None,
                  activation=nn.ReLU(), pred_activation=None,
                  optim_spec={'name': 'Adam', 'lr': 0.001},
                  lr_scheduler=None, early_stopping=None,
                  criter_spec=nn.CrossEntropyLoss()):
         """Define the DenseNet object."""
-        nn.Module.__init__(self)
         super(DenseNet, self).__init__(
-            name, dimensions, DenseNetConfig(config), save_path, input_network,
+            name, DenseNetConfig(config), in_dim, save_path, input_networks,
             num_classes, activation, pred_activation, optim_spec,
             lr_scheduler, early_stopping, criter_spec)
 
     def _create_network(self, **kwargs):
-        self.in_dim = self._dimensions
-
-        if self._input_network and \
-           self._input_network.__class__.__name__ == "ConvNet":
-
-            if self._input_network.conv_flat_dim != self.in_dim:
-                self.in_dim = self.get_flattened_size(self._input_network)
-            else:
-                pass
-
-        if self._input_network and \
-           self._input_network.__class__.__name__ == "DenseNet":
-
-            if self._input_network.dims[-1] != self.in_dim:
-                self.in_dim = self._input_network.dims[-1]
-            else:
-                pass
-
-        dense_hid_layers = self._config.units
-        # Build network
-        self.network = self._build_dense_network(
-            dense_hid_layers, kwargs['activation'])
-
-        if self._num_classes:
-            self.out_dim = self._num_classes
-            self._create_classification_layer(
-                dense_hid_layers[-1]['out_features'],
-                kwargs['pred_activation'])
-
-            if torch.cuda.is_available():
-                for module in self.modules():
-                    module.cuda()
-
-    def _create_classification_layer(self, dim, pred_activation):
-        self.network_tail = DenseUnit(
-            in_features=dim,
-            out_features=self.out_dim,
-            activation=pred_activation)
-
-    def forward(self, x):
-        """
-        Define the forward behaviour of the network.
-
-        If the network is defined with `num_classes` then it is
-        assumed to be the last network which contains a
-        classification layer/classifier (network tail).
-        The data ('x') will be passed through the network and
-        then through the classifier. If not, the input is passed
-        through the network and returned without passing through
-        a classification layer.
-
-        Parameters
-        ----------
-        x : torch.Tensor
-            Input tensor to pass through self.
-
-        Returns
-        -------
-        output : torch.Tensor
-
-        """
-        if self._input_network:
-            x = self._input_network(x)
-
-        if self._input_network and \
-           self._input_network.__class__.__name__ == "ConvNet":
-            x = x.view(-1, self._input_network.conv_flat_dim)
-
-        network_output = self.network(x)
-
-        if self._num_classes:
-            class_output = self.network_tail(network_output)
-            return class_output
-        else:
-            return network_output
-
-    def _build_dense_network(self, dense_hid_layers, activation):
         """
         Build the layers of the network into a nn.Sequential object.
 
@@ -210,18 +140,36 @@ class DenseNet(BaseNetwork, nn.Module):
             the dense network as a nn.Sequential object
 
         """
+        dense_hid_layers = self._config.units
+
+        if self.input_networks:
+            self.in_dim = self._get_in_dim()
+
+        # Build network
         # Specify incoming feature size for the first dense hidden layer
-        dense_hid_layers[0]['in_features'] = self.in_dim
-        dense_layers = []
-        for dense_layer_config in dense_hid_layers:
-            dense_layer_config['activation'] = activation
-            dense_layers.append(DenseUnit(**dense_layer_config))
-        dense_network = nn.Sequential(*dense_layers)
-        return dense_network
+        dense_hid_layers[0]['in_features'] = self.in_dim[0]
+        dense_layers = OrderedDict()
+        for idx, dense_layer_config in enumerate(dense_hid_layers):
+            dense_layer_config['activation'] = kwargs['activation']
+            layer_name = 'dense_{}'.format(idx)
+            dense_layers[layer_name] = DenseUnit(**dense_layer_config)
+        self.network = nn.Sequential(dense_layers)
+
+        if self._num_classes:
+            self.network.add_module(
+                'flatten', FlattenUnit())
+            self.network.add_module(
+                'classify', DenseUnit(
+                    in_features=self._get_out_dim()[0],
+                    out_features=self._num_classes,
+                    activation=kwargs['pred_activation']))
+
+    def _merge_input_network_outputs(self, tensors):
+        output_tensors = [FlattenUnit()(t) for t in tensors]
+        return torch.cat(output_tensors, dim=1)
 
     def __str__(self):
-        """Specify how to print network as string."""
-        if self.optim:
+        if self.optim is not None:
             return super(DenseNet, self).__str__() + f'\noptim: {self.optim}'
         else:
             return super(DenseNet, self).__str__()

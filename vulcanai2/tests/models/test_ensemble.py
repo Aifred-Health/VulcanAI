@@ -15,7 +15,7 @@ class TestSnapshotNet:
         """Create intermediate conv module."""
         return ConvNet(
             name='Test_ConvNet_noclass',
-            dimensions=(1, 28, 28),
+            in_dim=(1, 28, 28),
             config={
                 'conv_units': [
                     {
@@ -31,7 +31,7 @@ class TestSnapshotNet:
                         "stride": 1,
                         "padding": 2
                     }]
-            }
+            },
         )
 
     @pytest.fixture
@@ -39,8 +39,8 @@ class TestSnapshotNet:
         """Create dnn module prediction leaf node."""
         return DenseNet(
             name='Test_DenseNet_class',
-            input_network=cnn_noclass,
-            dimensions=cnn_noclass.conv_flat_dim,
+            input_networks=cnn_noclass,
+            in_dim=cnn_noclass.out_dim,
             config={
                 'dense_units': [100, 50],
                 'initializer': None,

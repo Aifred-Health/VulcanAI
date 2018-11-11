@@ -2,6 +2,7 @@
 """
 This file defines the TabularDataset Class
 """
+import torch
 from torch.utils.data import Dataset
 import numpy as np
 import pandas as pd
@@ -12,7 +13,8 @@ from sklearn import preprocessing
 
 logger = logging.getLogger(__name__)
 
-
+# TODO: give option to mirror train/target
+# TODO: add more logging statements as appropriate
 class TabularDataset(Dataset):
     """
     This defines a dataset, subclassed from torch.utils.data.Dataset. It uses pd.dataframe as the backend, with utility
@@ -58,20 +60,18 @@ class TabularDataset(Dataset):
         """
         # Where df.drop is used to access the dataframe without the label column, iloc gets the row, then access values
         # and convert
+
         if self.labelColumn:
             xs = self.df.drop(self.labelColumn, axis=1).iloc[[2]].values.tolist()[0]
-            y = self.df[[self.labelColumn]].iloc[[idx]].values.tolist()[0]
+            xs = torch.tensor(xs, dtype=torch.float)
+            y = self.df[[self.labelColumn]].iloc[[idx]].values.tolist()[0][0]
+            y = torch.tensor(y, dtype=torch.long)
             return xs, y
         else:
             xs = self.df.iloc[[2]].values.tolist()[0]
+            xs = torch.tensor(xs, dtype=torch.float)
             return xs
 
-    def convert_to_dataframe(self):
-        """
-        Converts TabularDataset variable back to dataframe
-        :return: The dataframe at current state
-        """
-        return self.df
 
     def save_dataframe(self, file_path):
         """

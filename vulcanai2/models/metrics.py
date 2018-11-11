@@ -1,6 +1,7 @@
+# coding=utf-8
 """Defines the network test suite."""
 import torch
-import torch.nn.functional as F
+from torch.utils import data
 
 import math
 import numpy as np
@@ -8,17 +9,16 @@ from sklearn import metrics as skl_metrics
 
 from .utils import get_confusion_matrix, round_list
 from ..plotters.visualization import display_confusion_matrix
+from collections import defaultdict
 
-from copy import deepcopy
-import datetime
-
-from collections import Counter
+import copy
 
 import logging
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
 
 
+# noinspection PyProtectedMember
 class Metrics(object):
     """
     A class to calculate all metrics for a BaseNetwork.
@@ -27,16 +27,14 @@ class Metrics(object):
 
     Parameters
     ----------
-    num_class : int
-        The number of classes the network is trying to predict.
-
     """
-
-    def __init__(self, num_class, use_unlabeled=False):
+    # TODO: why does use_unlabeled exist?
+    #def __init__(self, use_unlabeled=False):
+    def __init__(self):
         """Initialize the metrics class for a BaseNetwork."""
-        self.num_class = num_class
+        #self.num_class = num_class
         # self.mat = np.zeros((self.num_class, self.num_class), dtype=np.float)
-        self.list_classes = list(range(self.num_class))
+        #self.list_classes = list(range(self.num_class))
 
     # def update(self, predictions, targets):
     #     if not(isinstance(predictions, np.ndarray)) or not(isinstance(targets, np.ndarray)):
@@ -95,20 +93,22 @@ class Metrics(object):
         if metric == 'accuracy':
             # TODO: Use get_class
             max_index = predictions.max(dim=1)[1]
-            correct = (max_index == targets).sum()
+            correct = (max_index == targets).sum() # TODO: this doesn't seem correct
             accuracy = int(correct.data) / len(targets)
             return accuracy
         else:
-            raise NotImplementedError('Metric not available.')
+            raise NotImplementedError(
+                'Metric {} not available.'.format(metric))
 
     # TODO: class # should correspond with self.num_class
+    # noinspection PyMethodMayBeStatic
     def get_class(self, in_matrix):
         """
         Reformat truth matrix to be the classes in a 1D array.
 
         Parameters
         ----------
-        n_matrix : numpy.ndarray or torch.Tensor
+        in_matrix : numpy.ndarray or torch.Tensor
             One-hot matrix of shape [batch, num_classes].
 
         Returns
@@ -126,7 +126,6 @@ class Metrics(object):
         elif in_matrix.shape[1] == 1:
             return np.around(in_matrix)
 
-    # TODO: Modify to use val loader
     def run_test(self, network, data_loader, figure_path=None, plot=False):
         """
         Will conduct the test suite to determine network strength.
@@ -152,11 +151,13 @@ class Metrics(object):
            network._num_classes == 0:
             raise ValueError('There\'s no classification layer')
 
-        test_y = data_loader.dataset.test_labels
+        # getting just the y values out of the dataset
+        test_y = np.array([v[1] for v in data_loader.dataset])
 
         raw_prediction = network.forward_pass(
             data_loader=data_loader,
             convert_to_class=False)
+
         class_prediction = self.get_class(raw_prediction)
 
         confusion_matrix = get_confusion_matrix(
@@ -241,73 +242,118 @@ class Metrics(object):
             all_class_auc += [auc]
 
         return {
-            'accuracy': accuracy,
-            'macro_sensitivity': sens_macro,
-            'macro_specificity': spec_macro,
-            'avg_dice': np.average(dice),
-            'macro_ppv': ppv_macro,
-            'macro_npv': npv_macro,
-            'macro_f1': f1_macro,
-            'macro_auc': np.average(all_class_auc)
+            'accuracy': float(accuracy),
+            'macro_sensitivity': float(sens_macro),
+            'macro_specificity': float(spec_macro),
+            'avg_dice': float(np.average(dice)),
+            'macro_ppv': float(ppv_macro),
+            'macro_npv': float(npv_macro),
+            'macro_f1': float(f1_macro),
+            'macro_auc': float(np.average(all_class_auc))
         }
 
-    # TODO:  Needs to be updated to use train loader
-    def k_fold_validation(self, model, train_x, train_y, k=5, epochs=10,
-                          batch_ratio=1.0, plot=False):
+    def cross_validate(self, network, data_loader, k, epochs,
+                       average_results=True, retain_graph=None,
+                       valid_interv=4, plot=False, figure_path=None):
         """
-        Conduct k fold cross validation on a network.
+        Perform k-fold cross validation given a Network and DataLoader object.
 
-        Args:
-            model: BaseNetwork object you want to cross validate
-            train_x: ndarray of shape (batch, features), train samples
-            train_y: ndarray of shape(batch, classes), train labels
-            k: int, how many folds to run
-            batch_ratio: float, 0-1 for % of total to allocate for a batch
-            epochs: int, number of epochs to train each fold
+        Parameters
+        ----------
+        network : BaseNetwork
+            Network descendant of BaseNetwork.
+        data_loader : torch.utils.data.DataLoader
+            The DataLoader object containing the totality of the data to use
+            for k-fold cross validation.
+        k : int
+            The number of folds to split the training into.
+        epochs : int
+            The number of epochs to train the network per fold.
+        average_results : boolean
+            Whether or not to return results from all folds or just an average.
+        retain_graph : {None, boolean}
+            Whether retain_graph will be true when .backwards is called.
+        valid_interv : int
+            Specifies after how many epochs validation should occur.
+        plot : boolean
+            Whether or not to plot all results in prompt and charts.
+        figure_path : str
+            Where to save all figures and results.
 
-        Returns final metric dictionary
+        Returns
+        -------
+        results : dict
+            If average_results is on, return dict of floats.
+            If average_results is off, return dict of float lists.
+
         """
+        all_results = defaultdict(lambda: [])
+
+        # TODO: this whole section is really clunky
+        # Getting the fold sequence.
+        fold_len = math.floor(len(data_loader.dataset) / k)
+        rem = len(data_loader.dataset) % k
+        fold_seq = []
+
+        for _ in range(k-1):
+            fold_seq.append(fold_len)
+        if rem == 0:
+            fold_seq.append(fold_len)
+        else:
+            fold_seq.append(fold_len+rem)  # last one is the longest if unequal
+
+        dataset_splits = data.random_split(data_loader.dataset,
+                                           fold_seq)
+
+        batch_size = data_loader.batch_size
+
+        # #TODO: improve the copying of parameters
+        # Set to true if RandomSampler exists.
+        shuffle = isinstance(data_loader.sampler, data.sampler.RandomSampler)
+
         try:
-            model.save_name
-        except:
-            model.save_model()
-        chunk_size = int((train_x.shape[0]) / k)
-        results = []
-        timestamp = "{date:%Y-%m-%d_%H:%M:%S}".format(date=datetime.datetime.now())
-        for i in range(k):
-            val_x = train_x[i * chunk_size:(i + 1) * chunk_size]
-            val_y = train_y[i * chunk_size:(i + 1) * chunk_size]
-            tra_x = np.concatenate(
-                (train_x[:i * chunk_size], train_x[(i + 1) * chunk_size:]),
-                axis=0
-            )
-            tra_y = np.concatenate(
-                (train_y[:i * chunk_size], train_y[(i + 1) * chunk_size:]),
-                axis=0
-            )
-            net = deepcopy(model)
-            net.fit(
-                epochs=epochs,
-                train_x=tra_x,
-                train_y=tra_y,
-                val_x=val_x,
-                val_y=val_y,
-                batch_ratio=batch_ratio,
-                plot=plot
-            )
-            results += [Counter(self.run_test(
-                net,
-                val_x,
-                val_y,
-                figure_path='figures/kfold_{}_{}'.format(model.name, timestamp),
-                plot=plot))]
-            del net
-        aggregate_results = reduce(lambda x, y: x + y, results)
+            for fold in range(k):
 
-        print ('\nFinal Cross validated results')
-        print ('-----------------------------')
-        for metric_key in aggregate_results.keys():
-            aggregate_results[metric_key] /= float(k)
-            print ('{}: {:.4f}'.format(metric_key, aggregate_results[metric_key]))
+                # TODO: this may break on different devices?? test.
+                # TODO: Re-initialize instead of deepcopy?
+                cross_val_network = copy.deepcopy(network)
 
-        return aggregate_results
+                # TODO: properly pass params
+
+                # Generate fold training set.
+                train_dataset = data.ConcatDataset(
+                    dataset_splits[:fold] + dataset_splits[fold+1:])
+                # Generate fold validation set.
+                val_dataset = dataset_splits[fold]
+                # Generate fold training data loader object.
+                train_loader = data.DataLoader(
+                    train_dataset, batch_size=batch_size, shuffle=shuffle)
+                # Generate fold validation data loader object.
+                val_loader = data.DataLoader(
+                    val_dataset, batch_size=batch_size)
+                # Train network on fold training data loader.
+                cross_val_network.fit(
+                    train_loader, val_loader, epochs,
+                    retain_graph=retain_graph,
+                    valid_interv=valid_interv, plot=plot)
+                # Validate network performance on validation data loader.
+                results = self.run_test(
+                    cross_val_network, val_loader,
+                    figure_path=figure_path, plot=plot)
+
+                logger.info(results)
+                for m in results:
+                    all_results[m].append(results[m])
+
+        # TODO: we could show something better here like calculate
+        # all the results so far
+        except KeyboardInterrupt:
+            print("\n\n***KeyboardInterrupt: Cross validate stopped prematurely.***\n\n")
+
+        if average_results:
+            averaged_all_results = {}
+            for m in all_results:
+                averaged_all_results[m] = np.mean(all_results[m])
+            return averaged_all_results
+        else:
+            return all_results
