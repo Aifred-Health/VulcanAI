@@ -91,7 +91,7 @@ class Metrics(object):
 
         """
         if metric == 'accuracy':
-            # TODO: Use get_class
+            # TODO: Use extract_class_labels
             max_index = predictions.max(dim=1)[1]
             correct = (max_index == targets).sum() # TODO: this doesn't seem correct
             accuracy = int(correct.data) / len(targets)
@@ -102,7 +102,7 @@ class Metrics(object):
 
     # TODO: class # should correspond with self.num_class
     # noinspection PyMethodMayBeStatic
-    def get_class(self, in_matrix):
+    def extract_class_labels(self, in_matrix):
         """
         Reformat truth matrix to be the classes in a 1D array.
 
@@ -152,13 +152,13 @@ class Metrics(object):
             raise ValueError('There\'s no classification layer')
 
         # getting just the y values out of the dataset
-        test_y = np.array([v[1] for v in data_loader.dataset])
+        test_y = np.array([v[1] for v in data_loader.dataset]) #TODO: store in tensor for continuity?
 
         raw_prediction = network.forward_pass(
             data_loader=data_loader,
             convert_to_class=False)
 
-        class_prediction = self.get_class(raw_prediction)
+        class_prediction = self.extract_class_labels(raw_prediction)
 
         confusion_matrix = get_confusion_matrix(
             predictions=class_prediction,

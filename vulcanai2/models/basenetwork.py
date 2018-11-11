@@ -648,7 +648,7 @@ class BaseNetwork(nn.Module):
                 predictions = nn.Softmax(dim=1)(predictions)
                 if convert_to_class:
                     predictions = torch.tensor(
-                        self.metrics.get_class(
+                        self.metrics.extract_class_labels(
                             in_matrix=predictions.cpu())).float()
             # Aggregate predictions
             pred_collector = torch.cat([pred_collector, predictions.cpu()])
