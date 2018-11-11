@@ -220,4 +220,13 @@ loaded_model = multi_input_conv_3D.load_model(load_path = multi_input_conv_3D.sa
 loaded_model.device = "cpu" # Note the input_networks remain 
                             # in default device, in this case
                             # cuda:0
+# To assign device individually for input_networks
+for net in loaded_model.input_networks:
+    net.device = "cpu"
+# TODO: to train parts of the model in different device
+# nn.DataParallel must be used
+loaded_model.fit(train_loader_multi, val_loader_multi,
+                        epochs=3,
+                        #plot=True
+                        )
 loaded_model.run_test(val_loader_multi, plot=True)

@@ -246,7 +246,12 @@ class BaseNetwork(nn.Module):
         device = torch.device(device if torch.cuda.is_available() else 'cpu')
         if self.network:
             self.network.to(device=device)
-    
+        if self.optim:
+            for state in self.optim.state.values():
+                for k, v in state.items():
+                    if torch.is_tensor(v):
+                        state[k] = set_tensor_device(v, device=device)
+
     @property
     def is_cuda(self):
         """
