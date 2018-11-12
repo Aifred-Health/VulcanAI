@@ -126,6 +126,186 @@ class Metrics(object):
         elif in_matrix.shape[1] == 1:
             return np.around(in_matrix)
 
+    # TODO: check types
+    def get_confusion_matrix_values(self, confusion_matrix):
+        """
+        Will calculate the tp, tn, fp, fn values given a confusion matrix
+        Parameters
+        ----------
+        confusion_matrix: sklearn.metrics.confusion_matrix
+        The confusion matrix
+
+        Returns
+        -------
+        tp, tn, fp, fn:  np.float32
+        The values calculated
+        """
+        tp = np.diagonal(confusion_matrix).astype('float32')
+        tn = (np.array(
+            [np.sum(confusion_matrix)] *
+            confusion_matrix.shape[0]) -
+            confusion_matrix.sum(axis=0) -
+            confusion_matrix.sum(axis=1) + tp).astype('float32')
+        # sum each column and remove diagonal
+        fp = (confusion_matrix.sum(axis=0) - tp).astype('float32')
+        # sum each row and remove diagonal
+        fn = (confusion_matrix.sum(axis=1) - tp).astype('float32')
+
+        return tp, tn, fp, fn
+
+    def get_sensitivity(self, tp, fn):
+        """
+        Calculate the sensitivity
+        Parameters
+        ----------
+        tp: array of np.float32
+        true positives
+        fn: array of np.float32
+        false negatives
+
+        Returns
+        -------
+        sensitivity: array of np.float32
+        The sensitivity
+        """
+        sensitivity = np.nan_to_num(tp / (tp + fn))  # recall
+        return sensitivity
+
+    def get_specificity(self, tn, fp):
+        """
+        Calculate the specificity
+        Parameters
+        ----------
+        tn: array of np.float32
+        true negatives
+        fp: array of np.float32
+        false negatives
+
+        Returns
+        -------
+        specificity: array of np.float32
+        The specificity
+        """
+
+        specificity = np.nan_to_num(tn / (tn + fp))
+        return specificity
+
+    def get_dice(self, tp, fp, fn):
+        """
+        Calculates the dice metric
+        Parameters
+        ----------
+        tp: array of np.float32
+        true positives
+        fp: array of np.float32
+        false positives
+        fn: array of np.float32
+        false negatives
+
+        Returns
+        -------
+        dice: array of np.float32
+        The dice metric.
+        """
+
+        dice = 2 * tp / (2 * tp + fp + fn)
+        return dice
+
+    def get_ppv(self, tp, fp):
+        """
+        Calculate the positive predictive value
+        Parameters
+        ----------
+        tp: array of np.float32
+        true positives
+        fp: array of np.float32
+        false positives
+
+        Returns
+        -------
+        ppv: array of np.float32
+        the positive predictive value
+        """
+
+        ppv = np.nan_to_num(tp / (tp + fp))
+        return ppv
+
+    def get_npv(self, tn, fn):
+        """
+        Calculates the negative predictive value
+        Parameters
+        ----------
+        tn: array of np.float32
+        the true negatives
+        fn: array of np.float32
+        the false negatives
+
+        Returns
+        -------
+        npv: array of np.float32
+        The negative predictive value
+        """
+
+        npv = np.nan_to_num(tn / (tn + fn))
+        return npv
+
+    def get_accuracy(self, tp, confusion_matrix):
+        """
+        Calculate the accuracy
+        Parameters
+        ----------
+        tp: array of np.float32:
+        true positives
+        confusion_matrix: sklearn.metrics.confusion_matrix
+        The confusion matrix
+
+        Returns
+        -------
+        accuracy: array of np.float32
+        The accuracy
+
+        """
+
+        accuracy = np.sum(tp) / np.sum(confusion_matrix)
+        return accuracy
+
+    def get_f1(self, ppv, sensitivity):
+        """
+        Calculate the f1 score
+        Parameters
+        ----------
+        ppv: array of np.float32
+        positive predictive value
+        sensitivity: array of np.float32
+        sensitivity
+
+        Returns
+        -------
+        f1: array of np.float32
+        the f1 score
+        """
+
+        f1 = np.nan_to_num(2 * (ppv * sensitivity) / (ppv + sensitivity))
+        return f1
+
+    def get_f1_macro(self, ppv, sensitivity):
+        """
+        Calculate the average f1 score
+        Parameters
+        ----------
+        ppv: array of np.float32
+        positive predictive value
+        sensitivity: array of np.float32
+        sensitivity
+
+        Returns
+        -------
+        f1_macro: np.float32
+        """
+
+        f1_macro = np.average(np.nan_to_num(2 * sensitivity * ppv / (sensitivity + ppv)))
+        return f1_macro
+
     def run_test(self, network, data_loader, figure_path=None, plot=False):
         """
         Will conduct the test suite to determine network strength.
@@ -168,33 +348,27 @@ class Metrics(object):
         if plot:
             display_confusion_matrix(confusion_matrix)
 
-        tp = np.diagonal(confusion_matrix).astype('float32')
-        tn = (np.array(
-            [np.sum(confusion_matrix)] *
-            confusion_matrix.shape[0]) -
-            confusion_matrix.sum(axis=0) -
-            confusion_matrix.sum(axis=1) + tp).astype('float32')
-        # sum each column and remove diagonal
-        fp = (confusion_matrix.sum(axis=0) - tp).astype('float32')
-        # sum each row and remove diagonal
-        fn = (confusion_matrix.sum(axis=1) - tp).astype('float32')
+        tp, tn, fp, fn = self.get_confusion_matrix_values(confusion_matrix)
 
-        sens = np.nan_to_num(tp / (tp + fn))  # recall
-        spec = np.nan_to_num(tn / (tn + fp))
-        sens_macro = np.average(sens)
-        # sens_micro = np.nan_to_num(sum(tp) / (sum(tp) + sum(fn)))
-        spec_macro = np.average(spec)
-        # sens_micro = np.nan_to_num(sum(tn) / (sum(tn) + sum(fp)))
-        dice = 2 * tp / (2 * tp + fp + fn)
-        ppv = np.nan_to_num(tp / (tp + fp))  # precision
+        sensitivity = self.get_specificity(tn, fp)
+        sensitivity_macro = np.average(sensitivity)
+
+        specificity = self.get_specificity(tn, fp)
+        specificity_macro = np.average(specificity)
+
+        dice = self.get_dice(tp, fp, fn)
+        dice_macro = np.average(dice)
+
+        ppv = self.get_ppv(tp, fp)
         ppv_macro = np.average(ppv)
-        # ppv_micro = np.nan_to_num(sum(tp) / (sum(tp) + sum(fp)))
-        npv = np.nan_to_num(tn / (tn + fn))
+
+        npv = self.get_npv(tn, fn)
         npv_macro = np.average(npv)
-        # npv_micro = np.nan_to_num(sum(tn) / (sum(tn) + sum(fn)))
-        accuracy = np.sum(tp) / np.sum(confusion_matrix)
-        f1 = np.nan_to_num(2 * (ppv * sens) / (ppv + sens))
-        f1_macro = np.average(np.nan_to_num(2 * sens * ppv / (sens + ppv)))
+
+        accuracy = self.get_accuracy(tp, confusion_matrix)
+
+        f1 = self.get_f1(self, ppv, sensitivity)
+        f1_macro = self.get_f1_macro(ppv, sensitivity)
 
         logger.info('{} test\'s results'.format(network.name))
 
@@ -205,11 +379,11 @@ class Metrics(object):
 
         logger.info('\nAccuracy: {}'.format(accuracy))
 
-        logger.info('Sensitivity: {}'.format(round_list(sens, decimals=3)))
-        logger.info('\tMacro Sensitivity: {:.4f}'.format(sens_macro))
+        logger.info('Sensitivity: {}'.format(round_list(sensitivity, decimals=3)))
+        logger.info('\tMacro Sensitivity: {:.4f}'.format(sensitivity_macro))
 
-        logger.info('Specificity: {}'.format(round_list(spec, decimals=3)))
-        logger.info('\tMacro Specificity: {:.4f}'.format(spec_macro))
+        logger.info('Specificity: {}'.format(round_list(specificity, decimals=3)))
+        logger.info('\tMacro Specificity: {:.4f}'.format(specificity_macro))
 
         logger.info('DICE: {}'.format(round_list(dice, decimals=3)))
         logger.info('\tAvg. DICE: {:.4f}'.format(np.average(dice)))
@@ -240,12 +414,13 @@ class Metrics(object):
 
             auc = skl_metrics.auc(fpr, tpr)
             all_class_auc += [auc]
+        all_class_auc_macro = np.average(all_class_auc)
 
         return {
             'accuracy': float(accuracy),
-            'macro_sensitivity': float(sens_macro),
-            'macro_specificity': float(spec_macro),
-            'avg_dice': float(np.average(dice)),
+            'macro_sensitivity': float(sensitivity_macro),
+            'macro_specificity': float(specificity_macro),
+            'avg_dice': float(dice_macro),
             'macro_ppv': float(ppv_macro),
             'macro_npv': float(npv_macro),
             'macro_f1': float(f1_macro),
