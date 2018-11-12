@@ -243,7 +243,6 @@ class BaseNetwork(nn.Module):
             The device to transfer network to.
 
         """
-        print(self.name, self.device)
         device = torch.device(device if torch.cuda.is_available() else 'cpu')
         if self.network:
             self.network.to(device=device)
@@ -252,7 +251,6 @@ class BaseNetwork(nn.Module):
                 for k, v in state.items():
                     if torch.is_tensor(v):
                         state[k] = set_tensor_device(v, device=device)
-        
 
     @property
     def is_cuda(self):
@@ -455,27 +453,44 @@ class BaseNetwork(nn.Module):
         self.optim = self._init_optimizer(self._optim_spec)
         # TODO: Use logger to describe if the optimizer is changed.
         self.criterion = self._init_criterion(self._criter_spec)
-    
-    def _assert_same_devices(self):
+
+    def _assert_same_devices(self, comparison_device=None):
+        """
+        Will check if all incoming networks are on the same device.
+
+        Raises specific error about which device the networks need to
+        be re-assigned to.
+
+        Specific for when calling fit becuase of grad calculation across
+        several devices not compatible with optimizer. Temporary until
+        replaced with nn.DataParallel or better multi-gpu implmentation.
+
+        Parameters
+        ----------
+        comparison_device : str or torch.device
+            The device to compare current device to.
+
+        """
+        if comparison_device is None:
+            comparison_device = self.device
         incompatible_collector = {}
         if self.input_networks:
             for net in self.input_networks:
                 if net.input_networks:
-                    net._assert_same_devices()
-                if net.device != self.device:
+                    net._assert_same_devices(comparison_device)
+                if net.device != comparison_device:
                     incompatible_collector[net.name] = net.device
             if incompatible_collector:
-                raise ValueError("The following input networks'"
-                        "are assigned to the respective devices:\n{}"
-                        "Please assign the devices to this network's"
-                        "({}) device: {}".format(incompatible_collector, 
-                                                     self.name, 
-                                                     self.device))
+                raise ValueError(
+                    "The following input networks' devices do not "
+                    "match deepest network's device '{}':\n{}".format(
+                        comparison_device,
+                        incompatible_collector))
 
     def fit(self, train_loader, val_loader, epochs,
             retain_graph=None, valid_interv=4, plot=False):
         """
-        Trains the network on the provided data.
+        Train the network on the provided data.
 
         Parameters
         ----------
@@ -489,12 +504,13 @@ class BaseNetwork(nn.Module):
             Whether retain_graph will be true when .backwards is called.
         valid_interv : int
             Specifies the period of epochs before validation calculation.
- 
+
         Returns
         -------
         None
 
         """
+        # Check all networks are on same device.
         self._assert_same_devices()
 
         # In case there is already one, don't overwrite it.
