@@ -209,6 +209,12 @@ class BaseNetwork(nn.Module):
             output = torch.cat(inputs, dim=1)
 
         output = set_tensor_device(output, device=self.device)
+        # Return actionable error if input shapes don't match up.
+        if output.shape[1:] != self.in_dim:
+            raise ValueError(
+                "Input data incorrect dimension shape for network: {}. "
+                "Expecting shape {} but recieved shape {}".format(
+                    self.name, self.in_dim, output.shape[1:]))
         return self.network(output)
 
     def extra_repr(self):
