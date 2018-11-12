@@ -1,7 +1,7 @@
 """Contains all visualization utilities."""
 import numpy as np
 import torch
-from torch.nn import ReLU, SELU
+from torch.nn import ReLU, SELU, ModuleList
 import logging
 import collections
 
@@ -34,7 +34,7 @@ def get_notable_indices(feature_importances, top_k=5):
             'unimportant_indices': unimportant_features}
 
 
-class GuidedBackprop():
+class GuidedBackprop(object):
     """
     Generate gradients with guided back propagation w.r.t given input.
 
@@ -63,53 +63,6 @@ class GuidedBackprop():
         # Put model in evaluation mode
         self.network.eval()
         self._crop_negative_gradients()
-        self._hook_top_layers()
-
-    def _hook_top_layers(self):
-        def hook_function(module, grad_in, grad_out):
-            # TODO: Revisit dim disorder.
-            if isinstance(module, torch.nn.Linear):
-                # grad_in shape is (bias, input, weights)
-                self.gradients.append(grad_in[1])
-            elif isinstance(module, torch.nn.modules.conv._ConvNd):
-                # grad_in shape is (input, weights, bias)
-                self.gradients.append(grad_in[0])
-            else:
-                raise NotImplementedError(
-                    "{} module not available"
-                    " for gradient extraction".format(type(module)))
-
-        def get_top_layers(network):
-            """In-order traversal to get only top layers of network."""
-            all_top_layers = []
-            if network.input_networks is not None:
-                for net in network.input_networks:
-                    all_top_layers.append(get_top_layers(net))
-            else:
-                all_top_layers.append(network.network[0]._kernel)
-            return all_top_layers
-
-        def flatten_list(l):
-            """Flatten arbitrarily nested lists to get just the top layers."""
-            if isinstance(l, collections.Iterable):
-                return [itm for sublist in l for itm in flatten_list(sublist)]
-            else:
-                return [l]
-
-        top_layers = get_top_layers(self.network)
-
-        top_layers = flatten_list(top_layers)
-        # Extract only unique top layers
-        # This comes in handy if you have several inputs from the same network
-        # at different depths and not return duplicated gradients.
-        unique_top_layers = []
-        for layer in top_layers:
-            if layer not in unique_top_layers:
-                unique_top_layers.append(layer)
-
-        # Register hook to the first layers only
-        for layer in unique_top_layers:
-            self.hooks.append(layer.register_backward_hook(hook_function))
 
     def _crop_negative_gradients(self):
         """Update relu/selu activations to return positive gradients."""
@@ -125,11 +78,15 @@ class GuidedBackprop():
                     network.network[0]._activation.
                     register_backward_hook(activation_hook_function))
             logging.info("Cropping gradients in {}.".format(network.name))
-            if network.input_networks is not None:
-                for net in network.input_networks:
-                    hook_all_networks(net)
-
-        hook_all_networks(self.network)
+            if network.input_networks:
+                for in_net in network.input_networks.values():
+                    hook_all_networks(in_net)
+        # For Snapshot Networks
+        if isinstance(self.network.network, ModuleList):
+            for net in self.network.network:
+                hook_all_networks(net)
+        else:
+            hook_all_networks(self.network)
 
     def _remove_hooks(self):
         """Remove all previously placed hooks from model."""
@@ -153,18 +110,21 @@ class GuidedBackprop():
             Gradient numpy array with same shape as input images.
 
         """
-        if not isinstance(input_data, list):
-            input_data = [input_data]
-        # To properly pass the gradients
-        for idx, t in enumerate(input_data):
-            if not isinstance(t, torch.Tensor):
-                input_data[idx] = torch.tensor(t, requires_grad=True)
-            else:
-                if not t.requires_grad:
-                    t.requires_grad = True
+        assert isinstance(targets, torch.LongTensor)
 
-        if not isinstance(targets, torch.LongTensor):
-            targets = torch.LongTensor(targets)
+        def requires_grad_multidataset(data_list):
+            for d in data_list:
+                if isinstance(d, list):
+                    requires_grad_multidataset(d)
+                else:
+                    assert isinstance(d, torch.Tensor)
+                    d.requires_grad_()
+
+        if isinstance(input_data, list):
+            requires_grad_multidataset(input_data)
+        else:
+            assert isinstance(input_data, torch.Tensor)
+            input_data.requires_grad_()
 
         # Forward pass
         network_output = self.network(input_data)
@@ -178,9 +138,18 @@ class GuidedBackprop():
         one_hot_output = one_hot_output.to(self.network.device)
         # Backward pass
         network_output.backward(gradient=one_hot_output)
-        # Convert Pytorch variable to numpy array
-        # Will return batch dimension as well
-        gradients_as_arr = \
-            [grad.data for grad in reversed(self.gradients)]
+
+        def extract_input_gradients_multidataset(input_data):
+            for data in input_data:
+                if isinstance(data, list):
+                    extract_input_gradients_multidataset(data)
+                else:
+                    self.gradients.append(data.grad.data.numpy())
+
+        if isinstance(input_data, list):
+            extract_input_gradients_multidataset(input_data)
+        else:
+            self.gradients.append(input_data.grad.data.numpy())
+
         self._remove_hooks()
-        return gradients_as_arr
+        return self.gradients

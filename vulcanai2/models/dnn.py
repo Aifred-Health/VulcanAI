@@ -9,6 +9,8 @@ from .layers import DenseUnit, FlattenUnit
 import logging
 from inspect import getfullargspec
 
+from collections import OrderedDict
+
 logger = logging.getLogger(__name__)
 
 
@@ -123,40 +125,6 @@ class DenseNet(BaseNetwork):
             lr_scheduler, early_stopping, criter_spec, device)
 
     def _create_network(self, **kwargs):
-        dense_hid_layers = self._config.units
-
-        if self.input_networks is not None:
-            # Create empty input tensors
-            in_tensors = []
-            for d in self.input_networks:
-                in_tensors.append(torch.ones([1, *d.out_dim]))
-            output = self._merge_input_network_outputs(in_tensors)
-            # Override self.in_dim instead @Robert
-            self.in_dim = tuple([output.shape[-1]])
-
-        # Build network
-        self.network = self._build_dense_network(
-            dense_hid_layers, kwargs['activation'])
-
-        if self._num_classes:
-            self.out_dim = self._num_classes
-            self._create_classification_layer(
-                dense_hid_layers[-1]['out_features'],
-                kwargs['pred_activation'])
-
-    def _create_classification_layer(self, dim, pred_activation):
-        self.network_tail = nn.Sequential(
-                FlattenUnit(),
-                DenseUnit(
-                    in_features=dim,
-                    out_features=self._num_classes,
-                    activation=pred_activation))
-
-    def _merge_input_network_outputs(self, tensors):
-        output_tensors = [FlattenUnit()(t) for t in tensors]
-        return torch.cat(output_tensors, dim=1)
-
-    def _build_dense_network(self, dense_hid_layers, activation):
         """
         Build the layers of the network into a nn.Sequential object.
 
@@ -173,15 +141,33 @@ class DenseNet(BaseNetwork):
             the dense network as a nn.Sequential object
 
         """
+        dense_hid_layers = self._config.units
+
+        if self.input_networks:
+            self.in_dim = self._get_in_dim()
+
+        # Build network
         # Specify incoming feature size for the first dense hidden layer
         dense_hid_layers[0]['in_features'] = self.in_dim[0]
+        dense_layers = OrderedDict()
+        for idx, dense_layer_config in enumerate(dense_hid_layers):
+            dense_layer_config['activation'] = kwargs['activation']
+            layer_name = 'dense_{}'.format(idx)
+            dense_layers[layer_name] = DenseUnit(**dense_layer_config)
+        self.network = nn.Sequential(dense_layers)
 
-        dense_layers = []
-        for dense_layer_config in dense_hid_layers:
-            dense_layer_config['activation'] = activation
-            dense_layers.append(DenseUnit(**dense_layer_config))
-        dense_network = nn.Sequential(*dense_layers)
-        return dense_network
+        if self._num_classes:
+            self.network.add_module(
+                'flatten', FlattenUnit())
+            self.network.add_module(
+                'classify', DenseUnit(
+                    in_features=self._get_out_dim()[0],
+                    out_features=self._num_classes,
+                    activation=kwargs['pred_activation']))
+
+    def _merge_input_network_outputs(self, tensors):
+        output_tensors = [FlattenUnit()(t) for t in tensors]
+        return torch.cat(output_tensors, dim=1)
 
     def __str__(self):
         if self.optim is not None:
