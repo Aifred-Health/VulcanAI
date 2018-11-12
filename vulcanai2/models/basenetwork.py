@@ -7,7 +7,7 @@ from torch import nn
 
 # Vulcan imports
 from .layers import *
-from .utils import network_summary, set_tensor_device
+from .utils import set_tensor_device
 
 from .metrics import Metrics
 from ..plotters.visualization import display_record
@@ -65,7 +65,7 @@ class BaseNetwork(nn.Module):
     criter_spec : dict
         criterion specification with name and all its parameters.
     device : str or torch.device
-        Sets the network module to the relevant device. If cuda available 
+        Sets the network module to the relevant device. If cuda available
         in the host console, "cuda:0" will be run which can be overriden.
 
     Returns
@@ -208,9 +208,7 @@ class BaseNetwork(nn.Module):
         else:
             output = torch.cat(inputs, dim=1)
 
-
         output = set_tensor_device(output, device=self.device)
-        network_output = self.network(output)
         return self.network(output)
 
     def extra_repr(self):
@@ -296,13 +294,12 @@ class BaseNetwork(nn.Module):
     @property
     def is_cuda(self):
         """
-        Return  boolean that specifies whether the network is 
-        in gpu or not.
+        Return  boolean about whether the network is on cuda device (i.e gpu).
 
         Returns
         -------
         is_cuda : boolean
-            Specifies whether the network is in gpu or not.
+            Specifies whether the network is on gpu or not.
 
         """
         return next(self.network.parameters()).is_cuda
@@ -510,17 +507,17 @@ class BaseNetwork(nn.Module):
             comparison_device = self.device
         incompatible_collector = {}
         if self.input_networks:
-            for net in self.input_networks:
+            for net_name, net in self.input_networks.items():
                 if net.input_networks:
                     net._assert_same_devices(comparison_device)
                 if net.device != comparison_device:
-                    incompatible_collector[net.name] = net.device
-            if incompatible_collector:
-                raise ValueError(
-                    "The following input networks' devices do not "
-                    "match deepest network's device '{}':\n{}".format(
-                        comparison_device,
-                        incompatible_collector))
+                    incompatible_collector[net_name] = net.device
+        if incompatible_collector:
+            raise ValueError(
+                "The following input networks' devices do not "
+                "match deepest network's device '{}':\n{}".format(
+                    comparison_device,
+                    incompatible_collector))
 
     def fit(self, train_loader, val_loader, epochs,
             retain_graph=None, valid_interv=4, plot=False):
@@ -539,6 +536,8 @@ class BaseNetwork(nn.Module):
             Whether retain_graph will be true when .backwards is called.
         valid_interv : int
             Specifies the period of epochs before validation calculation.
+        plot : boolean
+            Whether or not to plot training metrics in real-time.
 
         Returns
         -------
