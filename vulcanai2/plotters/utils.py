@@ -48,7 +48,7 @@ class GuidedBackprop(object):
 
     Returns
     -------
-    gradients : numpy.ndarray
+    gradients : list of numpy.ndarray
         Gradients of top most layer w.r.t the input sample.
 
     """
@@ -100,14 +100,14 @@ class GuidedBackprop(object):
         Parameters
         ----------
         input_data : numpy.ndarray or torch.Tensor
-            1D for DenseNet, 4D (for 2D images) or 5D (for 3D images) Tensor.
+            2D for DenseNet, 4D (for 2D images) or 5D (for 3D images) Tensor.
         targets : numpy.ndarray or torch.LongTensor
             1D list of class labels
 
         Returns
         -------
-        gradients : numpy.ndarray
-            Gradient numpy array with same shape as input images.
+        gradients : list of numpy.ndarray
+            Gradient list of numpy array with same shape as inputs.
 
         """
         assert isinstance(targets, torch.LongTensor)
@@ -144,12 +144,12 @@ class GuidedBackprop(object):
                 if isinstance(data, list):
                     extract_input_gradients_multidataset(data)
                 else:
-                    self.gradients.append(data.grad.data.numpy())
+                    self.gradients.append(data.grad.detach().cpu().numpy())
 
         if isinstance(input_data, list):
             extract_input_gradients_multidataset(input_data)
         else:
-            self.gradients.append(input_data.grad.data.numpy())
+            self.gradients.append(input_data.grad.detach().cpu().numpy())
 
         self._remove_hooks()
         return self.gradients

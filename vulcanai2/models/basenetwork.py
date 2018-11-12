@@ -743,8 +743,7 @@ class BaseNetwork(nn.Module):
                         device=self.device)
             # Aggregate predictions
             pred_collector = torch.cat([pred_collector, predictions])
-        # TODO: DO we need to return a numpy object?
-        return pred_collector.data.to('cpu').numpy()
+        return pred_collector.cpu().numpy()
 
     def save_model(self, save_path=None):
         """

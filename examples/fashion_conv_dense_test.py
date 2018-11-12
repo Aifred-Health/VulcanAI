@@ -210,19 +210,6 @@ multi_input_conv_3D.fit(train_loader_multi, val_loader_multi,
 multi_input_conv_3D.run_test(val_loader_multi, plot=True)
 multi_input_conv_3D.save_model()
 
-# NOTE: Currently Tensorboard (Tensorflow) supports CUDA 9.0 only
-# so CUDA 9.0 will be reqiored to be installed
-from tensorboardX import SummaryWriter
-in_data = [
-    torch.ones([1, *multi_input_conv_3D.input_networks[0].in_dim]).detach(),
-    torch.ones([1, *multi_input_conv_3D.input_networks[1].input_networks[0].in_dim]).detach(),
-    torch.ones([1, *multi_input_conv_3D.input_networks[2].in_dim]).detach(),
-    torch.ones([1, *multi_input_conv_3D.input_networks[3].in_dim]).detach(),
-]
-import pdb; pdb.set_trace()
-with SummaryWriter(comment='mculti_input_conv_3D') as w:
-    w.add_graph(multi_input_conv_3D, in_data, True)
-
 # loaded_model = multi_input_conv_3D.load_model(load_path = multi_input_conv_3D.save_path)
 # loaded_model.device = "cpu" # Note the input_networks remain 
 #                             # in default device, in this case
