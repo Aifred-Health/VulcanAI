@@ -4,6 +4,7 @@
 *.__pycache__
 *.pytest_cache
 data
+runs
 examples/saved_models
 
 /*.egg-info

@@ -118,7 +118,6 @@ class BaseNetwork(nn.Module):
         self._optim_spec = optim_spec
         self._lr_scheduler = lr_scheduler
         self._early_stopping = early_stopping
-        self._criter_spec = criter_spec
 
         if self._num_classes:
             self.metrics = Metrics()
@@ -145,6 +144,7 @@ class BaseNetwork(nn.Module):
         self.out_dim = self._get_out_dim()
 
         self.device = device
+        self._criter_spec = criter_spec
 
     @abc.abstractmethod
     def _merge_input_network_outputs(self, inputs):
@@ -243,6 +243,7 @@ class BaseNetwork(nn.Module):
             The device to transfer network to.
 
         """
+        print(self.name, self.device)
         device = torch.device(device if torch.cuda.is_available() else 'cpu')
         if self.network:
             self.network.to(device=device)
@@ -251,6 +252,7 @@ class BaseNetwork(nn.Module):
                 for k, v in state.items():
                     if torch.is_tensor(v):
                         state[k] = set_tensor_device(v, device=device)
+        
 
     @property
     def is_cuda(self):
@@ -453,6 +455,22 @@ class BaseNetwork(nn.Module):
         self.optim = self._init_optimizer(self._optim_spec)
         # TODO: Use logger to describe if the optimizer is changed.
         self.criterion = self._init_criterion(self._criter_spec)
+    
+    def _assert_same_devices(self):
+        incompatible_collector = {}
+        if self.input_networks:
+            for net in self.input_networks:
+                if net.input_networks:
+                    net._assert_same_devices()
+                if net.device != self.device:
+                    incompatible_collector[net.name] = net.device
+            if incompatible_collector:
+                raise ValueError("The following input networks'"
+                        "are assigned to the respective devices:\n{}"
+                        "Please assign the devices to this network's"
+                        "({}) device: {}".format(incompatible_collector, 
+                                                     self.name, 
+                                                     self.device))
 
     def fit(self, train_loader, val_loader, epochs,
             retain_graph=None, valid_interv=4, plot=False):
@@ -477,6 +495,7 @@ class BaseNetwork(nn.Module):
         None
 
         """
+        self._assert_same_devices()
 
         # In case there is already one, don't overwrite it.
         # Important for not removing the ref from a lr scheduler

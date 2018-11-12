@@ -156,6 +156,7 @@ conv_1D = ConvNet(
     input_networks=None,
     in_dim=(1, 28),
     config=conv_1D_config,
+    device="cpu"
 )
 conv_2D = ConvNet(
     name='conv_2D',
@@ -168,11 +169,12 @@ conv_3D = ConvNet(
     input_networks=None,
     in_dim=(1, 28, 28, 28),
     config=conv_3D_config,
+    device="cpu"
 )
 
 dense_model = DenseNet(
     name='dense_model',
-    input_networks=[conv_2D, conv_1D],
+    input_networks=[conv_2D],
     config=dense_config
 )
 
@@ -216,17 +218,30 @@ multi_input_conv_3D.fit(train_loader_multi, val_loader_multi,
 multi_input_conv_3D.run_test(val_loader_multi, plot=True)
 multi_input_conv_3D.save_model()
 
-loaded_model = multi_input_conv_3D.load_model(load_path = multi_input_conv_3D.save_path)
-loaded_model.device = "cpu" # Note the input_networks remain 
-                            # in default device, in this case
-                            # cuda:0
-# To assign device individually for input_networks
-for net in loaded_model.input_networks:
-    net.device = "cpu"
-# TODO: to train parts of the model in different device
-# nn.DataParallel must be used
-loaded_model.fit(train_loader_multi, val_loader_multi,
-                        epochs=3,
-                        #plot=True
-                        )
-loaded_model.run_test(val_loader_multi, plot=True)
+# NOTE: Currently Tensorboard (Tensorflow) supports CUDA 9.0 only
+# so CUDA 9.0 will be reqiored to be installed
+from tensorboardX import SummaryWriter
+in_data = [
+    torch.ones([1, *multi_input_conv_3D.input_networks[0].in_dim]).detach(),
+    torch.ones([1, *multi_input_conv_3D.input_networks[1].input_networks[0].in_dim]).detach(),
+    torch.ones([1, *multi_input_conv_3D.input_networks[2].in_dim]).detach(),
+    torch.ones([1, *multi_input_conv_3D.input_networks[3].in_dim]).detach(),
+]
+import pdb; pdb.set_trace()
+with SummaryWriter(comment='mculti_input_conv_3D') as w:
+    w.add_graph(multi_input_conv_3D, in_data, True)
+
+# loaded_model = multi_input_conv_3D.load_model(load_path = multi_input_conv_3D.save_path)
+# loaded_model.device = "cpu" # Note the input_networks remain 
+#                             # in default device, in this case
+#                             # cuda:0
+# # To assign device individually for input_networks
+# for net in loaded_model.input_networks:
+#     net.device = "cpu"
+# # TODO: to train parts of the model in different device
+# # nn.DataParallel must be used
+# loaded_model.fit(train_loader_multi, val_loader_multi,
+#                         epochs=3,
+#                         #plot=True
+#                         )
+# loaded_model.run_test(val_loader_multi, plot=True)
