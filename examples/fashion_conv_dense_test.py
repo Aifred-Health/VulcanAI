@@ -147,8 +147,7 @@ conv_1D = ConvNet(
     name='conv_1D',
     input_networks=None,
     in_dim=(1, 28),
-    config=conv_1D_config,
-    device="cpu"
+    config=conv_1D_config
 )
 conv_2D = ConvNet(
     name='conv_2D',
@@ -160,8 +159,7 @@ conv_3D = ConvNet(
     name='conv_3D',
     input_networks=None,
     in_dim=(1, 28, 28, 28),
-    config=conv_3D_config,
-    device="cpu"
+    config=conv_3D_config
 )
 
 dense_model = DenseNet(
@@ -205,7 +203,7 @@ val_loader_multi = DataLoader(val_multi, batch_size=100)
 
 multi_input_conv_3D.fit(train_loader_multi, val_loader_multi,
                         epochs=3,
-                        #plot=True
+                        # plot=True
                         )
 multi_input_conv_3D.run_test(val_loader_multi, plot=True)
 multi_input_conv_3D.save_model()
