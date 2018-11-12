@@ -166,7 +166,7 @@ conv_3D = ConvNet(
 
 dense_model = DenseNet(
     name='dense_model',
-    input_networks=[conv_2D],
+    input_networks=[conv_2D, conv_1D],
     config=dense_config
 )
 
