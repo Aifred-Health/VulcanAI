@@ -13,6 +13,7 @@ from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 
 import matplotlib
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -180,9 +181,10 @@ def display_confusion_matrix(cm, class_list=None):
     if not isinstance(class_list, list):
         raise ValueError("class_list must be of type list.")
     plt.figure()
-    plt.imshow(cm, interpolation='nearest', cmap='Blues', origin='lower')
+    ax = plt.gca()
+    im = ax.imshow(cm, interpolation='nearest', cmap='Blues', origin='lower')
+
     plt.title('Confusion matrix')
-    plt.colorbar()
     tick_marks = np.arange(len(class_list))
     plt.xticks(tick_marks, class_list, rotation=45)
     plt.yticks(tick_marks, class_list)
@@ -196,6 +198,9 @@ def display_confusion_matrix(cm, class_list=None):
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="4%", pad=0.03)
+    plt.colorbar(im, cax=cax)
     plt.show(False)
 
 
@@ -276,9 +281,12 @@ def display_saliency_overlay(image, saliency_map, shape=(28, 28)):
     # Plot original with saliency overlay
     fig.add_subplot(1, 2, 2)
     plt.imshow(image, cmap='binary')
-    # Optional: get the absolute values of the saliency map here
-    plt.imshow(saliency_map, cmap='Blues', alpha=0.7)
-    plt.colorbar()
+
+    ax = plt.gca()
+    im = ax.imshow(saliency_map, cmap='Blues', alpha=0.7)
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="4%", pad=0.03)
+    plt.colorbar(im, cax=cax, format='%.0e')
     plt.show(False)
 
 

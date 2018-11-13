@@ -11,7 +11,7 @@ class TestBaseNetwork:
         """Create a test BaseNetwork."""
         return BaseNetwork(
             name='Test_BaseNet',
-            dimensions=(None, 10),
+            in_dim=(None, 10),
             config={}
         )
 

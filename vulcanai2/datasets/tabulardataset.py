@@ -2,6 +2,7 @@
 """
 This file defines the TabularDataset Class
 """
+import torch
 from torch.utils.data import Dataset
 import numpy as np
 import pandas as pd
@@ -11,7 +12,6 @@ from itertools import groupby
 from sklearn import preprocessing
 
 logger = logging.getLogger(__name__)
-
 
 class TabularDataset(Dataset):
     """
@@ -58,20 +58,18 @@ class TabularDataset(Dataset):
         """
         # Where df.drop is used to access the dataframe without the label column, iloc gets the row, then access values
         # and convert
+
         if self.labelColumn:
             xs = self.df.drop(self.labelColumn, axis=1).iloc[[2]].values.tolist()[0]
-            y = self.df[[self.labelColumn]].iloc[[idx]].values.tolist()[0]
+            xs = torch.tensor(xs, dtype=torch.float)
+            y = self.df[[self.labelColumn]].iloc[[idx]].values.tolist()[0][0]
+            y = torch.tensor(y, dtype=torch.long)
             return xs, y
         else:
             xs = self.df.iloc[[2]].values.tolist()[0]
+            xs = torch.tensor(xs, dtype=torch.float)
             return xs
 
-    def convert_to_dataframe(self):
-        """
-        Converts TabularDataset variable back to dataframe
-        :return: The dataframe at current state
-        """
-        return self.df
 
     def save_dataframe(self, file_path):
         """
@@ -120,21 +118,23 @@ class TabularDataset(Dataset):
         """
         return list(getattr(self.df, column_name)().unique())
 
-    # TODO: this is really slow make it faster
     def identify_all_numerical_features(self):
         """
-        Returns all columns that contain numeric values
+        Returns all column names that contain numeric values
         :return: all columns that contain numeric values
         """
-        return list(self.df.select_dtypes(include=np.number))
+        select = self.df.select_dtypes(include='number')
+        return select.columns.values.tolist() # much faster than casting to a list as in list(df)
 
-    # TODO: this is really slow make it faster
+    # TODO: datetime categorical?
     def identify_all_categorical_features(self):
         """
-        Returns all columns that contain categorical values
+        Returns all columns that do not contain numeric values (and we therefore consider categorical.
+        Note that this includes datetime.
         :return: all columns that contain categorical values
         """
-        return list(self.df.select_dtypes(exclude=np.number))
+        select = self.df.select_dtypes(exclude='number')
+        return select.columns.values.tolist() # much faster than casting to a list as in list(df)
 
     def delete_columns(self, column_list):
         """
@@ -152,7 +152,7 @@ class TabularDataset(Dataset):
 
     def create_label_encoding(self, column, ordered_values):
         """
-        Create label encoding for
+        Create label encoding for the provided column.
         Used for those categorical features where order does matter.
         :param ordered_values: Either an ordered list of possible column values. Or a mapping of column value to \
         label value. Must include all possible values.
@@ -184,9 +184,11 @@ class TabularDataset(Dataset):
         :return: None
         """
         if column in list(self.df):
-                self.df = pd.get_dummies(self.df, dummy_na=True, columns=[column], prefix_sep=prefix_sep)
+            self.df = pd.get_dummies(self.df, dummy_na=True, columns=[column], prefix_sep=prefix_sep)
+            logger.info(f"Successfully encoded {column}")
+
         else:
-                logger.info(f"Col {column} does not exist")
+            logger.info(f"Col {column} does not exist")
 
     def reverse_create_one_hot_encoding(self, prefix_sep="@"):
         """

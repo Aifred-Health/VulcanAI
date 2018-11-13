@@ -14,7 +14,7 @@ class TestConvNet:
         """Create ConvNet with no prediction layer."""
         return ConvNet(
             name='Test_ConvNet_noclass',
-            dimensions=(1, 28, 28),
+            in_dim=(1, 28, 28),
             config={
                 'conv_units': [
                     {
@@ -38,7 +38,7 @@ class TestConvNet:
         """Create ConvNet with prediction layer."""
         return ConvNet(
             name='Test_ConvNet_class',
-            dimensions=(1, 28, 28),
+            in_dim=(1, 28, 28),
             config={
                 'conv_units': [
                     {
@@ -84,16 +84,12 @@ class TestConvNet:
         cnn_class.freeze(apply_inputs=False)
         for params in cnn_class.network.parameters():
             assert params.requires_grad is False
-        for params in cnn_class.network_tail.parameters():
-            assert params.requires_grad is False
 
     def test_unfreeze_class(self, cnn_class):
         """Test class network unfreezing."""
         cnn_class.freeze(apply_inputs=False)
         cnn_class.unfreeze(apply_inputs=False)
         for params in cnn_class.network.parameters():
-            assert params.requires_grad is True
-        for params in cnn_class.network_tail.parameters():
             assert params.requires_grad is True
 
     def test_freeze_noclass(self, cnn_noclass):
@@ -108,3 +104,9 @@ class TestConvNet:
         cnn_noclass.unfreeze(apply_inputs=False)
         for params in cnn_noclass.network.parameters():
             assert params.requires_grad is True
+
+    def test_add_input_network(self, cnn_noclass, cnn_class):
+        """Test add input Network functionality."""
+        cnn_class.add_input_network(cnn_noclass)
+        assert cnn_class.input_networks[cnn_noclass.name] is cnn_noclass
+        assert cnn_class.in_dim == cnn_noclass.out_dim
