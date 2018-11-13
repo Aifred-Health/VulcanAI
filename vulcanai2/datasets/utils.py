@@ -141,7 +141,6 @@ def stitch_datasets(df_list, merge_on_columns=None, index_list=None):
     index_list: list of columns to establish as index for final stitched dataset (default None)
 
     Returns: concatenated dataframe
-
     """
     #Get name of a dataframe to extract
     first_column = list(df_list)[0]
