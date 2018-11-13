@@ -133,13 +133,12 @@ def check_split_ratio(split_ratio):
 #             return random.sample(data, len(data))
 
 
-def stitch_datasets(df_list, merge_on_columns, index_list=None):
+def stitch_datasets(df_list, merge_on_columns=None, index_list=None):
     """
     Args:
     df_list: dictionary of dataframes to stitch together
-    on: key that specifies which features column to use in each dataset
-    to identify the specific examples of all datasets
-    index_list: list of feature columns to index on when stitching(default None)
+    merge_on_columns: key(s) that specifies which columns to use to uniquely stitch dataset (default None)
+    index_list: list of columns to establish as index for final stitched dataset (default None)
 
     Returns: concatenated dataframe
 
