@@ -7,7 +7,9 @@ import math
 import numpy as np
 from sklearn import metrics as skl_metrics
 
-from .utils import get_confusion_matrix, round_list
+from sklearn.metrics import confusion_matrix, recall_score, precision_score, accuracy_score, f1_score
+
+from .utils import round_list
 from ..plotters.visualization import display_confusion_matrix
 from collections import defaultdict
 
@@ -16,7 +18,6 @@ import copy
 import logging
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
-
 
 # noinspection PyProtectedMember
 class Metrics(object):
@@ -28,48 +29,8 @@ class Metrics(object):
     Parameters
     ----------
     """
-    # TODO: why does use_unlabeled exist?
-    #def __init__(self, use_unlabeled=False):
     def __init__(self):
         """Initialize the metrics class for a BaseNetwork."""
-        #self.num_class = num_class
-        # self.mat = np.zeros((self.num_class, self.num_class), dtype=np.float)
-        #self.list_classes = list(range(self.num_class))
-
-    # def update(self, predictions, targets):
-    #     if not(isinstance(predictions, np.ndarray)) or not(isinstance(targets, np.ndarray)):
-    #         print("Expected ndarray")
-
-    #     elif len(targets.shape) == 3:        # batched spatial target
-    #         if len(predictions.shape) == 4:  # prediction is 1 hot encoded
-    #             temp_predictions = np.argmax(predictions, axis=1).flatten()
-    #         elif len(predictions.shape) == 3:
-    #             temp_predictions = predictions.flatten()
-    #         else:
-    #             print("Predictions and Targets does not match")
-    #         temp_targets = targets.flatten()
-
-    #     elif len(targets.shape) == 2:        # spatial target
-    #         if len(predictions.shape) == 3:  # prediction is 1 hot encoded
-    #             temp_predictions = np.argmax(predictions, axis=1).flatten()
-    #         elif len(predictions.shape) == 2:
-    #             temp_predictions = predictions.flatten()
-    #         else:
-    #             print("Predictions and Targets does not match")
-    #         temp_targets = targets.flatten()
-
-    #     elif len(targets.shape) == 1:
-    #         if len(predictions.shape) == 2:  # prediction is 1 hot encoded
-    #             temp_predictions = np.argmax(predictions, axis=1).flatten()
-    #         elif len(predictions.shape) == 1:
-    #             temp_predictions = predictions
-    #         else:
-    #             print("Predictions and Targets does not match")
-    #         temp_targets = targets
-    #     else:
-    #         print("Data with this dimension cannot be handled")
-
-    #     self.mat += confusion_matrix(temp_targets, temp_predictions, labels=self.list_classes)
 
     def get_score(self, predictions, targets, metric='accuracy'):
         """
@@ -100,7 +61,6 @@ class Metrics(object):
             raise NotImplementedError(
                 'Metric {} not available.'.format(metric))
 
-    # TODO: class # should correspond with self.num_class
     # noinspection PyMethodMayBeStatic
     def extract_class_labels(self, in_matrix):
         """
@@ -126,138 +86,245 @@ class Metrics(object):
         elif in_matrix.shape[1] == 1:
             return np.around(in_matrix)
 
-    # TODO: check types
-    def get_confusion_matrix_values(self, confusion_matrix):
+    @staticmethod
+    def get_confusion_matrix_values(targets, predictions):
         """
         Will calculate the tp, tn, fp, fn values given a confusion matrix
         Parameters
         ----------
-        confusion_matrix: sklearn.metrics.confusion_matrix
-        The confusion matrix
+        predictions: numpy.ndarray of integers
+        the predicted values
+
+        targets: numpy.ndarray of integers
+        the target values
 
         Returns
         -------
-        tp, tn, fp, fn:  np.float32
+        tp, tn, fp, fn:  integer
         The values calculated
         """
-        tp = np.diagonal(confusion_matrix).astype('float32')
-        tn = (np.array(
-            [np.sum(confusion_matrix)] *
-            confusion_matrix.shape[0]) -
-            confusion_matrix.sum(axis=0) -
-            confusion_matrix.sum(axis=1) + tp).astype('float32')
-        # sum each column and remove diagonal
-        fp = (confusion_matrix.sum(axis=0) - tp).astype('float32')
-        # sum each row and remove diagonal
-        fn = (confusion_matrix.sum(axis=1) - tp).astype('float32')
+
+        tn, fp, fn, tp = confusion_matrix(targets, predictions).ravel()
 
         return tp, tn, fp, fn
 
-    def get_sensitivity(self, tp, fn):
+    @staticmethod
+    def _check_average_parameters(targets, predictions, average=None):
+        """
+        Checks to see if average parameter is suitable for the data. Throws ValueError.
+        Parameters
+        ----------
+        predictions: numpy.ndarray of integers
+        the predicted values
+
+        targets: numpy.ndarray of integers
+        the target values
+
+        average: string, [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
+        This parameter is required for multiclass/multilabel targets.
+        If None, the scores for each class are returned.
+        Otherwise, this determines the type of averaging performed on the data:
+        See scikit learn
+
+        Returns
+        -------
+        True
+
+        """
+
+        if not average:
+            return True
+
+        if np.unique(predictions).size <= 2 and np.unique(targets).size <= 2:
+            if "binary" not in average:
+                raise ValueError(
+                    "You must provide binary as the average function if binary data"
+                )
+
+        if np.unique(predictions).size >= 2 or np.unique(targets).size >= 2:
+            if "binary" in average:
+                raise ValueError(
+                    "You cannot provide binary as the average function if non binary data"
+                )
+
+        return True
+
+    @staticmethod
+    def get_sensitivity(targets, predictions, average=None):
         """
         Calculate the sensitivity
         Parameters
         ----------
-        tp: array of np.float32
-        true positives
-        fn: array of np.float32
-        false negatives
+        predictions: numpy.ndarray of integers
+        the predicted values
+
+        targets: numpy.ndarray of integers
+        the target values
+
+        average: string, [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
+        This parameter is required for multiclass/multilabel targets.
+        If None, the scores for each class are returned.
+        Otherwise, this determines the type of averaging performed on the data.
+        See scikit learn
 
         Returns
         -------
-        sensitivity: array of np.float32
+        sensitivity: np.float32 or array of np.float32
         The sensitivity
         """
-        sensitivity = np.nan_to_num(tp / (tp + fn))  # recall
+
+        Metrics._check_average_parameters(targets, predictions, average)
+        sensitivity = recall_score(targets, predictions, average)
+
         return sensitivity
 
-    def get_specificity(self, tn, fp):
+    @staticmethod
+    def get_specificity(targets, predictions, average=None):
         """
         Calculate the specificity
         Parameters
         ----------
-        tn: array of np.float32
-        true negatives
-        fp: array of np.float32
-        false negatives
+        predictions: numpy.ndarray of integers
+        the predicted values
 
+        targets: numpy.ndarray of integers
+        the target values
+
+        average: string, [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
+        This parameter is required for multiclass/multilabel targets.
+        If None, the scores for each class are returned.
+        Otherwise, this determines the type of averaging performed on the data.
+        See scikit learn
         Returns
         -------
-        specificity: array of np.float32
+        specificity: np.float32 or array of np.float32
         The specificity
         """
 
-        specificity = np.nan_to_num(tn / (tn + fp))
+        Metrics._check_average_parameters(targets, predictions, average)
+        specificity = precision_score(targets, predictions, average)
+
         return specificity
 
-    def get_dice(self, tp, fp, fn):
+    @staticmethod
+    def get_dice(targets, predictions, average=None):
         """
         Calculates the dice metric
         Parameters
         ----------
-        tp: array of np.float32
-        true positives
-        fp: array of np.float32
-        false positives
-        fn: array of np.float32
-        false negatives
+        predictions: numpy.ndarray of integers
+        the predicted values
+
+        targets: numpy.ndarray of integers
+        the target values
+
+        average: string, [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
+        Only None and 'macro' currently implemented.
+        This parameter is required for multiclass/multilabel targets.
+        If None, the scores for each class are returned.
+        Otherwise, this determines the type of averaging performed on the data.
+        See scikit learn
 
         Returns
         -------
-        dice: array of np.float32
+        dice: np.float32 or array of np.float32
         The dice metric.
         """
 
+        tp, _, fp, fn = Metrics.get_confusion_matrix_values(targets, predictions)
         dice = 2 * tp / (2 * tp + fp + fn)
+
+        # TODO: implement other options
+        if "macro" in average:
+            dice = np.average(dice)
+        elif average:
+            raise NotImplementedError
+
         return dice
 
-    def get_ppv(self, tp, fp):
+    @staticmethod
+    def get_ppv(targets, predictions, average=None):
         """
         Calculate the positive predictive value
         Parameters
         ----------
-        tp: array of np.float32
-        true positives
-        fp: array of np.float32
-        false positives
+        predictions: numpy.ndarray of integers
+        the predicted values
+
+        targets: numpy.ndarray of integers
+        the target values
+
+        average: string, [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
+        Only None and 'macro' currently implemented.
+        This parameter is required for multiclass/multilabel targets.
+        If None, the scores for each class are returned.
+        Otherwise, this determines the type of averaging performed on the data.
+        See scikit learn
 
         Returns
         -------
-        ppv: array of np.float32
+        ppv: float32 or array of np.float32
         the positive predictive value
         """
-
+        tp, _, fp, _ = Metrics.get_confusion_matrix_values(targets, predictions)
         ppv = np.nan_to_num(tp / (tp + fp))
+
+        # TODO: implement other options
+        if "macro" in average:
+            ppv = np.average(ppv)
+        elif average:
+            raise NotImplementedError
+
         return ppv
 
-    def get_npv(self, tn, fn):
+    @staticmethod
+    def get_npv(targets, predictions, average=None):
         """
         Calculates the negative predictive value
         Parameters
         ----------
-        tn: array of np.float32
-        the true negatives
-        fn: array of np.float32
-        the false negatives
+        predictions: numpy.ndarray of integers
+        the predicted values
+
+        targets: numpy.ndarray of integers
+        the target values
+
+        average: string, [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
+        Only None and 'macro' currently implemented.
+        This parameter is required for multiclass/multilabel targets.
+        If None, the scores for each class are returned.
+        Otherwise, this determines the type of averaging performed on the data.
+        See scikit learn
 
         Returns
         -------
-        npv: array of np.float32
+        npv: np.float32 or array of np.float32
         The negative predictive value
         """
+        _ , tn, _, fn = Metrics.get_confusion_matrix_values(targets, predictions)
 
         npv = np.nan_to_num(tn / (tn + fn))
+
+        # TODO: implement other options
+        if "macro" in average:
+            npv = np.average(npv)
+        elif average:
+            raise NotImplementedError
+
         return npv
 
-    def get_accuracy(self, tp, confusion_matrix):
+    @staticmethod
+    def get_accuracy(targets, predictions):
         """
         Calculate the accuracy
         Parameters
         ----------
-        tp: array of np.float32:
-        true positives
-        confusion_matrix: sklearn.metrics.confusion_matrix
-        The confusion matrix
+       predictions: numpy.ndarray of integers
+        the predicted values
+
+        targets: numpy.ndarray of integers
+        the target values
+
 
         Returns
         -------
@@ -265,46 +332,81 @@ class Metrics(object):
         The accuracy
 
         """
+        accuracy = accuracy_score(predictions, targets)
 
-        accuracy = np.sum(tp) / np.sum(confusion_matrix)
         return accuracy
 
-    def get_f1(self, ppv, sensitivity):
+    @staticmethod
+    def get_f1(targets, predictions, average=None):
         """
         Calculate the f1 score
         Parameters
         ----------
-        ppv: array of np.float32
-        positive predictive value
-        sensitivity: array of np.float32
-        sensitivity
+        predictions: numpy.ndarray of integers
+        the predicted values
+
+        targets: numpy.ndarray of integers
+
+        average: string, [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
+        This parameter is required for multiclass/multilabel targets.
+        If None, the scores for each class are returned.
+        Otherwise, this determines the type of averaging performed on the data:
+        See scikit learn
 
         Returns
         -------
-        f1: array of np.float32
-        the f1 score
+        f1: np.float32 or array of np.float32
+        The f1 score
         """
 
-        f1 = np.nan_to_num(2 * (ppv * sensitivity) / (ppv + sensitivity))
+        Metrics._check_average_parameters(targets, predictions, average)
+        f1 = f1_score(targets, predictions, average)
         return f1
 
-    def get_f1_macro(self, ppv, sensitivity):
+    @staticmethod
+    def get_auc(targets, raw_predictions, num_classes, average=None):
         """
-        Calculate the average f1 score
+        Calculate the auc
         Parameters
         ----------
-        ppv: array of np.float32
-        positive predictive value
-        sensitivity: array of np.float32
-        sensitivity
+        raw_predictions: numpy.ndarray of integers
+        the raw predicted values, not converted to classes.
+
+        targets: numpy.ndarray of integers
+
+        average: string, [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
+        This parameter is required for multiclass/multilabel targets.
+        If None, the scores for each class are returned.
+        Otherwise, this determines the type of averaging performed on the data:
+        See scikit learn
 
         Returns
         -------
-        f1_macro: np.float32
+        f1: np.float32 or array of np.float32
+        The auc
         """
 
-        f1_macro = np.average(np.nan_to_num(2 * sensitivity * ppv / (sensitivity + ppv)))
-        return f1_macro
+        all_class_auc = []
+        for i in range(num_classes):
+            if num_classes == 1:
+                fpr, tpr, _ = skl_metrics.roc_curve(targets,
+                                                    raw_predictions,
+                                                    pos_label=1)
+            else:
+                fpr, tpr, _ = skl_metrics.roc_curve(targets,
+                                                    raw_predictions[:, i],
+                                                    pos_label=i)
+
+            auc = skl_metrics.auc(fpr, tpr)
+            all_class_auc += [auc]
+
+        # TODO: implement other options
+        if "macro" in average:
+            all_class_auc = np.average(all_class_auc)
+        elif average:
+            raise NotImplementedError
+
+        return all_class_auc
 
     def run_test(self, network, data_loader, figure_path=None, plot=False):
         """
@@ -332,43 +434,43 @@ class Metrics(object):
             raise ValueError('There\'s no classification layer')
 
         # getting just the y values out of the dataset
-        test_y = np.array([v[1] for v in data_loader.dataset]) #TODO: store in tensor for continuity?
+        targets = np.array([v[1] for v in data_loader.dataset]) #TODO: store in tensor for continuity?
 
-        raw_prediction = network.forward_pass(
+        raw_predictions = network.forward_pass(
             data_loader=data_loader,
             convert_to_class=False)
 
-        class_prediction = self.extract_class_labels(raw_prediction)
+        predictions = self.extract_class_labels(raw_predictions)
 
-        confusion_matrix = get_confusion_matrix(
-            predictions=class_prediction,
-            targets=test_y
-        )
-
+        #confusion matrix is from sklearn namespace
+        cm = confusion_matrix(targets, predictions) #TODO: you made them backwards
         if plot:
-            display_confusion_matrix(confusion_matrix)
+            display_confusion_matrix(cm)
 
-        tp, tn, fp, fn = self.get_confusion_matrix_values(confusion_matrix)
+        tp, tn, fp, fn = Metrics.get_confusion_matrix_values(targets, predictions)
 
-        sensitivity = self.get_specificity(tn, fp)
-        sensitivity_macro = np.average(sensitivity)
+        sensitivity = Metrics.get_specificity(targets, predictions)
+        sensitivity_macro = Metrics.get_specificity(targets, predictions, average="macro")
 
-        specificity = self.get_specificity(tn, fp)
-        specificity_macro = np.average(specificity)
+        specificity = Metrics.get_specificity(targets, predictions)
+        specificity_macro = Metrics.get_specificity(targets, predictions, average="macro")
 
-        dice = self.get_dice(tp, fp, fn)
-        dice_macro = np.average(dice)
+        dice = Metrics.get_dice(targets, predictions)
+        dice_macro = Metrics.get_dice(targets, predictions, average="macro")
 
-        ppv = self.get_ppv(tp, fp)
-        ppv_macro = np.average(ppv)
+        ppv = Metrics.get_ppv(targets, predictions)
+        ppv_macro = Metrics.get_ppv(targets, predictions, average="macro")
 
-        npv = self.get_npv(tn, fn)
-        npv_macro = np.average(npv)
+        npv = Metrics.get_npv(targets, predictions)
+        npv_macro = Metrics.get_npv(targets, predictions, average="macro")
 
-        accuracy = self.get_accuracy(tp, confusion_matrix)
+        accuracy = Metrics.get_accuracy(targets, predictions)
 
-        f1 = self.get_f1(self, ppv, sensitivity)
-        f1_macro = self.get_f1_macro(ppv, sensitivity)
+        f1 = Metrics.get_f1(targets, predictions)
+        f1_macro = Metrics.get_f1(targets, predictions, average="macro")
+
+        auc = Metrics.get_auc(targets, predictions)
+        auc_macro = Metrics.get_auc(targets, predictions, average="macro")
 
         logger.info('{} test\'s results'.format(network.name))
 
@@ -401,20 +503,8 @@ class Metrics(object):
         logger.info('F1-score: {}'.format(round_list(f1, decimals=3)))
         logger.info('\tMacro f1-score: {:.4f}'.format(f1_macro))
 
-        all_class_auc = []
-        for i in range(network._num_classes):
-            if network._num_classes == 1:
-                fpr, tpr, _ = skl_metrics.roc_curve(test_y,
-                                                    raw_prediction,
-                                                    pos_label=1)
-            else:
-                fpr, tpr, _ = skl_metrics.roc_curve(test_y,
-                                                    raw_prediction[:, i],
-                                                    pos_label=i)
-
-            auc = skl_metrics.auc(fpr, tpr)
-            all_class_auc += [auc]
-        all_class_auc_macro = np.average(all_class_auc)
+        logger.info('auc: {}'.format(round_list(auc, decimals=3)))
+        logger.info('\tMacro auc: {:.4f}'.format(auc_macro))
 
         return {
             'accuracy': float(accuracy),
@@ -424,8 +514,11 @@ class Metrics(object):
             'macro_ppv': float(ppv_macro),
             'macro_npv': float(npv_macro),
             'macro_f1': float(f1_macro),
-            'macro_auc': float(np.average(all_class_auc))
+            'macro_auc': float(auc_macro)
         }
+
+
+    #TODO: include support
 
     def cross_validate(self, network, data_loader, k, epochs,
                        average_results=True, retain_graph=None,
