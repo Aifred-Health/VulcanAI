@@ -2,7 +2,7 @@
 import torch
 import torch.nn as nn
 import logging
-import numpy as np
+import math
 logger = logging.getLogger(__name__)
 
 
@@ -53,24 +53,8 @@ class BaseUnit(nn.Sequential):
         if self.initializer is None, then pytorch default weight
         will be assigned to the kernel
         """
-        #import pdb; pdb.set_trace()
         if self.initializer:
             self.initializer(self._kernel.weight)
-        elif isinstance(self.activation, nn.SELU):
-            stdv = np.sqrt(1. / self.in_features)
-            weight = torch.empty(self.out_features, self.in_features)
-            weight = nn.init.normal_(weight, stdv)
-            self._kernel.weight = nn.Parameter(weight)
-        elif isinstance(self.activation, nn.ReLU):
-            weight = torch.empty(self.out_features, self.in_features)
-            weight = nn.init.kaiming_normal_(weight, mode='fan_in', nonlinearity=self.activation)
-            self._kernel.weight = nn.Parameter(weight)
-        else:
-            weight = torch.empty(self.out_features, self.in_features)
-            weight = nn.init.xavier_uniform_(weight)
-
-            self._kernel.weight = nn.Parameter(weight)
-        #import pdb; pdb.set_trace()
 
     def _init_bias(self):
         """
@@ -81,14 +65,12 @@ class BaseUnit(nn.Sequential):
         """
         if self.bias_init:
             nn.init.constant_(self._kernel.bias, self.bias_init)
-        elif isinstance(self.activation, nn.SELU):
-            bias = torch.empty(self.out_features)
-            bias = nn.init.normal_(bias, 0.0)
-            self._kernel.bias = nn.Parameter(bias)
-        else:
-            bias = torch.empty(self.out_features)
-            bias = nn.init.constant_(bias, 0.0)
-            self._kernel.bias = nn.Parameter(bias)
+
+def selu_init_(tensor, mean=0):
+    with torch.no_grad():
+        fan_in, _ = nn.init._calculate_fan_in_and_fan_out(tensor)
+        std = math.sqrt(1. / fan_in)
+        return tensor.normal_(mean, std)
 
 class FlattenUnit(BaseUnit):
     """
@@ -153,8 +135,7 @@ class DenseUnit(BaseUnit):
                             bias=True
                             )
         self.add_module('_kernel', self._kernel)
-        #self._init_weights()
-        #self._init_bias()
+
         # Norm
         if self.norm is not None:
             if self.norm == 'batch':
@@ -169,6 +150,9 @@ class DenseUnit(BaseUnit):
         # Activation/Non-Linearity
         if activation is not None:
             self.add_module('_activation', activation)
+            if isinstance(activation, nn.SELU):
+                self.initializer = selu_init_
+                self.bias_init = 0.0
 
         # Dropout
         if self.dropout is not None:
@@ -244,11 +228,9 @@ class ConvUnit(BaseUnit):
                               bias=True
                               )
         self.add_module('_kernel', self._kernel)
-        self._init_weights()
-        self._init_bias()
 
         # Norm
-        if self.norm is not None:
+        if self.norm:
             if self.norm == 'batch':
                 self.add_module(
                     '_norm',
@@ -261,6 +243,9 @@ class ConvUnit(BaseUnit):
         # Activation/Non-Linearity
         if activation is not None:
             self.add_module('_activation', activation)
+            if isinstance(activation, nn.SELU):
+                self.initializer = selu_init_
+                self.bias_init = 0.0
 
         # Pool
         if pool_size is not None:
@@ -275,7 +260,8 @@ class ConvUnit(BaseUnit):
             else:
                 self.add_module(
                     '_dropout', self.dropout_layer(self.dropout))
-
+        self._init_weights()
+        self._init_bias()
     def _init_layers(self):
         if self.conv_dim == 1:
             self.conv_layer = nn.Conv1d
