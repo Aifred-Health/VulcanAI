@@ -63,7 +63,7 @@ class BaseUnit(nn.Sequential):
         if self.bias_init is None, then pytorch default bias
         will be assigned to the kernel
         """
-        if self.bias_init:
+        if self.bias_init is not None:
             nn.init.constant_(self._kernel.bias, self.bias_init)
 
 def selu_init_(tensor, mean=0):
@@ -162,6 +162,7 @@ class DenseUnit(BaseUnit):
             else:
                 self.add_module(
                     '_dropout', nn.Dropout(self.dropout))
+
         self._init_weights()
         self._init_bias()
 
@@ -262,6 +263,7 @@ class ConvUnit(BaseUnit):
                     '_dropout', self.dropout_layer(self.dropout))
         self._init_weights()
         self._init_bias()
+
     def _init_layers(self):
         if self.conv_dim == 1:
             self.conv_layer = nn.Conv1d
