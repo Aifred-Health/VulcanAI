@@ -235,3 +235,21 @@ def set_tensor_device(data, device=None):
         for idx, d in enumerate(data):
             data[idx] = set_tensor_device(d, device=device)
     return data
+
+def master_device_setter(network, device=None):
+    """
+    Helper function to convert the network and its 
+    input_networks to the relevant device.
+
+    Parameters
+    ----------
+    network : BaseNetwork
+        network to be converted to the relevant device.
+    device : str or torch.device
+        the desired device
+
+    """
+    network.device = device
+    if network.input_networks:
+        for net in network.input_networks.values():           
+            master_device_setter(net, device)
