@@ -140,6 +140,8 @@ class TestDevice:
         assert multi_net.input_networks['dense_net'].input_networks['conv2D_net']\
             .device == torch.device(type='cuda', index=0)                                    
 
+    @pytest.mark.skipif(not TEST_CUDA, reason="No CUDA"
+                        " supported devices available")
     def test_fail_mixed_devices(self, multi_net):
         master_device_setter(multi_net, 'cuda:0')
         multi_net.input_networks['dense_net'].input_networks['conv2D_net'].device = "cpu"
