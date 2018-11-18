@@ -2,9 +2,10 @@ import pytest
 
 from vulcanai2.models import ConvNet, DenseNet
 from vulcanai2.models.utils import master_device_setter
-
+from vulcanai2.datasets import MultiDataset
 
 import torch
+from torch.utils.data import DataLoader, TensorDataset, Subset
 
 TEST_CUDA = torch.cuda.is_available()
 TEST_MULTIGPU = TEST_CUDA and torch.cuda.device_count() >= 2
@@ -125,7 +126,7 @@ class TestDevice:
             device='cpu'
         )
 
-    @pytest.mark.skipif(TEST_CUDA, reason="No CUDA"
+    @pytest.mark.skipif(not TEST_CUDA, reason="No CUDA"
                         " supported devices available")
     def test_master_net_device_set_to_cuda(self, multi_net):
         master_device_setter(multi_net, 'cuda:0')
@@ -139,10 +140,31 @@ class TestDevice:
         assert multi_net.input_networks['dense_net'].input_networks['conv2D_net']\
             .device == torch.device(type='cuda', index=0)                                    
 
-    # @pytest.mark.xfail
-    # def test_fail_mixed_devices(self, multi_net):
-    # TODO: write script with mixed devices so that the 
-    # network fails when fitting
+    def test_fail_mixed_devices(self, multi_net):
+        master_device_setter(multi_net, 'cuda:0')
+        multi_net.input_networks['dense_net'].input_networks['conv2D_net'].device = "cpu"
 
-    # TODO: more tests yet to come
+        data = MultiDataset([
+            (TensorDataset(torch.ones([10, *multi_net.input_networks['conv3D_net'].in_dim])), True, False),
+            MultiDataset([
+                (TensorDataset(torch.ones([10, *multi_net.input_networks['dense_net'].input_networks['conv1D_net'].in_dim])), True, False),
+                (TensorDataset(torch.ones([10, *multi_net.input_networks['dense_net'].input_networks['conv2D_net'].in_dim])), True, False)
+            ]),
+        ])
+
+        train_data = Subset(data, range(len(data)//2))
+        valid_data = Subset(data, range(len(data)//2, len(data)))
+        with pytest.raises(ValueError) as em:
+            multi_net.fit(
+                train_data,
+                valid_data,
+                epochs=2,
+                plot=False
+            )
+            assert str(em.value) == r"The following input networks' devices do not match deepest network's device 'cuda:0':\{'conv2D_net': device(type='cpu')\}"
+    
+    # TODO: add more tests
+
+
+
 
