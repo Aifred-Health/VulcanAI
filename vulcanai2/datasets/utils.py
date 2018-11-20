@@ -133,24 +133,33 @@ def check_split_ratio(split_ratio):
 #             return random.sample(data, len(data))
 
 
-def stitch_datasets(df_list, merge_on_columns, index_list=None):
+def stitch_datasets(df_dict, merge_on_columns=None, index_list=None):
     """
     Args:
-    df_list: dictionary of dataframes to stitch together
-    on: key that specifies which features column to use in each dataset
-    to identify the specific examples of all datasets
-    index_list: list of feature columns to index on when stitching(default None)
+    :param df_dict: dictionary {key = df name: value = dataframe} of dataframes to stitch together.
+    :param merge_on_columns: key(s) that specifies which columns to use to uniquely stitch dataset (default None)
+    :param index_list: list of columns to establish as index for final stitched dataset (default None)
 
-    Returns: concatenated dataframe
+    :return concatenated dataframe
 
+    :Example:
+
+    >>> dct_dfs = {'df_test_one': pd.DataFrame({'A': ['A0', 'A1', 'A2', 'A3'], 'B': ['B0', 'B1', 'B2', 'B3'],
+                                                'C': ['C0', 'C1', 'C2', 'C3'], 'D': ['D0', 'D1', 'D2', 'D3']},
+                                               index=[0, 1, 2, 3]),
+                    'df_test_two': pd.DataFrame({'A': ['A4', 'A5', 'A6', 'A7'], 'B': ['B4', 'B5', 'B6', 'B7'],
+                                                'C': ['C4', 'C5', 'C6', 'C7'], 'D': ['D4', 'D5', 'D6', 'D7']},
+                                               index=[4, 5, 6, 7])}
+    >>> df_stitched = stitch_datasets(dct_dfs, merge_on_columns=['A'], index_list=['A'])
     """
-    #Get name of a dataframe to extract
-    first_column = list(df_list)[0]
-    merged_df = df_list.pop(first_column)
+
+    # Get name of a dataframe to extract
+    first_column = list(df_dict)[0]
+    merged_df = df_dict.pop(first_column)
     merged_df = merged_df.apply(pd.to_numeric, errors='ignore')
-    for key in list(df_list):
+    for key in list(df_dict):
         logger.info('Combining: {}'.format(key))
-        df_two = df_list.pop(key)
+        df_two = df_dict.pop(key)
         merged_df = pd.concat([merged_df, df_two])
 
     if merge_on_columns is not None:
