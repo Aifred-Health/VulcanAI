@@ -132,7 +132,6 @@ class DenseUnit(BaseUnit):
                                         norm, dropout)
         self.in_features = in_features
         self.out_features = out_features
-        self.activation = activation
         # Main layer
         self._kernel = nn.Linear(
                             in_features=self.in_features,
