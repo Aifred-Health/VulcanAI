@@ -63,14 +63,18 @@ class BaseUnit(nn.Sequential):
         if self.bias_init is None, then pytorch default bias
         will be assigned to the kernel
         """
-        if self.bias_init is not None:
-            nn.init.constant_(self._kernel.bias, self.bias_init)
+        if self.bias_init:
+            self.bias_init(self._kernel.bias)
 
-def selu_init_(tensor, mean=0):
+def selu_weight_init_(tensor, mean=0):
     with torch.no_grad():
         fan_in, _ = nn.init._calculate_fan_in_and_fan_out(tensor)
         std = math.sqrt(1. / fan_in)
-        return tensor.normal_(mean, std)
+        return nn.init.normal_(tensor.data, mean, std)
+
+def selu_bias_init_(tensor, const = 0.0):
+    with torch.no_grad():
+        return nn.init.constant_(tensor.data, const)
 
 class FlattenUnit(BaseUnit):
     """
@@ -152,8 +156,8 @@ class DenseUnit(BaseUnit):
         if activation is not None:
             self.add_module('_activation', activation)
             if isinstance(activation, nn.SELU):
-                self.initializer = selu_init_
-                self.bias_init = 0.0
+                self.initializer = selu_weight_init_
+                self.bias_init = selu_bias_init_
 
         # Dropout
         if self.dropout is not None:
@@ -163,7 +167,6 @@ class DenseUnit(BaseUnit):
             else:
                 self.add_module(
                     '_dropout', nn.Dropout(self.dropout))
-
         self._init_weights()
         self._init_bias()
 
@@ -246,8 +249,8 @@ class ConvUnit(BaseUnit):
         if activation is not None:
             self.add_module('_activation', activation)
             if isinstance(activation, nn.SELU):
-                self.initializer = selu_init_
-                self.bias_init = 0.0
+                self.initializer = selu_weight_init_
+                self.initializer = selu_bias_init_
 
         # Pool
         if pool_size is not None:
