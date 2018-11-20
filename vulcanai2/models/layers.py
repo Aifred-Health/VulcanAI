@@ -33,7 +33,7 @@ class BaseUnit(nn.Sequential):
         """Initialize a base unit."""
         super(BaseUnit, self).__init__()
 
-        self.initializer = initializer
+        self.weight_init = initializer
         self.bias_init = bias_init
         self.norm = norm
         self.dropout = dropout
@@ -53,8 +53,8 @@ class BaseUnit(nn.Sequential):
         if self.initializer is None, then pytorch default weight
         will be assigned to the kernel
         """
-        if self.initializer:
-            self.initializer(self._kernel.weight)
+        if self.weight_init:
+            self.weight_init(self._kernel.weight)
 
     def _init_bias(self):
         """
@@ -156,7 +156,7 @@ class DenseUnit(BaseUnit):
         if activation is not None:
             self.add_module('_activation', activation)
             if isinstance(activation, nn.SELU):
-                self.initializer = selu_weight_init_
+                self.weight_init = selu_weight_init_
                 self.bias_init = selu_bias_init_
 
         # Dropout
@@ -249,9 +249,8 @@ class ConvUnit(BaseUnit):
         if activation is not None:
             self.add_module('_activation', activation)
             if isinstance(activation, nn.SELU):
-                self.initializer = selu_weight_init_
-                self.initializer = selu_bias_init_
-
+                self.weight_init = selu_weight_init_
+                self.bias_init = selu_bias_init_
         # Pool
         if pool_size is not None:
             self.add_module(
