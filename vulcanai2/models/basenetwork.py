@@ -1,15 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Defines the basenetwork class"""
+"""Defines the basenetwork class."""
 # Core imports
 import abc
 import torch
-from torch.autograd import Variable
 from torch import nn
-import sys
 
 # Vulcan imports
-from .layers import *
-from .utils import network_summary
 from .metrics import Metrics
 from ..plotters.visualization import display_record
 
@@ -20,10 +16,7 @@ from datetime import datetime
 import logging
 import os
 import pickle
-import time
-from collections import OrderedDict as odict
 import numpy as np
-import math
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -84,28 +77,19 @@ class BaseNetwork(nn.Module):
         """Define, initialize, and build the BaseNetwork."""
         super(BaseNetwork, self).__init__()
 
+        assert isinstance(name, str)
         self._name = name
-        if in_dim is not None:
-            if isinstance(in_dim, int):
-                self.in_dim = tuple([in_dim])
-            else:
-                self.in_dim = in_dim
-        else:
-            if input_networks is None:
-                raise ValueError("BaseNetwork must have either in_dim or \
-                                input_networks")
-
         self._config = config
         self._save_path = save_path
 
         # Turn into list if not list
-        if input_networks is not None and \
-            not isinstance(input_networks, list):
+        if input_networks and not isinstance(input_networks, list):
             input_networks = [input_networks]
 
-        if input_networks is not None and \
-            not isinstance(input_networks, nn.ModuleList):
-            self.input_networks = nn.ModuleList(input_networks)
+        if input_networks:
+            self.input_networks = nn.ModuleDict()
+            for in_net in input_networks:
+                self.add_input_network(in_net)
         else:
             self.input_networks = input_networks
 
@@ -132,6 +116,16 @@ class BaseNetwork(nn.Module):
             validation_accuracy=[]
         )
 
+        if in_dim:
+            if isinstance(in_dim, int):
+                self.in_dim = tuple([in_dim])
+            else:
+                self.in_dim = in_dim
+        else:
+            if input_networks is None:
+                raise ValueError("BaseNetwork must have either in_dim or \
+                                input_networks")
+
         # Creates the Network, and re-writes the self.in_dim
         self._create_network(
             activation=activation,
@@ -140,10 +134,35 @@ class BaseNetwork(nn.Module):
         # Compute self.out_dim of the network
         self.out_dim = self._get_out_dim()
 
+    def add_input_network(self, in_network):
+        """
+        Add a new network to  an input for this network.
+
+        New input network will exist at the end of the current set of
+        input_networks which will need to correspond with .
+
+        Parameters
+        ----------
+        in_network : BaseNetwork
+            A network to append to the set of self.input_networks.
+
+        Returns
+        -------
+        None
+
+        """
+        if self.input_networks is None:
+            self.input_networks = nn.ModuleDict()
+        assert isinstance(in_network, BaseNetwork)
+        assert in_network is not self
+        assert isinstance(self.input_networks, nn.ModuleDict)
+        self.input_networks[in_network.name] = in_network
+        self.in_dim = self._get_in_dim()
+
     @abc.abstractmethod
     def _merge_input_network_outputs(self, inputs):
         """Abstract method used to define how to handle multi-inputs."""
-        pass
+        raise NotImplementedError
 
     def forward(self, inputs, **kwargs):
         """
@@ -168,39 +187,59 @@ class BaseNetwork(nn.Module):
         if not isinstance(inputs, list):
             inputs = [inputs]
 
-        if self.input_networks is not None:
+        if self.input_networks:
             net_outs = []
-            for net, x in zip(self.input_networks, inputs):
-                net_outs.append(net(x))
+            # Loop through all input networks and pass through respective
+            # input data tensors to collect their outputs. Use the specified
+            # merge_inputs functionality to combine all the outputs to create
+            # the input for this network.
+            for in_net, x in zip(self.input_networks.values(), inputs):
+                net_outs.append(in_net(x))
             output = self._merge_input_network_outputs(net_outs)
         else:
             output = torch.cat(inputs, dim=1)
 
-        network_output = self.network(output)
+        return self.network(output)
 
-        if self._num_classes:
-            class_output = self.network_tail(network_output)
-            return class_output
-        else:
-            return network_output
-
+    @torch.no_grad()
     def _get_out_dim(self):
         """
-        Return the shape of the output of network by performing 
-        a single forward pass using built-up data.
+        Return the network output shape.
+
+        Perform a single forward pass using made-up data.
 
         Returns
         -------
         shape : tuple
             The output shape of the network.
+
         """
-        if self.network is not None:
+        if self.network:
             out = self.network(torch.ones([1, *self.in_dim]))
-            if self._num_classes:
-                out = self.network_tail(out)
             return tuple(out.shape[1:])
         else:
             return None
+
+    @torch.no_grad()
+    def _get_in_dim(self):
+        """
+        Return the network input shape.
+
+        Perform a single forward pass through all the input networks
+        and merge together to get input shape of this network.
+
+        Returns
+        -------
+        shape : tuple
+            The input shape of the network.
+
+        """
+        # Create empty input tensors
+        in_tensors = []
+        for in_net in self.input_networks.values():
+            in_tensors.append(torch.ones([1, *in_net.out_dim]))
+        output = self._merge_input_network_outputs(in_tensors)
+        return tuple(output.shape[1:])
 
     @property
     def name(self):
@@ -211,6 +250,7 @@ class BaseNetwork(nn.Module):
         -------
         name : string
             The name of the network.
+
         """
         return self._name
 
@@ -290,7 +330,7 @@ class BaseNetwork(nn.Module):
 
     def get_layers(self):
         """
-        Returns an ordered dict of all modules in this network (layers).
+        Return an ordered dict of all modules in this network (layers).
 
         Returns
         -------
@@ -301,12 +341,13 @@ class BaseNetwork(nn.Module):
 
     def get_weights(self):
         """
-        Return a dictionary containing a whole state of the module
+        Return a dictionary containing a whole state of the module.
 
         Returns
         -------
         weights : dict
             A dictionary containing a whole state of the module.
+
         """
         return self.state_dict()
 
@@ -360,17 +401,11 @@ class BaseNetwork(nn.Module):
         for params in self.network.parameters():
             # If freeze is True, set requires_grad to False
             # If freeze is False, set requires_grad to True
-            params.requires_grad = not freeze
-        # Freeze prediction layer parameters
-        if 'network_tail' in self._modules:
-            for params in self.network_tail.parameters():
-                # If freeze is True, set requires_grad to False
-                # If freeze is False, set requires_grad to True
-                params.requires_grad = not freeze
+            params.requires_grad_(not freeze)
         # Recursively toggle freeze on
-        if apply_inputs and self.input_networks is not None:
-            for network in self.input_networks:
-                network._toggle_freeze(
+        if apply_inputs and self.input_networks:
+            for in_net in self.input_networks.values():
+                in_net._toggle_freeze(
                     freeze=freeze,
                     apply_inputs=apply_inputs)
 
@@ -411,7 +446,6 @@ class BaseNetwork(nn.Module):
         None
 
         """
-
         # In case there is already one, don't overwrite it.
         # Important for not removing the ref from a lr scheduler
         if self.optim is None:
@@ -422,26 +456,26 @@ class BaseNetwork(nn.Module):
                 fig_number = plt.gcf().number + 1 if plt.fignum_exists(1) else 1
                 plt.show()
 
-            for epoch in trange(epochs, desc='Epoch: ', ncols=80):
+            for epoch in trange(epochs, desc='Epoch: '):
 
                 train_loss, train_acc = self._train_epoch(train_loader,
                                                           retain_graph)
-                if self.lr_scheduler is not None:
+                if self.lr_scheduler:
                     self.lr_scheduler.step(epoch=epoch)
 
                 valid_loss = valid_acc = np.nan
                 if epoch % valid_interv == 0:
                     valid_loss, valid_acc = self._validate(val_loader)
 
-                tqdm.write("\n Epoch {}:\n"
-                           "Train Loss: {:.6f} | Test Loss: {:.6f} |"
-                           "Train Acc: {:.4f} | Test Acc: {:.4f}".format(
-                    self.epoch,
-                    train_loss,
-                    valid_loss,
-                    train_acc,
-                    valid_acc
-                ))
+                tqdm.write(
+                    "\n Epoch {}:\n"
+                    "Train Loss: {:.6f} | Test Loss: {:.6f} |"
+                    "Train Acc: {:.4f} | Test Acc: {:.4f}".format(
+                        self.epoch,
+                        train_loss,
+                        valid_loss,
+                        train_acc,
+                        valid_acc))
 
                 self.record['epoch'].append(self.epoch)
                 self.record['train_error'].append(train_loss)
@@ -482,11 +516,7 @@ class BaseNetwork(nn.Module):
         train_accuracy_accumulator = 0.0
         pbar = trange(len(train_loader.dataset), desc='Training.. ')
 
-        for batch_idx, (data, targets) in enumerate(train_loader):
-
-            # for idx, d in enumerate(data):
-            #     data[idx] = Variable(d, requires_grad=True)
-            # targets = Variable(targets)
+        for data, targets in train_loader:
 
             if torch.cuda.is_available():
                 for idx, d in enumerate(data):
@@ -495,30 +525,16 @@ class BaseNetwork(nn.Module):
                 self.cuda()
 
             # Forward + Backward + Optimize
-            # import pudb; pu.db
             predictions = self(data)
-
             train_loss = self.criterion(predictions, targets)
             train_loss_accumulator += train_loss.item()
 
             self.optim.zero_grad()
             train_loss.backward(retain_graph=retain_graph)
             self.optim.step()
-
-            batch_len = train_loader.batch_size
-
-            if batch_idx % 10 == 0:
-                # Update tqdm bar
-
-                if ((batch_idx + 10) * batch_len) <= len(train_loader.dataset):
-                    pbar.update(10 * batch_len)
-                else:
-                    pbar.update(
-                        len(train_loader.dataset) - int(batch_idx * batch_len))
-
             train_accuracy_accumulator += self.metrics.get_score(predictions,
                                                                  targets)
-
+            pbar.update(train_loader.batch_size)
         pbar.close()
 
         train_loss = train_loss_accumulator * \
@@ -528,6 +544,7 @@ class BaseNetwork(nn.Module):
 
         return train_loss, train_accuracy
 
+    @torch.no_grad()
     def _validate(self, val_loader):
         """
         Validate the network on the validation data.
@@ -549,11 +566,7 @@ class BaseNetwork(nn.Module):
         val_accuracy_accumulator = 0.0
         pbar = trange(len(val_loader.dataset), desc='Validating.. ')
 
-        for batch_idx, (data, targets) in enumerate(val_loader):
-
-            # for idx, d in enumerate(data):
-            #     data[idx] = Variable(d, requires_grad=False)
-            # targets = Variable(targets, requires_grad=False)
+        for data, targets in val_loader:
 
             if torch.cuda.is_available():
                 for idx, d in enumerate(data):
@@ -562,23 +575,11 @@ class BaseNetwork(nn.Module):
                 self.cuda()
 
             predictions = self(data)
-
             validation_loss = self.criterion(predictions, targets)
             val_loss_accumulator += validation_loss.item()
-
-            batch_len = val_loader.batch_size
-
-            if batch_idx % 10 == 0:
-                # Update tqdm bar
-
-                if ((batch_idx + 10) * batch_len) <= len(val_loader.dataset):
-                    pbar.update(10 * batch_len)
-                else:
-                    pbar.update(
-                        len(val_loader.dataset) - int(batch_idx * batch_len))
             val_accuracy_accumulator += self.metrics.get_score(predictions,
                                                                targets)
-
+            pbar.update(val_loader.batch_size)
         pbar.close()
 
         validation_loss = val_loss_accumulator * \
@@ -600,6 +601,7 @@ class BaseNetwork(nn.Module):
                        average_results=True, retain_graph=None,
                        valid_interv=4, plot=False, figure_path=None):
         """Will conduct the test suite to determine model strength."""
+        # TODO: deal with repeated default parameters
         return self.metrics.cross_validate(
             network=self,
             data_loader=data_loader,
@@ -609,9 +611,10 @@ class BaseNetwork(nn.Module):
             retain_graph=retain_graph,
             valid_interv=valid_interv,
             plot=plot,
-            figure_path=figure_path)  # TODO: deal with repeated default parameters
+            figure_path=figure_path)
 
     # TODO: Instead of self.cpu(), use is_cuda to know if you can use gpu
+    @torch.no_grad()
     def forward_pass(self, data_loader, convert_to_class=False):
         """
         Allow the user to pass data through the network.
@@ -633,8 +636,8 @@ class BaseNetwork(nn.Module):
         # prediction_shape used to aggregate network outputs
         # (e.g. with or without class conversion)
         pred_collector = torch.tensor([])
-        for batch_idx, (*data, _) in enumerate(data_loader):
-
+        pbar = trange(len(data_loader.dataset), desc='Forward passing.. ')
+        for data, _ in data_loader:
             if torch.cuda.is_available():
                 data = data.cuda()
                 self.cuda()
@@ -649,6 +652,8 @@ class BaseNetwork(nn.Module):
                             in_matrix=predictions.cpu())).float()
             # Aggregate predictions
             pred_collector = torch.cat([pred_collector, predictions.cpu()])
+            pbar.update(data_loader.batch_size)
+        pbar.close()
         # Tensor comes in as float so convert back to int if returning classes
         if self._num_classes and convert_to_class:
             pred_collector = pred_collector.long()
@@ -658,7 +663,7 @@ class BaseNetwork(nn.Module):
 
     def save_model(self, save_path=None):
         """
-        Save the model (and it's input networks)
+        Save the model (and it's input networks).
 
         Parameters
         ----------
@@ -681,9 +686,9 @@ class BaseNetwork(nn.Module):
             self.name, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
         logger.info("No save path provided, saving to {}".format(save_path))
         # Recursively save the input networks as well.
-        if self.input_networks is not None:
-            for input_network in self.input_networks:
-                input_network.save_model(save_path)
+        if self.input_networks:
+            for in_net in self.input_networks.values():
+                in_net.save_model(save_path)
 
         if not os.path.exists(save_path):
             os.makedirs(save_path)
