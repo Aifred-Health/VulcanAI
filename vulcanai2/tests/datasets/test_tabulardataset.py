@@ -1,7 +1,8 @@
 # coding=utf-8
 """ Defines test cases for tabular dataset """
 import pytest
-import numpy as np
+from vulcanai2.datasets import TabularDataset
+import os
 
 class TestTabularDataset:
 
@@ -10,67 +11,38 @@ class TestTabularDataset:
         pass
 
     @pytest.fixture
-    def create_df(self):
-        pass
-        #return df
+    def my_test_dataset(self):
+        """Create a dataset by importing from the test csv"""
+        return TabularDataset(
+            data="test_data/birthweight_reduced.csv",
+            label_column="id",
+        )
 
-    def test_dataset_init_single_csv(self):
-        pass
+    def test_single_dataset_length(self, my_test_dataset):
+        assert len(my_test_dataset) == 42
+        assert "id" in my_test_dataset.label_column
 
-    def test_dataset_init_multiple_csv_correct_merge(self):
-        pass
+    def test_save_dataframe(self, my_test_dataset):
+        fname = "test_data/test_save.csv"
+        my_test_dataset.save_dataframe(fname)
+        assert os.path.isfile(fname)
+        os.remove(fname)
 
-    def test_dataset_init_multiple_csv_wrong_merge_index(self):
-        pass
+    def test_list_columns(self, my_test_dataset):
+        column_list = ["id", "headcirumference", "length", "Birthweight", "LowBirthWeight", "Gestation", "smoker", "motherage",
+                       "mnocig", "mheight", "mppwt", "fage", "fedyrs"]
+        assert set(my_test_dataset.list_all_features()) == set(column_list)
 
-    def test_datatset_init(self):
-        pass
+    # # TODO: test all possible combinations of merging
+    # def test_merge_data(self, my_test_dataset):
+    #     data = "test_data/birthweight_reduced2.csv"
+    #     my_test_dataset.merge_data(data, "id")
+    #     #TODO: test what Jospeh updates
 
-    def test_dataset_init(self):
-        pass
+    def test_replace_value_in_column(self, my_test_dataset):
 
-    def test_save_dataframe(self):
-        self.fail()
+        before = my_test_dataset.list_all_column_values("motherage")
+        my_test_dataset.replace_value_in_column("motherage", 24, 25)
+        after = my_test_dataset.list_all_column_values("motherage")
 
-    def test_delete_columns(self):
-        self.fail()
-
-    def test_reverse_create_dummies(self):
-        self.fail()
-
-    def test_list_all_features(self):
-        self.fail()
-
-    def test_list_all_categorical_features(self):
-        self.fail()
-
-    def test_remove_majority_null(self):
-        self.fail()
-
-    def test_remove_unique(self):
-        self.fail()
-
-    def test_remove_unbalanced_columns(self):
-        self.fail()
-
-    def test_remove_highly_correlated(self):
-        self.fail()
-
-    def test_remove_low_variance(self):
-        self.fail()
-
-    def test_split(self):
-        self.fail()
-
-
-
-#define a large fake dataframe
-
-#define 2 large fake csv files
-
-
-#test just supplying a file
-
-#test just supplying a dataframe
-
-#test concatenating dataframes.
+        assert set(before) - set(after) == set(25)

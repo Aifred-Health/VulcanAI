@@ -139,21 +139,18 @@ class TabularDataset(Dataset):
         :param column_name:
         :return: All unique values in a column.
         """
-        return list(getattr(self.df, column_name)().unique())
+        return list(getattr(self.df, column_name).unique())
 
-    def delete_columns(self, column_list):
+    def delete_columns(self, column_name):
         """
         Deletes columns in the list
         :param column_list: List of columns to be deleted
         :return: None
         """
-        prior_length = self.__len__()
-        for col in column_list:
-            if col in list(self.df):
-                self.df = self.df.drop(col, axis=1)
+        if column_name in list(self.df):
+            self.df = self.df.drop(column_name, axis=1)
 
-        cur_length = self.__len__()
-        logger.info(f"You have dropped {prior_length - cur_length} columns")
+        logger.info(f"You have dropped {column_name}")
 
     def create_label_encoding(self, column, ordered_values):
         """
