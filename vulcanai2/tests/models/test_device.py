@@ -129,6 +129,10 @@ class TestDevice:
     @pytest.mark.skipif(not TEST_CUDA, reason="No CUDA"
                         " supported devices available")
     def test_master_net_device_set_to_cuda(self, multi_net):
+        """
+        Test if the network as whole gets switched to cuda 
+        via master_device_setter
+        """
         master_device_setter(multi_net, 'cuda:0')
         assert multi_net.device == torch.device(type='cuda', index=0)
         assert multi_net.input_networks['conv3D_net']\
@@ -142,9 +146,14 @@ class TestDevice:
 
     @pytest.mark.skipif(not TEST_CUDA, reason="No CUDA"
                         " supported devices available")
-    def test_fail_mixed_devices(self, multi_net):
+    def test_fail_mixed_devices(self, multi_net, conv2D_net):
+        """
+        Test if the training throws a ValueError when the network 
+        has mixed devices.
+        """
         master_device_setter(multi_net, 'cuda:0')
         multi_net.input_networks['dense_net'].input_networks['conv2D_net'].device = "cpu"
+        assert conv2D_net == multi_net.input_networks['dense_net'].input_networks['conv2D_net']
 
         data = MultiDataset([
             (TensorDataset(torch.ones([10, *multi_net.input_networks['conv3D_net'].in_dim])), True, False),
