@@ -7,8 +7,6 @@ import math
 import numpy as np
 from sklearn import metrics as skl_metrics
 
-from sklearn.metrics import confusion_matrix, recall_score, precision_score, accuracy_score, f1_score
-
 from .utils import round_list
 from ..plotters.visualization import display_confusion_matrix
 from collections import defaultdict
@@ -18,6 +16,7 @@ import copy
 import logging
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
+
 
 # noinspection PyProtectedMember
 class Metrics(object):
@@ -54,15 +53,15 @@ class Metrics(object):
         if metric == 'accuracy':
             # TODO: Use extract_class_labels
             max_index = predictions.max(dim=1)[1]
-            correct = (max_index == targets).sum() # TODO: this doesn't seem correct
+            correct = (max_index == targets).sum()  # TODO: this doesn't seem correct
             accuracy = int(correct.data) / len(targets)
             return accuracy
         else:
             raise NotImplementedError(
                 'Metric {} not available.'.format(metric))
 
-    # noinspection PyMethodMayBeStatic
-    def extract_class_labels(self, in_matrix):
+    @staticmethod
+    def extract_class_labels(in_matrix):
         """
         Reformat truth matrix to be the classes in a 1D array.
 
@@ -77,6 +76,7 @@ class Metrics(object):
             1D class array.
 
         """
+
         if isinstance(in_matrix, torch.Tensor):
             in_matrix = in_matrix.detach().numpy()
         # For one-hot encoded entries
@@ -89,7 +89,7 @@ class Metrics(object):
     @staticmethod
     def get_confusion_matrix_values(targets, predictions):
         """
-        Will calculate the tp, tn, fp, fn values given a confusion matrix
+        Will calculate the tp, tn, fp, fn values given targets and predictions
         Parameters
         ----------
         predictions: numpy.ndarray of integers
@@ -100,16 +100,27 @@ class Metrics(object):
 
         Returns
         -------
-        tp, tn, fp, fn:  integer
+        tp, tn, fp, fn:  array of np.float32 with classes in sorted order
         The values calculated
         """
 
-        tn, fp, fn, tp = confusion_matrix(targets, predictions).ravel()
+        # credit: Robert Fratila
+        confusion_matrix = skl_metrics.confusion_matrix(targets, predictions)
+        tp = np.diagonal(confusion_matrix).astype('float32')
+        tn = (np.array(
+            [np.sum(confusion_matrix)] *
+            confusion_matrix.shape[0]) -
+            confusion_matrix.sum(axis=0) -
+            confusion_matrix.sum(axis=1) + tp).astype('float32')
+        # sum each column and remove diagonal
+        fp = (confusion_matrix.sum(axis=0) - tp).astype('float32')
+        # sum each row and remove diagonal
+        fn = (confusion_matrix.sum(axis=1) - tp).astype('float32')
 
         return tp, tn, fp, fn
 
     @staticmethod
-    def _check_average_parameters(targets, predictions, average=None):
+    def _check_average_parameter(targets, predictions, average):
         """
         Checks to see if average parameter is suitable for the data. Throws ValueError.
         Parameters
@@ -173,8 +184,8 @@ class Metrics(object):
         The sensitivity
         """
 
-        Metrics._check_average_parameters(targets, predictions, average)
-        sensitivity = recall_score(targets, predictions, average)
+        assert Metrics._check_average_parameter(targets, predictions, average)
+        sensitivity = skl_metrics.recall_score(targets, predictions, average=average)
 
         return sensitivity
 
@@ -201,8 +212,14 @@ class Metrics(object):
         The specificity
         """
 
-        Metrics._check_average_parameters(targets, predictions, average)
-        specificity = precision_score(targets, predictions, average)
+        _, tn, fp, _ = Metrics.get_confusion_matrix_values(targets, predictions)
+        specificity = tn / (tn + fp)
+
+        # TODO: implement other options
+        if average == "macro":
+            specificity = np.average(specificity)
+        elif average:
+            raise NotImplementedError
 
         return specificity
 
@@ -235,7 +252,7 @@ class Metrics(object):
         dice = 2 * tp / (2 * tp + fp + fn)
 
         # TODO: implement other options
-        if "macro" in average:
+        if average == "macro":
             dice = np.average(dice)
         elif average:
             raise NotImplementedError
@@ -266,14 +283,9 @@ class Metrics(object):
         ppv: float32 or array of np.float32
         the positive predictive value
         """
-        tp, _, fp, _ = Metrics.get_confusion_matrix_values(targets, predictions)
-        ppv = np.nan_to_num(tp / (tp + fp))
 
-        # TODO: implement other options
-        if "macro" in average:
-            ppv = np.average(ppv)
-        elif average:
-            raise NotImplementedError
+        assert Metrics._check_average_parameter(targets, predictions, average=average)
+        ppv = skl_metrics.precision_score(targets, predictions, average=average)
 
         return ppv
 
@@ -301,12 +313,12 @@ class Metrics(object):
         npv: np.float32 or array of np.float32
         The negative predictive value
         """
-        _ , tn, _, fn = Metrics.get_confusion_matrix_values(targets, predictions)
+        _, tn, _, fn = Metrics.get_confusion_matrix_values(targets, predictions)
 
         npv = np.nan_to_num(tn / (tn + fn))
 
         # TODO: implement other options
-        if "macro" in average:
+        if average == "macro":
             npv = np.average(npv)
         elif average:
             raise NotImplementedError
@@ -332,7 +344,7 @@ class Metrics(object):
         The accuracy
 
         """
-        accuracy = accuracy_score(predictions, targets)
+        accuracy = skl_metrics.accuracy_score(predictions, targets)
 
         return accuracy
 
@@ -359,17 +371,18 @@ class Metrics(object):
         The f1 score
         """
 
-        Metrics._check_average_parameters(targets, predictions, average)
-        f1 = f1_score(targets, predictions, average)
+        assert Metrics._check_average_parameter(targets, predictions, average)
+        f1 = skl_metrics.f1_score(targets, predictions, average=average)
+
         return f1
 
     @staticmethod
     def get_auc(targets, raw_predictions, num_classes, average=None):
         """
-        Calculate the auc
+        Calculate the auc. Note that raw_predictions and num_classes are required.
         Parameters
         ----------
-        raw_predictions: numpy.ndarray of integers
+        raw_predictions: numpy.ndarray of floats
         the raw predicted values, not converted to classes.
 
         targets: numpy.ndarray of integers
@@ -401,7 +414,7 @@ class Metrics(object):
             all_class_auc += [auc]
 
         # TODO: implement other options
-        if "macro" in average:
+        if average == "macro":
             all_class_auc = np.average(all_class_auc)
         elif average:
             raise NotImplementedError
@@ -433,8 +446,9 @@ class Metrics(object):
            network._num_classes == 0:
             raise ValueError('There\'s no classification layer')
 
+        num_classes = network._num_classes
         # getting just the y values out of the dataset
-        targets = np.array([v[1] for v in data_loader.dataset]) #TODO: store in tensor for continuity?
+        targets = np.array([v[1] for v in data_loader.dataset])  # TODO: store in tensor for continuity?
 
         raw_predictions = network.forward_pass(
             data_loader=data_loader,
@@ -442,8 +456,7 @@ class Metrics(object):
 
         predictions = self.extract_class_labels(raw_predictions)
 
-        #confusion matrix is from sklearn namespace
-        cm = confusion_matrix(targets, predictions) #TODO: you made them backwards
+        cm = skl_metrics.confusion_matrix(targets, predictions)
         if plot:
             display_confusion_matrix(cm)
 
@@ -469,8 +482,8 @@ class Metrics(object):
         f1 = Metrics.get_f1(targets, predictions)
         f1_macro = Metrics.get_f1(targets, predictions, average="macro")
 
-        auc = Metrics.get_auc(targets, predictions)
-        auc_macro = Metrics.get_auc(targets, predictions, average="macro")
+        auc = Metrics.get_auc(targets, raw_predictions, num_classes)
+        auc_macro = Metrics.get_auc(targets, raw_predictions, num_classes, average="macro")
 
         logger.info('{} test\'s results'.format(network.name))
 
@@ -517,9 +530,7 @@ class Metrics(object):
             'macro_auc': float(auc_macro)
         }
 
-
-    #TODO: include support
-
+    # TODO: include support
     def cross_validate(self, network, data_loader, k, epochs,
                        average_results=True, retain_graph=None,
                        valid_interv=4, plot=False, figure_path=None):
@@ -616,7 +627,7 @@ class Metrics(object):
         # TODO: we could show something better here like calculate
         # all the results so far
         except KeyboardInterrupt:
-            print("\n\n***KeyboardInterrupt: Cross validate stopped prematurely.***\n\n")
+            logger.info("\n\n***KeyboardInterrupt: Cross validate stopped prematurely.***\n\n")
 
         if average_results:
             averaged_all_results = {}

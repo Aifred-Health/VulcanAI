@@ -7,7 +7,6 @@ from vulcanai2.plotters.visualization import (compute_saliency_map,
                                               display_saliency_overlay,
                                               display_receptive_fields,
                                               display_confusion_matrix)
-from vulcanai2.models.utils import get_confusion_matrix
 
 import torch
 
