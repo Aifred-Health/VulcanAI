@@ -12,8 +12,8 @@ class BaseUnit(nn.Sequential):
 
     Parameters
     ----------
-    initializer : torch.nn.init
-        Torch initialization function.
+    weight_init : torch.nn.init
+        Torch initialization function for weights.
     bias_init : int or float
         A constant int or float to initialize biases with.
     norm : str
@@ -28,12 +28,12 @@ class BaseUnit(nn.Sequential):
 
     """
 
-    def __init__(self, initializer=None, bias_init=None,
+    def __init__(self, weight_init=None, bias_init=None,
                  norm=None, dropout=None):
         """Initialize a base unit."""
         super(BaseUnit, self).__init__()
 
-        self.weight_init = initializer
+        self.weight_init = weight_init
         self.bias_init = bias_init
         self.norm = norm
         self.dropout = dropout
@@ -77,7 +77,7 @@ def selu_weight_init_(tensor, mean=0):
     with torch.no_grad():
         fan_in, _ = nn.init._calculate_fan_in_and_fan_out(tensor)
         std = math.sqrt(1. / fan_in)
-        return nn.init.normal_(tensor.data, mean, std)
+        return nn.init.normal_(tensor, mean, std)
 
 def selu_bias_init_(tensor, const=0.0):
     """
@@ -87,7 +87,7 @@ def selu_bias_init_(tensor, const=0.0):
     :return:
     """
     with torch.no_grad():
-        return nn.init.constant_(tensor.data, const)
+        return nn.init.constant_(tensor, const)
 
 class FlattenUnit(BaseUnit):
     """
@@ -119,7 +119,7 @@ class DenseUnit(BaseUnit):
         The incoming feature size of a sample.
     out_features : int
         The number of hidden Linear units for this layer.
-    initializer : torch.nn.init
+    init : torch.nn.init
         Torch initialization function.
     bias_init : int or float
         A constant int or float to initialize biases with.
@@ -138,10 +138,10 @@ class DenseUnit(BaseUnit):
     """
 
     def __init__(self, in_features, out_features,
-                 initializer=None, bias_init=None,
+                 weight_init=None, bias_init=None,
                  norm=None, activation=None, dropout=None):
         """Initialize a single DenseUnit (i.e. a dense layer)."""
-        super(DenseUnit, self).__init__(initializer, bias_init,
+        super(DenseUnit, self).__init__(weight_init, bias_init,
                                         norm, dropout)
         self.in_features = in_features
         self.out_features = out_features
@@ -197,7 +197,7 @@ class ConvUnit(BaseUnit):
         The number of convolution kernels for this layer.
     kernel_size : int or tuple
         The size of the 1, 2, or 3 dimensional convolution kernel.
-    initializer : torch.nn.init
+    weight_init : torch.nn.init
         Torch initialization function.
     bias_init : int or float
         A constant int or float to initialize biases with.
@@ -222,11 +222,11 @@ class ConvUnit(BaseUnit):
     """
 
     def __init__(self, conv_dim, in_channels, out_channels, kernel_size,
-                 initializer=None, bias_init=None,
+                 weight_init=None, bias_init=None,
                  stride=1, padding=0, norm=None,
                  activation=None, pool_size=None, dropout=None):
         """Initialize a single ConvUnit (i.e. a conv layer)."""
-        super(ConvUnit, self).__init__(initializer, bias_init,
+        super(ConvUnit, self).__init__(weight_init, bias_init,
                                        norm, dropout)
         self.conv_dim = conv_dim
         self._init_layers()
