@@ -66,13 +66,26 @@ class BaseUnit(nn.Sequential):
         if self.bias_init:
             self.bias_init(self._kernel.bias)
 
+
 def selu_weight_init_(tensor, mean=0):
+    """
+    Function assigned to variable that will be called within _init_weights function to assign weights for selu.
+    :param tensor: Weight tensor to be adjusted
+    :param mean: Mean value for the normal distribution
+    :return weight tensor with normal distribution
+    """
     with torch.no_grad():
         fan_in, _ = nn.init._calculate_fan_in_and_fan_out(tensor)
         std = math.sqrt(1. / fan_in)
         return nn.init.normal_(tensor.data, mean, std)
 
-def selu_bias_init_(tensor, const = 0.0):
+def selu_bias_init_(tensor, const=0.0):
+    """
+    Function assigned to variable that will be called within _init_bias function to assign bias for selu.
+    :param tensor:
+    :param const:
+    :return:
+    """
     with torch.no_grad():
         return nn.init.constant_(tensor.data, const)
 
