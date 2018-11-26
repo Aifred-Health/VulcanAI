@@ -82,9 +82,9 @@ def selu_weight_init_(tensor, mean=0):
 def selu_bias_init_(tensor, const=0.0):
     """
     Function assigned to variable that will be called within _init_bias function to assign bias for selu.
-    :param tensor:
-    :param const:
-    :return:
+    :param tensor: Bias tensor to be adjusted
+    :param const: Constant value to be assigned to tensor.
+    :return bias tensor with constant values.
     """
     with torch.no_grad():
         return nn.init.constant_(tensor, const)
