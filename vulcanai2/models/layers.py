@@ -119,7 +119,7 @@ class DenseUnit(BaseUnit):
         The incoming feature size of a sample.
     out_features : int
         The number of hidden Linear units for this layer.
-    init : torch.nn.init
+    weight_init : torch.nn.init
         Torch initialization function.
     bias_init : int or float
         A constant int or float to initialize biases with.
