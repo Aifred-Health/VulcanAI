@@ -94,9 +94,9 @@ def selu_bias_init_(tensor, const=0.0):
 
     Parameters
     ----------
-    tensor:
+    tensor : torch.tensor
         Bias tensor to be adjusted
-    const:
+    const : float
         Constant value to be assigned to tensor.
 
     Returns
