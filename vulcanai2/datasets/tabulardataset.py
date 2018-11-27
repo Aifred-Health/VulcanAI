@@ -18,7 +18,7 @@ class TabularDataset(Dataset):
     This defines a dataset, subclassed from torch.utils.data.Dataset. It uses pd.dataframe as the backend, with utility
     functions.
     """
-    def __init__(self, data, label_column, join_column=None, index_list=None):
+    def __init__(self, data, label_column, join_column=None, index_list=None, na_values=None):
         """
         Creates an instance of Tabulardataset
         :param data: Either a path to a csv file, a list of paths to csv files, a list of dataframes, or a dataframe.
@@ -31,12 +31,12 @@ class TabularDataset(Dataset):
             if not join_column:
                 raise RuntimeError("You need to provide a join_column if a list of csvs or dataframes are provided")
             if isinstance(data[0], str):
-                dfs = [pd.read_csv(f) for f in data]
+                dfs = [pd.read_csv(f, na_values=na_values) for f in data]
             self.df = utils.stitch_datasets(dfs, join_column, index_list)
         elif isinstance(data, pd.DataFrame):
             self.df = data
         else:
-            self.df = pd.read_csv(data)
+            self.df = pd.read_csv(data, na_values=na_values)
         self.label_column = label_column
 
         self.df = utils.clean_dataframe(self.df)
@@ -51,7 +51,6 @@ class TabularDataset(Dataset):
         """
         return self.df.shape[0]
 
-    # TODO: make label column the index??
     def __getitem__(self, idx):
         """
         Generates one sample of data
@@ -69,10 +68,11 @@ class TabularDataset(Dataset):
             return xs, y
         else:
             xs = self.df.iloc[[2]].values.tolist()[0]
+            print(xs)
             xs = torch.tensor(xs, dtype=torch.float)
             return xs
 
-    def merge_data(self, data, join_column, index_list=None):
+    def merge_data(self, data, join_column, index_list=None, na_values=None):
         """
         Given additional data merge into the current data.
         :param data: Either a path to a csv file, a list of paths to csv files, a list of dataframes, or a dataframe.
@@ -84,14 +84,14 @@ class TabularDataset(Dataset):
             if not join_column:
                 raise RuntimeError("You need to provide a join_column if a list of csvs or dataframes are provided")
             if isinstance(data[0], str):
-                dfs = [pd.read_csv(f) for f in data]
+                dfs = [pd.read_csv(f, na_values=na_values) for f in data]
             if isinstance(index_list, list):
                 assert len(data) == len(index_list)
             #self.df = utils.stitch_datasets(dfs, join_column #TODO: update once joseph updates documentation
         elif isinstance(data, pd.DataFrame):
             self.df = utils.stitch_datasets([self.df, data], join_column, index_list)
         else:
-            new_df = pd.read_csv(data)
+            new_df = pd.read_csv(data, na_values=na_values)
             self.df = utils.stitch_datasets([self.df, new_df], join_column, index_list)
         logger.info(f"Datasets successfully merged")
 
@@ -111,16 +111,14 @@ class TabularDataset(Dataset):
         """
         return self.df.columns.values.tolist()
 
-    def replace_value_in_column(self, columns, current_values, target_values):
+    def replace_value_in_column(self, column_name, current_values, target_values):
         """
         Replace one or more values in either a single column or a list of columns.
-        :param columns: Either a single column or list of columns where you want the values to be replaced
+        :param column: The column where you want values to be replaced
         :param current_values: Either a single value or a list of values that you want to be replaced
-        :param target_values: Either a single value or a list of values you want the current value to be replaced with
+        :param target_values: Either a single value or a list of values you want the current values to be replaced with
         :return: None
         """
-        if not isinstance(columns, list):
-            columns = [columns]
 
         if not isinstance(current_values, list):
             current_values = [current_values]
@@ -129,22 +127,30 @@ class TabularDataset(Dataset):
         if len(current_values) != len(target_values):
             raise ValueError("Length of current values and target values must be the same")
 
-        self.df[columns] = self.df[columns].replace(current_values, target_values)
+        self.df[column_name] = self.df[column_name].replace(current_values, target_values)
 
-        logger.info(f"replaced values in {columns}")
+        logger.info(f"replaced values in {column_name}")
 
     def list_all_column_values(self, column_name):
         """
-        List all values in this column
+        Return a list of all values in this column
         :param column_name:
         :return: All unique values in a column.
         """
         return list(getattr(self.df, column_name).unique())
 
-    def delete_columns(self, column_name):
+    def print_column_data_types(self):
         """
-        Deletes columns in the list
-        :param column_list: List of columns to be deleted
+        Prints the data types of all columns
+        Returns None
+        -------
+        """
+        print(self.df.dtypes)
+
+    def delete_column(self, column_name):
+        """
+        Deletes the given column
+        :param column_list: The name of the column to be deleted.
         :return: None
         """
         if column_name in list(self.df):
@@ -152,7 +158,7 @@ class TabularDataset(Dataset):
 
         logger.info(f"You have dropped {column_name}")
 
-    def create_label_encoding(self, column, ordered_values):
+    def create_label_encoding(self, column_name, ordered_values):
         """
         Create label encoding for the provided column.
         Used for those categorical features where order does matter.
@@ -171,30 +177,31 @@ class TabularDataset(Dataset):
         if len(column_vals) != len(set(column_vals)):
             raise ValueError("Ordered_value_list contains non-unique values")
 
-        if set(column_vals) != self.list_all_column_values(column):
+        if set(column_vals) != set(self.list_all_column_values(column_name)):
             raise ValueError("Not all column values are included")
 
-        self.df = getattr(self.df, column)().map(ordered_values)
+        self.df[column_name] = getattr(self.df, column_name).map(ordered_values)
 
-        logger.info(f"Successfully remapped {column}")
+        logger.info(f"Successfully remapped {column_name}")
 
-    def create_one_hot_encoding(self, column, prefix_sep="@"):
+    def create_one_hot_encoding(self, column_name, prefix_sep="@"):
         """
         Create one-hot encoding for the provided column. Deliberatly doesn't make any decisions for you.
         :param column: The name of the column you want to one-hot encode
         :param prefix_sep: The prefix seperator.
         :return: None
         """
-        if column in list(self.df):
-            self.df = pd.get_dummies(self.df, dummy_na=True, columns=[column], prefix_sep=prefix_sep)
-            logger.info(f"Successfully encoded {column}")
+        #TODO: ensure dummy_na =False is what you want
+        if column_name in list(self.df):
+            self.df = pd.get_dummies(self.df, dummy_na=False, columns=[column_name], prefix_sep=prefix_sep)
+            logger.info(f"Successfully encoded {column_name}")
 
         else:
-            logger.info(f"Col {column} does not exist")
+            logger.info(f"Col {column_name} does not exist")
 
-    def reverse_create_one_hot_encoding(self, prefix_sep="@"):
+    def reverse_create_all_one_hot_encodings(self, prefix_sep="@"):
         """
-        Ensure prefix sep only exists for dummy columns
+        Ensure prefix sep only exists in dummy columns
         :return: None
         """
         result_series = {}
@@ -224,34 +231,35 @@ class TabularDataset(Dataset):
 
         logger.info(f"Successfully converted {len(dummy_tuples)} columns back from dummy format.")
 
-    def identify_majority_null(self, threshold):
+    def identify_sufficient_non_null(self, threshold):
         """
-        Return columns where the number of values as determined by the threshold are null
-        :param threshold: A number between 0 and 1, representing proportion needed to drop
+        Return columns where there is at least threshold percent of non-null values.
+        Does not drop columns
+        :param threshold: A number between 0 and 1, representing proportion needed
         :return: A list of those columns with threshold percentage null values
         """
         if threshold >= 1 or threshold <= 0:
             raise ValueError("Threshold needs to be a proportion between 0 and 1")
-        num_threshold = threshold * self.__len__()
-        tmp = self.df.dropna(thresh=num_threshold, axis=1)
-        cols = list(set(tmp.columns).difference(set(self.df.columns)))
+        num_threshold = (threshold * len(self))
+        tmp = self.df.dropna(thresh=num_threshold, axis=1)  # thresh is "Require that many non-NA values."
+        cols = list(set(self.df.columns).difference(set(tmp.columns)))
         return cols
 
     def identify_unique(self, threshold):
         """
-        Returns columns that have less than threshold number of unique values
-        :param threshold: All columns that have threshold or less unique values will be removed.
-        :return: The column list
+        Returns columns that have at least threshold number of values
+        :param threshold: All columns having at least threshold number of unique values.
         """
         column_list = []
         for col in self.df.columns:
-            if len(self.df[col].unique()) <= threshold:
+            if len(self.df[col].unique()) >= threshold:
                 column_list.append(col)
         return column_list
 
     def identify_unbalanced_columns(self, threshold, non_numeric=True):
         """
-        This returns columns that are highly unbalanced, aka those that have a disproportionate amount of one value
+        This returns columns that are highly unbalanced, aka those that have a disproportionate amount of one value.
+        Return those columns that have at least threshold percentage of one value.
         :param threshold: Proportion needed to define unbalanced, between 0 and 1
         :param non_numeric: Whether non-numeric columns are also considered.
         :return: The column list
@@ -264,16 +272,16 @@ class TabularDataset(Dataset):
         for col in columns:
             #Check amount of null values, because if column is entirely null, max won't work.
             num_of_null = self.df[col].isnull().sum()
-            if num_of_null != self.__len__():
+            if num_of_null != len(self):
                 col_maj = (max(self.df[col].value_counts()) / self.df[col].value_counts().sum())
-                if col_maj <= threshold:
+                if col_maj >= threshold:
                     column_list.append(col)
         return column_list
 
     def identify_highly_correlated(self, threshold):
         """
         Identify columns that are highly correlated with one-another.
-        :param threshold: Amount of correlation necessary for removal.
+        :param threshold: Between 0 and 1. Minimum amount of correlation necessary to be identified.
         :return: None
         """
         column_list = set()
@@ -284,18 +292,20 @@ class TabularDataset(Dataset):
                 column_list.add((index,val))
         return column_list
 
+    # TODO: is it ok that this is maxiumum amount of variance?
     def identify_low_variance(self, threshold):
         """
         Identify those columns that have low variance
-        :param threshold: Upper bound of variance needed for removal
+        :param threshold: Between 0 an 1. Maximum amount of variance necessary to be identified as low variance.
         :return: A dictionary of column names, with the value being their variance
         """
         dct_low_var = {}
         scaler = preprocessing.MinMaxScaler()
         for col in self.df.columns:
             if self.df[col].dtype in ['float64', 'int64', 'float32', 'int32']:
-                col_float_array = self.df[[col]].values.astype(float)
-                scaled_col = scaler.fit_transform(col_float_array)
+                col_float_array = self.df[col].dropna().values.astype(float)
+                reshaped_col_float_array = col_float_array.reshape(-1, 1)
+                scaled_col = scaler.fit_transform(reshaped_col_float_array)
                 col_var = scaled_col.var()
                 if col_var <= threshold:
                     dct_low_var[col] = col_var
@@ -330,8 +340,6 @@ class TabularDataset(Dataset):
             raise NotImplementedError("We still need to get to this!")
 
         train_ratio, test_ratio, val_ratio = utils.check_split_ratio(split_ratio)
-
-        print(train_ratio, test_ratio, val_ratio)
 
         np.random.seed(random_state)
         perm = np.random.permutation(self.df.index)
