@@ -18,6 +18,7 @@ class TabularDataset(Dataset):
     This defines a dataset, subclassed from torch.utils.data.Dataset. It uses pd.dataframe as the backend, with utility
     functions.
     """
+    #TODO: rewrite to work with new stitch datasets function
     def __init__(self, data, label_column, join_column=None, index_list=None, na_values=None):
         """
         Creates an instance of Tabulardataset
@@ -72,28 +73,29 @@ class TabularDataset(Dataset):
             xs = torch.tensor(xs, dtype=torch.float)
             return xs
 
-    def merge_data(self, data, join_column, index_list=None, na_values=None):
-        """
-        Given additional data merge into the current data.
-        :param data: Either a path to a csv file, a list of paths to csv files, a list of dataframes, or a dataframe.
-        :param join_column: Either a single value if it is consistent, or a list of length data.
-        :param index_list: list of feature columns to index on when stitching(default None)
-        :return: None
-        """
-        if isinstance(data, list):
-            if not join_column:
-                raise RuntimeError("You need to provide a join_column if a list of csvs or dataframes are provided")
-            if isinstance(data[0], str):
-                dfs = [pd.read_csv(f, na_values=na_values) for f in data]
-            if isinstance(index_list, list):
-                assert len(data) == len(index_list)
-            #self.df = utils.stitch_datasets(dfs, join_column #TODO: update once joseph updates documentation
-        elif isinstance(data, pd.DataFrame):
-            self.df = utils.stitch_datasets([self.df, data], join_column, index_list)
-        else:
-            new_df = pd.read_csv(data, na_values=na_values)
-            self.df = utils.stitch_datasets([self.df, new_df], join_column, index_list)
-        logger.info(f"Datasets successfully merged")
+    # TODO: needs to be re-written to match new stitch datasets signature.
+    # def merge_data(self, data, join_column, index_list=None, na_values=None):
+    #     """
+    #     Given additional data merge into the current data.
+    #     :param data: Either a path to a csv file, a dictionary names: paths to csv files, a list of dataframes, or a dataframe.
+    #     :param join_column: Either a single value if it is consistent, or a list of length data.
+    #     :param index_list: list of feature columns to index on when stitching(default None)
+    #     :return: None
+    #     """
+    #     if isinstance(data, list):
+    #         if not join_column:
+    #             raise RuntimeError("You need to provide a join_column if a list of csvs or dataframes are provided")
+    #         if isinstance(data[0], str):
+    #             dfs = [pd.read_csv(f, na_values=na_values) for f in data]
+    #         if isinstance(index_list, list):
+    #             assert len(data) == len(index_list)
+    #         self.df = utils.stitch_datasets(dfs, join_column)
+    #     elif isinstance(data, pd.DataFrame):
+    #         self.df = utils.stitch_datasets([self.df, data], join_column, index_list)
+    #     else:
+    #         new_df = pd.read_csv(data, na_values=na_values)
+    #         self.df = utils.stitch_datasets([self.df, new_df], join_column, index_list)
+    #     logger.info(f"Datasets successfully merged")
 
     def save_dataframe(self, file_path):
         """
@@ -311,6 +313,7 @@ class TabularDataset(Dataset):
                     dct_low_var[col] = col_var
         return dct_low_var
 
+    # TODO: re-write documentation
     # future improvements could come from https://github.com/pytorch/text/blob/master/torchtext/data/dataset.py
     # noinspection PyUnusedLocal
     def split(self, split_ratio=0.7, stratified=False, strata_field='label',

@@ -19,6 +19,8 @@ class TestTabularDataset:
             na_values=["Nan"]
         )
 
+    #TODO: test all the ways of merging, both in init and in the merge function
+
     def test_single_dataset_length(self, my_test_dataset):
         assert len(my_test_dataset) == 42
         assert "id" in my_test_dataset.label_column
