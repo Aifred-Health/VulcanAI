@@ -1,6 +1,7 @@
 from vulcanai2.datasets.utils import stitch_datasets
 import unittest
 import pandas as pd
+import numpy as np
 
 
 class TestStitchDataset(unittest.TestCase):
@@ -21,6 +22,25 @@ class TestStitchDataset(unittest.TestCase):
 
         stitch_dataset_results = stitch_datasets(dct_dfs, merge_on_columns=None)
         pd.testing.assert_frame_equal(stitch_dataset_results, df_no_moc_results)
+
+    def test_single_merge_on_columns(self):
+        dct_dfs = {'df_test_one': pd.DataFrame({'name': ['Jane', 'John', 'Jesse', 'Jane', 'John', 'Jesse'],
+                                               'age': [23, 25, 26, np.nan, np.nan, np.nan]},
+                                               index=[0, 1, 2, 3, 4, 5]),
+                   'df_test_two': pd.DataFrame({'name': ['Jane', 'John', 'Jesse'],
+                                               'state': ['CA', 'WA', 'OR']},
+                                               index=[0, 1, 2])}
+
+        df_single_moc_results = pd.DataFrame({'name': ['Jane', 'John', 'Jesse'],
+                                              'age': [23, 25, 26],
+                                              'state': ['CA', 'WA', 'OR']},
+                                             index=[0, 1, 2])
+        stitch_dataset_results = stitch_datasets(dct_dfs, merge_on_columns=['name'])
+
+        # Assert_frame_equal checks order of columns; therefore, sort_index by columns when checking. If dataframes are
+        # same, they should sort the same way.
+        pd.testing.assert_frame_equal(stitch_dataset_results.sort_index(axis=1), df_single_moc_results.sort_index(axis=1),
+                                      check_dtype=False)
 
 if __name__ == '__main__':
     unittest.main()
