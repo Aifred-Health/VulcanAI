@@ -135,12 +135,21 @@ def check_split_ratio(split_ratio):
 
 def stitch_datasets(df_dict, merge_on_columns=None, index_list=None):
     """
-    Args:
-    :param df_dict: dictionary {key = df name: value = dataframe} of dataframes to stitch together.
-    :param merge_on_columns: key(s) that specifies which columns to use to uniquely stitch dataset (default None)
-    :param index_list: list of columns to establish as index for final stitched dataset (default None)
+    Function to produce a single dataset from multiple.
 
-    :return concatenated dataframe
+    Parameters
+    ----------
+    df_dict : dictionary of dataframes to concatenated
+        dictionary {key = df name: value = dataframe} of dataframes to stitch together.
+    merge_on_columns : list of strings
+        key(s) that specifies which columns to use to uniquely stitch dataset (default None)
+    index_list: list of strings
+        columns to establish as index for final stitched dataset (default None)
+
+    Returns
+    -------
+    merged_df : dataframe
+        concatenated dataframe
 
     :Example:
 
