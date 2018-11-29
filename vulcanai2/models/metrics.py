@@ -31,23 +31,32 @@ class Metrics(object):
     def __init__(self):
         """Initialize the metrics class for a BaseNetwork."""
 
-    def get_score(self, targets, predictions, metrics='accuracy', average=None, class_converted=False):
+    def get_score(self, targets, predictions, metrics='accuracy', average=None,
+                  class_converted=False):
         """
-        Calculate some defined score given predictions and targets.
-
+        Calculate the provided metrics given some targets and predictions
         Parameters
         ----------
-        predictions : torch.Tensor
-            Network output of shape [batch, num_classes].
-        targets : torch.LongTensor
-            The truth values of shape [batch].
-        metric : str
-            The metric to calculate and return.
+        targets: numpy.ndarray of integers
+            the target values
+        predictions: numpy.ndarray of integers
+            the predicted values
+        metrics: list of strings
+            the strings definition the "get_"... functions to call
+        average: string,
+            [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
+            This parameter is required for multiclass/multilabel targets.
+            If None, the scores for each class are returned.
+            Otherwise, this determines the type of averaging performed on the
+            data.See scikit learn
+        class_converted: binary. default False
+            True if raw_predictions have already been converted using
+            extract_class_labels
+            False if raw_predictions are used
 
-        Returns
+        Returns dict
+            Metric name : values returned by the metric functions
         -------
-        score : float
-            The specified metric to calculate.
 
         """
 
@@ -109,11 +118,12 @@ class Metrics(object):
         Will calculate the tp, tn, fp, fn values given targets and predictions
         Parameters
         ----------
-        predictions: numpy.ndarray of integers
-        the predicted values
 
         targets: numpy.ndarray of integers
-        the target values
+            the target values
+
+        predictions: numpy.ndarray of integers
+            the predicted values
 
         Returns
         -------
@@ -139,21 +149,20 @@ class Metrics(object):
     @staticmethod
     def _check_average_parameter(targets, predictions, average):
         """
-        Checks to see if average parameter is suitable for the data. Throws ValueError.
+        Checks to see if average parameter is suitable for the data.
+        Throws ValueError.
         Parameters
         ----------
-        predictions: numpy.ndarray of integers
-        the predicted values
-
         targets: numpy.ndarray of integers
-        the target values
-
-        average: string, [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
-        This parameter is required for multiclass/multilabel targets.
-        If None, the scores for each class are returned.
-        Otherwise, this determines the type of averaging performed on the data:
-        See scikit learn
-
+            the target values
+        predictions: numpy.ndarray of integers
+            the predicted values
+        average: string,
+            [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
+            This parameter is required for multiclass/multilabel targets.
+            If None, the scores for each class are returned.
+            Otherwise, this determines the type of averaging performed on the
+            data.See scikit learn
         Returns
         -------
         True
@@ -166,13 +175,15 @@ class Metrics(object):
         if np.unique(predictions).size <= 2 and np.unique(targets).size <= 2:
             if "binary" not in average:
                 raise ValueError(
-                    "You must provide binary as the average function if binary data"
+                    "You must provide binary as the average \
+                    function if binary data"
                 )
 
         if np.unique(predictions).size >= 2 or np.unique(targets).size >= 2:
             if "binary" in average:
                 raise ValueError(
-                    "You cannot provide binary as the average function if non binary data"
+                    "You cannot provide binary as the average \
+                    function if non binary data"
                 )
 
         return True
@@ -183,26 +194,26 @@ class Metrics(object):
         Calculate the sensitivity
         Parameters
         ----------
-        predictions: numpy.ndarray of integers
-        the predicted values
-
         targets: numpy.ndarray of integers
-        the target values
-
-        average: string, [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
-        This parameter is required for multiclass/multilabel targets.
-        If None, the scores for each class are returned.
-        Otherwise, this determines the type of averaging performed on the data.
-        See scikit learn
+            the target values
+        predictions: numpy.ndarray of integers
+            the predicted values
+        average: string,
+            [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
+            This parameter is required for multiclass/multilabel targets.
+            If None, the scores for each class are returned.
+            Otherwise, this determines the type of averaging performed on the
+            data. See scikit learn
 
         Returns
         -------
         sensitivity: np.float32 or array of np.float32
-        The sensitivity
+            The sensitivity
         """
 
         assert Metrics._check_average_parameter(targets, predictions, average)
-        sensitivity = skl_metrics.recall_score(targets, predictions, average=average)
+        sensitivity = skl_metrics.recall_score(targets, predictions,
+                                               average=average)
 
         return sensitivity
 
@@ -212,24 +223,24 @@ class Metrics(object):
         Calculate the specificity
         Parameters
         ----------
-        predictions: numpy.ndarray of integers
-        the predicted values
-
         targets: numpy.ndarray of integers
-        the target values
-
-        average: string, [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
-        This parameter is required for multiclass/multilabel targets.
-        If None, the scores for each class are returned.
-        Otherwise, this determines the type of averaging performed on the data.
-        See scikit learn
+            the target values
+        predictions: numpy.ndarray of integers
+            the predicted values
+        average: string,
+            [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
+            This parameter is required for multiclass/multilabel targets.
+            If None, the scores for each class are returned.
+            Otherwise, this determines the type of averaging performed on the
+            data.See scikit learn
         Returns
         -------
         specificity: np.float32 or array of np.float32
-        The specificity
+            The specificity
         """
 
-        _, tn, fp, _ = Metrics.get_confusion_matrix_values(targets, predictions)
+        _, tn, fp, _ = Metrics.get_confusion_matrix_values(targets,
+                                                           predictions)
         specificity = tn / (tn + fp)
 
         # TODO: implement other options
@@ -246,26 +257,25 @@ class Metrics(object):
         Calculates the dice metric
         Parameters
         ----------
-        predictions: numpy.ndarray of integers
-        the predicted values
-
         targets: numpy.ndarray of integers
-        the target values
-
-        average: string, [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
-        Only None and 'macro' currently implemented.
-        This parameter is required for multiclass/multilabel targets.
-        If None, the scores for each class are returned.
-        Otherwise, this determines the type of averaging performed on the data.
-        See scikit learn
-
+            the target values
+        predictions: numpy.ndarray of integers
+            the predicted values
+        average: string,
+            [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
+            Only None and 'macro' currently implemented.
+            This parameter is required for multiclass/multilabel targets.
+            If None, the scores for each class are returned.
+            Otherwise, this determines the type of averaging performed on the
+            data. See scikit learn
         Returns
         -------
         dice: np.float32 or array of np.float32
-        The dice metric.
+            The dice metric.
         """
 
-        tp, _, fp, fn = Metrics.get_confusion_matrix_values(targets, predictions)
+        tp, _, fp, fn = Metrics.get_confusion_matrix_values(targets,
+                                                            predictions)
         dice = 2 * tp / (2 * tp + fp + fn)
 
         # TODO: implement other options
@@ -282,27 +292,28 @@ class Metrics(object):
         Calculate the positive predictive value
         Parameters
         ----------
-        predictions: numpy.ndarray of integers
-        the predicted values
-
         targets: numpy.ndarray of integers
-        the target values
-
-        average: string, [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
-        Only None and 'macro' currently implemented.
-        This parameter is required for multiclass/multilabel targets.
-        If None, the scores for each class are returned.
-        Otherwise, this determines the type of averaging performed on the data.
-        See scikit learn
+            the target values
+        predictions: numpy.ndarray of integers
+            the predicted values
+        average: string,
+            [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
+            Only None and 'macro' currently implemented.
+            This parameter is required for multiclass/multilabel targets.
+            If None, the scores for each class are returned.
+            Otherwise, this determines the type of averaging performed on the
+            data. See scikit learn
 
         Returns
         -------
         ppv: float32 or array of np.float32
-        the positive predictive value
+            the positive predictive value
         """
 
-        assert Metrics._check_average_parameter(targets, predictions, average=average)
-        ppv = skl_metrics.precision_score(targets, predictions, average=average)
+        assert Metrics._check_average_parameter(targets, predictions,
+                                                average=average)
+        ppv = skl_metrics.precision_score(targets, predictions,
+                                          average=average)
 
         return ppv
 
@@ -312,25 +323,25 @@ class Metrics(object):
         Calculates the negative predictive value
         Parameters
         ----------
-        predictions: numpy.ndarray of integers
-        the predicted values
-
         targets: numpy.ndarray of integers
-        the target values
-
-        average: string, [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
-        Only None and 'macro' currently implemented.
-        This parameter is required for multiclass/multilabel targets.
-        If None, the scores for each class are returned.
-        Otherwise, this determines the type of averaging performed on the data.
-        See scikit learn
+            the target values
+        predictions: numpy.ndarray of integers
+            the predicted values
+        average: string,
+            [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
+            Only None and 'macro' currently implemented.
+            This parameter is required for multiclass/multilabel targets.
+            If None, the scores for each class are returned.
+            Otherwise, this determines the type of averaging performed on the
+            data. See scikit learn
 
         Returns
         -------
         npv: np.float32 or array of np.float32
-        The negative predictive value
+            The negative predictive value
         """
-        _, tn, _, fn = Metrics.get_confusion_matrix_values(targets, predictions)
+        _, tn, _, fn = Metrics.get_confusion_matrix_values(targets,
+                                                           predictions)
 
         npv = np.nan_to_num(tn / (tn + fn))
 
@@ -348,17 +359,15 @@ class Metrics(object):
         Calculate the accuracy
         Parameters
         ----------
-        predictions: numpy.ndarray of integers
-        the predicted values
-
         targets: numpy.ndarray of integers
-        the target values
-
+            the target values
+        predictions: numpy.ndarray of integers
+            the predicted values
 
         Returns
         -------
         accuracy: array of np.float32
-        The accuracy
+            The accuracy
 
         """
         accuracy = skl_metrics.accuracy_score(targets, predictions)
@@ -371,21 +380,20 @@ class Metrics(object):
         Calculate the f1 score
         Parameters
         ----------
-        predictions: numpy.ndarray of integers
-        the predicted values
-
         targets: numpy.ndarray of integers
-
-        average: string, [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
-        This parameter is required for multiclass/multilabel targets.
-        If None, the scores for each class are returned.
-        Otherwise, this determines the type of averaging performed on the data:
-        See scikit learn
-
+            the target values
+        predictions: numpy.ndarray of integers
+            the predicted values
+        average: string,
+            [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
+            This parameter is required for multiclass/multilabel targets.
+            If None, the scores for each class are returned.
+            Otherwise, this determines the type of averaging performed on the
+            data. See scikit learn
         Returns
         -------
         f1: np.float32 or array of np.float32
-        The f1 score
+            The f1 score
         """
 
         assert Metrics._check_average_parameter(targets, predictions, average)
@@ -396,28 +404,30 @@ class Metrics(object):
     @staticmethod
     def get_auc(targets, raw_predictions, num_classes, average=None):
         """
-        Calculate the auc. Note that raw_predictions and num_classes are required.
+        Calculate the auc. Note that raw_predictions and num_classes are
+        required.
         Parameters
         ----------
-        raw_predictions: numpy.ndarray of floats
-        the raw predicted values, not converted to classes.
-
         targets: numpy.ndarray of integers
-
-        average: string, [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
-        This parameter is required for multiclass/multilabel targets.
-        If None, the scores for each class are returned.
-        Otherwise, this determines the type of averaging performed on the data:
-        See scikit learn
+            the target values
+        raw_predictions: numpy.ndarray of floats
+            the raw predicted values, not converted to classes.
+        average: string,
+            [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
+            This parameter is required for multiclass/multilabel targets.
+            If None, the scores for each class are returned.
+            Otherwise, this determines the type of averaging performed on the
+            data. See scikit learn
 
         Returns
         -------
         f1: np.float32 or array of np.float32
-        The auc
+            The auc
         """
 
-        if raw_predictions.a.ndim == 1:
-            raise ValueError("You must provide raw predictions not class_converted predictions")
+        if raw_predictions.ndim == 1:
+            raise ValueError("You must provide raw predictions not \
+                             class_converted predictions")
 
         all_class_auc = []
         for i in range(num_classes):
@@ -468,7 +478,8 @@ class Metrics(object):
 
         num_classes = network._num_classes
         # getting just the y values out of the dataset
-        targets = np.array([v[1] for v in data_loader.dataset])  # TODO: store in tensor for continuity?
+        # TODO: store in tensor for continuity?
+        targets = np.array([v[1] for v in data_loader.dataset])
 
         raw_predictions = network.forward_pass(
             data_loader=data_loader,
@@ -480,13 +491,16 @@ class Metrics(object):
         if plot:
             display_confusion_matrix(cm)
 
-        tp, tn, fp, fn = Metrics.get_confusion_matrix_values(targets, predictions)
+        tp, tn, fp, fn = Metrics.get_confusion_matrix_values(targets,
+                                                             predictions)
 
         sensitivity = Metrics.get_specificity(targets, predictions)
-        sensitivity_macro = Metrics.get_specificity(targets, predictions, average="macro")
+        sensitivity_macro = Metrics.get_specificity(targets, predictions,
+                                                    average="macro")
 
         specificity = Metrics.get_specificity(targets, predictions)
-        specificity_macro = Metrics.get_specificity(targets, predictions, average="macro")
+        specificity_macro = Metrics.get_specificity(targets, predictions,
+                                                    average="macro")
 
         dice = Metrics.get_dice(targets, predictions)
         dice_macro = Metrics.get_dice(targets, predictions, average="macro")
@@ -503,7 +517,8 @@ class Metrics(object):
         f1_macro = Metrics.get_f1(targets, predictions, average="macro")
 
         auc = Metrics.get_auc(targets, raw_predictions, num_classes)
-        auc_macro = Metrics.get_auc(targets, raw_predictions, num_classes, average="macro")
+        auc_macro = Metrics.get_auc(targets, raw_predictions, num_classes,
+                                    average="macro")
 
         logger.info('{} test\'s results'.format(network.name))
 
@@ -514,10 +529,12 @@ class Metrics(object):
 
         logger.info('\nAccuracy: {}'.format(accuracy))
 
-        logger.info('Sensitivity: {}'.format(round_list(sensitivity, decimals=3)))
+        logger.info('Sensitivity: {}'.format(round_list(sensitivity,
+                                                        decimals=3)))
         logger.info('\tMacro Sensitivity: {:.4f}'.format(sensitivity_macro))
 
-        logger.info('Specificity: {}'.format(round_list(specificity, decimals=3)))
+        logger.info('Specificity: {}'.format(round_list(specificity,
+                                                        decimals=3)))
         logger.info('\tMacro Specificity: {:.4f}'.format(specificity_macro))
 
         logger.info('DICE: {}'.format(round_list(dice, decimals=3)))
@@ -647,7 +664,9 @@ class Metrics(object):
         # TODO: we could show something better here like calculate
         # all the results so far
         except KeyboardInterrupt:
-            logger.info("\n\n***KeyboardInterrupt: Cross validate stopped prematurely.***\n\n")
+            logger.info(
+                "\n\n***KeyboardInterrupt: Cross validate stopped \
+                prematurely.***\n\n")
 
         if average_results:
             averaged_all_results = {}
