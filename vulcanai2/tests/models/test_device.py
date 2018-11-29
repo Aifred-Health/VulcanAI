@@ -31,7 +31,8 @@ class TestDevice:
                         in_channels=1,
                         out_channels=24,
                         kernel_size=(5),
-                        stride=2, 
+                        stride=2,
+                        pool_size=2,
                         dropout=0.1
                     ),
                     dict(
@@ -59,6 +60,7 @@ class TestDevice:
                         out_channels=24,
                         kernel_size=(5, 5),
                         stride=2,
+                        pool_size=2,
                         dropout=0.1
                     ),
                     dict(
@@ -154,33 +156,48 @@ class TestDevice:
 
     @pytest.mark.skipif(not TEST_CUDA, reason="No CUDA"
                         " supported devices available")
-    def test_fail_mixed_devices(self, multi_net, conv2D_net):
+    def test_fail_mixed_devices(self, multi_net, conv3D_net,
+                                dense_net, conv1D_net):
         """Test training throws ValueError when network has mixed devices."""
         master_device_setter(multi_net, 'cuda:0')
-        multi_net.input_networks['dense_net'].\
-            input_networks['conv2D_net'].device = "cpu"
-        assert conv2D_net == \
-            multi_net.input_networks['dense_net'].input_networks['conv2D_net']
+        assert conv3D_net == multi_net.input_networks['conv3D_net']
+        assert dense_net == multi_net.input_networks['dense_net']
 
         dense_net_data = MultiDataset([
-                (TensorDataset(torch.ones([10, *multi_net.input_networks['dense_net'].input_networks['conv1D_net'].in_dim])), True, False),
-                (TensorDataset(torch.ones([10, *multi_net.input_networks['dense_net'].input_networks['conv2D_net'].in_dim])), True, False)
+                (
+                    TensorDataset(
+                        torch.ones([10, *conv1D_net.in_dim]),
+                        torch.tensor([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]).long()),
+                    True, True),
+                (
+                    TensorDataset(torch.ones(
+                        [10, *dense_net.input_networks['conv2D_net'].in_dim])),
+                    True, False)
             ])
 
         multi_net_data = MultiDataset([
-            (TensorDataset(torch.ones([10, *multi_net.input_networks['conv3D_net'].in_dim])), True, False),
+            (TensorDataset(torch.ones([10, *conv3D_net.in_dim])), True, False),
             dense_net_data
         ])
 
         data_len = len(multi_net_data)
-        train_data = DataLoader(
+        train_loader = DataLoader(
             Subset(multi_net_data, range(data_len//2)))
-        valid_data = DataLoader(
+        valid_loader = DataLoader(
             Subset(multi_net_data, range(data_len//2, data_len)))
-        with pytest.raises(ValueError) as em:
+
+        multi_net.fit(
+            train_loader=train_loader,
+            val_loader=valid_loader,
+            epochs=1,
+            plot=False)
+
+        with pytest.raises(ValueError) as e_info:
+            multi_net.input_networks['conv3D_net'].device = 'cpu'
             multi_net.fit(
-                train_data,
-                valid_data,
-                epochs=2,
+                train_loader=train_loader,
+                val_loader=valid_loader,
+                epochs=1,
                 plot=False)
-            assert str(em.value) == r"""The following input networks' devices do not match deepest network's device 'cuda:0':\{'conv2D_net': device(type='cpu')\}"""
+
+        assert str(e_info.value).endswith("{'conv3D_net': device(type='cpu')}")

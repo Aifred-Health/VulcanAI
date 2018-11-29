@@ -590,7 +590,7 @@ class BaseNetwork(nn.Module):
                 self.record['validation_error'].append(valid_loss)
                 self.record['validation_accuracy'].append(valid_acc)
 
-                if plot is True:
+                if plot:
                     plt.ion()
                     plt.figure(fig_number)
                     display_record(record=self.record)
