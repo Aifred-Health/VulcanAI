@@ -1,3 +1,4 @@
+"""Test device switching for networks."""
 import pytest
 
 from vulcanai2.models import ConvNet, DenseNet
@@ -16,8 +17,11 @@ if TEST_CUDA:
 
 
 class TestDevice:
+    """Test multi-input GPU device switching."""
+
     @pytest.fixture
     def conv1D_net(self):
+        """conv1D fixture."""
         return ConvNet(
             name='conv1D_net',
             in_dim=(1, 28),
@@ -41,8 +45,10 @@ class TestDevice:
             },
             device='cpu'
         )
+
     @pytest.fixture
     def conv2D_net(self):
+        """conv2D fixture."""
         return ConvNet(
             name='conv2D_net',
             in_dim=(1, 28, 28),
@@ -52,8 +58,8 @@ class TestDevice:
                         in_channels=1,
                         out_channels=24,
                         kernel_size=(5, 5),
-                        stride=2, 
-                        dropout=0.1 
+                        stride=2,
+                        dropout=0.1
                     ),
                     dict(
                         in_channels=24,
@@ -69,6 +75,7 @@ class TestDevice:
 
     @pytest.fixture
     def conv3D_net(self):
+        """conv3D fixture."""
         return ConvNet(
             name='conv3D_net',
             in_dim=(1, 28, 28, 28),
@@ -93,6 +100,7 @@ class TestDevice:
 
     @pytest.fixture
     def dense_net(self, conv1D_net, conv2D_net):
+        """Dense network fixture with two inputs."""
         return DenseNet(
             name='dense_net',
             input_networks=[conv1D_net, conv2D_net],
@@ -107,7 +115,8 @@ class TestDevice:
         )
 
     @pytest.fixture
-    def multi_net(self, conv3D_net, dense_net):  
+    def multi_net(self, conv3D_net, dense_net):
+        """Bottom multi-input network fixture."""
         return ConvNet(
             name='multi_input_network',
             input_networks=[conv3D_net, dense_net],
@@ -129,53 +138,49 @@ class TestDevice:
     @pytest.mark.skipif(not TEST_CUDA, reason="No CUDA"
                         " supported devices available")
     def test_master_net_device_set_to_cuda(self, multi_net):
-        """
-        Test if the network as whole gets switched to cuda 
-        via master_device_setter
-        """
+        """Test if the network as whole gets switched to cuda."""
         master_device_setter(multi_net, 'cuda:0')
         assert multi_net.device == torch.device(type='cuda', index=0)
         assert multi_net.input_networks['conv3D_net']\
             .device == torch.device(type='cuda', index=0)
         assert multi_net.input_networks['dense_net']\
             .device == torch.device(type='cuda', index=0)
-        assert multi_net.input_networks['dense_net'].input_networks['conv1D_net']\
-            .device == torch.device(type='cuda', index=0)
-        assert multi_net.input_networks['dense_net'].input_networks['conv2D_net']\
-            .device == torch.device(type='cuda', index=0)                                    
+        assert multi_net.input_networks['dense_net'].\
+            input_networks['conv1D_net'].\
+            device == torch.device(type='cuda', index=0)
+        assert multi_net.input_networks['dense_net'].\
+            input_networks['conv2D_net'].\
+            device == torch.device(type='cuda', index=0)
 
     @pytest.mark.skipif(not TEST_CUDA, reason="No CUDA"
                         " supported devices available")
     def test_fail_mixed_devices(self, multi_net, conv2D_net):
-        """
-        Test if the training throws a ValueError when the network 
-        has mixed devices.
-        """
+        """Test training throws ValueError when network has mixed devices."""
         master_device_setter(multi_net, 'cuda:0')
-        multi_net.input_networks['dense_net'].input_networks['conv2D_net'].device = "cpu"
-        assert conv2D_net == multi_net.input_networks['dense_net'].input_networks['conv2D_net']
+        multi_net.input_networks['dense_net'].\
+            input_networks['conv2D_net'].device = "cpu"
+        assert conv2D_net == \
+            multi_net.input_networks['dense_net'].input_networks['conv2D_net']
 
-        data = MultiDataset([
-            (TensorDataset(torch.ones([10, *multi_net.input_networks['conv3D_net'].in_dim])), True, False),
-            MultiDataset([
+        dense_net_data = MultiDataset([
                 (TensorDataset(torch.ones([10, *multi_net.input_networks['dense_net'].input_networks['conv1D_net'].in_dim])), True, False),
                 (TensorDataset(torch.ones([10, *multi_net.input_networks['dense_net'].input_networks['conv2D_net'].in_dim])), True, False)
-            ]),
+            ])
+
+        multi_net_data = MultiDataset([
+            (TensorDataset(torch.ones([10, *multi_net.input_networks['conv3D_net'].in_dim])), True, False),
+            dense_net_data
         ])
 
-        train_data = Subset(data, range(len(data)//2))
-        valid_data = Subset(data, range(len(data)//2, len(data)))
+        data_len = len(multi_net_data)
+        train_data = DataLoader(
+            Subset(multi_net_data, range(data_len//2)))
+        valid_data = DataLoader(
+            Subset(multi_net_data, range(data_len//2, data_len)))
         with pytest.raises(ValueError) as em:
             multi_net.fit(
                 train_data,
                 valid_data,
                 epochs=2,
-                plot=False
-            )
-            assert str(em.value) == r"The following input networks' devices do not match deepest network's device 'cuda:0':\{'conv2D_net': device(type='cpu')\}"
-    
-    # TODO: add more tests
-
-
-
-
+                plot=False)
+            assert str(em.value) == r"""The following input networks' devices do not match deepest network's device 'cuda:0':\{'conv2D_net': device(type='cpu')\}"""
