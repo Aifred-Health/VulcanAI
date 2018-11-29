@@ -210,3 +210,46 @@ def print_model_structure(network, input_size=None):
         if isinstance(v, odict):
             for k2, v2 in v.items():
                 print('\t {}: {}'.format(k2, v2))
+
+def set_tensor_device(data, device=None):
+    """
+    Helper function to convert list of data to
+    relevant device
+
+    Parameters
+    ----------
+    data : torch.tensor or list
+        data to be converted to the relevant device.
+    device : str or torch.device
+        the desired device
+
+    Returns
+    -------
+    data : torch.tensor or list
+        data converted to the relevant device
+
+    """
+    if not isinstance(data, (list, tuple)):
+        data = data.to(device=device)
+    else:
+        for idx, d in enumerate(data):
+            data[idx] = set_tensor_device(d, device=device)
+    return data
+
+def master_device_setter(network, device=None):
+    """
+    Helper function to convert the network and its 
+    input_networks to the relevant device.
+
+    Parameters
+    ----------
+    network : BaseNetwork
+        network to be converted to the relevant device.
+    device : str or torch.device
+        the desired device
+
+    """
+    network.device = device
+    if network.input_networks:
+        for net in network.input_networks.values():           
+            master_device_setter(net, device)

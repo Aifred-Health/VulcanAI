@@ -6,6 +6,9 @@ import torch
 from torch import nn
 
 # Vulcan imports
+from .layers import *
+from .utils import set_tensor_device
+
 from .metrics import Metrics
 from ..plotters.visualization import display_record
 
@@ -61,6 +64,9 @@ class BaseNetwork(nn.Module):
         So far just 'best_validation_error' is implemented.
     criter_spec : dict
         criterion specification with name and all its parameters.
+    device : str or torch.device
+        Sets the network module to the relevant device. If cuda available
+        in the host console, "cuda:0" will be run which can be overriden.
 
     Returns
     -------
@@ -73,7 +79,8 @@ class BaseNetwork(nn.Module):
                  activation=nn.ReLU(), pred_activation=None,
                  optim_spec={'name': 'Adam', 'lr': 0.001},
                  lr_scheduler=None, early_stopping=None,
-                 criter_spec=nn.CrossEntropyLoss()):
+                 criter_spec=nn.CrossEntropyLoss(),
+                 device="cuda:0"):
         """Define, initialize, and build the BaseNetwork."""
         super(BaseNetwork, self).__init__()
 
@@ -98,7 +105,6 @@ class BaseNetwork(nn.Module):
         self._optim_spec = optim_spec
         self._lr_scheduler = lr_scheduler
         self._early_stopping = early_stopping
-        self._criter_spec = criter_spec
 
         if self._num_classes:
             self.metrics = Metrics()
@@ -133,6 +139,9 @@ class BaseNetwork(nn.Module):
 
         # Compute self.out_dim of the network
         self.out_dim = self._get_out_dim()
+
+        self.device = device
+        self._criter_spec = criter_spec
 
     def add_input_network(self, in_network):
         """
@@ -199,7 +208,18 @@ class BaseNetwork(nn.Module):
         else:
             output = torch.cat(inputs, dim=1)
 
+        output = set_tensor_device(output, device=self.device)
+        # Return actionable error if input shapes don't match up.
+        if output.shape[1:] != self.in_dim:
+            raise ValueError(
+                "Input data incorrect dimension shape for network: {}. "
+                "Expecting shape {} but recieved shape {}".format(
+                    self.name, self.in_dim, output.shape[1:]))
         return self.network(output)
+
+    def extra_repr(self):
+        """Set the extra representation of the module."""
+        return '(device): torch.'+self.device.__repr__()
 
     @torch.no_grad()
     def _get_out_dim(self):
@@ -240,6 +260,55 @@ class BaseNetwork(nn.Module):
             in_tensors.append(torch.ones([1, *in_net.out_dim]))
         output = self._merge_input_network_outputs(in_tensors)
         return tuple(output.shape[1:])
+
+    @property
+    def device(self):
+        """
+        Return the relevant device associalted with network module.
+
+        Returns
+        -------
+        device : torch.device
+            Relevant device associalted with the network module.
+
+        """
+        return next(self.network.parameters()).device
+
+    @device.setter
+    def device(self, device):
+        """
+        Network device setter.
+
+        If the user specifies invalid device id, raises
+        RuntimeError for invalid device ordinal.
+
+        Parameters
+        ----------
+        device : str or torch.device
+            The device to transfer network to.
+
+        """
+        device = torch.device(device if torch.cuda.is_available() else 'cpu')
+        if self.network:
+            self.network.to(device=device)
+        if self.optim:
+            for state in self.optim.state.values():
+                for k, v in state.items():
+                    if torch.is_tensor(v):
+                        state[k] = set_tensor_device(v, device=device)
+
+    @property
+    def is_cuda(self):
+        """
+        Return  boolean about whether the network is on cuda device (i.e gpu).
+
+        Returns
+        -------
+        is_cuda : boolean
+            Specifies whether the network is on gpu or not.
+
+        """
+        return next(self.network.parameters()).is_cuda
 
     @property
     def name(self):
@@ -423,10 +492,43 @@ class BaseNetwork(nn.Module):
         # TODO: Use logger to describe if the optimizer is changed.
         self.criterion = self._init_criterion(self._criter_spec)
 
+    def _assert_same_devices(self, comparison_device=None):
+        """
+        Will check if all incoming networks are on the same device.
+
+        Raises specific error about which device the networks need to
+        be re-assigned to.
+
+        Specific for when calling fit becuase of grad calculation across
+        several devices not compatible with optimizer. Temporary until
+        replaced with nn.DataParallel or better multi-gpu implmentation.
+
+        Parameters
+        ----------
+        comparison_device : str or torch.device
+            The device to compare current device to.
+
+        """
+        if comparison_device is None:
+            comparison_device = self.device
+        incompatible_collector = {}
+        if self.input_networks:
+            for net_name, net in self.input_networks.items():
+                if net.input_networks:
+                    net._assert_same_devices(comparison_device)
+                if net.device != comparison_device:
+                    incompatible_collector[net_name] = net.device
+        if incompatible_collector:
+            raise ValueError(
+                "The following input networks' devices do not "
+                "match deepest network's device '{}':\n{}".format(
+                    comparison_device,
+                    incompatible_collector))
+
     def fit(self, train_loader, val_loader, epochs,
             retain_graph=None, valid_interv=4, plot=False):
         """
-        Trains the network on the provided data.
+        Train the network on the provided data.
 
         Parameters
         ----------
@@ -440,12 +542,17 @@ class BaseNetwork(nn.Module):
             Whether retain_graph will be true when .backwards is called.
         valid_interv : int
             Specifies the period of epochs before validation calculation.
+        plot : boolean
+            Whether or not to plot training metrics in real-time.
 
         Returns
         -------
         None
 
         """
+        # Check all networks are on same device.
+        self._assert_same_devices()
+
         # In case there is already one, don't overwrite it.
         # Important for not removing the ref from a lr scheduler
         if self.optim is None:
@@ -483,7 +590,7 @@ class BaseNetwork(nn.Module):
                 self.record['validation_error'].append(valid_loss)
                 self.record['validation_accuracy'].append(valid_acc)
 
-                if plot is True:
+                if plot:
                     plt.ion()
                     plt.figure(fig_number)
                     display_record(record=self.record)
@@ -518,11 +625,8 @@ class BaseNetwork(nn.Module):
 
         for data, targets in train_loader:
 
-            if torch.cuda.is_available():
-                for idx, d in enumerate(data):
-                    data[idx] = d.cuda()
-                targets = targets.cuda()
-                self.cuda()
+            data = set_tensor_device(data, device=self.device)
+            targets = set_tensor_device(targets, device=self.device)
 
             # Forward + Backward + Optimize
             predictions = self(data)
@@ -568,11 +672,8 @@ class BaseNetwork(nn.Module):
 
         for data, targets in val_loader:
 
-            if torch.cuda.is_available():
-                for idx, d in enumerate(data):
-                    data[idx] = d.cuda()
-                targets = targets.cuda()
-                self.cuda()
+            data = set_tensor_device(data, device=self.device)
+            targets = set_tensor_device(targets, device=self.device)
 
             predictions = self(data)
             validation_loss = self.criterion(predictions, targets)
@@ -613,7 +714,6 @@ class BaseNetwork(nn.Module):
             plot=plot,
             figure_path=figure_path)
 
-    # TODO: Instead of self.cpu(), use is_cuda to know if you can use gpu
     @torch.no_grad()
     def forward_pass(self, data_loader, convert_to_class=False):
         """
@@ -635,12 +735,9 @@ class BaseNetwork(nn.Module):
         self.eval()
         # prediction_shape used to aggregate network outputs
         # (e.g. with or without class conversion)
-        pred_collector = torch.tensor([])
-        pbar = trange(len(data_loader.dataset), desc='Forward passing.. ')
+        dtype = torch.long if convert_to_class else torch.float
+        pred_collector = torch.tensor([], dtype=dtype, device=self.device)
         for data, _ in data_loader:
-            if torch.cuda.is_available():
-                data = data.cuda()
-                self.cuda()
             # Get raw network output
             predictions = self(data)
             if self._num_classes:
@@ -648,18 +745,11 @@ class BaseNetwork(nn.Module):
                 predictions = nn.Softmax(dim=1)(predictions)
                 if convert_to_class:
                     predictions = torch.tensor(
-                        self.metrics.get_class(
-                            in_matrix=predictions.cpu())).float()
+                        self.metrics.get_class(in_matrix=predictions),
+                        device=self.device)
             # Aggregate predictions
-            pred_collector = torch.cat([pred_collector, predictions.cpu()])
-            pbar.update(data_loader.batch_size)
-        pbar.close()
-        # Tensor comes in as float so convert back to int if returning classes
-        if self._num_classes and convert_to_class:
-            pred_collector = pred_collector.long()
-        if isinstance(pred_collector, torch.Tensor):
-                pred_collector = pred_collector.detach().numpy()
-        return pred_collector
+            pred_collector = torch.cat([pred_collector, predictions])
+        return pred_collector.cpu().numpy()
 
     def save_model(self, save_path=None):
         """
