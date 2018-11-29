@@ -18,32 +18,43 @@ class TabularDataset(Dataset):
     This defines a dataset, subclassed from torch.utils.data.Dataset. It uses pd.dataframe as the backend, with utility
     functions.
     """
-    #TODO: rewrite to work with new stitch datasets function
-    def __init__(self, data, label_column, join_column=None, index_list=None, na_values=None):
+    def __init__(self, label_column=None, merge_on_columns=None, index_list=None, na_values=None, **kwargs):
         """
         Creates an instance of Tabulardataset
         :param data: Either a path to a csv file, a list of paths to csv files, a list of dataframes, or a dataframe.
         :param label_column: Must specify, provide None if you do not want a target. Must be unique.
-        :param join_column: The column on which a list of datasets should be joined
-        :param index_list: list of feature columns to index on when stitching(default None)
+        merge_on_columns : list of strings
+            key(s) that specifies which columns to use to uniquely stitch dataset (default None)
+        :param index_list: list of columns to make the dataset index
         :return: None
         """
-        if isinstance(data, list):
-            if not join_column:
-                raise RuntimeError("You need to provide a join_column if a list of csvs or dataframes are provided")
-            if isinstance(data[0], str):
-                dfs = [pd.read_csv(f, na_values=na_values) for f in data]
-            self.df = utils.stitch_datasets(dfs, join_column, index_list)
-        elif isinstance(data, pd.DataFrame):
-            self.df = data
+
+        dataset_dict = kwargs
+        for dataset in dataset_dict:
+            v = dataset_dict[dataset_dict]
+            if isinstance(v, str):
+                f_path = v
+                dataset_dict[dataset] = pd.read_csv(f_path,
+                                                    na_values=na_values,
+                                                    index_col=index_list)
+            elif not isinstance(v, pd.DataFrame):
+                raise ValueError("Dataset inputs must be either paths \
+                                 or DataFrame objects")
+
+        if len(dataset_dict) == 1:
+            key, value = sorted(dataset_dict)[0] #anyone got something better?
+            self.df = value  # TODO: do we want to do anything with this name?
         else:
-            self.df = pd.read_csv(data, na_values=na_values)
+            #Not using index list now because we set it before
+            self.df = utils.stitch_datasets(dataset_dict, merge_on_columns,
+                                            index_list)
+            # TODO: check index list doesn't fail if set twice...
+
         self.label_column = label_column
 
         self.df = utils.clean_dataframe(self.df)
 
-        dataset_length = self.__len__()
-        logger.info(f"You have created a new dataset with {dataset_length} rows")
+        logger.info(f"You have created a new dataset with {len(self)} rows")
 
     def __len__(self):
         """
