@@ -416,6 +416,9 @@ class Metrics(object):
         The auc
         """
 
+        if raw_predictions.a.ndim == 1:
+            raise ValueError("You must provide raw predictions not class_converted predictions")
+
         all_class_auc = []
         for i in range(num_classes):
             if num_classes == 1:
