@@ -42,5 +42,26 @@ class TestStitchDataset(unittest.TestCase):
         pd.testing.assert_frame_equal(stitch_dataset_results.sort_index(axis=1), df_single_moc_results.sort_index(axis=1),
                                       check_dtype=False)
 
+    def test_two_merge_on_columns(self):
+        dct_dfs = {'df_test_one': pd.DataFrame({'name': ['Jane', 'John', 'Jesse', 'Jane', 'John', 'Jesse', 'Jane'],
+                                               'age': [23, 25, 26, np.nan, np.nan, np.nan, 23],
+                                               'dob': ['09-18-1995', '10-18-1993', '06-18-1992', np.nan, np.nan, np.nan, '05-23-1995']},
+                                               index=[0, 1, 2, 3, 4, 5, 6]),
+                   'df_test_two': pd.DataFrame({'name': ['Jane', 'John', 'Jesse', 'Jane'],
+                                                'dob': ['09-18-1995', '10-18-1993', '06-18-1992', '05-23-1995'],
+                                               'state': ['CA', 'WA', 'OR', 'AZ']},
+                                               index=[0, 1, 2, 3])}
+
+        df_two_moc_results = pd.DataFrame({'name': ['Jane', 'John', 'Jesse', 'Jane'],
+                                              'age': [23, 25, 26, 23],
+                                              'dob': ['09-18-1995', '10-18-1993', '06-18-1992', '05-23-1995'],
+                                              'state': ['CA', 'WA', 'OR', 'AZ']},
+                                             index=[0, 1, 2, 6])
+        stitch_dataset_results = stitch_datasets(dct_dfs, merge_on_columns=['name', 'dob'])
+        # Assert_frame_equal checks order of columns; therefore, sort_index by columns when checking. If dataframes are
+        # same, they should sort the same way.
+        pd.testing.assert_frame_equal(stitch_dataset_results.sort_index(axis=1), df_two_moc_results.sort_index(axis=1),
+                                      check_dtype=False)
+
 if __name__ == '__main__':
     unittest.main()
