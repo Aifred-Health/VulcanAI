@@ -348,7 +348,7 @@ class Metrics(object):
         Calculate the accuracy
         Parameters
         ----------
-       predictions: numpy.ndarray of integers
+        predictions: numpy.ndarray of integers
         the predicted values
 
         targets: numpy.ndarray of integers
@@ -361,7 +361,7 @@ class Metrics(object):
         The accuracy
 
         """
-        accuracy = skl_metrics.accuracy_score(predictions, targets)
+        accuracy = skl_metrics.accuracy_score(targets, predictions)
 
         return accuracy
 
