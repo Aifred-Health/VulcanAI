@@ -6,7 +6,7 @@ import torch
 from torch import nn
 
 # Vulcan imports
-from .metrics import Metrics
+from . import Metrics
 from ..plotters.visualization import display_record
 
 # Generic imports

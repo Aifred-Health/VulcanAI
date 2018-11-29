@@ -4,6 +4,7 @@ from .basenetwork import BaseNetwork
 from .cnn import ConvNet
 from .dnn import DenseNet
 from .ensemble import SnapshotNet
+from .metrics import Metrics
 
 __all__ = [
     'basenetwork',
@@ -16,5 +17,6 @@ __all__ = [
     'BaseNetwork',
     'ConvNet',
     'DenseNet',
-    'SnapshotNet'
+    'SnapshotNet',
+    'Metrics'
 ]
