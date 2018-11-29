@@ -31,7 +31,7 @@ class Metrics(object):
     def __init__(self):
         """Initialize the metrics class for a BaseNetwork."""
 
-    def get_score(self, predictions, targets, metric='accuracy'):
+    def get_score(self, targets, predictions, metrics='accuracy', average=None, class_converted=False):
         """
         Calculate some defined score given predictions and targets.
 
@@ -50,15 +50,32 @@ class Metrics(object):
             The specified metric to calculate.
 
         """
-        if metric == 'accuracy':
-            # TODO: Use extract_class_labels
-            max_index = predictions.max(dim=1)[1]
-            correct = (max_index == targets).sum()  # TODO: this doesn't seem correct
-            accuracy = int(correct.data) / len(targets)
-            return accuracy
-        else:
-            raise NotImplementedError(
-                'Metric {} not available.'.format(metric))
+
+        double_parametered_functions = ["get_accuracy"]
+
+        if not class_converted:
+            predictions = self.extract_class_labels(predictions)
+
+        if isinstance(metrics, str):
+            metrics = [metrics]
+
+        results_dict = {}
+
+        for metric in metrics:
+            method_name = "get_" + metric
+            method = getattr(Metrics, method_name)
+            try:
+                if method_name in double_parametered_functions:
+                    res = method(targets, predictions)
+                else:
+                    res = method(targets, predictions, average)
+
+            except AttributeError:
+                logger.warning("Metric {} does not exist".format(metric))
+
+            results_dict[metric] = res
+
+        return results_dict
 
     @staticmethod
     def extract_class_labels(in_matrix):
