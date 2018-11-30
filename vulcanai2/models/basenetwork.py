@@ -636,8 +636,13 @@ class BaseNetwork(nn.Module):
             self.optim.zero_grad()
             train_loss.backward(retain_graph=retain_graph)
             self.optim.step()
-            train_accuracy_accumulator += self.metrics.get_score(predictions,
-                                                                 targets)
+            metric = "accuracy"
+            # will be fixed in the future
+            train_accuracy_accumulator += self.metrics.get_score(
+                targets=targets,
+                predictions=predictions,
+                metrics=metric)[metric]
+
             pbar.update(train_loader.batch_size)
         pbar.close()
 
@@ -678,8 +683,14 @@ class BaseNetwork(nn.Module):
             predictions = self(data)
             validation_loss = self.criterion(predictions, targets)
             val_loss_accumulator += validation_loss.item()
-            val_accuracy_accumulator += self.metrics.get_score(predictions,
-                                                               targets)
+
+            # Will fix this in the future
+            metric = "accuracy"
+            val_accuracy_accumulator += self.metrics.get_score(
+                targets=targets,
+                predictions=predictions,
+                metrics=metric)[metric]
+
             pbar.update(val_loader.batch_size)
         pbar.close()
 
@@ -745,7 +756,8 @@ class BaseNetwork(nn.Module):
                 predictions = nn.Softmax(dim=1)(predictions)
                 if convert_to_class:
                     predictions = torch.tensor(
-                        self.metrics.get_class(in_matrix=predictions),
+                        self.metrics.extract_class_labels(
+                            in_matrix=predictions),
                         device=self.device)
             # Aggregate predictions
             pred_collector = torch.cat([pred_collector, predictions])

@@ -50,7 +50,7 @@ class TestDenseNet:
         raw_output = dnn_class.forward_pass(
             data_loader=test_dataloader,
             convert_to_class=False)
-        class_output = dnn_class.metrics.get_class(
+        class_output = dnn_class.metrics.extract_class_labels(
             in_matrix=test_input)
         assert np.any(~np.isnan(raw_output))
         assert np.any(~np.isnan(class_output))
