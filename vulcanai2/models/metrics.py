@@ -78,8 +78,10 @@ class Metrics(object):
                 else:
                     metric_results = method(targets, predictions, average)
 
-            except (AttributeError,  TypeError):
-                logger.warning("Metric {} does not exist".format(metric))
+            except (AttributeError, TypeError):
+                logger.warning(
+                    "Metric {} does not exist via function {}().".format(
+                        metric, method_name))
 
             results_dict[metric] = metric_results
 
