@@ -1,10 +1,12 @@
 """Define utilities for all networks."""
 from math import ceil, floor
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
 import numpy as np
+import math
 from sklearn.metrics import confusion_matrix
 from sklearn.preprocessing import LabelBinarizer
 from collections import OrderedDict as odict
@@ -210,3 +212,43 @@ def print_model_structure(network, input_size=None):
         if isinstance(v, odict):
             for k2, v2 in v.items():
                 print('\t {}: {}'.format(k2, v2))
+
+def selu_weight_init_(tensor, mean=0.0):
+    """
+    Function assigned to variable that will be called within _init_weights function to assign weights for selu.
+
+    Parameters
+    ----------
+    tensor :  torch.tensor
+        Weight tensor to be adjusted
+    mean : float
+        Mean value for the normal distribution
+
+    Returns
+    -------
+    torch.tensor
+        weight tensor with normal distribution
+    """
+    with torch.no_grad():
+        fan_in, _ = nn.init._calculate_fan_in_and_fan_out(tensor)
+        std = math.sqrt(1. / fan_in)
+        return nn.init.normal_(tensor, mean, std)
+
+def selu_bias_init_(tensor, const=0.0):
+    """
+    Function assigned to variable that will be called within _init_bias function to assign bias for selu.
+
+    Parameters
+    ----------
+    tensor : torch.tensor
+        Bias tensor to be adjusted
+    const : float
+        Constant value to be assigned to tensor.
+
+    Returns
+    -------
+    torch.tensor
+        bias tensor with constant values.
+    """
+    with torch.no_grad():
+        return nn.init.constant_(tensor, const)

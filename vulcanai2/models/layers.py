@@ -2,7 +2,7 @@
 import torch
 import torch.nn as nn
 import logging
-import math
+from . import utils as utils
 logger = logging.getLogger(__name__)
 
 
@@ -67,45 +67,7 @@ class BaseUnit(nn.Sequential):
             self.bias_init(self._kernel.bias)
 
 
-def selu_weight_init_(tensor, mean=0.0):
-    """
-    Function assigned to variable that will be called within _init_weights function to assign weights for selu.
 
-    Parameters
-    ----------
-    tensor :  torch.tensor
-        Weight tensor to be adjusted
-    mean : float
-        Mean value for the normal distribution
-
-    Returns
-    -------
-    torch.tensor
-        weight tensor with normal distribution
-    """
-    with torch.no_grad():
-        fan_in, _ = nn.init._calculate_fan_in_and_fan_out(tensor)
-        std = math.sqrt(1. / fan_in)
-        return nn.init.normal_(tensor, mean, std)
-
-def selu_bias_init_(tensor, const=0.0):
-    """
-    Function assigned to variable that will be called within _init_bias function to assign bias for selu.
-
-    Parameters
-    ----------
-    tensor : torch.tensor
-        Bias tensor to be adjusted
-    const : float
-        Constant value to be assigned to tensor.
-
-    Returns
-    -------
-    torch.tensor
-        bias tensor with constant values.
-    """
-    with torch.no_grad():
-        return nn.init.constant_(tensor, const)
 
 class FlattenUnit(BaseUnit):
     """
@@ -186,8 +148,8 @@ class DenseUnit(BaseUnit):
         if activation is not None:
             self.add_module('_activation', activation)
             if isinstance(activation, nn.SELU):
-                self.weight_init = selu_weight_init_
-                self.bias_init = selu_bias_init_
+                self.weight_init = utils.selu_weight_init_
+                self.bias_init = utils.selu_bias_init_
 
         # Dropout
         if self.dropout is not None:
@@ -279,8 +241,8 @@ class ConvUnit(BaseUnit):
         if activation is not None:
             self.add_module('_activation', activation)
             if isinstance(activation, nn.SELU):
-                self.weight_init = selu_weight_init_
-                self.bias_init = selu_bias_init_
+                self.weight_init = utils.selu_weight_init_
+                self.bias_init = utils.selu_bias_init_
         # Pool
         if pool_size is not None:
             self.add_module(
