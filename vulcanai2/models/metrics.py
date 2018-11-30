@@ -39,7 +39,7 @@ class Metrics(object):
         ----------
         targets: numpy.ndarray of integers
             the target values
-        predictions: numpy.ndarray of integers
+        predictions: numpy.ndarray of integers or numpy.ndarray of floats
             the predicted values
         metrics: list of strings
             the strings definition the "get_"... functions to call
@@ -54,9 +54,9 @@ class Metrics(object):
             extract_class_labels
             False if raw_predictions are used
 
-        Returns dict
-            Metric name : values returned by the metric functions
+        Returns
         -------
+        Dict of metric : values returned by the metric functions
 
         """
 
@@ -74,15 +74,15 @@ class Metrics(object):
             method_name = "get_" + metric
             method = getattr(Metrics, method_name)
             try:
-                if method_name in double_parametered_functions:
-                    res = method(targets, predictions)
+                if method_name in set(double_parametered_functions):
+                    metric_results = method(targets, predictions)
                 else:
-                    res = method(targets, predictions, average)
+                    metric_results = method(targets, predictions, average)
 
-            except AttributeError:
+            except (AttributeError,  TypeError):
                 logger.warning("Metric {} does not exist".format(metric))
 
-            results_dict[metric] = res
+            results_dict[metric] = metric_results
 
         return results_dict
 
@@ -116,9 +116,9 @@ class Metrics(object):
     def get_confusion_matrix_values(targets, predictions):
         """
         Will calculate the tp, tn, fp, fn values given targets and predictions
+
         Parameters
         ----------
-
         targets: numpy.ndarray of integers
             the target values
 
