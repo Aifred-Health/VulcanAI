@@ -757,7 +757,8 @@ class BaseNetwork(nn.Module):
                 if convert_to_class:
                     predictions = torch.tensor(
                         self.metrics.extract_class_labels(
-                            in_matrix=predictions.cpu())).float()
+                            in_matrix=predictions),
+                        device=self.device)
             # Aggregate predictions
             pred_collector = torch.cat([pred_collector, predictions])
         return pred_collector.cpu().numpy()
