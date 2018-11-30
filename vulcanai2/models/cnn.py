@@ -126,12 +126,13 @@ class ConvNet(BaseNetwork):
                  activation=nn.ReLU(), pred_activation=None,
                  optim_spec={'name': 'Adam', 'lr': 0.001},
                  lr_scheduler=None, early_stopping=None,
-                 criter_spec=nn.CrossEntropyLoss()):
+                 criter_spec=nn.CrossEntropyLoss(),
+                 device="cuda:0"):
         """Define the ConvNet object."""
         super(ConvNet, self).__init__(
             name, ConvNetConfig(config), in_dim, save_path, input_networks,
             num_classes, activation, pred_activation, optim_spec,
-            lr_scheduler, early_stopping, criter_spec)
+            lr_scheduler, early_stopping, criter_spec, device)
 
     def _create_network(self, **kwargs):
         """

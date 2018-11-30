@@ -104,7 +104,7 @@ class Metrics(object):
         """
 
         if isinstance(in_matrix, torch.Tensor):
-            in_matrix = in_matrix.detach().numpy()
+            in_matrix = in_matrix.cpu().detach().numpy()
         # For one-hot encoded entries
         if in_matrix.shape[1] > 1:
             return np.argmax(in_matrix, axis=1)

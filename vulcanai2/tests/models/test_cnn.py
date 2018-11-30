@@ -21,13 +21,14 @@ class TestConvNet:
                         "in_channels": 1,
                         "out_channels": 16,
                         "kernel_size": (5, 5),
+                        "pool_size": 2,
                         "stride": 2
                     },
                     {
                         "in_channels": 16,
                         "out_channels": 1,
                         "kernel_size": (5, 5),
-                        "stride": 1,
+                        "stride": 2,
                         "padding": 2
                     }]
             }
@@ -45,13 +46,14 @@ class TestConvNet:
                         "in_channels": 1,
                         "out_channels": 16,
                         "kernel_size": (5, 5),
+                        "pool_size": 2,
                         "stride": 2
                     },
                     {
                         "in_channels": 16,
                         "out_channels": 1,
                         "kernel_size": (5, 5),
-                        "stride": 1,
+                        "stride": 2,
                         "padding": 2
                     }]
             },
