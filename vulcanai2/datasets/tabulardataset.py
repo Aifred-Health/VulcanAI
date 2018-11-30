@@ -15,20 +15,30 @@ logger = logging.getLogger(__name__)
 
 class TabularDataset(Dataset):
     """
-    This defines a dataset, subclassed from torch.utils.data.Dataset. It uses pd.dataframe as the backend, with utility
+    This defines a dataset, subclassed from torch.utils.data.Dataset.
+    It uses pd.dataframe as the backend, with utility
     functions.
     """
-    def __init__(self, label_column=None, merge_on_columns=None, index_list=None, na_values=None, **kwargs):
+    def __init__(self, label_column=None, merge_on_columns=None,
+                 index_list=None, na_values=None, **kwargs):
         """
-        Creates an instance of Tabulardataset
-        :param data: Either a path to a csv file, a list of paths to csv files, a list of dataframes, or a dataframe.
-        :param label_column: Must specify, provide None if you do not want a target. Must be unique.
-        merge_on_columns : list of strings
-            key(s) that specifies which columns to use to uniquely stitch dataset (default None)
-        :param index_list: list of columns to make the dataset index
-        :return: None
-        """
+        Creates an instance of TabularDataset
 
+        Parameters
+        ----------
+        label_column: String
+            The name of the label column.
+            Provide None if you do not want a target.
+        merge_on_columns: list of strings
+            Key(s) that specifies which columns to use to uniquely stitch
+            dataset (default None)
+        index_list: list of strings
+            List of columns to make the index of the dataframe
+        na_values: The values to convert to NaN when reading from csv
+        kwargs: keyword parameter, value is either path or dataframe
+            Where key: dataset name and value is either a path to a file
+            or a dataframe.
+        """
         dataset_dict = kwargs
         for dataset in dataset_dict:
             v = dataset_dict[dataset_dict]
@@ -42,10 +52,10 @@ class TabularDataset(Dataset):
                                  or DataFrame objects")
 
         if len(dataset_dict) == 1:
-            key, value = sorted(dataset_dict)[0] #anyone got something better?
+            key, value = sorted(dataset_dict)[0]  # anyone got smthing better?
             self.df = value  # TODO: do we want to do anything with this name?
         else:
-            #Not using index list now because we set it before
+            # Not using index list now because we set it before
             self.df = utils.stitch_datasets(dataset_dict, merge_on_columns,
                                             index_list)
             # TODO: check index list doesn't fail if set twice...
@@ -58,22 +68,34 @@ class TabularDataset(Dataset):
 
     def __len__(self):
         """
-        Denotes the total number of samples.
-        :return: None
+        The total number of samples
+
+        Returns
+        -------
+        The total number of samples: int
         """
         return self.df.shape[0]
 
     def __getitem__(self, idx):
         """
         Generates one sample of data
-        :param idx: The index of the data
-        :return: The values of the row and the value of the label columns. Xs and y.
+
+        Parameters
+        ----------
+        idx: int
+            The index of the data
+
+        Returns
+        -------
+        The values of the row and the value of the label columns. Xs, Y
         """
-        # Where df.drop is used to access the dataframe without the label column, iloc gets the row, then access values
-        # and convert
+
+        # Where df.drop is used to access the dataframe without
+        # the label column, iloc gets the row, then access values and convert
 
         if self.label_column:
-            xs = self.df.drop(self.label_column, axis=1).iloc[[2]].values.tolist()[0]
+            xs = self.df.drop(self.label_column,
+                              axis=1).iloc[[2]].values.tolist()[0]
             xs = torch.tensor(xs, dtype=torch.float)
             y = self.df[[self.label_column]].iloc[[idx]].values.tolist()[0][0]
             y = torch.tensor(y, dtype=torch.long)
@@ -84,35 +106,60 @@ class TabularDataset(Dataset):
             xs = torch.tensor(xs, dtype=torch.float)
             return xs
 
-    # TODO: needs to be re-written to match new stitch datasets signature.
-    # def merge_data(self, data, join_column, index_list=None, na_values=None):
-    #     """
-    #     Given additional data merge into the current data.
-    #     :param data: Either a path to a csv file, a dictionary names: paths to csv files, a list of dataframes, or a dataframe.
-    #     :param join_column: Either a single value if it is consistent, or a list of length data.
-    #     :param index_list: list of feature columns to index on when stitching(default None)
-    #     :return: None
-    #     """
-    #     if isinstance(data, list):
-    #         if not join_column:
-    #             raise RuntimeError("You need to provide a join_column if a list of csvs or dataframes are provided")
-    #         if isinstance(data[0], str):
-    #             dfs = [pd.read_csv(f, na_values=na_values) for f in data]
-    #         if isinstance(index_list, list):
-    #             assert len(data) == len(index_list)
-    #         self.df = utils.stitch_datasets(dfs, join_column)
-    #     elif isinstance(data, pd.DataFrame):
-    #         self.df = utils.stitch_datasets([self.df, data], join_column, index_list)
-    #     else:
-    #         new_df = pd.read_csv(data, na_values=na_values)
-    #         self.df = utils.stitch_datasets([self.df, new_df], join_column, index_list)
-    #     logger.info(f"Datasets successfully merged")
+    def merge_data(self, merge_on_columns=None,
+                   index_list=None, na_values=None, **kwargs):
+        """
+        Merges additional data into a TabularDataset isntance
+
+        Parameters
+        ----------
+        merge_on_columns: list of strings
+            Key(s) that specifies which columns to use to uniquely stitch
+            dataset (default None)
+        index_list: list of strings
+            List of columns to make the index of the dataframe
+        na_values: The values to convert to NaN when reading from csv
+        kwargs: keyword parameter, value is either path or dataframe
+            Where key: dataset name and value is either a path to a file
+            or a dataframe.
+        """
+
+        dataset_dict = kwargs
+
+        if "original" in dataset_dict:
+            raise ValueError("Please choose a name other than 'original'")
+
+        dataset_dict["original"] = self.df
+
+        for dataset in dataset_dict:
+            v = dataset_dict[dataset_dict]
+            if isinstance(v, str):
+                f_path = v
+                dataset_dict[dataset] = pd.read_csv(f_path,
+                                                    na_values=na_values,
+                                                    index_col=index_list)
+            elif not isinstance(v, pd.DataFrame):
+                raise ValueError("Dataset inputs must be either paths \
+                                 or DataFrame objects")
+
+        if len(dataset_dict) == 1:
+            key, value = sorted(dataset_dict)[0]  # anyone got smthing better?
+            self.df = value  # TODO: do we want to do anything with this name?
+        else:
+            # Not using index list now because we set it before
+            self.df = utils.stitch_datasets(dataset_dict, merge_on_columns,
+                                            index_list)
+
+        logger.info(f"Successfully merged {len(kwargs)} datasets")
 
     def save_dataframe(self, file_path):
         """
         Save the dataframe to a file.
-        :param file_path: the file path
-        :return: Noneff
+
+        Parameters
+        ----------
+        file_path: String
+            Path to the file where you want your dataframe to be saved
         """
         self.df.to_csv(file_path, encoding='utf-8', index=True)
         logger.info(f"You have saved the dataframe as a csv to {file_path}")
@@ -124,7 +171,8 @@ class TabularDataset(Dataset):
         """
         return self.df.columns.values.tolist()
 
-    def replace_value_in_column(self, column_name, current_values, target_values):
+    def replace_value_in_column(self, column_name, current_values,
+                                target_values):
         """
         Replace one or more values in either a single column or a list of columns.
         :param column: The column where you want values to be replaced
