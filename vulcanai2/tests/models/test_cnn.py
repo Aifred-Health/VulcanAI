@@ -8,12 +8,13 @@ from torch.utils.data import DataLoader, TensorDataset
 
 from vulcanai2.models import BaseNetwork
 from vulcanai2.models.cnn import ConvNet
+from vulcanai2.models.utils import master_device_setter
 
 
 class TestConvNet:
     """Define ConvNet test class."""
     
-    def test_init_conv1D_net(self, conv1D_net):
+    def test_init_ConvNet(self, conv1D_net):
         """Initialization Test of ConvNet """
         assert isinstance(conv1D_net, BaseNetwork)
         assert isinstance(conv1D_net, nn.Module)
@@ -21,6 +22,21 @@ class TestConvNet:
         assert hasattr(conv1D_net, 'network')
         assert hasattr(conv1D_net, 'in_dim')
         assert hasattr(conv1D_net, 'device')
+    
+    def test_forward_ConvNet(self, conv1D_net):
+        """Test Forward of ConvNet"""
+        out = conv1D_net(torch.ones([10, *conv1D_net.in_dim]))
+        assert out.shape == (10, *conv1D_net.out_dim)
+
+    def test_forward_multi_input_ConvNet(self, multi_input_cnn,
+                                         multi_input_cnn_data):
+        """Test Forward of Multi Input ConvNet"""
+        master_device_setter(multi_input_cnn, 'cpu')
+        out = multi_input_cnn([torch.ones([10, 1, 28, 28, 28]),
+                                [torch.ones([10, 1, 28]),
+                                 torch.ones([10, 1, 28, 28])]
+                                ])
+        assert out.shape == (10, *multi_input_cnn.out_dim)
 
     def test_forward_pass_not_nan(self, cnn_noclass):
         """Confirm out is non nan."""
