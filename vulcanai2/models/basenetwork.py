@@ -160,11 +160,12 @@ class BaseNetwork(nn.Module):
         None
 
         """
-        if self.input_networks is None:
-            self.input_networks = nn.ModuleDict()
         assert isinstance(in_network, BaseNetwork)
         assert in_network is not self
-        assert isinstance(self.input_networks, nn.ModuleDict)
+        if not self.input_networks:
+            self.input_networks = nn.ModuleDict()
+        else:
+            assert isinstance(self.input_networks, nn.ModuleDict)
         self.input_networks[in_network.name] = in_network
         self.in_dim = self._get_in_dim()
 
