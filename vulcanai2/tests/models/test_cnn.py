@@ -2,71 +2,25 @@
 import pytest
 import numpy as np
 import torch
+import torch.nn as nn
+from vulcanai2.models import BaseNetwork
 from vulcanai2.models.cnn import ConvNet
 from torch.utils.data import TensorDataset, DataLoader
 
 
 class TestConvNet:
     """Define ConvNet test class."""
+    
+    def test_init_conv1D_net(self, conv1D_net):
+        """Testing Initializations """
+        assert isinstance(conv1D_net, BaseNetwork)
+        assert isinstance(conv1D_net, nn.Module)
+        assert hasattr(conv1D_net, 'input_networks')
+        assert hasattr(conv1D_net, 'network')
+        assert hasattr(conv1D_net, 'in_dim')
+        assert hasattr(conv1D_net, 'device')
 
-    @pytest.fixture
-    def cnn_noclass(self):
-        """Create ConvNet with no prediction layer."""
-        return ConvNet(
-            name='Test_ConvNet_noclass',
-            in_dim=(1, 28, 28),
-            config={
-                'conv_units': [
-                    {
-                        "in_channels": 1,
-                        "out_channels": 16,
-                        "kernel_size": (5, 5),
-                        "pool_size": 2,
-                        "stride": 2
-                    },
-                    {
-                        "in_channels": 16,
-                        "out_channels": 1,
-                        "kernel_size": (5, 5),
-                        "stride": 2,
-                        "padding": 2
-                    }]
-            }
-        )
-
-    @pytest.fixture
-    def cnn_class(self):
-        """Create ConvNet with prediction layer."""
-        return ConvNet(
-            name='Test_ConvNet_class',
-            in_dim=(1, 28, 28),
-            config={
-                'conv_units': [
-                    {
-                        "in_channels": 1,
-                        "out_channels": 16,
-                        "kernel_size": (5, 5),
-                        "pool_size": 2,
-                        "stride": 2
-                    },
-                    {
-                        "in_channels": 16,
-                        "out_channels": 1,
-                        "kernel_size": (5, 5),
-                        "stride": 2,
-                        "padding": 2
-                    }]
-            },
-            num_classes=3
-        )
-
-    @pytest.fixture
-    def cnn_class_add_input_network(self, cnn_noclass, cnn_class):
-        """Create ConvNet with input_network added via
-        add_input_network and has a prediction layer."""
-        net = cnn_class
-        net.add_input_network(cnn_noclass)
-        return net
+    
 
     def test_forward_pass_not_nan(self, cnn_noclass):
         """Confirm out is non nan."""
@@ -134,7 +88,7 @@ class TestConvNet:
                                cnn_noclass):
         """Test add input Network functionality."""
         assert isinstance(cnn_class_add_input_network.input_networks,
-                          torch.nn.ModuleDict)
+                          nn.ModuleDict)
         assert cnn_class_add_input_network\
                .input_networks[cnn_noclass.name] is cnn_noclass
         assert cnn_class_add_input_network.in_dim == cnn_noclass.out_dim
