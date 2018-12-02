@@ -1,11 +1,10 @@
 import pytest
 
-from vulcanai2.models import ConvNet, DenseNet
-from vulcanai2.datasets import MultiDataset
-
 import torch
 from torch.utils.data import TensorDataset
 
+from vulcanai2.datasets import MultiDataset
+from vulcanai2.models import ConvNet, DenseNet
 
 @pytest.fixture(scope="module")
 def conv1D_net():

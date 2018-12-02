@@ -1,10 +1,11 @@
 """Test device switching for networks."""
 import pytest
 
-from vulcanai2.models import ConvNet, DenseNet
-from vulcanai2.models.utils import master_device_setter
 import torch
 from torch.utils.data import DataLoader, Subset
+
+from vulcanai2.models import ConvNet, DenseNet
+from vulcanai2.models.utils import master_device_setter
 
 TEST_CUDA = torch.cuda.is_available()
 TEST_MULTIGPU = TEST_CUDA and torch.cuda.device_count() >= 2

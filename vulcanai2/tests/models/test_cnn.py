@@ -1,11 +1,13 @@
 """Test all ConvNet capabilities."""
-import pytest
 import numpy as np
+import pytest
+
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader, TensorDataset
+
 from vulcanai2.models import BaseNetwork
 from vulcanai2.models.cnn import ConvNet
-from torch.utils.data import TensorDataset, DataLoader
 
 
 class TestConvNet:
