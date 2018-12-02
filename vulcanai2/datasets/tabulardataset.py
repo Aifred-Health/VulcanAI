@@ -53,8 +53,9 @@ class TabularDataset(Dataset):
                                  or DataFrame objects")
 
         if len(dataset_dict) == 1:
-            key, value = sorted(dataset_dict)[0]  # anyone got smthing better?
-            self.df = value  # TODO: do we want to do anything with this name?
+            # TODO: do we want to do anything with this name?
+            key = sorted(dataset_dict)[0]  # anyone got smthing better?
+            self.df = dataset_dict[key]
         else:
             # Not using index list now because we set it before
             self.df = utils.stitch_datasets(dataset_dict, merge_on_columns,
@@ -513,10 +514,10 @@ class TabularDataset(Dataset):
             test_start = train_end
         test_df = self.df.loc[perm[test_start:]]
 
-        train = TabularDataset(train_df, self.label_column)
-        test = TabularDataset(test_df, self.label_column)
+        train = TabularDataset(train=train_df, label_column=self.label_column)
+        test = TabularDataset(test=test_df, label_column=self.label_column)
         if val_ratio:
-            val = TabularDataset(val_df, self.label_column)
+            val = TabularDataset(val=val_df, label_column=self.label_column)
             return train, val, test
         else:
             return train, test
