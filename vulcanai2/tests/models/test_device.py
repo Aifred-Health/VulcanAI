@@ -3,10 +3,8 @@ import pytest
 
 from vulcanai2.models import ConvNet, DenseNet
 from vulcanai2.models.utils import master_device_setter
-from vulcanai2.datasets import MultiDataset
-
 import torch
-from torch.utils.data import DataLoader, TensorDataset, Subset
+from torch.utils.data import DataLoader, Subset
 
 TEST_CUDA = torch.cuda.is_available()
 TEST_MULTIGPU = TEST_CUDA and torch.cuda.device_count() >= 2
@@ -40,7 +38,9 @@ class TestDevice:
     @pytest.mark.skipif(not TEST_CUDA, reason="No CUDA"
                         " supported devices available")
     def test_fail_mixed_devices(self, multi_input_cnn, conv3D_net,
-                                multi_input_dnn, conv1D_net):
+                                multi_input_dnn, conv1D_net,
+                                multi_input_dnn_data,
+                                multi_input_cnn_data):
         """Test training throws ValueError when network has mixed devices."""
         assert hasattr(conv1D_net, 'device')
         assert hasattr(conv3D_net, 'device')
@@ -50,23 +50,6 @@ class TestDevice:
         master_device_setter(multi_input_cnn, 'cuda:0')
         assert conv3D_net == multi_input_cnn.input_networks['conv3D_net']
         assert multi_input_dnn == multi_input_cnn.input_networks['multi_input_dnn']
-
-        multi_input_dnn_data = MultiDataset([
-                (
-                    TensorDataset(
-                        torch.ones([10, *conv1D_net.in_dim]),
-                        torch.tensor([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]).long()),
-                    True, True),
-                (
-                    TensorDataset(torch.ones(
-                        [10, *multi_input_dnn.input_networks['conv2D_net'].in_dim])),
-                    True, False)
-            ])
-
-        multi_input_cnn_data = MultiDataset([
-            (TensorDataset(torch.ones([10, *conv3D_net.in_dim])), True, False),
-            multi_input_dnn_data
-        ])
 
         data_len = len(multi_input_cnn_data)
         train_loader = DataLoader(

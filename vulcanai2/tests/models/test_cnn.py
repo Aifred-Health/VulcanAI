@@ -12,15 +12,13 @@ class TestConvNet:
     """Define ConvNet test class."""
     
     def test_init_conv1D_net(self, conv1D_net):
-        """Testing Initializations """
+        """Initialization Test of ConvNet """
         assert isinstance(conv1D_net, BaseNetwork)
         assert isinstance(conv1D_net, nn.Module)
         assert hasattr(conv1D_net, 'input_networks')
         assert hasattr(conv1D_net, 'network')
         assert hasattr(conv1D_net, 'in_dim')
         assert hasattr(conv1D_net, 'device')
-
-    
 
     def test_forward_pass_not_nan(self, cnn_noclass):
         """Confirm out is non nan."""

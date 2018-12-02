@@ -1,8 +1,10 @@
 import pytest
 
 from vulcanai2.models import ConvNet, DenseNet
+from vulcanai2.datasets import MultiDataset
 
 import torch
+from torch.utils.data import TensorDataset
 
 
 @pytest.fixture(scope="module")
@@ -122,6 +124,27 @@ def multi_input_cnn(conv3D_net, multi_input_dnn):
         },
         device='cpu'
     )
+@pytest.fixture(scope="module")
+def multi_input_dnn_data(conv1D_net, conv2D_net,
+                         multi_input_dnn):
+    return MultiDataset([
+        (
+            TensorDataset(
+                torch.ones([10, *conv1D_net.in_dim]),
+                torch.tensor([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]).long()),
+            True, True),
+        (
+            TensorDataset(torch.ones(
+                [10, *multi_input_dnn.input_networks['conv2D_net'].in_dim])),
+            True, False)
+    ])
+
+@pytest.fixture(scope="module")
+def multi_input_cnn_data(conv3D_net, multi_input_dnn_data):
+    return MultiDataset([
+        (TensorDataset(torch.ones([10, *conv3D_net.in_dim])), True, False),
+        multi_input_dnn_data
+    ])
 
 @pytest.fixture(scope="module")
 def cnn_noclass():
