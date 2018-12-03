@@ -104,11 +104,11 @@ def multi_input_dnn(conv1D_net, conv2D_net):
     )
 
 @pytest.fixture(scope="module")
-def multi_input_cnn(conv3D_net, multi_input_dnn):
+def multi_input_cnn(conv2D_net, conv3D_net, multi_input_dnn):
     """Bottom multi-input network fixture."""
     return ConvNet(
         name='multi_input_cnn',
-        input_networks=[conv3D_net, multi_input_dnn],
+        input_networks=[conv2D_net, conv3D_net, multi_input_dnn],
         num_classes=10,
         config={
             'conv_units': [
@@ -139,8 +139,9 @@ def multi_input_dnn_data(conv1D_net, conv2D_net,
     ])
 
 @pytest.fixture(scope="module")
-def multi_input_cnn_data(conv3D_net, multi_input_dnn_data):
+def multi_input_cnn_data(conv2D_net, conv3D_net, multi_input_dnn_data):
     return MultiDataset([
+        (TensorDataset(torch.ones([10, *conv2D_net.in_dim])), True, False),
         (TensorDataset(torch.ones([10, *conv3D_net.in_dim])), True, False),
         multi_input_dnn_data
     ])
@@ -197,9 +198,28 @@ def cnn_class():
     )
 
 @pytest.fixture(scope="module")
-def cnn_class_add_input_network(cnn_noclass, cnn_class):
+def multi_input_cnn_add_input_network(conv1D_net, conv2D_net,
+                                      conv3D_net):
     """Create ConvNet with input_network added via
     add_input_network and has a prediction layer."""
-    net = cnn_class
-    net.add_input_network(cnn_noclass)
+    net = ConvNet(
+        name='multi_input_cnn_add_input_network',
+        num_classes=10,
+        in_dim=(1, 28, 28, 28),
+        config={
+            'conv_units': [
+                dict(
+                    in_channels=1,
+                    out_channels=16,
+                    kernel_size=(3, 3, 3),
+                    stride=2,
+                    dropout=0.1
+                ),
+            ],
+        },
+        device='cpu'
+    )
+    net.add_input_network(conv1D_net)
+    net.add_input_network(conv2D_net)
+    net.add_input_network(conv3D_net)
     return net
