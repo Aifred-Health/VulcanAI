@@ -2,7 +2,7 @@
 import torch
 import torch.nn as nn
 import logging
-from . import utils as utils
+from .utils import selu_bias_init_, selu_weight_init_
 logger = logging.getLogger(__name__)
 
 
@@ -148,8 +148,8 @@ class DenseUnit(BaseUnit):
         if activation is not None:
             self.add_module('_activation', activation)
             if isinstance(activation, nn.SELU):
-                self.weight_init = utils.selu_weight_init_
-                self.bias_init = utils.selu_bias_init_
+                self.weight_init = selu_weight_init_
+                self.bias_init = selu_bias_init_
 
         # Dropout
         if self.dropout is not None:
@@ -241,8 +241,8 @@ class ConvUnit(BaseUnit):
         if activation is not None:
             self.add_module('_activation', activation)
             if isinstance(activation, nn.SELU):
-                self.weight_init = utils.selu_weight_init_
-                self.bias_init = utils.selu_bias_init_
+                self.weight_init = selu_weight_init_
+                self.bias_init = selu_bias_init_
         # Pool
         if pool_size is not None:
             self.add_module(
