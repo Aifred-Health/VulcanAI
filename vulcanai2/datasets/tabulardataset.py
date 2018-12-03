@@ -358,7 +358,9 @@ class TabularDataset(Dataset):
 
         Parameters
         ----------
-        threshold: The minimum number of values needed
+        threshold: The minimum number of values needed. 
+            Must be greater than 1. Not between 0 and 1, but rather
+            represents the number of values
 
         Returns
         -------
