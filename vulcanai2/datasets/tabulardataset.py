@@ -382,6 +382,8 @@ class TabularDataset(Dataset):
         ----------
         threshold: Float
             Proportion needed to define unbalanced, between 0 and 1
+            0 is a lesser proportion of the one value, 
+            (less imbalanced)
         non_numeric: Boolean
             Whether non-numeric columns are also considered.
 
