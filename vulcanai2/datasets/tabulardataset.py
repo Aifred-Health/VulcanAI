@@ -413,7 +413,7 @@ class TabularDataset(Dataset):
 
         Parameters
         ----------
-        threshold: Between 0 and 1.
+        threshold: Between 0 (weakest correlation) and 1 (strongest correlation).
         Minimum amount of correlation necessary to be identified.
 
         Returns
