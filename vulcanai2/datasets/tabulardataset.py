@@ -366,14 +366,9 @@ class TabularDataset(Dataset):
 
         Parameters
         ----------
-<<<<<<< HEAD
-        threshold: int
-            A number greater than 0 representing number of unique values for columns within dataframe
-=======
-        threshold: The minimum number of values needed. 
+        threshold: The minimum number of values needed.
             Must be greater than 1. Not between 0 and 1, but rather
             represents the number of values
->>>>>>> 397ae0485e19e54c287d9d3d727b932016524507
 
         Returns
         -------
@@ -395,14 +390,9 @@ class TabularDataset(Dataset):
         Parameters
         ----------
         threshold: Float
-<<<<<<< HEAD
-            Proportion needed to define unbalanced, between 0(low unbalance, i.e. all values different) and
-            1(high unbalance, i.e. all values the same)
-=======
             Proportion needed to define unbalanced, between 0 and 1
             0 is a lesser proportion of the one value, 
             (less imbalanced)
->>>>>>> 397ae0485e19e54c287d9d3d727b932016524507
         non_numeric: Boolean
             Whether non-numeric columns are also considered.
 
