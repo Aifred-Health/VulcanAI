@@ -381,7 +381,8 @@ class TabularDataset(Dataset):
         Parameters
         ----------
         threshold: Float
-            Proportion needed to define unbalanced, between 0 and 1
+            Proportion needed to define unbalanced, between 0(low unbalance, i.e. all values different) and
+            1(high unbalance, i.e. all values the same)
         non_numeric: Boolean
             Whether non-numeric columns are also considered.
 
