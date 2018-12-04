@@ -358,11 +358,13 @@ class TabularDataset(Dataset):
 
         Parameters
         ----------
-        threshold: The minimum number of values needed
+        threshold: int
+            A number greater than 0 representing number of unique values for columns within dataframe
 
         Returns
         -------
-        column_list: The list of columns having threshold number of values
+        column_list: list
+            The list of columns having threshold number of values
         """
 
         column_list = []
