@@ -50,6 +50,7 @@ class TestSeluWeightInit:
                          out_features=10
         )
 
+    @pytest.fixture
     def conv_unit(self):
         return ConvUnit(
             conv_dim=2,
@@ -64,12 +65,27 @@ class TestSeluWeightInit:
         #Produce upper and lower by finding values that are 3 standard deviations from mean
         # Statistically, ~99% of values in normal distribution are 3 std away from mean.
         upper = 3 * std
-        lower = 3 * (-(math.sqrt(1. /10)))
+        lower = 3 * (-(math.sqrt(1. / 10)))
 
 
         dense_unit.weight_init = selu_weight_init_
         dense_unit.weight_init(dense_unit._kernel.weight)
         new_weight = copy.deepcopy(dense_unit._kernel.weight)
+        assert ((torch.equal(starting_weight, new_weight) is False) and
+               (new_weight.max().item() <= upper) and
+               (new_weight.min().item() >= lower))
+
+    def test_conv_selu_weight_change(self, conv_unit):
+        starting_weight = copy.deepcopy(conv_unit._kernel.weight)
+        std = math.sqrt(1. / 10)
+        #Produce upper and lower by finding values that are 3 standard deviations from mean
+        # Statistically, ~99% of values in normal distribution are 3 std away from mean.
+        upper = 3 * std
+        lower = 3 * (-(math.sqrt(1. / 10)))
+
+        conv_unit.weight_init = selu_weight_init_
+        conv_unit.weight_init(conv_unit._kernel.weight)
+        new_weight = copy.deepcopy(conv_unit._kernel.weight)
         assert ((torch.equal(starting_weight, new_weight) is False) and
                (new_weight.max().item() <= upper) and
                (new_weight.min().item() >= lower))
@@ -80,12 +96,28 @@ class TestSeluWeightInit:
         #Produce upper and lower by finding values that are 3 standard deviations from mean
         # Statistically, ~99% of values in normal distribution are 3 std away from mean.
         upper = 3 * std
-        lower = 3 * (-(math.sqrt(1. /10)))
+        lower = 3 * (-(math.sqrt(1. / 10)))
 
 
         dense_unit.bias_init = selu_bias_init_
         dense_unit.bias_init(dense_unit._kernel.bias)
         new_bias = copy.deepcopy(dense_unit._kernel.bias)
+        assert ((torch.equal(starting_bias, new_bias) is False) and
+               (new_bias.max().item() <= upper) and
+               (new_bias.min().item() >= lower))
+
+    def test_conv_selu_bias_change(self, conv_unit):
+        starting_bias = copy.deepcopy(conv_unit._kernel.bias)
+        std = math.sqrt(1. / 10)
+        #Produce upper and lower by finding values that are 3 standard deviations from mean
+        # Statistically, ~99% of values in normal distribution are 3 std away from mean.
+        upper = 3 * std
+        lower = 3 * (-(math.sqrt(1. / 10)))
+
+
+        conv_unit.bias_init = selu_bias_init_
+        conv_unit.bias_init(conv_unit._kernel.bias)
+        new_bias = copy.deepcopy(conv_unit._kernel.bias)
         assert ((torch.equal(starting_bias, new_bias) is False) and
                (new_bias.max().item() <= upper) and
                (new_bias.min().item() >= lower))
