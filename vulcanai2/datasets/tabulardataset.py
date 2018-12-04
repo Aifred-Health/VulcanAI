@@ -48,14 +48,22 @@ class TabularDataset(Dataset):
                 dataset_dict[dataset_name] = pd.read_csv(f_path,
                                                          na_values=na_values,
                                                          index_col=index_list)
+            elif isinstance(dataset_value, dict):
+                for key in dataset_value.keys():
+                    if isinstance(dataset_value[key], pd.DataFrame):
+                        continue
+                    else:
+                        raise ValueError("Dataset inputs must be either paths \
+                                                         or DataFrame objects")
+
             elif not isinstance(dataset_value, pd.DataFrame):
                 raise ValueError("Dataset inputs must be either paths \
                                  or DataFrame objects")
 
         if len(dataset_dict) == 1:
             # TODO: do we want to do anything with this name?
-            key = sorted(dataset_dict)[0]  # anyone got smthing better?
-            self.df = dataset_dict[key]
+            dict_df = dataset_dict[sorted(dataset_dict)[0]]
+            self.df = dict_df[list(dict_df.keys())[0]]
         else:
             # Not using index list now because we set it before
             self.df = utils.stitch_datasets(dataset_dict, merge_on_columns,
@@ -499,7 +507,7 @@ class TabularDataset(Dataset):
         if stratified:
             raise NotImplementedError("We still need to get to this!")
 
-        train_ratio, test_ratio, val_ratio = utils.check_split_ratio(
+        train_ratio, test_ratio, validation_ratio = utils.check_split_ratio(
             split_ratio)
 
         np.random.seed(random_state)
@@ -508,19 +516,19 @@ class TabularDataset(Dataset):
 
         train_end = int(train_ratio * m)
         train_df = self.df.loc[perm[:train_end]]
-        val_df = None  # just to shut up linter
-        if val_ratio:
-            val_end = int(val_ratio * m) + train_end
-            val_df = self.df.loc[perm[train_end:val_end]]
-            test_start = val_end
+        validation_df = None  # just to shut up linter
+        if validation_ratio:
+            validation_end = int(validation_ratio * m) + train_end
+            validation_df = self.df.loc[perm[train_end:validation_end]]
+            test_start = validation_end
         else:
             test_start = train_end
         test_df = self.df.loc[perm[test_start:]]
 
         train = TabularDataset(train=train_df, label_column=self.label_column)
         test = TabularDataset(test=test_df, label_column=self.label_column)
-        if val_ratio:
-            val = TabularDataset(val=val_df, label_column=self.label_column)
-            return train, val, test
+        if validation_ratio:
+            validation = TabularDataset(val=validation_df, label_column=self.label_column)
+            return train, validation, test
         else:
             return train, test
