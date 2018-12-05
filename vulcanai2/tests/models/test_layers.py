@@ -5,6 +5,9 @@ import copy
 import torch
 from vulcanai2.models.layers import *
 from vulcanai2.models.utils import selu_weight_init_, selu_bias_init_
+from vulcanai2.models.dnn import DenseNet
+from vulcanai2.models.cnn import ConvNet
+from torch.utils.data import TensorDataset, DataLoader
 
 class TestBaseUnit:
     @pytest.fixture
@@ -43,7 +46,7 @@ class TestConvUnit:
         # No padding with 2 5x5 kernels leads from 28x28 -> 24x24
         assert output.size() == torch.ones([1, conv_unit.out_channels, 24, 24]).size()
 
-class TestSeluWeightInit:
+class TestSeluInit:
     @pytest.fixture
     def dense_unit(self):
         return DenseUnit(in_features=10,
@@ -68,18 +71,17 @@ class TestSeluWeightInit:
         new_weight = copy.deepcopy(dense_unit._kernel.weight)
         assert (torch.equal(starting_weight, new_weight) is False)
         assert (round(new_weight.std().item(), 1) == std)
-        assert (round(new_weight.mean().item(), 0) == 0.0)
+        assert (int(new_weight.mean().item()) == 0.0)
 
     def test_conv_selu_weight_change(self, conv_unit):
         starting_weight = copy.deepcopy(conv_unit._kernel.weight)
         std = round(math.sqrt(1. / 250), 1)
-
         conv_unit.weight_init = selu_weight_init_
         conv_unit.weight_init(conv_unit._kernel.weight)
         new_weight = copy.deepcopy(conv_unit._kernel.weight)
         assert (torch.equal(starting_weight, new_weight) is False)
         assert (round(new_weight.std().item(), 1) == std)
-        assert (round(new_weight.mean().item(), 0) == 0.0)
+        assert (int(new_weight.mean().item()) == 0)
 
     def test_dense_selu_bias_change(self, dense_unit):
         starting_bias = copy.deepcopy(dense_unit._kernel.bias)
@@ -89,7 +91,7 @@ class TestSeluWeightInit:
         new_bias = copy.deepcopy(dense_unit._kernel.bias)
         assert (torch.equal(starting_bias, new_bias) is False)
         assert (round(new_bias.std().item(), 1) == 0.0)
-        assert (round(new_bias.mean().item(), 0) == 0.0)
+        assert (int(new_bias.mean().item()) == 0)
 
     def test_conv_selu_bias_change(self, conv_unit):
         starting_bias = copy.deepcopy(conv_unit._kernel.bias)
@@ -99,4 +101,70 @@ class TestSeluWeightInit:
         new_bias = copy.deepcopy(conv_unit._kernel.bias)
         assert (torch.equal(starting_bias, new_bias) is False)
         assert (round(new_bias.std().item(), 1) == 0.0)
-        assert (round(new_bias.mean().item(), 0) == 0.0)
+        assert (int(new_bias.mean().item()) == 0)
+
+class TestSeluInitTrain:
+    @pytest.fixture
+    def dnn_class(self):
+        """Create DenseNet with no prediction layer."""
+        return DenseNet(
+            name='Test_DenseNet_class',
+            in_dim=(200),
+            activation=torch.nn.SELU(),
+            num_classes=3,
+            config={
+                'dense_units': [100],
+                'dropout': [0.3],
+            },
+            optim_spec={'name': 'Adam', 'lr': 0.001}
+        )
+
+    @pytest.fixture
+    def cnn_class(self):
+        """Create ConvNet with prediction layer."""
+        return ConvNet(
+            name='Test_ConvNet_class',
+            in_dim=(1, 28, 28),
+            activation=torch.nn.SELU(),
+            config={
+                'conv_units': [
+                    {
+                        "in_channels": 1,
+                        "out_channels": 16,
+                        "kernel_size": (5, 5),
+                        "stride": 2
+                    },
+                    {
+                        "in_channels": 16,
+                        "out_channels": 1,
+                        "kernel_size": (5, 5),
+                        "stride": 1,
+                        "padding": 2
+                    }]
+            },
+            num_classes=6
+        )
+
+    def test_selu_trained_dense(self, dnn_class):
+        std = round(math.sqrt(1. / 200), 1)
+        test_input = torch.ones([5, *dnn_class.in_dim]).float()
+        test_target = torch.LongTensor([0, 2, 1, 2, 1])
+        test_dataloader = DataLoader(TensorDataset(test_input, test_target))
+        dnn_class.fit(test_dataloader, test_dataloader, 5)
+        trained = copy.deepcopy(dnn_class.network.dense_0._kernel)
+        assert (round(trained.weight.std().item(), 1) == std)
+        assert (int(trained.weight.mean().item()) == 0.0)
+        assert (round(trained.bias.std().item(), 1) == 0.0)
+        assert (int(trained.bias.mean().item()) == 0.0)
+
+    def test_selu_trained_conv(self, cnn_class):
+        std = round(math.sqrt(1. / 25), 1)
+        test_input = torch.ones([13, *cnn_class.in_dim]).float()
+        test_target = torch.LongTensor([0, 2, 1, 3, 4, 1, 2, 2, 3, 0, 4, 5, 0])
+        test_dataloader = DataLoader(TensorDataset(test_input, test_target))
+        cnn_class.fit(test_dataloader, test_dataloader, 5)
+        trained = copy.copy(cnn_class.network.conv_0._kernel)
+        assert (round(trained.weight.std().item(), 1) == std)
+        assert (int(trained.weight.mean().item()) == 0.0)
+        assert (round(trained.bias.std().item(), 1) == 0.0)
+        assert (int(trained.bias.mean().item()) == 0.0)
