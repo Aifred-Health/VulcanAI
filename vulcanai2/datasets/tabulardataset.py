@@ -4,6 +4,7 @@ This file defines the TabularDataset Class
 """
 import torch
 from torch.utils.data import Dataset
+import copy
 import numpy as np
 import pandas as pd
 from . import utils as utils
@@ -48,22 +49,14 @@ class TabularDataset(Dataset):
                 dataset_dict[dataset_name] = pd.read_csv(f_path,
                                                          na_values=na_values,
                                                          index_col=index_list)
-            elif isinstance(dataset_value, dict):
-                for key in dataset_value.keys():
-                    if isinstance(dataset_value[key], pd.DataFrame):
-                        continue
-                    else:
-                        raise ValueError("Dataset inputs must be either paths \
-                                                         or DataFrame objects")
-
             elif not isinstance(dataset_value, pd.DataFrame):
                 raise ValueError("Dataset inputs must be either paths \
                                  or DataFrame objects")
 
         if len(dataset_dict) == 1:
             # TODO: do we want to do anything with this name?
-            dict_df = dataset_dict[sorted(dataset_dict)[0]]
-            self.df = dict_df[list(dict_df.keys())[0]]
+            df = dataset_dict[sorted(dataset_dict)[0]]
+            self.df = copy.deepcopy(df)
         else:
             # Not using index list now because we set it before
             self.df = utils.stitch_datasets(dataset_dict, merge_on_columns,
@@ -131,14 +124,8 @@ class TabularDataset(Dataset):
         na_values: The values to convert to NaN when reading from csv
         kwargs: keyword parameter, value is either path or dataframe
             Where key: dataset name and value is either a path to a file
-            or a dataframe.
+            or a dataframe. This parameter should only contain new dataframes.
         """
-
-        if "original" in dataset_dict:
-            raise ValueError("Please choose a name other than 'original'")
-
-        dataset_dict["original"] = self.df
-
         for dataset in dataset_dict:
             v = dataset_dict[dataset]
             if isinstance(v, str):
@@ -146,17 +133,25 @@ class TabularDataset(Dataset):
                 dataset_dict[dataset] = pd.read_csv(f_path,
                                                     na_values=na_values,
                                                     index_col=index_list)
+            elif isinstance(v, dict):
+                for key in v.keys():
+                    if isinstance(v[key], pd.DataFrame):
+                        continue
+                    else:
+                        raise ValueError("Dataset inputs must be either paths \
+                                                         or DataFrame objects")
             elif not isinstance(v, pd.DataFrame):
                 raise ValueError("Dataset inputs must be either paths \
                                  or DataFrame objects")
 
         if len(dataset_dict) == 1:
-            key, value = sorted(dataset_dict)[0]  # anyone got smthing better?
-            self.df = value  # TODO: do we want to do anything with this name?
+            dct_df = dataset_dict[sorted(dataset_dict)[0]]
+            self.df = utils.stitch_datasets(df_dict=dct_df, df_main=self.df, merge_on_columns=merge_on_columns, index_list=index_list)
         else:
-            # Not using index list now because we set it before
-            self.df = utils.stitch_datasets(dataset_dict, merge_on_columns,
-                                            index_list)
+            if not self.df.empty:
+                self.df = utils.stitch_datasets(dataset_dict, self.df, merge_on_columns, index_list)
+            else:
+                self.df = utils.stitch_datasets(dataset_dict, merge_on_columns, index_list)
 
         logger.info(f"Successfully merged {len(dataset_dict)} datasets")
 

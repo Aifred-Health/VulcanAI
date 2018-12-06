@@ -133,7 +133,7 @@ def check_split_ratio(split_ratio):
 #             return random.sample(data, len(data))
 
 
-def stitch_datasets(df_dict, merge_on_columns=None, index_list=None):
+def stitch_datasets(df_dict, df_main=None, merge_on_columns=None, index_list=None):
     """
     Function to produce a single dataset from multiple.
 
@@ -163,9 +163,13 @@ def stitch_datasets(df_dict, merge_on_columns=None, index_list=None):
     """
 
     # Get name of a dataframe to extract
-    first_column = list(df_dict)[0]
-    merged_df = df_dict.pop(first_column)
-    merged_df = merged_df.apply(pd.to_numeric, errors='ignore')
+    if df_main is not None:
+        merged_df = copy.deepcopy(df_main)
+    else:
+        first_column = list(df_dict)[0]
+        merged_df = df_dict.pop(first_column)
+        merged_df = merged_df.apply(pd.to_numeric, errors='ignore')
+
     for key in list(df_dict):
         logger.info('Combining: {}'.format(key))
         df_two = df_dict.pop(key)
