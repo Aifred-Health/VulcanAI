@@ -137,7 +137,7 @@ multi_input_conv_3D_config = {
 }
 dense_config = {
     'dense_units': [100, 50],
-    'initializer': None,
+    'weight_init': None,
     'bias_init': None,
     'norm': None,
     'dropout': 0.5,  # Single value or List
