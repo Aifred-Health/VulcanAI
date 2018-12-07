@@ -38,7 +38,7 @@ class TabularDataset(Dataset):
         index_list: list of strings
             List of columns to make the index of the dataframe
         na_values: The values to convert to NaN when reading from csv
-        kwargs: keyword parameter, value is either path or dataframe
+        dataset_dict: keyword parameter, value is either path or dataframe
             Where key: dataset name and value is either a path to a file
             or a dataframe.
         """
@@ -146,12 +146,21 @@ class TabularDataset(Dataset):
 
         if len(dataset_dict) == 1:
             dct_df = dataset_dict[sorted(dataset_dict)[0]]
-            self.df = utils.stitch_datasets(df_dict=dct_df, df_main=self.df, merge_on_columns=merge_on_columns, index_list=index_list)
+            self.df = utils.stitch_datasets(df_dict=dct_df, df_main=self.df,
+                                            merge_on_columns=merge_on_columns,
+                                            index_list=index_list)
         else:
             if not self.df.empty:
-                self.df = utils.stitch_datasets(dataset_dict, self.df, merge_on_columns, index_list)
+                self.df = utils.stitch_datasets(df_dict=dataset_dict,
+                                                df_main=self.df,
+                                                merge_on_columns=
+                                                merge_on_columns,
+                                                index_list=index_list)
             else:
-                self.df = utils.stitch_datasets(dataset_dict, merge_on_columns, index_list)
+                self.df = utils.stitch_datasets(df_dict=dataset_dict,
+                                                merge_on_columns=
+                                                merge_on_columns,
+                                                index_list=index_list)
 
         logger.info(f"Successfully merged {len(dataset_dict)} datasets")
 
