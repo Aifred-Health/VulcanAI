@@ -40,7 +40,7 @@ class TabularDataset(Dataset):
         na_values: The values to convert to NaN when reading from csv
         dataset_dict: keyword parameter, value is either path or dataframe
             Where key: dataset name and value is either a path to a file
-            or a dataframe.
+            or a dataframe. Provided dataframes will be deepcopied.
         """
         for dataset_name in dataset_dict:
             dataset_value = dataset_dict[dataset_name]
