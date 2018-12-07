@@ -59,7 +59,7 @@ class TestTabularDataset:
 
     def test_reverse_create_all_one_hot_encodings(self, my_test_dataset):
         my_test_dataset.create_one_hot_encoding("LowBirthWeight")
-        my_test_dataset.reverse_create_all_one_hot_encodings()
+        my_test_dataset.reverse_create_one_hot_encoding(reverse_all=True)
         assert "LowBirthWeight@Low" not in my_test_dataset.list_all_features()
 
     def test_identify_sufficient_non_null(self, my_test_dataset):

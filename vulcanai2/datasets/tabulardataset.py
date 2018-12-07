@@ -238,8 +238,7 @@ class TabularDataset(Dataset):
             The name of the column you want deleted
         """
 
-        if column_name in list(self.df):
-            self.df = self.df.drop(column_name, axis=1)
+        self.df = self.df.drop(column_name, axis=1)
 
         logger.info(f"You have dropped {column_name}")
 
@@ -290,37 +289,52 @@ class TabularDataset(Dataset):
         """
 
         # TODO: ensure dummy_na =False is what you want
-        if column_name in list(self.df):
-            self.df = pd.get_dummies(self.df, columns=[column_name],
-                                     prefix_sep=prefix_sep)
-            logger.info(f"Successfully encoded {column_name}")
+        self.df = pd.get_dummies(self.df, columns=[column_name],
+                                    prefix_sep=prefix_sep)
+        logger.info(f"Successfully encoded {column_name}")
 
-        else:
-            logger.info(f"Col {column_name} does not exist")
-
-    def reverse_create_all_one_hot_encodings(self, prefix_sep="@"):
+    # if a use case presents itself column_name could easily become a list
+    def reverse_create_one_hot_encoding(self, column_name=None,
+                                        reverse_all=False, prefix_sep="@"):
         """
         Undo the creation of one-hot encodings, if prefix_sep was used
-        to create one-hot encodings and nowhere else.
-
+        to create one-hot encodings and nowhere else. If a column_name is
+        provided, only that column will be reverse-encoded, even if reverse_all
+        is set to true.
         Parameters
         ----------
-        prefix_sep String default("@")
-            The prefix used when creating a one-hot encoding
+        column_name: String
+            The name of the column to reverse the one-hot encoding for
+        reverse_all: Boolean
+            Whether to reverse all columns containing the prefix
+        prefix_sep: String default("@")
+            The prefix used when creating a one-hot encodin
         """
         result_series = {}
 
+        # this is really just to check that the user really wants to
+        # reverse all
+        if not column_name and not reverse_all:
+            raise ValueError("You must provide a True value for either of \
+                             column_name or reverse_all")
+
+        if column_name:
+            if prefix_sep in column_name:
+                considered_column_list = [column_name]
+            else:
+                raise ValueError("Prefix not found in column_name")
+            non_dummy_cols = [col for col in self.df.columns
+                              if col not in considered_column_list]
+        else:
+            considered_column_list = self.df.columns
+            non_dummy_cols = [col for col in self.df.columns
+                              if prefix_sep not in col]
+
         # Find dummy columns and build pairs (category, category_value)
         dummy_tuples = [(col.split(prefix_sep)[0], col) for col in
-                        self.df.columns if prefix_sep in col]
+                        considered_column_list if prefix_sep in col]
 
-        # Find non-dummy columns that do not have a _
-        non_dummy_cols = [col for col in self.df.columns
-                          if prefix_sep not in col]
-
-        # For each category column group use idxmax to find the value.
         for dummy, cols in groupby(dummy_tuples, lambda item: item[0]):
-            # Select columns for each category
             dummy_df = self.df[[col[1] for col in cols]]
 
             # Find max value among columns
@@ -427,7 +441,8 @@ class TabularDataset(Dataset):
 
         Parameters
         ----------
-        threshold: Between 0 (weakest correlation) and 1 (strongest correlation).
+        threshold: Between 0 (weakest correlation) and 1
+        (strongest correlation).
         Minimum amount of correlation necessary to be identified.
 
         Returns
@@ -477,7 +492,7 @@ class TabularDataset(Dataset):
     def split(self, split_ratio=0.7, stratified=False, strata_field='label',
               random_state=None):
         """
-        Create train-test(-valid?) splits from the instance's examples.
+        Create train-test(-validation) splits from the instance's examples.
         Function signature borrowed from torchtext in an effort to maintain
         consistency
         https://github.com/pytorch/text/blob/master/torchtext/data/dataset.py
@@ -534,7 +549,8 @@ class TabularDataset(Dataset):
         train = TabularDataset(train=train_df, label_column=self.label_column)
         test = TabularDataset(test=test_df, label_column=self.label_column)
         if validation_ratio:
-            validation = TabularDataset(val=validation_df, label_column=self.label_column)
+            validation = TabularDataset(val=validation_df,
+                                        label_column=self.label_column)
             return train, validation, test
         else:
             return train, test
