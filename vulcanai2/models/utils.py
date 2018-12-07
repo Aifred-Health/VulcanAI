@@ -30,31 +30,6 @@ def round_list(raw_list, decimals=4):
     return [round(item, decimals) for item in raw_list]
 
 
-def get_confusion_matrix(predictions, targets):
-    """
-    Calculate the confusion matrix for classification network predictions.
-
-    Parameters
-    ----------
-    predictions : numpy.ndarray
-        The classes predicted by the network. Does not take one hot vectors.
-    targets : numpy.ndarray
-        the classes of the ground truth. Does not take one hot vectors.
-
-    Returns
-    -------
-    confusion_matrix : numpy.ndarray
-        The confusion matrix.
-
-    """
-    if len(predictions.shape) == 2:
-        predictions = predictions[:, 0]
-    if len(targets.shape) == 2:
-        targets = targets[:, 0]
-    return confusion_matrix(y_true=targets,
-                            y_pred=predictions)
-
-
 def get_one_hot(in_matrix):
     """
     Reformat truth matrix to same size as the output of the dense network.
