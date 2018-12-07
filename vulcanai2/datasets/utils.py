@@ -189,7 +189,7 @@ def stitch_datasets(df_dict, df_main=None, merge_on_columns=None,
     for key in list(df_dict):
         logger.info('Combining: {}'.format(key))
         df_two = df_dict.pop(key)
-        merged_df = pd.concat([merged_df, df_two])
+        merged_df = pd.concat([merged_df, df_two], sort=False)
 
     if merge_on_columns is not None:
         # Group by keys, forward fill and backward fill missing data
