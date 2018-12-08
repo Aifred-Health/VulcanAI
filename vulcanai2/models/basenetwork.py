@@ -160,6 +160,8 @@ class BaseNetwork(nn.Module):
         None
 
         """
+        # TODO: I think we need to re-create/re-initalize the basenetwork when calling this function since 
+        # self.network has no idea how the new input shape will look like after adding a new input_network?
         assert isinstance(in_network, BaseNetwork)
         assert in_network is not self
         if not self.input_networks:

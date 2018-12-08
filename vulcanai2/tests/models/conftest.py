@@ -84,7 +84,35 @@ def conv3D_net():
                     dropout=0.1
                 )
             ],
-        }
+        },
+        device='cpu'
+    )
+
+@pytest.fixture(scope="module")
+def conv3D_net_class():
+    """conv3D fixture."""
+    return ConvNet(
+        name='conv3D_net',
+        in_dim=(1, 28, 28, 28),
+        num_classes=10,
+        config={
+            'conv_units': [
+                dict(
+                    in_channels=1,
+                    out_channels=16,
+                    kernel_size=(5, 5, 5),
+                    stride=2,
+                    dropout=0.1
+                ),
+                dict(
+                    in_channels=16,
+                    out_channels=64,
+                    kernel_size=(5, 5, 5),
+                    dropout=0.1
+                )
+            ],
+        },
+        device='cpu'
     )
 
 @pytest.fixture(scope="module")
@@ -147,57 +175,6 @@ def multi_input_cnn_data(conv2D_net, conv3D_net, multi_input_dnn_data):
     ])
 
 @pytest.fixture(scope="module")
-def cnn_noclass():
-    """Create ConvNet with no prediction layer."""
-    return ConvNet(
-        name='Test_ConvNet_noclass',
-        in_dim=(1, 28, 28),
-        config={
-            'conv_units': [
-                {
-                    "in_channels": 1,
-                    "out_channels": 16,
-                    "kernel_size": (5, 5),
-                    "pool_size": 2,
-                    "stride": 2
-                },
-                {
-                    "in_channels": 16,
-                    "out_channels": 1,
-                    "kernel_size": (5, 5),
-                    "stride": 2,
-                    "padding": 2
-                }]
-        }
-    )
-
-@pytest.fixture(scope="module")
-def cnn_class():
-    """Create ConvNet with prediction layer."""
-    return ConvNet(
-        name='Test_ConvNet_class',
-        in_dim=(1, 28, 28),
-        config={
-            'conv_units': [
-                {
-                    "in_channels": 1,
-                    "out_channels": 16,
-                    "kernel_size": (5, 5),
-                    "pool_size": 2,
-                    "stride": 2
-                },
-                {
-                    "in_channels": 16,
-                    "out_channels": 1,
-                    "kernel_size": (5, 5),
-                    "stride": 2,
-                    "padding": 2
-                }]
-        },
-        num_classes=3
-    )
-
-@pytest.fixture(scope="module")
 def multi_input_cnn_add_input_network(conv1D_net, conv2D_net,
                                       conv3D_net):
     """Create ConvNet with input_network added via
@@ -205,11 +182,11 @@ def multi_input_cnn_add_input_network(conv1D_net, conv2D_net,
     net = ConvNet(
         name='multi_input_cnn_add_input_network',
         num_classes=10,
-        in_dim=(1, 28, 28, 28),
+        in_dim=conv3D_net.out_dim,
         config={
             'conv_units': [
                 dict(
-                    in_channels=1,
+                    in_channels=conv3D_net.out_dim[0],
                     out_channels=16,
                     kernel_size=(3, 3, 3),
                     stride=2,
@@ -219,7 +196,5 @@ def multi_input_cnn_add_input_network(conv1D_net, conv2D_net,
         },
         device='cpu'
     )
-    net.add_input_network(conv1D_net)
-    net.add_input_network(conv2D_net)
     net.add_input_network(conv3D_net)
     return net

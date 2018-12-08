@@ -18,10 +18,25 @@ class TestConvNet:
         """Initialization Test of ConvNet """
         assert isinstance(conv1D_net, BaseNetwork)
         assert isinstance(conv1D_net, nn.Module)
-        assert hasattr(conv1D_net, 'input_networks')
         assert hasattr(conv1D_net, 'network')
         assert hasattr(conv1D_net, 'in_dim')
         assert hasattr(conv1D_net, 'device')
+
+        assert conv1D_net.input_networks == None
+        assert conv1D_net.epoch == 0
+        assert conv1D_net.optim == None
+        assert conv1D_net.criterion == None
+        
+        assert not hasattr(conv1D_net, 'metrics')
+
+    def test_add_input_network(self, multi_input_cnn_add_input_network,
+                               conv3D_net):
+        """Test add input Network functionality."""
+        assert isinstance(multi_input_cnn_add_input_network.input_networks,
+                          nn.ModuleDict)
+        assert multi_input_cnn_add_input_network\
+               .input_networks[conv3D_net.name] is conv3D_net
+        assert multi_input_cnn_add_input_network.in_dim == conv3D_net.out_dim
     
     def test_forward(self, conv1D_net):
         """Test Forward of ConvNet"""
@@ -44,65 +59,54 @@ class TestConvNet:
         """Test Forward of Multi Input ConvNet where input_networks
         added via add_input_network"""
         out = multi_input_cnn_add_input_network([
-                            torch.ones([10, 1, 28]),
-                            torch.ones([10, 1, 28, 28]),
                             torch.ones([10, 1, 28, 28, 28])
                         ])
         assert out.shape == (10, 10)
 
-    def test_forward_pass_not_nan(self, cnn_noclass):
+    def test_forward_pass_not_nan(self, conv3D_net):
         """Confirm out is non nan."""
-        test_input = torch.ones([1, *cnn_noclass.in_dim])
+        test_input = torch.ones([1, *conv3D_net.in_dim])
         test_dataloader = DataLoader(TensorDataset(test_input, test_input))
-        output = cnn_noclass.forward_pass(
+        output = conv3D_net.forward_pass(
             data_loader=test_dataloader,
             convert_to_class=False)
         assert np.any(~np.isnan(output))
 
-    def test_forward_pass_not_nan(self, cnn_class):
+    def test_forward_pass_not_nan(self, conv3D_net_class):
         """Confirm out is non nan."""
-        test_input = torch.ones([1, *cnn_class.in_dim])
+        test_input = torch.ones([1, *conv3D_net_class.in_dim])
         test_dataloader = DataLoader(TensorDataset(test_input, test_input))
-        raw_output = cnn_class.forward_pass(
+        raw_output = conv3D_net_class.forward_pass(
             data_loader=test_dataloader,
             convert_to_class=False)
-        class_output = cnn_class.metrics.extract_class_labels(
+        class_output = conv3D_net_class.metrics.extract_class_labels(
             in_matrix=raw_output)
         assert np.any(~np.isnan(class_output))
         assert np.any(~np.isnan(raw_output))
 
-    def test_freeze_class(self, cnn_class):
+    def test_freeze_class(self, conv3D_net_class):
         """Test class network freezing."""
-        cnn_class.freeze(apply_inputs=False)
-        for params in cnn_class.network.parameters():
+        conv3D_net_class.freeze(apply_inputs=False)
+        for params in conv3D_net_class.network.parameters():
             assert params.requires_grad is False
 
-    def test_unfreeze_class(self, cnn_class):
+    def test_unfreeze_class(self, conv3D_net_class):
         """Test class network unfreezing."""
-        cnn_class.freeze(apply_inputs=False)
-        cnn_class.unfreeze(apply_inputs=False)
-        for params in cnn_class.network.parameters():
+        conv3D_net_class.freeze(apply_inputs=False)
+        conv3D_net_class.unfreeze(apply_inputs=False)
+        for params in conv3D_net_class.network.parameters():
             assert params.requires_grad is True
 
-    def test_freeze_noclass(self, cnn_noclass):
+    def test_freeze_noclass(self, conv3D_net):
         """Test intermediate network freezing."""
-        cnn_noclass.freeze(apply_inputs=False)
-        for params in cnn_noclass.network.parameters():
+        conv3D_net.freeze(apply_inputs=False)
+        for params in conv3D_net.network.parameters():
             assert params.requires_grad is False
 
-    def test_unfreeze_noclass(self, cnn_noclass):
+    def test_unfreeze_noclass(self, conv3D_net):
         """Test intermediate network unfreezing."""
-        cnn_noclass.freeze(apply_inputs=False)
-        cnn_noclass.unfreeze(apply_inputs=False)
-        for params in cnn_noclass.network.parameters():
+        conv3D_net.freeze(apply_inputs=False)
+        conv3D_net.unfreeze(apply_inputs=False)
+        for params in conv3D_net.network.parameters():
             assert params.requires_grad is True
-            
-    # TODO: temporarily cutting this test off
-    # def test_add_input_network(self, cnn_class_add_input_network,
-    #                            cnn_noclass):
-    #     """Test add input Network functionality."""
-    #     assert isinstance(cnn_class_add_input_network.input_networks,
-    #                       nn.ModuleDict)
-    #     assert cnn_class_add_input_network\
-    #            .input_networks[cnn_noclass.name] is cnn_noclass
-    #     assert cnn_class_add_input_network.in_dim == cnn_noclass.out_dim
+
