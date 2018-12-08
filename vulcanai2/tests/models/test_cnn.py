@@ -7,7 +7,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
 from vulcanai2.models import BaseNetwork
-from vulcanai2.models.cnn import ConvNet
+from vulcanai2.models.cnn import ConvNet, ConvNetConfig
 from vulcanai2.models.utils import master_device_setter
 
 
@@ -15,12 +15,16 @@ class TestConvNet:
     """Define ConvNet test class."""
     
     def test_init(self, conv1D_net):
-        """Initialization Test of ConvNet """
+        """Initialization Test of a ConvNet object"""
         assert isinstance(conv1D_net, BaseNetwork)
         assert isinstance(conv1D_net, nn.Module)
         assert hasattr(conv1D_net, 'network')
         assert hasattr(conv1D_net, 'in_dim')
+        assert hasattr(conv1D_net, 'record')
         assert hasattr(conv1D_net, 'device')
+
+        assert conv1D_net._name is not None
+        assert isinstance(conv1D_net._config, ConvNetConfig)
 
         assert conv1D_net.input_networks == None
         assert conv1D_net.epoch == 0
@@ -28,6 +32,18 @@ class TestConvNet:
         assert conv1D_net.criterion == None
         
         assert not hasattr(conv1D_net, 'metrics')
+
+    def test_mult_multi_input(self, multi_input_cnn):
+        """Test methods/functions wrt multi_input_cnn"""
+        assert isinstance(multi_input_cnn.input_networks, nn.ModuleDict)
+        assert len(list(multi_input_cnn.input_networks)) == 3
+        assert multi_input_cnn._get_max_incoming_spatial_dims == (8, 8, 8)
+        assert multi_input_cnn._merge_input_network_outputs([
+                                torch.ones([10, 1, 28, 28]),
+                                torch.ones([10, 1, 28, 28, 28]),
+                                torch.ones(10, *multi_input_cnn.\
+                                input_networks['multi_input_dnn'].out_dim)
+               ]).shape == (10, 3, 8, 8, 8)
 
     def test_add_input_network(self, multi_input_cnn_add_input_network,
                                conv3D_net):
@@ -47,13 +63,14 @@ class TestConvNet:
                                          multi_input_cnn_data):
         """Test Forward of Multi Input ConvNet"""
         master_device_setter(multi_input_cnn, 'cuda:0')
-        out = multi_input_cnn([torch.ones([10, 1, 28, 28]),
-                               torch.ones([10, 1, 28, 28, 28]),
-                               [torch.ones([10, 1, 28]),
-                                torch.ones([10, 1, 28, 28])]
-                                ])
+        input_tensor = [torch.ones([10, 1, 28, 28]),
+               torch.ones([10, 1, 28, 28, 28]),
+               [torch.ones([10, 1, 28]),
+                torch.ones([10, 1, 28, 28])]
+            ]
+        out = multi_input_cnn(input_tensor)
         assert out.shape == (10, 10)
-    
+
     def test_forward_multi_input_cnn_add_input_network(self, 
                                 multi_input_cnn_add_input_network):
         """Test Forward of Multi Input ConvNet where input_networks
