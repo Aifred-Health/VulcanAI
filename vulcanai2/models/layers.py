@@ -50,8 +50,8 @@ class BaseUnit(nn.Sequential):
         """
         Initialize the weights.
 
-        if self.initializer is None, then pytorch default weight
-        will be assigned to the kernel
+        If self.weight_init is None, then pytorch default weight
+        will be assigned to the kernel.
         """
         if self.weight_init:
             self.weight_init(self._kernel.weight)
@@ -60,13 +60,11 @@ class BaseUnit(nn.Sequential):
         """
         Initialize the bias.
 
-        if self.bias_init is None, then pytorch default bias
-        will be assigned to the kernel
+        If self.bias_init is None, then pytorch default bias
+        will be assigned to the kernel.
         """
         if self.bias_init:
             self.bias_init(self._kernel.bias)
-
-
 
 
 class FlattenUnit(BaseUnit):
@@ -161,6 +159,7 @@ class DenseUnit(BaseUnit):
                     '_dropout', nn.Dropout(self.dropout))
         self._init_weights()
         self._init_bias()
+
 
 # TODO: Automatically calculate padding to be the same as input shape.
 class ConvUnit(BaseUnit):
