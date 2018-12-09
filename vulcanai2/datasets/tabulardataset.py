@@ -110,7 +110,7 @@ class TabularDataset(Dataset):
             return xs
 
     def merge_dataframe(self, merge_on_columns=None,
-                        index_list=None, na_values=None, **dataset_dict):
+                        index_list=None, na_values=None, dataset_dict=None):
         """
         Merges additional data into a TabularDataset isntance
 
@@ -133,20 +133,12 @@ class TabularDataset(Dataset):
                 dataset_dict[dataset] = pd.read_csv(f_path,
                                                     na_values=na_values,
                                                     index_col=index_list)
-            elif isinstance(v, dict):
-                for key in v.keys():
-                    if isinstance(v[key], pd.DataFrame):
-                        continue
-                    else:
-                        raise ValueError("Dataset inputs must be either paths \
-                                                         or DataFrame objects")
             elif not isinstance(v, pd.DataFrame):
                 raise ValueError("Dataset inputs must be either paths \
                                  or DataFrame objects")
 
         if len(dataset_dict) == 1:
-            dct_df = dataset_dict[sorted(dataset_dict)[0]]
-            self.df = utils.stitch_datasets(df_dict=dct_df, df_main=self.df,
+            self.df = utils.stitch_datasets(df_dict=dataset_dict, df_main=self.df,
                                             merge_on_columns=merge_on_columns,
                                             index_list=index_list)
         else:

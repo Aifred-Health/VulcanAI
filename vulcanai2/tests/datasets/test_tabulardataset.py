@@ -3,6 +3,9 @@
 import pytest
 from vulcanai2.datasets import TabularDataset
 import os
+import numpy as np
+import pandas as pd
+import copy
 
 class TestTabularDataset:
 
@@ -14,19 +17,31 @@ class TestTabularDataset:
     def my_test_dataset(self):
         """Create a dataset by importing from the test csv"""
         return TabularDataset(
-            data="datasets/test_data/birthweight_reduced.csv", #TODO: not sure how to define file path here..
+            data="test_data/birthweight_reduced.csv",
             label_column="id",
-            na_values=["Nan"]
+            na_values='Nan'
         )
 
-    #TODO: test all the ways of merging, both in init and in the merge function
+    @pytest.fixture
+    def my_test_dataset_two(self):
+        """Create a second dataset by importing from the test csv"""
+        return ("../../tests/datasets/test_data/birthweight_reduced2.csv")
+
+    @pytest.fixture
+    def my_merged_test_dataset(self):
+        return pd.read_csv("test_data/birthweight_reduced_merged.csv")
+
+    def test_merge_dataframe(self, my_test_dataset, my_test_dataset_two, my_merged_test_dataset):
+        dct_df = {'df_test_two': my_test_dataset_two}
+        my_test_dataset.merge_dataframe(merge_on_columns=['id'], na_values='Nan', dataset_dict=dct_df)
+        pd.testing.assert_frame_equal(my_test_dataset.df, my_merged_test_dataset, check_dtype=False)
 
     def test_single_dataset_length(self, my_test_dataset):
         assert len(my_test_dataset) == 42
         assert "id" in my_test_dataset.label_column
 
     def test_save_dataframe(self, my_test_dataset):
-        fname = "datasets/test_data/test_save.csv"
+        fname = "test_data/test_save.csv"
         my_test_dataset.save_dataframe(fname)
         assert os.path.isfile(fname)
         os.remove(fname)
