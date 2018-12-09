@@ -37,7 +37,7 @@ class TestConvNet:
         """Test methods/functions wrt multi_input_cnn"""
         assert isinstance(multi_input_cnn.input_networks, nn.ModuleDict)
         assert len(list(multi_input_cnn.input_networks)) == 3
-        assert multi_input_cnn._get_max_incoming_spatial_dims == (8, 8, 8)
+        assert multi_input_cnn._get_max_incoming_spatial_dims() == (8, 8, 8)
         assert multi_input_cnn._merge_input_network_outputs([
                                 torch.ones([10, 1, 28, 28]),
                                 torch.ones([10, 1, 28, 28, 28]),
