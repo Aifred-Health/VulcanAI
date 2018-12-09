@@ -26,15 +26,15 @@ class TestConvNet:
         assert conv1D_net._name is not None
         assert isinstance(conv1D_net._config, ConvNetConfig)
 
-        assert conv1D_net.input_networks == None
+        assert conv1D_net.input_networks is None
         assert conv1D_net.epoch == 0
-        assert conv1D_net.optim == None
-        assert conv1D_net.criterion == None
-        
+        assert conv1D_net.optim is None
+        assert conv1D_net.criterion is None
+
         assert not hasattr(conv1D_net, 'metrics')
 
     def test_mult_multi_input(self, multi_input_cnn):
-        """Test methods/functions wrt multi_input_cnn"""
+        """Test methods/functions wrt multi_input_cnn."""
         assert isinstance(multi_input_cnn.input_networks, nn.ModuleDict)
         assert len(list(multi_input_cnn.input_networks)) == 3
         assert multi_input_cnn._get_max_incoming_spatial_dims() == (8, 8, 8)
