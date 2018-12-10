@@ -3,7 +3,7 @@ import numpy as np
 import math
 import copy
 import torch
-from vulcanai2.models.layers import *
+from vulcanai2.models.layers import BaseUnit, ConvUnit, DenseUnit
 from vulcanai2.models.utils import selu_weight_init_, selu_bias_init_
 from vulcanai2.models.dnn import DenseNet
 from vulcanai2.models.cnn import ConvNet
