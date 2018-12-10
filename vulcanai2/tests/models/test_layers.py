@@ -1,5 +1,5 @@
+"""The script to test all layers and SELU activation properties hold."""
 import pytest
-import numpy as np
 import math
 import copy
 from functools import reduce
@@ -16,7 +16,7 @@ class TestBaseUnit:
 
     @pytest.fixture
     def baseunit(self):
-        """Base unit fixture."""
+        """Make Base unit fixture."""
         return BaseUnit()
 
 
@@ -96,7 +96,8 @@ class TestSeluInit:
     def test_conv_selu_weight_change(self, conv_unit):
         """Confirm SELU weight init properties hold for conv net."""
         starting_weight = copy.deepcopy(conv_unit._kernel.weight)
-        fan_in = conv_unit._kernel.in_channels * reduce(lambda kern1, kern2: kern1*kern2, conv_unit._kernel.kernel_size)
+        fan_in = conv_unit._kernel.in_channels * \
+            reduce(lambda k1, k2: k1 * k2, conv_unit._kernel.kernel_size)
         std = round(math.sqrt(1. / fan_in), 1)
         conv_unit.weight_init = selu_weight_init_
         conv_unit._init_weights()
@@ -188,7 +189,8 @@ class TestSeluInitTrain:
 
     def test_selu_trained_conv(self, cnn_class):
         """Confirm SELU weight and bias properties hold for a conv net."""
-        fan_in = cnn_class.network.conv_0.in_channels * reduce(lambda kern1, kern2: kern1*kern2, cnn_class.network.conv_0.kernel_size)
+        fan_in = cnn_class.network[0].in_channels * \
+            reduce(lambda k1, k2: k1 * k2, cnn_class.network[0].kernel_size)
         std = round(math.sqrt(1. / fan_in), 1)
         test_input = torch.ones([10, *cnn_class.in_dim]).float()
         test_target = torch.LongTensor([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
