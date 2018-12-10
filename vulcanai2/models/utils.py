@@ -180,10 +180,7 @@ def network_summary(network, input_size=None):
 
 
 def print_model_structure(network, input_size=None):
-    """
-    Print the entire model structure.
-    
-    """
+    """Print the entire model structure."""
     shapes = network_summary(network)
     for k, v in shapes.items():
         print('{}:'.format(k))
@@ -194,7 +191,10 @@ def print_model_structure(network, input_size=None):
 
 def selu_weight_init_(tensor, mean=0.0):
     """
-    Function assigned to variable that will be called within _init_weights function to assign weights for selu.
+    SELU layer weight initialization function.
+
+    Function assigned to variable that will be called within
+    _init_weights function to assign weights for selu.
 
     Parameters
     ----------
@@ -207,6 +207,7 @@ def selu_weight_init_(tensor, mean=0.0):
     -------
     torch.tensor
         weight tensor with normal distribution
+
     """
     with torch.no_grad():
         fan_in, _ = nn.init._calculate_fan_in_and_fan_out(tensor)
@@ -216,7 +217,10 @@ def selu_weight_init_(tensor, mean=0.0):
 
 def selu_bias_init_(tensor, const=0.0):
     """
-    Function assigned to variable that will be called within _init_bias function to assign bias for selu.
+    SELU layer bias initialization function.
+
+    Function assigned to variable that will be called within
+    _init_bias function to assign bias for selu.
 
     Parameters
     ----------
@@ -229,6 +233,7 @@ def selu_bias_init_(tensor, const=0.0):
     -------
     torch.tensor
         bias tensor with constant values.
+
     """
     with torch.no_grad():
         return nn.init.constant_(tensor, const)
@@ -236,20 +241,19 @@ def selu_bias_init_(tensor, const=0.0):
 
 def set_tensor_device(data, device=None):
     """
-    Helper function to convert list of data to
-    relevant device
+    Convert list of data tensors to specified device.
 
     Parameters
     ----------
     data : torch.tensor or list
-        data to be converted to the relevant device.
+        data to be converted to the specified device.
     device : str or torch.device
         the desired device
 
     Returns
     -------
     data : torch.tensor or list
-        data converted to the relevant device
+        data converted to the specified device
 
     """
     if not isinstance(data, (list, tuple)):
@@ -262,13 +266,12 @@ def set_tensor_device(data, device=None):
 
 def master_device_setter(network, device=None):
     """
-    Helper function to convert the network and its 
-    input_networks to the relevant device.
+    Convert network and input_networks to specified device.
 
     Parameters
     ----------
     network : BaseNetwork
-        network to be converted to the relevant device.
+        network to be converted to the specified device.
     device : str or torch.device
         the desired device
 
