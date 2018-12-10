@@ -85,10 +85,10 @@ class TestSeluInit:
         std = round(math.sqrt(1. / 10), 1)
 
         dense_unit.weight_init = selu_weight_init_
-        dense_unit.weight_init(dense_unit._kernel.weight)
+        dense_unit._init_weights()
         new_weight = copy.deepcopy(dense_unit._kernel.weight)
         assert (torch.equal(starting_weight, new_weight) is False)
-        assert (round(new_weight.std().item(), 1) == std)
+        assert pytest.approx(round(new_weight.std().item(), 1), 0.1) == std
         assert (int(new_weight.mean().item()) == 0.0)
 
     def test_conv_selu_weight_change(self, conv_unit):
@@ -96,10 +96,10 @@ class TestSeluInit:
         starting_weight = copy.deepcopy(conv_unit._kernel.weight)
         std = round(math.sqrt(1. / 250), 1)
         conv_unit.weight_init = selu_weight_init_
-        conv_unit.weight_init(conv_unit._kernel.weight)
+        conv_unit._init_weights()
         new_weight = copy.deepcopy(conv_unit._kernel.weight)
         assert (torch.equal(starting_weight, new_weight) is False)
-        assert (round(new_weight.std().item(), 1) == std)
+        assert pytest.approx(round(new_weight.std().item(), 1), 0.1) == std
         assert (int(new_weight.mean().item()) == 0)
 
     def test_dense_selu_bias_change(self, dense_unit):
@@ -107,7 +107,7 @@ class TestSeluInit:
         starting_bias = copy.deepcopy(dense_unit._kernel.bias)
 
         dense_unit.bias_init = selu_bias_init_
-        dense_unit.bias_init(dense_unit._kernel.bias)
+        dense_unit._init_bias()
         new_bias = copy.deepcopy(dense_unit._kernel.bias)
         assert (torch.equal(starting_bias, new_bias) is False)
         assert (round(new_bias.std().item(), 1) == 0.0)
@@ -118,7 +118,7 @@ class TestSeluInit:
         starting_bias = copy.deepcopy(conv_unit._kernel.bias)
 
         conv_unit.bias_init = selu_bias_init_
-        conv_unit.bias_init(conv_unit._kernel.bias)
+        conv_unit._init_bias()
         new_bias = copy.deepcopy(conv_unit._kernel.bias)
         assert (torch.equal(starting_bias, new_bias) is False)
         assert (round(new_bias.std().item(), 1) == 0.0)
