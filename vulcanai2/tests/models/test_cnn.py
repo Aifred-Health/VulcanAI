@@ -21,13 +21,14 @@ class TestConvNet:
                         "in_channels": 1,
                         "out_channels": 16,
                         "kernel_size": (5, 5),
+                        "pool_size": 2,
                         "stride": 2
                     },
                     {
                         "in_channels": 16,
                         "out_channels": 1,
                         "kernel_size": (5, 5),
-                        "stride": 1,
+                        "stride": 2,
                         "padding": 2
                     }]
             }
@@ -45,13 +46,14 @@ class TestConvNet:
                         "in_channels": 1,
                         "out_channels": 16,
                         "kernel_size": (5, 5),
+                        "pool_size": 2,
                         "stride": 2
                     },
                     {
                         "in_channels": 16,
                         "out_channels": 1,
                         "kernel_size": (5, 5),
-                        "stride": 1,
+                        "stride": 2,
                         "padding": 2
                     }]
             },
@@ -74,7 +76,7 @@ class TestConvNet:
         raw_output = cnn_class.forward_pass(
             data_loader=test_dataloader,
             convert_to_class=False)
-        class_output = cnn_class.metrics.get_class(
+        class_output = cnn_class.metrics.extract_class_labels(
             in_matrix=raw_output)
         assert np.any(~np.isnan(class_output))
         assert np.any(~np.isnan(raw_output))

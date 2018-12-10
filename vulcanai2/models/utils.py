@@ -32,31 +32,6 @@ def round_list(raw_list, decimals=4):
     return [round(item, decimals) for item in raw_list]
 
 
-def get_confusion_matrix(predictions, targets):
-    """
-    Calculate the confusion matrix for classification network predictions.
-
-    Parameters
-    ----------
-    predictions : numpy.ndarray
-        The classes predicted by the network. Does not take one hot vectors.
-    targets : numpy.ndarray
-        the classes of the ground truth. Does not take one hot vectors.
-
-    Returns
-    -------
-    confusion_matrix : numpy.ndarray
-        The confusion matrix.
-
-    """
-    if len(predictions.shape) == 2:
-        predictions = predictions[:, 0]
-    if len(targets.shape) == 2:
-        targets = targets[:, 0]
-    return confusion_matrix(y_true=targets,
-                            y_pred=predictions)
-
-
 def get_one_hot(in_matrix):
     """
     Reformat truth matrix to same size as the output of the dense network.
@@ -83,6 +58,7 @@ def get_one_hot(in_matrix):
 
     lb = LabelBinarizer()
     return np.array(lb.fit_transform(custom_array), dtype='float32')
+
 
 def pad(tensor, padded_shape):
     """
@@ -120,6 +96,7 @@ def pad(tensor, padded_shape):
         padding_needed.append(dim_zero_padding)
         padding_needed.append(dim_one_padding)
     return F.pad(tensor, padding_needed)
+
 
 def network_summary(network, input_size=None):
     """
@@ -201,6 +178,7 @@ def network_summary(network, input_size=None):
 
     return summary
 
+
 def print_model_structure(network, input_size=None):
     """
     Print the entire model structure.
@@ -212,6 +190,7 @@ def print_model_structure(network, input_size=None):
         if isinstance(v, odict):
             for k2, v2 in v.items():
                 print('\t {}: {}'.format(k2, v2))
+
 
 def selu_weight_init_(tensor, mean=0.0):
     """
@@ -234,6 +213,7 @@ def selu_weight_init_(tensor, mean=0.0):
         std = math.sqrt(1. / fan_in)
         return nn.init.normal_(tensor, mean, std)
 
+
 def selu_bias_init_(tensor, const=0.0):
     """
     Function assigned to variable that will be called within _init_bias function to assign bias for selu.
@@ -252,3 +232,48 @@ def selu_bias_init_(tensor, const=0.0):
     """
     with torch.no_grad():
         return nn.init.constant_(tensor, const)
+
+
+def set_tensor_device(data, device=None):
+    """
+    Helper function to convert list of data to
+    relevant device
+
+    Parameters
+    ----------
+    data : torch.tensor or list
+        data to be converted to the relevant device.
+    device : str or torch.device
+        the desired device
+
+    Returns
+    -------
+    data : torch.tensor or list
+        data converted to the relevant device
+
+    """
+    if not isinstance(data, (list, tuple)):
+        data = data.to(device=device)
+    else:
+        for idx, d in enumerate(data):
+            data[idx] = set_tensor_device(d, device=device)
+    return data
+
+
+def master_device_setter(network, device=None):
+    """
+    Helper function to convert the network and its 
+    input_networks to the relevant device.
+
+    Parameters
+    ----------
+    network : BaseNetwork
+        network to be converted to the relevant device.
+    device : str or torch.device
+        the desired device
+
+    """
+    network.device = device
+    if network.input_networks:
+        for net in network.input_networks.values():           
+            master_device_setter(net, device)

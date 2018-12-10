@@ -224,7 +224,7 @@ def compute_saliency_map(network, input_data, targets):
 
     Returns
     -------
-    saliency_map : numpy.ndarray
+    saliency_map : list of numpy.ndarray
         Top layer gradients of the same shape as input data.
 
     """
