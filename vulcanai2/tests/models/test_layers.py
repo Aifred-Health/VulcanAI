@@ -82,11 +82,12 @@ class TestSeluInit:
     def test_dense_selu_weight_change(self, dense_unit):
         """Confirm SELU weight init properties hold for dense net."""
         starting_weight = copy.deepcopy(dense_unit._kernel.weight)
-        std = round(math.sqrt(1. / 10), 1)
+        fan_in = dense_unit.in_features
+        std = round(math.sqrt(1. / fan_in), 1)
 
         dense_unit.weight_init = selu_weight_init_
         dense_unit._init_weights()
-        new_weight = copy.deepcopy(dense_unit._kernel.weight)
+        new_weight = dense_unit._kernel.weight
         assert (torch.equal(starting_weight, new_weight) is False)
         assert pytest.approx(round(new_weight.std().item(), 1), 0.1) == std
         assert (int(new_weight.mean().item()) == 0.0)
@@ -94,10 +95,11 @@ class TestSeluInit:
     def test_conv_selu_weight_change(self, conv_unit):
         """Confirm SELU weight init properties hold for conv net."""
         starting_weight = copy.deepcopy(conv_unit._kernel.weight)
-        std = round(math.sqrt(1. / 250), 1)
+        fan_in = conv_unit._kernel.in_channels * conv_unit._kernel.kernel_size[0] * conv_unit._kernel.kernel_size[1]
+        std = round(math.sqrt(1. / fan_in), 1)
         conv_unit.weight_init = selu_weight_init_
         conv_unit._init_weights()
-        new_weight = copy.deepcopy(conv_unit._kernel.weight)
+        new_weight = conv_unit._kernel.weight
         assert (torch.equal(starting_weight, new_weight) is False)
         assert pytest.approx(round(new_weight.std().item(), 1), 0.1) == std
         assert (int(new_weight.mean().item()) == 0)
@@ -108,7 +110,7 @@ class TestSeluInit:
 
         dense_unit.bias_init = selu_bias_init_
         dense_unit._init_bias()
-        new_bias = copy.deepcopy(dense_unit._kernel.bias)
+        new_bias = dense_unit._kernel.bias
         assert (torch.equal(starting_bias, new_bias) is False)
         assert (round(new_bias.std().item(), 1) == 0.0)
         assert (int(new_bias.mean().item()) == 0)
@@ -119,7 +121,7 @@ class TestSeluInit:
 
         conv_unit.bias_init = selu_bias_init_
         conv_unit._init_bias()
-        new_bias = copy.deepcopy(conv_unit._kernel.bias)
+        new_bias = conv_unit._kernel.bias
         assert (torch.equal(starting_bias, new_bias) is False)
         assert (round(new_bias.std().item(), 1) == 0.0)
         assert (int(new_bias.mean().item()) == 0)
@@ -171,12 +173,13 @@ class TestSeluInitTrain:
 
     def test_selu_trained_dense(self, dnn_class):
         """Confirm SELU weight and bias properties hold for a dense net."""
-        std = round(math.sqrt(1. / 200), 1)
+        fan_in = dnn_class.in_dim[0]
+        std = round(math.sqrt(1. / fan_in), 1)
         test_input = torch.ones([10, *dnn_class.in_dim]).float()
         test_target = torch.LongTensor([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
         test_dataloader = DataLoader(TensorDataset(test_input, test_target))
         dnn_class.fit(test_dataloader, test_dataloader, 5)
-        trained = copy.deepcopy(dnn_class.network.dense_0._kernel)
+        trained = dnn_class.network.dense_0._kernel
         assert (round(trained.weight.std().item(), 1) == std)
         assert (int(trained.weight.mean().item()) == 0.0)
         assert (round(trained.bias.std().item(), 1) == 0.0)
@@ -184,12 +187,13 @@ class TestSeluInitTrain:
 
     def test_selu_trained_conv(self, cnn_class):
         """Confirm SELU weight and bias properties hold for a conv net."""
-        std = round(math.sqrt(1. / 25), 1)
+        fan_in = cnn_class.network.conv_0.in_channels * cnn_class.network.conv_0.kernel_size[0] * cnn_class.network.conv_0.kernel_size[1]
+        std = round(math.sqrt(1. / fan_in), 1)
         test_input = torch.ones([10, *cnn_class.in_dim]).float()
         test_target = torch.LongTensor([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
         test_dataloader = DataLoader(TensorDataset(test_input, test_target))
         cnn_class.fit(test_dataloader, test_dataloader, 5)
-        trained = copy.copy(cnn_class.network.conv_0._kernel)
+        trained = cnn_class.network.conv_0._kernel
         assert (round(trained.weight.std().item(), 1) == std)
         assert (int(trained.weight.mean().item()) == 0.0)
         assert (round(trained.bias.std().item(), 1) == 0.0)
