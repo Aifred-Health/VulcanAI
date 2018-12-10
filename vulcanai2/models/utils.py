@@ -1,10 +1,12 @@
 """Define utilities for all networks."""
 from math import ceil, floor
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
 import numpy as np
+import math
 from sklearn.metrics import confusion_matrix
 from sklearn.preprocessing import LabelBinarizer
 from collections import OrderedDict as odict
@@ -57,6 +59,7 @@ def get_one_hot(in_matrix):
     lb = LabelBinarizer()
     return np.array(lb.fit_transform(custom_array), dtype='float32')
 
+
 def pad(tensor, padded_shape):
     """
     Pad incoming tensor to the size of padded_shape.
@@ -93,6 +96,7 @@ def pad(tensor, padded_shape):
         padding_needed.append(dim_zero_padding)
         padding_needed.append(dim_one_padding)
     return F.pad(tensor, padding_needed)
+
 
 def network_summary(network, input_size=None):
     """
@@ -174,11 +178,9 @@ def network_summary(network, input_size=None):
 
     return summary
 
+
 def print_model_structure(network, input_size=None):
-    """
-    Print the entire model structure.
-    
-    """
+    """Print the entire model structure."""
     shapes = network_summary(network)
     for k, v in shapes.items():
         print('{}:'.format(k))
@@ -186,22 +188,72 @@ def print_model_structure(network, input_size=None):
             for k2, v2 in v.items():
                 print('\t {}: {}'.format(k2, v2))
 
+
+def selu_weight_init_(tensor, mean=0.0):
+    """
+    SELU layer weight initialization function.
+
+    Function assigned to variable that will be called within
+    _init_weights function to assign weights for selu.
+
+    Parameters
+    ----------
+    tensor :  torch.tensor
+        Weight tensor to be adjusted
+    mean : float
+        Mean value for the normal distribution
+
+    Returns
+    -------
+    torch.tensor
+        weight tensor with normal distribution
+
+    """
+    with torch.no_grad():
+        fan_in, _ = nn.init._calculate_fan_in_and_fan_out(tensor)
+        std = math.sqrt(1. / fan_in)
+        return nn.init.normal_(tensor, mean, std)
+
+
+def selu_bias_init_(tensor, const=0.0):
+    """
+    SELU layer bias initialization function.
+
+    Function assigned to variable that will be called within
+    _init_bias function to assign bias for selu.
+
+    Parameters
+    ----------
+    tensor : torch.tensor
+        Bias tensor to be adjusted
+    const : float
+        Constant value to be assigned to tensor.
+
+    Returns
+    -------
+    torch.tensor
+        bias tensor with constant values.
+
+    """
+    with torch.no_grad():
+        return nn.init.constant_(tensor, const)
+
+
 def set_tensor_device(data, device=None):
     """
-    Helper function to convert list of data to
-    relevant device
+    Convert list of data tensors to specified device.
 
     Parameters
     ----------
     data : torch.tensor or list
-        data to be converted to the relevant device.
+        data to be converted to the specified device.
     device : str or torch.device
         the desired device
 
     Returns
     -------
     data : torch.tensor or list
-        data converted to the relevant device
+        data converted to the specified device
 
     """
     if not isinstance(data, (list, tuple)):
@@ -211,15 +263,15 @@ def set_tensor_device(data, device=None):
             data[idx] = set_tensor_device(d, device=device)
     return data
 
+
 def master_device_setter(network, device=None):
     """
-    Helper function to convert the network and its 
-    input_networks to the relevant device.
+    Convert network and input_networks to specified device.
 
     Parameters
     ----------
     network : BaseNetwork
-        network to be converted to the relevant device.
+        network to be converted to the specified device.
     device : str or torch.device
         the desired device
 
