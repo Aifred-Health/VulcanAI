@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 from . import utils as utils
 import logging
+from collections import ChainMap
 from itertools import groupby
 from sklearn import preprocessing
 
@@ -38,9 +39,23 @@ class TabularDataset(Dataset):
         index_list: list of strings
             List of columns to make the index of the dataframe
         na_values: The values to convert to NaN when reading from csv
-        dataset_dict: keyword parameter, value is either path or dataframe
-            Where key: dataset name and value is either a path to a file
-            or a dataframe. Provided dataframes will be deepcopied.
+        dataset_dict: keyword parameter, value is dataframe
+            pandas dataframe assigned to keyword argument that produces a dictionary variable..
+
+        :Example:
+
+        >>> df_test_one: pd.DataFrame({'A': ['A0', 'A1', 'A2', 'A3'],
+                                   'B': ['B0', 'B1', 'B2', 'B3'],
+                                   'C': ['C0', 'C1', 'C2', 'C3'],
+                                   'D': ['D0', 'D1', 'D2', 'D3']},
+                                   index=[0, 1, 2, 3]),
+
+        >>> df_test_two: pd.DataFrame({'A': ['A4', 'A5', 'A6', 'A7'],
+                                    'B': ['B4', 'B5', 'B6', 'B7'],
+                                    'C': ['C4', 'C5', 'C6', 'C7'],
+                                    'D': ['D4', 'D5', 'D6', 'D7']},
+                                    index=[4, 5, 6, 7])}
+        >>> tab_dataset_var = TabularDataset(merge_on_columns=['A'], index_list=['A'], df1=df_test_one, df2=df_test_two)
         """
         for dataset_name in dataset_dict:
             dataset_value = dataset_dict[dataset_name]
@@ -110,7 +125,7 @@ class TabularDataset(Dataset):
             return xs
 
     def merge_dataframe(self, merge_on_columns=None,
-                        index_list=None, na_values=None, dataset_dict=None):
+                        index_list=None, na_values=None, **dataset_dict):
         """
         Merges additional data into a TabularDataset isntance
 
@@ -122,9 +137,8 @@ class TabularDataset(Dataset):
         index_list: list of strings
             List of columns to make the index of the dataframe
         na_values: The values to convert to NaN when reading from csv
-        kwargs: keyword parameter, value is either path or dataframe
-            Where key: dataset name and value is either a path to a file
-            or a dataframe. This parameter should only contain new dataframes.
+        kwargs: keyword parameter, value is dataframe
+            pandas dataframe assigned to keyword argument that produces a dictionary variable.
         """
         for dataset in dataset_dict:
             v = dataset_dict[dataset]
@@ -138,21 +152,24 @@ class TabularDataset(Dataset):
                                  or DataFrame objects")
 
         if len(dataset_dict) == 1:
-            self.df = utils.stitch_datasets(df_dict=dataset_dict, df_main=self.df,
+            df = dataset_dict[sorted(dataset_dict)[0]]
+            self.df = utils.stitch_datasets(df_main=self.df,
                                             merge_on_columns=merge_on_columns,
-                                            index_list=index_list)
+                                            index_list=index_list, new_df=df)
         else:
+            # ChainMap allows us to send a dictionary as keyword arguments.
+            # This is useful for when we have a large number of dataframes to merge.
+            new_dfs = ChainMap(dataset_dict)
             if not self.df.empty:
-                self.df = utils.stitch_datasets(df_dict=dataset_dict,
-                                                df_main=self.df,
+                self.df = utils.stitch_datasets(df_main=self.df,
                                                 merge_on_columns=
                                                 merge_on_columns,
-                                                index_list=index_list)
+                                                index_list=index_list,
+                                                **new_dfs)
             else:
-                self.df = utils.stitch_datasets(df_dict=dataset_dict,
-                                                merge_on_columns=
-                                                merge_on_columns,
-                                                index_list=index_list)
+                self.df = utils.stitch_datasets(merge_on_columns=merge_on_columns,
+                                                index_list=index_list,
+                                                **new_dfs)
 
         logger.info(f"Successfully merged {len(dataset_dict)} datasets")
 

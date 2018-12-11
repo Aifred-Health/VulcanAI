@@ -139,8 +139,8 @@ def check_split_ratio(split_ratio):
 #             return random.sample(data, len(data))
 
 
-def stitch_datasets(df_dict, df_main=None, merge_on_columns=None,
-                    index_list=None):
+def stitch_datasets(df_main=None, merge_on_columns=None,
+                    index_list=None, **dataset_dict):
     """
     Function to produce a single dataset from multiple.
 
@@ -154,7 +154,8 @@ def stitch_datasets(df_dict, df_main=None, merge_on_columns=None,
         (default None)
     index_list: list of strings
         columns to establish as index for final stitched dataset (default None)
-
+    kwargs : keyword parameter, value is dataframe
+        pandas dataframe assigned to keyword argument that produces a dictionary variable.
     Returns
     -------
     merged_df : dataframe
@@ -162,33 +163,30 @@ def stitch_datasets(df_dict, df_main=None, merge_on_columns=None,
 
     :Example:
 
-    >>> dct_dfs = {'df_test_one': pd.DataFrame({'A': ['A0', 'A1', 'A2', 'A3'],
-                                                'B': ['B0', 'B1', 'B2', 'B3'],
-                                                'C': ['C0', 'C1', 'C2', 'C3'],
-                                                'D': ['D0', 'D1', 'D2', 'D3']},
-                                               index=[0, 1, 2, 3]),
+    >>> df_test_one: pd.DataFrame({'A': ['A0', 'A1', 'A2', 'A3'],
+                                   'B': ['B0', 'B1', 'B2', 'B3'],
+                                   'C': ['C0', 'C1', 'C2', 'C3'],
+                                   'D': ['D0', 'D1', 'D2', 'D3']},
+                                   index=[0, 1, 2, 3]),
 
-                    'df_test_two': pd.DataFrame({
-                                                'A': ['A4', 'A5', 'A6', 'A7'],
-                                                'B': ['B4', 'B5', 'B6', 'B7'],
-                                                'C': ['C4', 'C5', 'C6', 'C7'],
-                                                'D': ['D4', 'D5', 'D6', 'D7']},
-                                               index=[4, 5, 6, 7])}
-    >>> df_stitched = stitch_datasets(dct_dfs, merge_on_columns=['A'],
-    index_list=['A'])
+     >>> df_test_two: pd.DataFrame({'A': ['A4', 'A5', 'A6', 'A7'],
+                                    'B': ['B4', 'B5', 'B6', 'B7'],
+                                    'C': ['C4', 'C5', 'C6', 'C7'],
+                                    'D': ['D4', 'D5', 'D6', 'D7']},
+                                    index=[4, 5, 6, 7])}
+    >>> df_stitched = stitch_datasets(merge_on_columns=['A'], index_list=['A'], df1=df_test_one, df2=df_test_two)
     """
-
     # Get name of a dataframe to extract
     if df_main is not None:
         merged_df = copy.deepcopy(df_main)
     else:
-        first_column = list(df_dict)[0]
-        merged_df = df_dict.pop(first_column)
+        first_column = list(dataset_dict)[0]
+        merged_df = dataset_dict.pop(first_column)
         merged_df = merged_df.apply(pd.to_numeric, errors='ignore')
 
-    for key in list(df_dict):
+    for key in list(dataset_dict):
         logger.info('Combining: {}'.format(key))
-        df_two = df_dict.pop(key)
+        df_two = dataset_dict.pop(key)
         merged_df = pd.concat([merged_df, df_two], sort=False)
 
     if merge_on_columns is not None:
