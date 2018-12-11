@@ -18,6 +18,7 @@ from tqdm import tqdm, trange
 from datetime import datetime
 import logging
 import os
+from os import environ
 import pickle
 import numpy as np
 
@@ -591,9 +592,13 @@ class BaseNetwork(nn.Module):
                 self.record['validation_accuracy'].append(valid_acc)
 
                 if plot:
-                    plt.ion()
-                    plt.figure(fig_number)
-                    display_record(record=self.record)
+                    if os.environ.get("DISPLAY"):
+                        plt.ion()
+                        plt.figure(fig_number)
+                        display_record(record=self.record)
+                    else:
+                        raise RuntimeError("No display environment not found. Display environment needed to plot.")
+
                 self.epoch += 1
 
         except KeyboardInterrupt:
