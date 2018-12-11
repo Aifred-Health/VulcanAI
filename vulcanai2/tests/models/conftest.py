@@ -182,11 +182,12 @@ def multi_input_cnn_add_input_network(conv1D_net, conv2D_net,
     net = ConvNet(
         name='multi_input_cnn_add_input_network',
         num_classes=10,
-        in_dim=conv3D_net.out_dim,
+        in_dim=(64, 8, 8, 8),
+        #in_dim=(4, 8, 8, 8), # TODO: Needs fix when giving a randon in_dim
         config={
             'conv_units': [
                 dict(
-                    in_channels=conv3D_net.out_dim[0],
+                    in_channels=1,
                     out_channels=16,
                     kernel_size=(3, 3, 3),
                     stride=2,
