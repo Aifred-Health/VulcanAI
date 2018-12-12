@@ -154,7 +154,7 @@ def stitch_datasets(df_main=None, merge_on_columns=None,
         (default None)
     index_list: list of strings
         columns to establish as index for final stitched dataset (default None)
-    kwargs : keyword parameter, value is dataframe
+    dataset_dict : keyword parameter, value is dataframe
         pandas dataframe assigned to keyword argument that produces a dictionary variable.
     Returns
     -------
