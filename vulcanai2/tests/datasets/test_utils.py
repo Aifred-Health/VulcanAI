@@ -38,6 +38,7 @@ class TestStitchDataset:
                                                 'state': ['CA', 'WA', 'OR', 'AZ']},
                                                index=[0, 1, 2, 3])}
         return dct_dfs
+
     @pytest.fixture
     def my_test_dataset_four(self):
         dct_dfs = {'df_test_one': pd.DataFrame({'name': ['Jane', 'John', 'Jesse', 'Jane'],
@@ -62,7 +63,7 @@ class TestStitchDataset:
                                           'D': ['D0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7']},
                                          index=[0, 1, 2, 3, 4, 5, 6, 7])
 
-        stitch_dataset_results = stitch_datasets(my_test_dataset_one, merge_on_columns=None)
+        stitch_dataset_results = stitch_datasets(merge_on_columns=None, **my_test_dataset_one)
         pd.testing.assert_frame_equal(stitch_dataset_results, df_no_moc_results)
 
     def test_single_merge_on_columns(self, my_test_dataset_two):
@@ -70,7 +71,7 @@ class TestStitchDataset:
                                               'age': [23, 25, 26],
                                               'state': ['CA', 'WA', 'OR']},
                                              index=[0, 1, 2])
-        stitch_dataset_results = stitch_datasets(my_test_dataset_two, merge_on_columns=['name'])
+        stitch_dataset_results = stitch_datasets(merge_on_columns=['name'], **my_test_dataset_two)
 
         # Assert_frame_equal checks order of columns; therefore, sort_index by columns when checking. If dataframes are
         # same, they should sort the same way.
@@ -83,7 +84,7 @@ class TestStitchDataset:
                                               'dob': ['09-18-1995', '10-18-1993', '06-18-1992', '05-23-1995'],
                                               'state': ['CA', 'WA', 'OR', 'AZ']},
                                              index=[0, 1, 2, 6])
-        stitch_dataset_results = stitch_datasets(my_test_dataset_three, merge_on_columns=['name', 'dob'])
+        stitch_dataset_results = stitch_datasets(merge_on_columns=['name', 'dob'], **my_test_dataset_three)
 
         # Assert_frame_equal checks order of columns; therefore, sort_index by columns when checking. If dataframes are
         # same, they should sort the same way.
@@ -100,7 +101,7 @@ class TestStitchDataset:
                                              'visit_location': ['HI', 'HI', 'HI', 'HI', 'CA', 'AZ']},
                                             index=[0, 1, 2, 3, 4, 5])
 
-        stitch_dataset_results = stitch_datasets(my_test_dataset_four, merge_on_columns=['name', 'dob', 'visit_date'])
+        stitch_dataset_results = stitch_datasets(merge_on_columns=['name', 'dob', 'visit_date'], **my_test_dataset_four)
 
         # Assert_frame_equal checks order of columns; therefore, sort_index by columns when checking. If dataframes are
         # same, they should sort the same way.

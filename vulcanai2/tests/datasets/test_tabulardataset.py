@@ -33,7 +33,7 @@ class TestTabularDataset:
 
     def test_merge_dataframe(self, my_test_dataset, my_test_dataset_two, my_merged_test_dataset):
         dct_df = {'df_test_two': my_test_dataset_two}
-        my_test_dataset.merge_dataframe(merge_on_columns=['id'], na_values='Nan', dataset_dict=dct_df)
+        my_test_dataset.merge_dataframe(merge_on_columns=['id'], na_values='Nan', **dct_df)
         pd.testing.assert_frame_equal(my_test_dataset.df, my_merged_test_dataset, check_dtype=False)
 
     def test_single_dataset_length(self, my_test_dataset):
