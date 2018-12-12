@@ -4,7 +4,7 @@ import pytest
 
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader, Subset, TensorDataset
 
 from vulcanai2.models import BaseNetwork
 from vulcanai2.models.cnn import ConvNet, ConvNetConfig
@@ -127,3 +127,14 @@ class TestConvNet:
         for params in conv3D_net.network.parameters():
             assert params.requires_grad is True
 
+    def test_fit_multi_input(self, multi_input_cnn,
+                             multi_input_cnn_data):
+        """Test for fit function"""
+        test_train = Subset(multi_input_cnn_data, 
+                            range(len(multi_input_cnn_data)//2))
+        test_val = Subset(multi_input_cnn_data, 
+                          range(len(multi_input_cnn_data)//2, 
+                                    len(multi_input_cnn_data)))
+        test_train_loader = DataLoader(test_train, batch_size=2)
+        test_val_loader = DataLoader(test_val, batch_size=2)
+        multi_input_cnn.fit(test_train_loader, test_val_loader, 1)
