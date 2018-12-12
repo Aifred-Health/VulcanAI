@@ -203,7 +203,7 @@ def stitch_datasets(df_main=None, merge_on_columns=None,
         df_groupOn = df_groupOn.dropna(subset=merge_on_columns, how='all')
         df_groupOn = df_groupOn.drop_duplicates(subset=merge_on_columns,
                                                 keep='first', inplace=False)
-        merged_df = copy.deepcopy(df_groupOn)
+        merged_df = df_groupOn
 
     if index_list is not None:
         merged_df = merged_df.set_index(index_list, inplace=False)

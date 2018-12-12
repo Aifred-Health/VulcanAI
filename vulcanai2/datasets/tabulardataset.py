@@ -38,8 +38,9 @@ class TabularDataset(Dataset):
         index_list: list of strings
             List of columns to make the index of the dataframe
         na_values: The values to convert to NaN when reading from csv
-        dataset_dict: keyword parameter, value is dataframe
-            pandas dataframe assigned to keyword argument that produces a dictionary variable..
+        dataset_dict: keyword parameter, value is dataframe or path string
+            pandas dataframe assigned to keyword argument that produces a
+            dictionary variable.
 
         :Example:
 
@@ -54,7 +55,8 @@ class TabularDataset(Dataset):
                                     'C': ['C4', 'C5', 'C6', 'C7'],
                                     'D': ['D4', 'D5', 'D6', 'D7']},
                                     index=[4, 5, 6, 7])}
-        >>> tab_dataset_var = TabularDataset(merge_on_columns=['A'], index_list=['A'], df1=df_test_one, df2=df_test_two)
+        >>> tab_dataset_var = TabularDataset(merge_on_columns=['A'],
+                            index_list=['A'], df1=df_test_one, df2=df_test_two)
         """
         for dataset_name in dataset_dict:
             dataset_value = dataset_dict[dataset_name]
@@ -69,8 +71,7 @@ class TabularDataset(Dataset):
 
         if len(dataset_dict) == 1:
             # TODO: do we want to do anything with this name?
-            df = dataset_dict[sorted(dataset_dict)[0]]
-            self.df = copy.deepcopy(df)
+            self.df = dataset_dict[sorted(dataset_dict)[0]]
         else:
             # Not using index list now because we set it before
             self.df = utils.stitch_datasets(dataset_dict, merge_on_columns,
@@ -119,7 +120,6 @@ class TabularDataset(Dataset):
             return xs, y
         else:
             xs = self.df.iloc[[2]].values.tolist()[0]
-            print(xs)
             xs = torch.tensor(xs, dtype=torch.float)
             return xs
 
@@ -136,8 +136,9 @@ class TabularDataset(Dataset):
         index_list: list of strings
             List of columns to make the index of the dataframe
         na_values: The values to convert to NaN when reading from csv
-        dataset_dict: keyword parameter, value is dataframe
-            pandas dataframe assigned to keyword argument that produces a dictionary variable.
+        dataset_dict: keyword parameter, value is dataframe or path string
+            pandas dataframe assigned to keyword argument that produces a
+            dictionary variable.
         """
         for dataset in dataset_dict:
             dict_value = dataset_dict[dataset]
@@ -163,9 +164,10 @@ class TabularDataset(Dataset):
                                                 index_list=index_list,
                                                 **dataset_dict)
             else:
-                self.df = utils.stitch_datasets(merge_on_columns=merge_on_columns,
-                                                index_list=index_list,
-                                                **dataset_dict)
+                self.df = utils.stitch_datasets(
+                    merge_on_columns=merge_on_columns,
+                    index_list=index_list,
+                    **dataset_dict)
 
         logger.info(f"Successfully merged {len(dataset_dict)} datasets")
 
@@ -376,7 +378,8 @@ class TabularDataset(Dataset):
 
         if threshold >= 1 or threshold <= 0:
             raise ValueError(
-                "Threshold needs to be a proportion between 0 and 1")
+                "Threshold needs to be a proportion between 0 and 1 \
+                (exclusive)")
         num_threshold = (threshold * len(self))
         # thresh is "Require that many non-NA values."
         tmp = self.df.dropna(thresh=num_threshold, axis=1)
@@ -525,7 +528,7 @@ class TabularDataset(Dataset):
 
         Returns
         -------
-        datasets: Tuple
+        datasets: Tuple of TabularDatasets
             Datasets for train, validation, and
             test splits in that order, if the splits are provided.
 
