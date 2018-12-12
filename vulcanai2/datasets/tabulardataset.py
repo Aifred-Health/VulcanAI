@@ -121,7 +121,7 @@ class TabularDataset(Dataset):
         else:
             xs = self.df.iloc[[2]].values.tolist()[0]
             xs = torch.tensor(xs, dtype=torch.float)
-            return xs
+            return xs, None
 
     def merge_dataframe(self, merge_on_columns=None,
                         index_list=None, na_values=None, **dataset_dict):
