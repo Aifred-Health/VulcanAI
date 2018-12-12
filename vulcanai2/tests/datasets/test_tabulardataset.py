@@ -16,34 +16,23 @@ class TestTabularDataset:
     @pytest.fixture
     def my_test_dataset(self):
         """Create a dataset by importing from the test csv"""
-        if os.path.basename(os.path.normpath(os.getcwd())) == 'datasets':
-            return TabularDataset(
-                data="test_data/birthweight_reduced.csv",
-                label_column="id",
-                na_values='Nan'
-            )
-
-        elif os.path.basename(os.path.normpath(os.getcwd())) == 'tests':
-            return TabularDataset(
-                data="datasets/test_data/birthweight_reduced.csv",
-                label_column="id",
-                na_values='Nan'
-            )
+        fpath = str(os.path.dirname(__file__)) + "/test_data/birthweight_reduced.csv"
+        return TabularDataset(
+            data=fpath,
+            label_column="id",
+            na_values='Nan'
+        )
 
     @pytest.fixture
     def my_test_dataset_two(self):
         """Create a second dataset by importing from the test csv"""
-        if os.path.basename(os.path.normpath(os.getcwd())) == 'datasets':
-            return ("../../tests/datasets/test_data/birthweight_reduced2.csv")
-        elif os.path.basename(os.path.normpath(os.getcwd())) == 'tests':
-            return ("datasets/test_data/birthweight_reduced2.csv")
+        fpath = str(os.path.dirname(__file__)) + "/test_data/birthweight_reduced2.csv"
+        return (fpath)
 
     @pytest.fixture
     def my_merged_test_dataset(self):
-        if os.path.basename(os.path.normpath(os.getcwd())) == 'datasets':
-            return pd.read_csv("test_data/birthweight_reduced_merged.csv")
-        elif os.path.basename(os.path.normpath(os.getcwd())) == 'tests':
-            return pd.read_csv("datasets/test_data/birthweight_reduced_merged.csv")
+        fpath = str(os.path.dirname(__file__)) + "/test_data/birthweight_reduced_merged.csv"
+        return pd.read_csv(fpath)
 
     def test_merge_dataframe(self, my_test_dataset, my_test_dataset_two, my_merged_test_dataset):
         dct_df = {'df_test_two': my_test_dataset_two}
@@ -55,13 +44,10 @@ class TestTabularDataset:
         assert "id" in my_test_dataset.label_column
 
     def test_save_dataframe(self, my_test_dataset):
-        if os.path.basename(os.path.normpath(os.getcwd())) == 'datasets':
-            fname = "test_data/test_save.csv"
-        elif os.path.basename(os.path.normpath(os.getcwd())) == 'tests':
-            fname = "datasets/test_data/test_save.csv"
-        my_test_dataset.save_dataframe(fname)
-        assert os.path.isfile(fname)
-        os.remove(fname)
+        fpath = str(os.path.dirname(__file__)) + "/test_data/test_save.csv"
+        my_test_dataset.save_dataframe(fpath)
+        assert os.path.isfile(fpath)
+        os.remove(fpath)
 
     def test_list_columns(self, my_test_dataset):
         column_list = ["id", "headcirumference", "length", "Birthweight", "LowBirthWeight", "Gestation", "smoker", "motherage",
