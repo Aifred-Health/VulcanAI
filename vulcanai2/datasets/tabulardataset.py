@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 from . import utils as utils
 import logging
-from collections import ChainMap
 from itertools import groupby
 from sklearn import preprocessing
 
