@@ -302,28 +302,20 @@ class TabularDataset(Dataset):
 
     # if a use case presents itself column_name could easily become a list
     def reverse_create_one_hot_encoding(self, column_name=None,
-                                        reverse_all=False, prefix_sep="@"):
+                                        prefix_sep="@"):
         """
         Undo the creation of one-hot encodings, if prefix_sep was used
         to create one-hot encodings and nowhere else. If a column_name is
-        provided, only that column will be reverse-encoded, even if reverse_all
-        is set to true.
+        provided, only that column will be reverse-encoded, otherwise all will
+        be reverse-encoded.
         Parameters
         ----------
         column_name: String
             The name of the column to reverse the one-hot encoding for
-        reverse_all: Boolean
-            Whether to reverse all columns containing the prefix
         prefix_sep: String default("@")
             The prefix used when creating a one-hot encodin
         """
         result_series = {}
-
-        # this is really just to check that the user really wants to
-        # reverse all
-        if not column_name and not reverse_all:
-            raise ValueError("You must provide a True value for either of \
-                             column_name or reverse_all")
 
         if column_name:
             if prefix_sep in column_name:
