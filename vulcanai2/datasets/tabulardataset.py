@@ -11,6 +11,7 @@ from . import utils as utils
 import logging
 from itertools import groupby
 from sklearn import preprocessing
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +83,26 @@ class TabularDataset(Dataset):
 
         self.df = utils.clean_dataframe(self.df)
 
+        self.seed_value = int(time.time())
+
+        self.random_seeding(self.seed_value)
+
         logger.info(f"You have created a new dataset with {len(self)} rows")
+
+        logger.info(f"The random seed was set to a value of {self.seed_value}")
+
+    def random_seeding(self, seed_value):
+        """
+        Initializes the random state using the seed_value
+        Parameters
+        ----------
+        seed_value Int
+            The seed value
+
+        """
+        np.random.seed(seed_value)  # cpu vars
+        torch.manual_seed(seed_value)  # cpu  vars
+        torch.cuda.manual_seed_all(seed_value)  # gpu vars
 
     def __len__(self):
         """
@@ -531,7 +551,6 @@ class TabularDataset(Dataset):
         train_ratio, test_ratio, validation_ratio = utils.check_split_ratio(
             split_ratio)
 
-        np.random.seed(random_state)
         perm = np.random.permutation(self.df.index)
         m = len(self.df.index)
 
