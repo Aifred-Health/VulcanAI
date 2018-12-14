@@ -9,7 +9,8 @@ import errno
 import torch
 import codecs
 import torchvision.transforms as transforms
-
+import urllib
+import io
 
 # FROM https://raw.githubusercontent.com/mayurbhangale/fashion-mnist-pytorch/master/fashion.py
 class FashionData(data.Dataset):
@@ -52,8 +53,8 @@ class FashionData(data.Dataset):
             self.download()
 
         if not self._check_exists():
-            raise RuntimeError('Dataset not found.' +
-                               ' You can use download=True to download it')
+            print("downloading")
+            self.download()
 
         if self.train:
             self.train_data, self.train_labels = torch.load(
@@ -116,12 +117,14 @@ class FashionData(data.Dataset):
 
         for url in self.urls:
             print('Downloading ' + url)
+            response = urllib.request.urlopen(url)
+            #compressed_file = io.BytesIO(response.read())
             filename = url.rpartition('/')[2]
             file_path = os.path.join(self.root, self.raw_folder, filename)
             with open(file_path.replace('.gz', ''), 'wb') as out_f, \
-                    gzip.GzipFile(file_path) as zip_f:
+                    gzip.GzipFile(fileobj=response) as zip_f:
                 out_f.write(zip_f.read())
-            os.unlink(file_path)
+            #os.unlink(file_path)
 
         # process and save as torch files
         print('Processing...')
