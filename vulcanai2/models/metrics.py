@@ -464,7 +464,7 @@ class Metrics(object):
 
         return all_class_auc
 
-    def run_test(self, network, data_loader, figure_path=None, plot=False):
+    def run_test(self, network, data_loader, save_path=None, plot=False):
         """
         Will conduct the test suite to determine network strength.
 
@@ -472,7 +472,7 @@ class Metrics(object):
         ----------
         data_loader : DataLoader
             A DataLoader object to run the test with.
-        figure_path : string
+        save_path : string
             Folder to place images in.
         plot: bool
             Determine if graphs should be plotted in real time.
@@ -502,7 +502,7 @@ class Metrics(object):
 
         cm = skl_metrics.confusion_matrix(targets, predictions)
         if plot:
-            display_confusion_matrix(cm)
+            display_confusion_matrix(cm, save_path=save_path)
 
         tp, tn, fp, fn = Metrics.get_confusion_matrix_values(targets,
                                                              predictions)
@@ -583,7 +583,7 @@ class Metrics(object):
     # TODO: include support
     def cross_validate(self, network, data_loader, k, epochs,
                        average_results=True, retain_graph=None,
-                       valid_interv=4, plot=False, figure_path=None):
+                       valid_interv=4, plot=False, save_path=None):
         """
         Perform k-fold cross validation given a Network and DataLoader object.
 
@@ -606,7 +606,7 @@ class Metrics(object):
             Specifies after how many epochs validation should occur.
         plot : boolean
             Whether or not to plot all results in prompt and charts.
-        figure_path : str
+        save_path : str
             Where to save all figures and results.
 
         Returns
@@ -664,11 +664,11 @@ class Metrics(object):
                 cross_val_network.fit(
                     train_loader, val_loader, epochs,
                     retain_graph=retain_graph,
-                    valid_interv=valid_interv, plot=plot)
+                    valid_interv=valid_interv, plot=plot, save_path=save_path)
                 # Validate network performance on validation data loader.
                 results = self.run_test(
                     cross_val_network, val_loader,
-                    figure_path=figure_path, plot=plot)
+                    save_path=save_path, plot=plot)
 
                 logger.info(results)
                 for m in results:

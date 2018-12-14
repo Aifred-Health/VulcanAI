@@ -527,7 +527,7 @@ class BaseNetwork(nn.Module):
                     incompatible_collector))
 
     def fit(self, train_loader, val_loader, epochs,
-            retain_graph=None, valid_interv=4, plot=False):
+            retain_graph=None, valid_interv=4, plot=False, save_path=None):
         """
         Train the network on the provided data.
 
@@ -545,6 +545,8 @@ class BaseNetwork(nn.Module):
             Specifies the period of epochs before validation calculation.
         plot : boolean
             Whether or not to plot training metrics in real-time.
+        save_path : str
+            Path to save graphics at
 
         Returns
         -------
@@ -564,6 +566,11 @@ class BaseNetwork(nn.Module):
                 fig_number = plt.gcf().number + 1 if plt.fignum_exists(1) else 1
                 plt.show()
 
+            if save_path:
+                time = str(datetime.now())
+                time = time.replace(" ", '_')
+                time = time.split('.')[0]
+                save_path = save_path + '/' + str(self.name) + '_' + time
             for epoch in trange(epochs, desc='Epoch: '):
 
                 train_loss, train_acc = self._train_epoch(train_loader,
@@ -592,12 +599,11 @@ class BaseNetwork(nn.Module):
                 self.record['validation_accuracy'].append(valid_acc)
 
                 if plot:
-                    if os.environ.get("DISPLAY"):
-                        plt.ion()
-                        plt.figure(fig_number)
-                        display_record(record=self.record)
-                    else:
-                        raise RuntimeError("No display environment not found. Display environment needed to plot.")
+                    plt.ion()
+                    plt.figure(fig_number)
+                    display_record(record=self.record, save_path=save_path)
+
+
 
                 self.epoch += 1
 
@@ -629,7 +635,6 @@ class BaseNetwork(nn.Module):
         pbar = trange(len(train_loader.dataset), desc='Training.. ')
 
         for data, targets in train_loader:
-
             data = set_tensor_device(data, device=self.device)
             targets = set_tensor_device(targets, device=self.device)
 
@@ -706,17 +711,17 @@ class BaseNetwork(nn.Module):
 
         return validation_loss, validation_accuracy
 
-    def run_test(self, data_loader, figure_path=None, plot=False):
+    def run_test(self, data_loader, plot=False, save_path=None):
         """Will conduct the test suite to determine model strength."""
         return self.metrics.run_test(
             network=self,
             data_loader=data_loader,
-            figure_path=figure_path,
+            save_path=save_path,
             plot=plot)
 
     def cross_validate(self, data_loader, k, epochs,
                        average_results=True, retain_graph=None,
-                       valid_interv=4, plot=False, figure_path=None):
+                       valid_interv=4, plot=False, save_path=None):
         """Will conduct the test suite to determine model strength."""
         # TODO: deal with repeated default parameters
         return self.metrics.cross_validate(
@@ -728,7 +733,7 @@ class BaseNetwork(nn.Module):
             retain_graph=retain_graph,
             valid_interv=valid_interv,
             plot=plot,
-            figure_path=figure_path)
+            save_path=save_path)
 
     @torch.no_grad()
     def forward_pass(self, data_loader, convert_to_class=False):

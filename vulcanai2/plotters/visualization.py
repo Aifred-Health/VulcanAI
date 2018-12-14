@@ -4,7 +4,7 @@ import os
 import numpy as np
 
 from math import sqrt, ceil, floor
-
+from datetime import datetime
 import pickle
 
 from .utils import GuidedBackprop, get_notable_indices
@@ -21,8 +21,16 @@ import itertools
 import logging
 logger = logging.getLogger(__name__)
 
+def assert_display_available():
+    if os.environ.get("DISPLAY"):
+        return True
+    else:
+        return False
 
-def display_record(record=None, load_path=None, interactive=True):
+def save_visualization(path=None):
+    plt.savefig(path)
+
+def display_record(record=None, load_path=None, save_path=None, interactive=True):
     """
     Display the training curve for a network training session.
 
@@ -32,6 +40,8 @@ def display_record(record=None, load_path=None, interactive=True):
         the network record dictionary for dynamic graphs during training.
     load_path : str
         (deprecated) Where records could be loaded from.
+    save_path : boolean
+        To save display during training
     interactive : boolean
         To display during training or afterwards.
 
@@ -40,6 +50,9 @@ def display_record(record=None, load_path=None, interactive=True):
     None
 
     """
+    if not assert_display_available() and save_path is None:
+        raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
+
     title = 'Training curve'
     if load_path is not None:
         with open(load_path) as in_file:
@@ -98,19 +111,27 @@ def display_record(record=None, load_path=None, interactive=True):
         plt.draw()
         plt.pause(1e-17)
 
+    if save_path:
+        save_path = save_path + '_train.png'
+        save_visualization(save_path)
 
-def display_pca(input_data, targets, label_map=None):
+
+def display_pca(input_data, targets, label_map=None, save_path=None):
     """Calculate pca reduction and plot it."""
+    if not assert_display_available() and save_path is None:
+        raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
+
     pca = PCA(n_components=2, random_state=0)
     x_transform = pca.fit_transform(input_data)
     _plot_reduction(
         x_transform,
         targets,
         label_map=label_map,
-        title='PCA Visualization')
+        title='PCA Visualization',
+        save_path=save_path)
 
 
-def display_tsne(input_data, targets, label_map=None):
+def display_tsne(input_data, targets, label_map=None, save_path=None):
     """
     t-distributed Stochastic Neighbor Embedding (t-SNE) visualization [1].
 
@@ -125,19 +146,35 @@ def display_tsne(input_data, targets, label_map=None):
         size (batch, labels) for samples.
     label_map : dict
         labelled {str(int), string} key, value pairs.
+    save_path : str
+        Path for graphic to be stored in
 
     """
+    if not assert_display_available() and save_path is None:
+        raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
+
     tsne = TSNE(n_components=2, random_state=0)
     x_transform = tsne.fit_transform(input_data)
     _plot_reduction(
         x_transform,
         targets,
         label_map=label_map,
-        title='t-SNE Visualization')
+        title='t-SNE Visualization',
+        save_path=save_path)
 
 
-def _plot_reduction(x_transform, targets, label_map, title):
+def _plot_reduction(x_transform, targets, label_map, title, save_path=None):
     """Once PCA and t-SNE has been calculated, this is used to plot."""
+    if not assert_display_available() and save_path is None:
+        raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
+
+    if save_path:
+        time = str(datetime.now())
+        time = time.replace(" ", '_')
+        time = time.split('.')[0]
+        save_path = save_path + '/' + title + '_' + time + '.png'
+        save_visualization(save_path)
+
     y_unique = np.unique(targets)
     if label_map is None:
         label_map = {str(i): str(i) for i in y_unique}
@@ -162,7 +199,7 @@ def _plot_reduction(x_transform, targets, label_map, title):
     plt.show(False)
 
 
-def display_confusion_matrix(cm, class_list=None):
+def display_confusion_matrix(cm, class_list=None, save_path=None):
     """
     Print and plot the confusion matrix.
 
@@ -176,6 +213,9 @@ def display_confusion_matrix(cm, class_list=None):
         Actual class labels (e.g.: MNIST - [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 
     """
+    if not assert_display_available() and save_path is None:
+        raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
+
     if class_list is None:
         class_list = list(range(cm.shape[0]))
     if not isinstance(class_list, list):
@@ -202,6 +242,13 @@ def display_confusion_matrix(cm, class_list=None):
     cax = divider.append_axes("right", size="4%", pad=0.03)
     plt.colorbar(im, cax=cax)
     plt.show(False)
+
+    if save_path:
+        time = str(datetime.now())
+        time = time.replace(" ", '_')
+        time = time.split('.')[0]
+        save_path = save_path + '/confusion_matrix' + '_' + time + '.png'
+        save_visualization(save_path)
 
 
 def compute_saliency_map(network, input_data, targets):
@@ -233,7 +280,7 @@ def compute_saliency_map(network, input_data, targets):
     return saliency_map
 
 
-def display_saliency_overlay(image, saliency_map, shape=(28, 28)):
+def display_saliency_overlay(image, saliency_map, shape=(28, 28), save_path=None):
     """
     Plot overlay saliency map over image.
 
@@ -247,6 +294,9 @@ def display_saliency_overlay(image, saliency_map, shape=(28, 28)):
         The dimensions of the image. Defaults to mnist.
 
     """
+    if not assert_display_available() and save_path is None:
+        raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
+
     # Handle different colour channels and shapes for image input
     if len(image.shape) == 3:
         if image.shape[0] == 1:
@@ -289,8 +339,15 @@ def display_saliency_overlay(image, saliency_map, shape=(28, 28)):
     plt.colorbar(im, cax=cax, format='%.0e')
     plt.show(False)
 
+    if save_path:
+        time = str(datetime.now())
+        time = time.replace(" ", '_')
+        time = time.split('.')[0]
+        save_path = save_path + '/saliency_map' + '_' + time + '.png'
+        save_visualization(save_path)
 
-def display_receptive_fields(network, top_k=5):
+
+def display_receptive_fields(network, top_k=5, save_path=None):
     """
     Display receptive fields of layers from a network [1].
 
@@ -310,6 +367,8 @@ def display_receptive_fields(network, top_k=5):
         A dict of the top k and bottom k important features.
 
     """
+    if not assert_display_available() and save_path is None:
+        raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
     if type(network).__name__ == "ConvNet":
         raise NotImplementedError
     elif '_input_network' in network._modules:
@@ -340,4 +399,12 @@ def display_receptive_fields(network, top_k=5):
         plt.imshow(np.resize(field, field_shape), cmap='Blues')
         plt.colorbar()
     plt.show(False)
+
+    if save_path:
+        time = str(datetime.now())
+        time = time.replace(" ", '_')
+        time = time.split('.')[0]
+        save_path = save_path + '/feature_importance' + '_' + time + '.png'
+        save_visualization(save_path)
+
     return feature_importance
