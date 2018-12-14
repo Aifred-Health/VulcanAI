@@ -2,11 +2,11 @@
 import numpy as np
 import pytest
 import copy
+import pickle
 
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Subset, TensorDataset
-from torch.autograd.gradcheck import gradcheck
 from torch.autograd import Variable
 
 from vulcanai2.models import BaseNetwork
@@ -17,6 +17,19 @@ from vulcanai2.models.utils import master_device_setter
 class TestConvNet:
     """Define ConvNet test class."""
     
+    @pytest.fixture(scope="module")
+    def multi_input_train_loader(self, multi_input_cnn_data):
+        test_train = Subset(multi_input_cnn_data, 
+                            range(len(multi_input_cnn_data)//2))
+        return DataLoader(test_train, batch_size=2) 
+
+    @pytest.fixture(scope="module")
+    def multi_input_test_loader(self, multi_input_cnn_data):
+        test_val = Subset(multi_input_cnn_data, 
+                          range(len(multi_input_cnn_data)//2, 
+                                    len(multi_input_cnn_data)))
+        return DataLoader(test_val, batch_size=2)  
+
     def test_init(self, conv1D_net):
         """Initialization Test of a ConvNet object"""
         assert isinstance(conv1D_net, BaseNetwork)
@@ -36,11 +49,11 @@ class TestConvNet:
         
         assert not hasattr(conv1D_net, 'metrics')
 
-    def test_mult_multi_input(self, multi_input_cnn):
+    def test_multi_multi_input(self, multi_input_cnn):
         """Test methods/functions wrt multi_input_cnn"""
         assert isinstance(multi_input_cnn.input_networks, nn.ModuleDict)
         assert len(list(multi_input_cnn.input_networks)) == 3
-        assert np.all(multi_input_cnn._get_max_incoming_spatial_dims() == (8, 8, 8))
+        assert all(multi_input_cnn._get_max_incoming_spatial_dims() == (8, 8, 8))
         assert multi_input_cnn._merge_input_network_outputs([
                                 torch.ones([10, 1, 28, 28]),
                                 torch.ones([10, 1, 28, 28, 28]),
@@ -131,27 +144,64 @@ class TestConvNet:
             assert params.requires_grad is True
 
     def test_fit_multi_input(self, multi_input_cnn,
-                             multi_input_cnn_data):
-        """Test for fit function"""
-        test_train = Subset(multi_input_cnn_data, 
-                            range(len(multi_input_cnn_data)//2))
-        test_val = Subset(multi_input_cnn_data, 
-                          range(len(multi_input_cnn_data)//2, 
-                                    len(multi_input_cnn_data)))
-        test_train_loader = DataLoader(test_train, batch_size=2)
-        test_val_loader = DataLoader(test_val, batch_size=2)     
-        
-        init_weights = copy.deepcopy(multi_input_cnn.network[0]._kernel.weight.data)
+                             multi_input_train_loader,
+                             multi_input_test_loader):
+        """Test for fit function"""        
+        init_weights = copy.deepcopy(multi_input_cnn.network[0]._kernel.weight.detach())
         multi_input_cnn_no_fit = copy.deepcopy(multi_input_cnn)
         try:
-            multi_input_cnn.fit(test_train_loader, test_val_loader, 2)
+            multi_input_cnn.fit(multi_input_train_loader, 
+                                multi_input_test_loader, 2)
         except RuntimeError:
+            #TODO: Change to logger
             print("The network multi_input_cnn failed to train.")
         finally:
-            trained_weights = multi_input_cnn.network[0]._kernel.weight.data.cpu()
+            trained_weights = multi_input_cnn.network[0]._kernel.weight.detach().cpu()
             
             # Sanity check if the network parameters are training
             assert (torch.equal(init_weights.cpu(), trained_weights.cpu()) is False)
             assert (torch.equal(list(multi_input_cnn.state_dict().values())[0],
                                 list(multi_input_cnn_no_fit.state_dict().values())[0])\
                                 is False)
+    
+    def test_params_multi_input(self, multi_input_cnn,
+                                multi_input_train_loader,
+                                multi_input_test_loader):
+        """Test for change in network params/specifications"""
+        
+        test_net1 = copy.deepcopy(multi_input_cnn)
+        test_net2 = pickle.loads(pickle.dumps(multi_input_cnn))
+        
+        # Check the parameters are copying properly
+        copy_params1 = [torch.allclose(param1, param2)
+                        for param1, param2 in zip(multi_input_cnn.parameters(),
+                                                  test_net1.parameters())]
+        copy_params2 = [torch.allclose(param1, param2)
+                        for param1, param2 in zip(multi_input_cnn.parameters(),
+                                                  test_net2.parameters())]
+        assert all(copy_params1)
+        assert all(copy_params2)
+
+        # Check the parameters change after copy and fit
+        test_net1.fit(multi_input_train_loader, 
+                      multi_input_test_loader, 2)
+        test_net2.fit(multi_input_train_loader, 
+                      multi_input_test_loader, 2)
+        close_params1 = [not torch.allclose(param1, param2)
+                        for param1, param2 in zip(multi_input_cnn.parameters(),
+                                                  test_net1.parameters())]
+        close_params2 = [not torch.allclose(param1, param2)
+                        for param1, param2 in zip(multi_input_cnn.parameters(),
+                                                  test_net2.parameters())]
+        assert all(close_params1)
+        assert all(close_params2)
+
+        # Check the network params and optimizer params point to
+        # the same memory
+        if test_net1._net_spec_initialzed is True:
+            assert isinstance(test_net1.optim, torch.optim.Adam)
+            assert isinstance(test_net1.criterion, torch.nn.CrossEntropyLoss)
+            for param, opt_param in zip(test_net1.parameters(),
+                                        test_net1.optim.param_groups[0]['params']):
+                assert param is opt_param
+        

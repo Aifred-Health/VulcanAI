@@ -102,7 +102,6 @@ class BaseNetwork(nn.Module):
 
         self._num_classes = num_classes
 
-        self._optim_spec = optim_spec
         self._lr_scheduler = lr_scheduler
         self._early_stopping = early_stopping
 
@@ -141,7 +140,11 @@ class BaseNetwork(nn.Module):
         self.out_dim = self._get_out_dim()
 
         self.device = device
+        self._optim_spec = optim_spec
         self._criter_spec = criter_spec
+        self.optim = None
+        self.criterion = None
+        self._net_spec_initialzed = False
 
     def add_input_network(self, in_network):
         """
@@ -489,6 +492,7 @@ class BaseNetwork(nn.Module):
         return criterion_spec
 
     def _init_trainer(self):
+        self._net_spec_initialzed = True
         self.optim = self._init_optimizer(self._optim_spec)
         # TODO: Use logger to describe if the optimizer is changed.
         self.criterion = self._init_criterion(self._criter_spec)
