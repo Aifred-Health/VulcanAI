@@ -205,3 +205,13 @@ class TestConvNet:
                                         test_net1.optim.param_groups[0]['params']):
                 assert param is opt_param
         
+        # Check the params after saving loaading
+        test_net2.save_model()
+        save_path = test_net2.save_path
+        loaded_test_net2 = BaseNetwork.load_model(load_path=save_path)
+        # Warning: Repeated run of this test will resulting dumping
+        # the saved model into the storage
+        load_params = [torch.allclose(param1, param2)
+                        for param1, param2 in zip(test_net2.parameters(),
+                                                  loaded_test_net2.parameters())]
+        assert all(load_params)
