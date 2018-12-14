@@ -1,10 +1,13 @@
 """Test all ConvNet capabilities."""
 import numpy as np
 import pytest
+import copy
 
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Subset, TensorDataset
+from torch.autograd.gradcheck import gradcheck
+from torch.autograd import Variable
 
 from vulcanai2.models import BaseNetwork
 from vulcanai2.models.cnn import ConvNet, ConvNetConfig
@@ -136,5 +139,19 @@ class TestConvNet:
                           range(len(multi_input_cnn_data)//2, 
                                     len(multi_input_cnn_data)))
         test_train_loader = DataLoader(test_train, batch_size=2)
-        test_val_loader = DataLoader(test_val, batch_size=2)
-        multi_input_cnn.fit(test_train_loader, test_val_loader, 1)
+        test_val_loader = DataLoader(test_val, batch_size=2)     
+        
+        init_weights = copy.deepcopy(multi_input_cnn.network[0]._kernel.weight.data)
+        multi_input_cnn_no_fit = copy.deepcopy(multi_input_cnn)
+        try:
+            multi_input_cnn.fit(test_train_loader, test_val_loader, 2)
+        except RuntimeError:
+            print("The network multi_input_cnn failed to train.")
+        finally:
+            trained_weights = multi_input_cnn.network[0]._kernel.weight.data.cpu()
+            
+            # Sanity check if the network parameters are training
+            assert (torch.equal(init_weights.cpu(), trained_weights.cpu()) is False)
+            assert (torch.equal(list(multi_input_cnn.state_dict().values())[0],
+                                list(multi_input_cnn_no_fit.state_dict().values())[0])\
+                                is False)
