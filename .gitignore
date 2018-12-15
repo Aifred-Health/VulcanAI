@@ -6,7 +6,6 @@
 data
 runs
 examples/saved_models
-vulcanai2/tests/models/saved_models/
 
 /*.egg-info
 *.png

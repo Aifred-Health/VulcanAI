@@ -144,7 +144,6 @@ class BaseNetwork(nn.Module):
         self._criter_spec = criter_spec
         self.optim = None
         self.criterion = None
-        self._net_spec_initialzed = False
 
     def add_input_network(self, in_network):
         """

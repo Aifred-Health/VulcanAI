@@ -3,6 +3,9 @@ import numpy as np
 import pytest
 import copy
 import pickle
+import logging
+import os
+import shutil
 
 import torch
 import torch.nn as nn
@@ -13,6 +16,7 @@ from vulcanai2.models import BaseNetwork
 from vulcanai2.models.cnn import ConvNet, ConvNetConfig
 from vulcanai2.models.utils import master_device_setter
 
+logger = logging.getLogger(__name__)
 
 class TestConvNet:
     """Define ConvNet test class."""
@@ -149,20 +153,22 @@ class TestConvNet:
         """Test for fit function"""        
         init_weights = copy.deepcopy(multi_input_cnn.network[0]._kernel.weight.detach())
         multi_input_cnn_no_fit = copy.deepcopy(multi_input_cnn)
+        parameters1 = multi_input_cnn_no_fit.parameters()
         try:
             multi_input_cnn.fit(multi_input_train_loader, 
                                 multi_input_test_loader, 2)
         except RuntimeError:
-            #TODO: Change to logger
-            print("The network multi_input_cnn failed to train.")
+            logger.error("The network multi_input_cnn failed to train.")
         finally:
+            parameters2 = multi_input_cnn.parameters()
             trained_weights = multi_input_cnn.network[0]._kernel.weight.detach().cpu()
             
             # Sanity check if the network parameters are training
             assert (torch.equal(init_weights.cpu(), trained_weights.cpu()) is False)
-            assert (torch.equal(list(multi_input_cnn.state_dict().values())[0],
-                                list(multi_input_cnn_no_fit.state_dict().values())[0])\
-                                is False)
+            compare_params = [not torch.allclose(param1, param2)
+                        for param1, param2 in zip(parameters1,
+                                                  parameters2)]
+            assert all(compare_params)
     
     def test_params_multi_input(self, multi_input_cnn,
                                 multi_input_train_loader,
@@ -198,7 +204,7 @@ class TestConvNet:
 
         # Check the network params and optimizer params point to
         # the same memory
-        if test_net1._net_spec_initialzed is True:
+        if test_net1.optim:
             assert isinstance(test_net1.optim, torch.optim.Adam)
             assert isinstance(test_net1.criterion, torch.nn.CrossEntropyLoss)
             for param, opt_param in zip(test_net1.parameters(),
@@ -208,10 +214,10 @@ class TestConvNet:
         # Check the params after saving loaading
         test_net2.save_model()
         save_path = test_net2.save_path
+        abs_save_path = os.path.dirname(os.path.abspath(save_path))
         loaded_test_net2 = BaseNetwork.load_model(load_path=save_path)
-        # Warning: Repeated run of this test will resulting dumping
-        # the saved model into the storage
         load_params = [torch.allclose(param1, param2)
                         for param1, param2 in zip(test_net2.parameters(),
                                                   loaded_test_net2.parameters())]
+        shutil.rmtree(abs_save_path)
         assert all(load_params)
