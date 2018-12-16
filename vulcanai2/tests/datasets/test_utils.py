@@ -107,6 +107,3 @@ class TestStitchDataset:
         # same, they should sort the same way.
         pd.testing.assert_frame_equal(stitch_dataset_results.sort_index(axis=1), df_three_moc_results.sort_index(axis=1),
                                       check_dtype=False)
-
-if __name__ == '__main__':
-    unittest.main()
