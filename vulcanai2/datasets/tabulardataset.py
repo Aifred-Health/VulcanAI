@@ -85,13 +85,13 @@ class TabularDataset(Dataset):
 
         self.seed_value = int(time.time())
 
-        self.random_seeding(self.seed_value)
+        self.set_global_random_seed(self.seed_value)
 
         logger.info(f"You have created a new dataset with {len(self)} rows")
 
         logger.info(f"The random seed was set to a value of {self.seed_value}")
 
-    def random_seeding(self, seed_value):
+    def set_global_random_seed(self, seed_value):
         """
         Initializes the random state using the seed_value
         Parameters
