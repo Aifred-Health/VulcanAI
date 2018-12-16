@@ -53,7 +53,7 @@ class TestConvNet:
         assert not hasattr(conv1D_net, 'metrics')
 
     def test_function_multi_input(self, multi_input_cnn):
-        """Test methods/functions wrt multi_input_cnn"""
+        """Test functions wrt multi_input_cnn"""
         assert isinstance(multi_input_cnn.input_networks, nn.ModuleDict)
         assert len(list(multi_input_cnn.input_networks)) == 3
         assert all(multi_input_cnn._get_max_incoming_spatial_dims() == (8, 8, 8))
@@ -108,7 +108,7 @@ class TestConvNet:
             convert_to_class=False)
         assert np.any(~np.isnan(output))
 
-    def test_forward_pass_not_nan(self, conv3D_net_class):
+    def test_forward_pass_class_not_nan(self, conv3D_net_class):
         """Confirm out is non nan."""
         test_input = torch.ones([1, *conv3D_net_class.in_dim])
         test_dataloader = DataLoader(TensorDataset(test_input, test_input))
