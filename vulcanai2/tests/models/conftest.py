@@ -116,6 +116,31 @@ def conv3D_net_class():
     )
 
 @pytest.fixture(scope="module")
+def dnn_noclass():
+    """DenseNet fixture."""
+    return DenseNet(
+        name='Test_DenseNet_class',
+        in_dim=(200),
+        config={
+            'dense_units': [100, 50],
+            'dropout': [0.3, 0.5],
+        }
+    )
+
+@pytest.fixture(scope="module")
+def dnn_class():
+    """DenseNet with prediction layer."""
+    return DenseNet(
+        name='Test_DenseNet_class',
+        in_dim=(200),
+        config={
+            'dense_units': [100, 50],
+            'dropout': 0.5,
+        },
+        num_classes=3
+    )
+
+@pytest.fixture(scope="module")
 def multi_input_dnn(conv1D_net, conv2D_net):
     """Dense network fixture with two inputs."""
     return DenseNet(
@@ -151,6 +176,7 @@ def multi_input_cnn(conv2D_net, conv3D_net, multi_input_dnn):
         },
         device='cpu'
     )
+
 @pytest.fixture(scope="module")
 def multi_input_dnn_data(conv1D_net, conv2D_net,
                          multi_input_dnn):

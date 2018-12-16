@@ -1,6 +1,6 @@
 """Test all ConvNet capabilities."""
-import numpy as np
 import pytest
+import numpy as np
 import copy
 import pickle
 import logging
@@ -10,7 +10,6 @@ import shutil
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Subset, TensorDataset
-from torch.autograd import Variable
 
 from vulcanai2.models import BaseNetwork
 from vulcanai2.models.cnn import ConvNet, ConvNetConfig
@@ -46,14 +45,14 @@ class TestConvNet:
         assert conv1D_net._name is not None
         assert isinstance(conv1D_net._config, ConvNetConfig)
 
-        assert conv1D_net.input_networks == None
+        assert conv1D_net.input_networks is None
         assert conv1D_net.epoch == 0
-        assert conv1D_net.optim == None
-        assert conv1D_net.criterion == None
+        assert conv1D_net.optim is None
+        assert conv1D_net.criterion is None
         
         assert not hasattr(conv1D_net, 'metrics')
 
-    def test_multi_multi_input(self, multi_input_cnn):
+    def test_function_multi_input(self, multi_input_cnn):
         """Test methods/functions wrt multi_input_cnn"""
         assert isinstance(multi_input_cnn.input_networks, nn.ModuleDict)
         assert len(list(multi_input_cnn.input_networks)) == 3
