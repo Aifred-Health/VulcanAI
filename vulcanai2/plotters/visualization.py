@@ -28,7 +28,10 @@ def assert_display_available():
         return False
 
 def save_visualization(path=None):
-    plt.savefig(path)
+    if not assert_display_available() and save_path is None:
+        raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
+    else:
+        plt.savefig(path)
 
 def display_record(record=None, load_path=None, save_path=None, interactive=True):
     """
@@ -50,9 +53,6 @@ def display_record(record=None, load_path=None, save_path=None, interactive=True
     None
 
     """
-    if not assert_display_available() and save_path is None:
-        raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
-
     title = 'Training curve'
     if load_path is not None:
         with open(load_path) as in_file:
@@ -118,9 +118,6 @@ def display_record(record=None, load_path=None, save_path=None, interactive=True
 
 def display_pca(input_data, targets, label_map=None, save_path=None):
     """Calculate pca reduction and plot it."""
-    if not assert_display_available() and save_path is None:
-        raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
-
     pca = PCA(n_components=2, random_state=0)
     x_transform = pca.fit_transform(input_data)
     _plot_reduction(
@@ -150,9 +147,6 @@ def display_tsne(input_data, targets, label_map=None, save_path=None):
         Path for graphic to be stored in
 
     """
-    if not assert_display_available() and save_path is None:
-        raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
-
     tsne = TSNE(n_components=2, random_state=0)
     x_transform = tsne.fit_transform(input_data)
     _plot_reduction(
@@ -165,9 +159,6 @@ def display_tsne(input_data, targets, label_map=None, save_path=None):
 
 def _plot_reduction(x_transform, targets, label_map, title, save_path=None):
     """Once PCA and t-SNE has been calculated, this is used to plot."""
-    if not assert_display_available() and save_path is None:
-        raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
-
     if save_path:
         time = str(datetime.now())
         time = time.replace(" ", '_')
@@ -213,9 +204,6 @@ def display_confusion_matrix(cm, class_list=None, save_path=None):
         Actual class labels (e.g.: MNIST - [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 
     """
-    if not assert_display_available() and save_path is None:
-        raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
-
     if class_list is None:
         class_list = list(range(cm.shape[0]))
     if not isinstance(class_list, list):
@@ -294,9 +282,6 @@ def display_saliency_overlay(image, saliency_map, shape=(28, 28), save_path=None
         The dimensions of the image. Defaults to mnist.
 
     """
-    if not assert_display_available() and save_path is None:
-        raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
-
     # Handle different colour channels and shapes for image input
     if len(image.shape) == 3:
         if image.shape[0] == 1:
@@ -367,8 +352,6 @@ def display_receptive_fields(network, top_k=5, save_path=None):
         A dict of the top k and bottom k important features.
 
     """
-    if not assert_display_available() and save_path is None:
-        raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
     if type(network).__name__ == "ConvNet":
         raise NotImplementedError
     elif '_input_network' in network._modules:
