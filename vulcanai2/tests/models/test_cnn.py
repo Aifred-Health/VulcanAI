@@ -53,7 +53,7 @@ class TestConvNet:
 
         assert not hasattr(conv1D_net, 'metrics')
 
-    def test_function_multi_input(self, multi_input_cnn):
+    def test_function_multi_input(self, conv1D_net, multi_input_cnn):
         """Test functions wrt multi_input_cnn"""
         assert isinstance(multi_input_cnn.input_networks, nn.ModuleDict)
         assert len(list(multi_input_cnn.input_networks)) == 3
@@ -64,6 +64,11 @@ class TestConvNet:
                                 torch.ones(10, *multi_input_cnn.\
                                 input_networks['multi_input_dnn'].out_dim)
                ]).shape == (10, 3, 8, 8, 8)
+        test_net = pickle.loads(pickle.dumps(multi_input_cnn))
+        test_net._add_input_network(conv1D_net)
+        assert len(list(test_net.input_networks)) == 4
+        assert 'conv1D_net' in test_net.input_networks
+        assert isinstance(test_net.input_networks['conv1D_net'], ConvNet)
     
     def test_forward(self, conv1D_net):
         """Test Forward of ConvNet"""
@@ -81,30 +86,30 @@ class TestConvNet:
         out = multi_input_cnn(input_tensor)
         assert out.shape == (10, 10)
         inp = torch.ones([10, 1, 28], requires_grad=True)
-        for net in conv1D_net.network:
+        for l in conv1D_net.network:
             import pdb; pdb.set_trace()
-            if net._kernel:
+            if l._kernel:
                 import pdb; pdb.set_trace()
                 # Kernel
-                assert gradcheck(net._kernel.double(), (inp.double(),))
-                inp = net._kernel.double()(inp.double())
-            if net._activation:
+                assert gradcheck(l._kernel.double(), (inp.double(),))
+                inp = l._kernel.double()(inp.double())
+            if l._activation:
                 import pdb; pdb.set_trace()
                 # Activation
-                assert gradcheck(net._activation.double(), (inp.double(),))
-                inp = net._activation.double()(inp.double())
-            if net._pool:
+                assert gradcheck(l._activation.double(), (inp.double(),))
+                inp = l._activation.double()(inp.double())
+            if l._pool:
                 import pdb; pdb.set_trace()
                 # Pool
                 # TODO failing here: RuntimeError: Jacobian mismatch for output 0 with respect to input 0,
-                assert gradcheck(net._pool.double(), (inp.double(),))
-                inp = net._pool.double()(inp.double())
-            if net._dropout:
+                assert gradcheck(l._pool.double(), (inp.double(),))
+                inp = l._pool.double()(inp.double())
+            if l._dropout:
                 import pdb; pdb.set_trace()
                 # TODO failing here too assuming if Pool passes: RuntimeError: Jacobian mismatch for output 0 with respect to input 0,
                 # Dropout
-                assert gradcheck(net._dropout.double(), (inp.double(),))
-                inp = net._dropout.double()(inp.double())
+                assert gradcheck(l._dropout.double(), (inp.double(),))
+                inp = l._dropout.double()(inp.double())
 
     def test_forward_pass_not_nan(self, conv3D_net):
         """Confirm out is non nan."""
