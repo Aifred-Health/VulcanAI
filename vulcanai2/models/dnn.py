@@ -158,8 +158,6 @@ class DenseNet(BaseNetwork):
 
         if self._num_classes:
             self.network.add_module(
-                'flatten', FlattenUnit())
-            self.network.add_module(
                 'classify', DenseUnit(
                     in_features=self._get_out_dim()[0],
                     out_features=self._num_classes,

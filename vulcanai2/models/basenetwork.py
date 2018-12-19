@@ -96,13 +96,12 @@ class BaseNetwork(nn.Module):
         if input_networks:
             self.input_networks = nn.ModuleDict()
             for in_net in input_networks:
-                self.add_input_network(in_net)
+                self._add_input_network(in_net)
         else:
             self.input_networks = input_networks
 
         self._num_classes = num_classes
 
-        self._optim_spec = optim_spec
         self._lr_scheduler = lr_scheduler
         self._early_stopping = early_stopping
 
@@ -141,9 +140,12 @@ class BaseNetwork(nn.Module):
         self.out_dim = self._get_out_dim()
 
         self.device = device
+        self._optim_spec = optim_spec
         self._criter_spec = criter_spec
+        self.optim = None
+        self.criterion = None
 
-    def add_input_network(self, in_network):
+    def _add_input_network(self, in_network):
         """
         Add a new network to  an input for this network.
 
