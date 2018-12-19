@@ -157,10 +157,6 @@ class DenseNet(BaseNetwork):
         self.network = nn.Sequential(dense_layers)
 
         if self._num_classes:
-            if self.input_networks is not None and\
-                all(isinstance(net, DenseNet) for net in self.input_networks):
-                self.network.add_module(
-                    'flatten', FlattenUnit())
             self.network.add_module(
                 'classify', DenseUnit(
                     in_features=self._get_out_dim()[0],
