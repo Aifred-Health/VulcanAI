@@ -119,7 +119,7 @@ def conv3D_net_class():
 def dnn_noclass():
     """DenseNet fixture."""
     return DenseNet(
-        name='Test_DenseNet_class',
+        name='dnn_noclass',
         in_dim=(200),
         config={
             'dense_units': [100, 50],
@@ -131,7 +131,7 @@ def dnn_noclass():
 def dnn_class():
     """DenseNet with prediction layer."""
     return DenseNet(
-        name='Test_DenseNet_class',
+        name='dnn_class',
         in_dim=(200),
         config={
             'dense_units': [100, 50],
