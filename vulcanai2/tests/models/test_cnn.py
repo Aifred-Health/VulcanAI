@@ -64,15 +64,6 @@ class TestConvNet:
                                 torch.ones(10, *multi_input_cnn.\
                                 input_networks['multi_input_dnn'].out_dim)
                ]).shape == (10, 3, 8, 8, 8)
-
-    def test_add_input_network(self, multi_input_cnn_add_input_network,
-                               conv3D_net):
-        """Test add input Network functionality."""
-        assert isinstance(multi_input_cnn_add_input_network.input_networks,
-                          nn.ModuleDict)
-        assert multi_input_cnn_add_input_network\
-               .input_networks[conv3D_net.name] is conv3D_net
-        assert multi_input_cnn_add_input_network.in_dim == conv3D_net.out_dim
     
     def test_forward(self, conv1D_net):
         """Test Forward of ConvNet"""
@@ -114,15 +105,6 @@ class TestConvNet:
                 # Dropout
                 assert gradcheck(net._dropout.double(), (inp.double(),))
                 inp = net._dropout.double()(inp.double())
-
-    def test_forward_multi_input_cnn_add_input_network(self, 
-                                multi_input_cnn_add_input_network):
-        """Test Forward of Multi Input ConvNet where input_networks
-        added via add_input_network"""
-        out = multi_input_cnn_add_input_network([
-                            torch.ones([10, 1, 28, 28, 28])
-                        ])
-        assert out.shape == (10, 10)
 
     def test_forward_pass_not_nan(self, conv3D_net):
         """Confirm out is non nan."""
@@ -234,3 +216,5 @@ class TestConvNet:
                                                   loaded_test_net.parameters())]
         shutil.rmtree(abs_save_path)
         assert all(load_params)
+    
+    # TODO: Add a private function test for _add_input_network

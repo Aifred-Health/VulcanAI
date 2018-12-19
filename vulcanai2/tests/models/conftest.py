@@ -199,37 +199,3 @@ def multi_input_cnn_data(conv2D_net, conv3D_net, multi_input_dnn_data):
         (TensorDataset(torch.ones([10, *conv3D_net.in_dim])), True, False),
         multi_input_dnn_data
     ])
-
-@pytest.fixture(scope="module")
-def multi_input_cnn_add_input_network(conv1D_net, conv2D_net,
-                                      conv3D_net):
-    """Create ConvNet with input_network added via
-    _add_input_network and has a prediction layer."""
-    net = ConvNet(
-        name='multi_input_cnn_add_input_network',
-        num_classes=10,
-        in_dim=(64, 8, 8, 8),
-        #in_dim=(4, 8, 8, 8), # TODO: Needs fix when giving a randon in_dim
-        config={
-            'conv_units': [
-                dict(
-                    in_channels=1,
-                    out_channels=16,
-                    kernel_size=(3, 3, 3),
-                    stride=2,
-                    dropout=0.1
-                ),
-            ],
-        },
-        device='cpu'
-    )
-    net._add_input_network(conv3D_net)
-    return net
-
-# @pytest.fixture(scope="module")
-# def multi_input_dnn_add_input_network(multi_input_dnn, dnn_noclass):
-#     """Create ConvNet with input_network added via
-#     add_input_network and has a prediction layer."""
-#     net = multi_input_dnn
-#     net._add_input_network(dnn_noclass)
-#     return net
