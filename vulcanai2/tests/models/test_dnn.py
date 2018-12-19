@@ -133,7 +133,7 @@ class TestDenseNet:
 
     def test_add_input_network(self, dnn_noclass, dnn_class):
         """Test add input Network functionality."""
-        dnn_class.add_input_network(dnn_noclass)
+        dnn_class._add_input_network(dnn_noclass)
         assert dnn_class.input_networks[dnn_noclass.name] is dnn_noclass
         assert dnn_class.in_dim == dnn_noclass.out_dim
 
@@ -152,7 +152,7 @@ class TestDenseNet:
             logger.error("The network multi_input_dnn failed to train.")
         finally:
             parameters2 = multi_input_dnn.parameters()
-            trained_weights = multi_input_dnn.network[0]._kernel.weight.detach().cpu()
+            trained_weights = multi_input_dnn.network[0]._kernel.weight.detach()
             
             # Sanity check if the network parameters are training
             assert (torch.equal(init_weights.cpu(), trained_weights.cpu()) is False)

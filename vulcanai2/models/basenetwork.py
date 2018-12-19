@@ -96,7 +96,7 @@ class BaseNetwork(nn.Module):
         if input_networks:
             self.input_networks = nn.ModuleDict()
             for in_net in input_networks:
-                self.add_input_network(in_net)
+                self._add_input_network(in_net)
         else:
             self.input_networks = input_networks
 
@@ -145,7 +145,7 @@ class BaseNetwork(nn.Module):
         self.optim = None
         self.criterion = None
 
-    def add_input_network(self, in_network):
+    def _add_input_network(self, in_network):
         """
         Add a new network to  an input for this network.
 
