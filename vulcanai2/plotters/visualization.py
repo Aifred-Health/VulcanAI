@@ -27,11 +27,11 @@ def assert_display_available():
     else:
         return False
 
-def save_visualization(path=None):
+def save_visualization(plot=plt, path=None):
     if not assert_display_available() and save_path is None:
         raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
     else:
-        plt.savefig(path)
+        plot.savefig(path)
 
 def display_record(record=None, load_path=None, save_path=None, interactive=True):
     """
@@ -113,7 +113,7 @@ def display_record(record=None, load_path=None, save_path=None, interactive=True
 
     if save_path:
         save_path = save_path + '_train.png'
-        save_visualization(save_path)
+        save_visualization(plt, save_path)
 
 
 def display_pca(input_data, targets, label_map=None, save_path=None):
@@ -164,7 +164,7 @@ def _plot_reduction(x_transform, targets, label_map, title, save_path=None):
         time = time.replace(" ", '_')
         time = time.split('.')[0]
         save_path = save_path + '/' + title + '_' + time + '.png'
-        save_visualization(save_path)
+        save_visualization(plt, save_path)
 
     y_unique = np.unique(targets)
     if label_map is None:
@@ -236,7 +236,7 @@ def display_confusion_matrix(cm, class_list=None, save_path=None):
         time = time.replace(" ", '_')
         time = time.split('.')[0]
         save_path = save_path + '/confusion_matrix' + '_' + time + '.png'
-        save_visualization(save_path)
+        save_visualization(plt, save_path)
 
 
 def compute_saliency_map(network, input_data, targets):
@@ -329,7 +329,7 @@ def display_saliency_overlay(image, saliency_map, shape=(28, 28), save_path=None
         time = time.replace(" ", '_')
         time = time.split('.')[0]
         save_path = save_path + '/saliency_map' + '_' + time + '.png'
-        save_visualization(save_path)
+        save_visualization(plt, save_path)
 
 
 def display_receptive_fields(network, top_k=5, save_path=None):
@@ -388,6 +388,6 @@ def display_receptive_fields(network, top_k=5, save_path=None):
         time = time.replace(" ", '_')
         time = time.split('.')[0]
         save_path = save_path + '/feature_importance' + '_' + time + '.png'
-        save_visualization(save_path)
+        save_visualization(plt, save_path)
 
     return feature_importance
