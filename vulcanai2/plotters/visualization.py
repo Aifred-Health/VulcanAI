@@ -37,7 +37,7 @@ def assert_display_available():
     else:
         return False
 
-def save_visualization(plot=plt, path=None):
+def save_visualization(plot, path=None):
     """
     Save plot at designated path
 
