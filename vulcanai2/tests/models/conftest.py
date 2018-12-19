@@ -178,6 +178,23 @@ def multi_input_cnn(conv2D_net, conv3D_net, multi_input_dnn):
     )
 
 @pytest.fixture(scope="module")
+def multi_input_dnn_class(conv1D_net, conv2D_net):
+    """Dense network fixture with two inputs."""
+    return DenseNet(
+        name='multi_input_dnn_class',
+        input_networks=[conv1D_net, conv2D_net],
+        num_classes=10,
+        config={
+            'dense_units': [100, 50],
+            'initializer': None,
+            'bias_init': None,
+            'norm': None,
+            'dropout': 0.5,  # Single value or List
+        },
+        device='cpu'
+    )
+
+@pytest.fixture(scope="module")
 def multi_input_dnn_data(conv1D_net, conv2D_net,
                          multi_input_dnn):
     return MultiDataset([
