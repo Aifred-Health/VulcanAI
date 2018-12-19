@@ -68,8 +68,8 @@ def display_record(record=None, load_path=None, save_path=None, interactive=True
         the network record dictionary for dynamic graphs during training.
     load_path : str
         (deprecated) Where records could be loaded from.
-    save_path : boolean
-        To save display during training
+    save_path : String
+        String that designates the path to save figure to be produced.
     interactive : boolean
         To display during training or afterwards.
 
@@ -168,8 +168,8 @@ def display_tsne(input_data, targets, label_map=None, save_path=None):
         size (batch, labels) for samples.
     label_map : dict
         labelled {str(int), string} key, value pairs.
-    save_path : str
-        Path for graphic to be stored in
+    save_path : String
+        String that designates the path to save figure to be produced.
 
     """
     tsne = TSNE(n_components=2, random_state=0)
@@ -227,6 +227,8 @@ def display_confusion_matrix(cm, class_list=None, save_path=None):
         2D confustion_matrix obtained using utils.get_confusion_matrix
     class_list : list
         Actual class labels (e.g.: MNIST - [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    save_path : String
+        String that designates the path to save figure to be produced.
 
     """
     if class_list is None:
@@ -305,6 +307,8 @@ def display_saliency_overlay(image, saliency_map, shape=(28, 28), save_path=None
         (1D, 2D, 3D) for single image or linear output.
     shape : tuple, list
         The dimensions of the image. Defaults to mnist.
+    save_path : String
+        String that designates the path to save figure to be produced.
 
     """
     # Handle different colour channels and shapes for image input
@@ -370,6 +374,8 @@ def display_receptive_fields(network, top_k=5, save_path=None):
         Network to get receptive fields of.
     top_k : int
         To return the most and least k important features from field
+    save_path : String
+        String that designates the path to save figure to be produced.
 
     Returns
     -------
