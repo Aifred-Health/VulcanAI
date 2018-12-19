@@ -22,12 +22,37 @@ import logging
 logger = logging.getLogger(__name__)
 
 def assert_display_available():
+    """
+    Check that display variable exists
+
+    Returns
+    -------
+    Boolean
+        True if display variable exists
+        False if display variable does not exist
+
+    """
     if os.environ.get("DISPLAY"):
         return True
     else:
         return False
 
 def save_visualization(plot=plt, path=None):
+    """
+    Save plot at designated path
+
+    Parameters
+    ----------
+    plot : matplotlib
+        Matplotlib variable with savefig ability.
+    path : string
+        String that designates the path to save the given figure to.
+
+    Returns
+    -------
+    None
+
+    """
     if not assert_display_available() and save_path is None:
         raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
     else:
