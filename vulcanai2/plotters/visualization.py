@@ -129,13 +129,13 @@ def display_record(record=None, load_path=None, save_path=None, interactive=True
                         validation_accuracy],
                loc=0)
 
-    if interactive is True:
-        plt.draw()
-        plt.pause(1e-17)
-
     if save_path:
         save_path = save_path + '_train.png'
         save_visualization(plt, save_path)
+
+    if interactive is True:
+        plt.draw()
+        plt.pause(1e-17)
 
 
 def display_pca(input_data, targets, label_map=None, save_path=None):
@@ -253,7 +253,6 @@ def display_confusion_matrix(cm, class_list=None, save_path=None):
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="4%", pad=0.03)
     plt.colorbar(im, cax=cax)
-    plt.show(False)
 
     if save_path:
         time = str(datetime.now())
@@ -262,6 +261,7 @@ def display_confusion_matrix(cm, class_list=None, save_path=None):
         save_path = save_path + '/confusion_matrix' + '_' + time + '.png'
         save_visualization(plt, save_path)
 
+    plt.show(False)
 
 def compute_saliency_map(network, input_data, targets):
     """
@@ -348,7 +348,6 @@ def display_saliency_overlay(image, saliency_map, shape=(28, 28), save_path=None
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="4%", pad=0.03)
     plt.colorbar(im, cax=cax, format='%.0e')
-    plt.show(False)
 
     if save_path:
         time = str(datetime.now())
@@ -357,6 +356,7 @@ def display_saliency_overlay(image, saliency_map, shape=(28, 28), save_path=None
         save_path = save_path + '/saliency_map' + '_' + time + '.png'
         save_visualization(plt, save_path)
 
+    plt.show(False)
 
 def display_receptive_fields(network, top_k=5, save_path=None):
     """
@@ -409,7 +409,6 @@ def display_receptive_fields(network, top_k=5, save_path=None):
         plt.title(layer_name)
         plt.imshow(np.resize(field, field_shape), cmap='Blues')
         plt.colorbar()
-    plt.show(False)
 
     if save_path:
         time = str(datetime.now())
@@ -417,5 +416,7 @@ def display_receptive_fields(network, top_k=5, save_path=None):
         time = time.split('.')[0]
         save_path = save_path + '/feature_importance' + '_' + time + '.png'
         save_visualization(plt, save_path)
+
+    plt.show(False)
 
     return feature_importance
