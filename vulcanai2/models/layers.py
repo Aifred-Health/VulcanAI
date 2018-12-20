@@ -2,6 +2,7 @@
 import torch
 import torch.nn as nn
 import logging
+from .utils import selu_bias_init_, selu_weight_init_
 logger = logging.getLogger(__name__)
 
 
@@ -11,8 +12,8 @@ class BaseUnit(nn.Sequential):
 
     Parameters
     ----------
-    initializer : torch.nn.init
-        Torch initialization function.
+    weight_init : torch.nn.init
+        Torch initialization function for weights.
     bias_init : int or float
         A constant int or float to initialize biases with.
     norm : str
@@ -27,12 +28,12 @@ class BaseUnit(nn.Sequential):
 
     """
 
-    def __init__(self, initializer=None, bias_init=None,
+    def __init__(self, weight_init=None, bias_init=None,
                  norm=None, dropout=None):
         """Initialize a base unit."""
         super(BaseUnit, self).__init__()
 
-        self.initializer = initializer
+        self.weight_init = weight_init
         self.bias_init = bias_init
         self.norm = norm
         self.dropout = dropout
@@ -43,27 +44,26 @@ class BaseUnit(nn.Sequential):
         self.out_bound_layers = []
 
         self._kernel = None
-        self.norm = norm
 
     def _init_weights(self):
         """
         Initialize the weights.
 
-        if self.initializer is None, then pytorch default weight
-        will be assigned to the kernel
+        If self.weight_init is None, then pytorch default weight
+        will be assigned to the kernel.
         """
-        if self.initializer:
-            self.initializer(self._kernel.weight)
+        if self.weight_init:
+            self.weight_init(self._kernel.weight)
 
     def _init_bias(self):
         """
         Initialize the bias.
 
-        if self.bias_init is None, then pytorch default bias
-        will be assigned to the kernel
+        If self.bias_init is None, then pytorch default bias
+        will be assigned to the kernel.
         """
         if self.bias_init:
-            nn.init.constant_(self._kernel.bias, self.bias_init)
+            self.bias_init(self._kernel.bias)
 
 
 class FlattenUnit(BaseUnit):
@@ -96,7 +96,7 @@ class DenseUnit(BaseUnit):
         The incoming feature size of a sample.
     out_features : int
         The number of hidden Linear units for this layer.
-    initializer : torch.nn.init
+    weight_init : torch.nn.init
         Torch initialization function.
     bias_init : int or float
         A constant int or float to initialize biases with.
@@ -115,14 +115,13 @@ class DenseUnit(BaseUnit):
     """
 
     def __init__(self, in_features, out_features,
-                 initializer=None, bias_init=None,
+                 weight_init=None, bias_init=None,
                  norm=None, activation=None, dropout=None):
         """Initialize a single DenseUnit (i.e. a dense layer)."""
-        super(DenseUnit, self).__init__(initializer, bias_init,
+        super(DenseUnit, self).__init__(weight_init, bias_init,
                                         norm, dropout)
         self.in_features = in_features
         self.out_features = out_features
-
         # Main layer
         self._kernel = nn.Linear(
                             in_features=self.in_features,
@@ -130,8 +129,6 @@ class DenseUnit(BaseUnit):
                             bias=True
                             )
         self.add_module('_kernel', self._kernel)
-        self._init_weights()
-        self._init_bias()
 
         # Norm
         if self.norm is not None:
@@ -147,6 +144,9 @@ class DenseUnit(BaseUnit):
         # Activation/Non-Linearity
         if activation is not None:
             self.add_module('_activation', activation)
+            if isinstance(activation, nn.SELU):
+                self.weight_init = selu_weight_init_
+                self.bias_init = selu_bias_init_
 
         # Dropout
         if self.dropout is not None:
@@ -156,6 +156,8 @@ class DenseUnit(BaseUnit):
             else:
                 self.add_module(
                     '_dropout', nn.Dropout(self.dropout))
+        self._init_weights()
+        self._init_bias()
 
 
 # TODO: Automatically calculate padding to be the same as input shape.
@@ -173,7 +175,7 @@ class ConvUnit(BaseUnit):
         The number of convolution kernels for this layer.
     kernel_size : int or tuple
         The size of the 1, 2, or 3 dimensional convolution kernel.
-    initializer : torch.nn.init
+    weight_init : torch.nn.init
         Torch initialization function.
     bias_init : int or float
         A constant int or float to initialize biases with.
@@ -198,11 +200,11 @@ class ConvUnit(BaseUnit):
     """
 
     def __init__(self, conv_dim, in_channels, out_channels, kernel_size,
-                 initializer=None, bias_init=None,
+                 weight_init=None, bias_init=None,
                  stride=1, padding=0, norm=None,
                  activation=None, pool_size=None, dropout=None):
         """Initialize a single ConvUnit (i.e. a conv layer)."""
-        super(ConvUnit, self).__init__(initializer, bias_init,
+        super(ConvUnit, self).__init__(weight_init, bias_init,
                                        norm, dropout)
         self.conv_dim = conv_dim
         self._init_layers()
@@ -221,11 +223,9 @@ class ConvUnit(BaseUnit):
                               bias=True
                               )
         self.add_module('_kernel', self._kernel)
-        self._init_weights()
-        self._init_bias()
 
         # Norm
-        if self.norm is not None:
+        if self.norm:
             if self.norm == 'batch':
                 self.add_module(
                     '_norm',
@@ -238,7 +238,9 @@ class ConvUnit(BaseUnit):
         # Activation/Non-Linearity
         if activation is not None:
             self.add_module('_activation', activation)
-
+            if isinstance(activation, nn.SELU):
+                self.weight_init = selu_weight_init_
+                self.bias_init = selu_bias_init_
         # Pool
         if pool_size is not None:
             self.add_module(
@@ -252,6 +254,8 @@ class ConvUnit(BaseUnit):
             else:
                 self.add_module(
                     '_dropout', self.dropout_layer(self.dropout))
+        self._init_weights()
+        self._init_bias()
 
     def _init_layers(self):
         if self.conv_dim == 1:

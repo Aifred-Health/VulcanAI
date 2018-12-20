@@ -1,23 +1,35 @@
 # -*- coding: utf-8 -*-
 """
-This file contains utility methods that many be useful to several dataset classes.
+This file contains utility methods that many be useful to several dataset
+classes.
 check_split_ration, stratify, rationed_split, randomshuffler
 were all copy-pasted from torchtext because torchtext is not yet packaged
 for anaconda and is therefore not yet a reasonable dependency.
 See https://github.com/pytorch/text/blob/master/torchtext/data/dataset.py
 """
 import pandas as pd
-import random
 import logging
 import copy
 
 logger = logging.getLogger(__name__)
 
 
+# TODO: implement
+def clean_dataframe(df):
+    """
+    Goes through and ensures that all nonsensical values are encoded as NaNs
+    :param df:
+    :return:
+    """
+
+    return df
+
+
 def check_split_ratio(split_ratio):
     """
     Check that the split ratio argument is not malformed
-    :param split_ratio: desired split ratio, either a list of length 2 or 3 depending if the validation set is desired.
+    :param split_ratio: desired split ratio, either a list of length 2 or 3
+    depending if the validation set is desired.
     :return: split ratio as tuple
     """
     valid_ratio = 0.
@@ -33,7 +45,8 @@ def check_split_ratio(split_ratio):
         # A list of relative ratios is provided
         length = len(split_ratio)
         assert length == 2 or length == 3, (
-            "Length of split ratio list should be 2 or 3, got {}".format(split_ratio))
+            "Length of split ratio list should be 2 or 3, got {}".format(
+                split_ratio))
 
         # Normalize if necessary
         ratio_sum = sum(split_ratio)
@@ -51,8 +64,10 @@ def check_split_ratio(split_ratio):
 #
 #     # The field has to be hashable otherwise this doesn't work
 #     # There's two iterations over the whole dataset here, which can be
-#     # reduced to just one if a dedicated method for stratified splitting is used
-#     unique_strata = set(getattr(example, strata_field) for example in examples)
+#     # reduced to just one if a dedicated method for stratified splitting is
+# used
+#     unique_strata = set(getattr(example, strata_field) for example in
+# examples)
 #     strata_maps = {s: [] for s in unique_strata}
 #     for example in examples:
 #         strata_maps[getattr(example, strata_field)].append(example)
@@ -92,7 +107,8 @@ def check_split_ratio(split_ratio):
 #     return data
 
 # class RandomShuffler(object):
-#     """Use random functions while keeping track of the random state to make it
+#     """Use random functions while keeping track of the random state to
+# make it
 #     reproducible and deterministic."""
 #
 #     def __init__(self, random_state=None):
@@ -123,44 +139,77 @@ def check_split_ratio(split_ratio):
 #             return random.sample(data, len(data))
 
 
-def stitch_datasets(df_list, merge_on_columns, index_list=None):
+def stitch_datasets(df_main=None, merge_on_columns=None,
+                    index_list=None, **dataset_dict):
     """
-    Args:
-    df_list: dictionary of dataframes to stitch together
-    on: key that specifies which features column to use in each dataset
-    to identify the specific examples of all datasets
-    index_list: list of feature columns to index on when stitching(default None)
+    Function to produce a single dataset from multiple.
 
-    Returns: concatenated dataframe
+    Parameters
+    ----------
+    df_dict : dictionary of dataframes to concatenated
+        dictionary {key = df name: value = dataframe} of dataframes to stitch
+        together.
+    merge_on_columns : list of strings
+        key(s) that specifies which columns to use to uniquely stitch dataset
+        (default None)
+    index_list: list of strings
+        columns to establish as index for final stitched dataset (default None)
+    dataset_dict : keyword parameter, value is dataframe
+        pandas dataframe assigned to keyword argument that produces a dictionary variable.
+    Returns
+    -------
+    merged_df : dataframe
+        concatenated dataframe
 
+    :Example:
+
+    >>> df_test_one: pd.DataFrame({'A': ['A0', 'A1', 'A2', 'A3'],
+                                   'B': ['B0', 'B1', 'B2', 'B3'],
+                                   'C': ['C0', 'C1', 'C2', 'C3'],
+                                   'D': ['D0', 'D1', 'D2', 'D3']},
+                                   index=[0, 1, 2, 3]),
+
+     >>> df_test_two: pd.DataFrame({'A': ['A4', 'A5', 'A6', 'A7'],
+                                    'B': ['B4', 'B5', 'B6', 'B7'],
+                                    'C': ['C4', 'C5', 'C6', 'C7'],
+                                    'D': ['D4', 'D5', 'D6', 'D7']},
+                                    index=[4, 5, 6, 7])}
+    >>> df_stitched = stitch_datasets(merge_on_columns=['A'], index_list=['A'], df1=df_test_one, df2=df_test_two)
     """
-    #Get name of a dataframe to extract
-    first_column = list(df_list)[0]
-    merged_df = df_list.pop(first_column)
-    merged_df = merged_df.apply(pd.to_numeric, errors='ignore')
-    for key in list(df_list):
+    # Get name of a dataframe to extract
+    if df_main is not None:
+        merged_df = copy.deepcopy(df_main)
+    else:
+        first_column = list(dataset_dict)[0]
+        merged_df = dataset_dict.pop(first_column)
+        merged_df = merged_df.apply(pd.to_numeric, errors='ignore')
+
+    for key in list(dataset_dict):
         logger.info('Combining: {}'.format(key))
-        df_two = df_list.pop(key)
-        merged_df = pd.concat([merged_df, df_two])
+        df_two = dataset_dict.pop(key)
+        merged_df = pd.concat([merged_df, df_two], sort=False)
 
     if merge_on_columns is not None:
-        # Group by keys, forward fill and backward fill missing data then remove duplicate keys
+        # Group by keys, forward fill and backward fill missing data
+        # then remove duplicate keys
         merged_df = merged_df.apply(pd.to_numeric, errors='ignore')
-        df_groupOn = merged_df.reset_index(drop=True).groupby(merge_on_columns).apply(
-            lambda x: x.bfill().ffill())
+        df_groupOn = merged_df.reset_index(drop=True).\
+            groupby(merge_on_columns).apply(lambda x: x.bfill().ffill())
         logger.info("\tDropping duplicates")
 
         #Drop rows where there are duplicates for the merged_on_columns.
-        # We first need to dropna based on merged since drop_duplicates ignores null/na values.
+        # We first need to dropna based on merged since drop_duplicates
+        # ignores null/na values.
         df_groupOn = df_groupOn.dropna(subset=merge_on_columns, how='all')
-        df_groupOn = df_groupOn.drop_duplicates(subset=merge_on_columns, keep='first', inplace=False)
-        merged_df = copy.deepcopy(df_groupOn)
+        df_groupOn = df_groupOn.drop_duplicates(subset=merge_on_columns,
+                                                keep='first', inplace=False)
+        merged_df = df_groupOn
 
     if index_list is not None:
         merged_df = merged_df.set_index(index_list, inplace=False)
 
-    logger.info("\nMerge Total columns = {totalCols}, rows = {totalRows} ".format(
+    logger.info("\nMerge Total columns = {totalCols}, rows = {totalRows} "
+        .format(
         totalCols=len(list(merged_df)),
         totalRows=len(merged_df)))
     return merged_df
-
