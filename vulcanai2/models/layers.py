@@ -43,7 +43,6 @@ class BaseUnit(nn.Sequential):
         self.out_bound_layers = []
 
         self._kernel = None
-        self.norm = norm
 
     def _init_weights(self):
         """
