@@ -48,6 +48,27 @@ class TestDenseUnit:
                               nn.ReLU, modules.dropout._DropoutNd))
             assert callable(unit[1])
     
+    @pytest.fixture
+    def test_denseunit_parameters(self):
+        """Create a dictionary with parameters that 
+        aren't DenseUnit parameters"""
+        return dict(
+                    in_channels=10,
+                    out_features=10,
+                    initializer=nn.init.xavier_uniform_,
+                    bias_init=0.1,
+                    norm='batch',
+                    activation=nn.ReLU(),
+                    dropout=0.5
+                )
+    
+    def test_create_denseunit(self, test_denseunit_parameters):
+        """Check if passing wrong parameters raises TypeError"""
+        with pytest.raises(TypeError) as e:
+            DenseUnit(**test_denseunit_parameters)
+            assert e.message == "__init__() got an unexpected \
+                                keyword argument 'in_channels'"
+  
     def test_forward(self, denseunit):
         """Confirm size is expected after forward."""
         test_input = torch.ones([10, denseunit.in_features])
@@ -70,6 +91,27 @@ class TestConvUnit:
             dropout=0.5
         )
 
+    @pytest.fixture
+    def test_convunit_parameters(self):
+        """Create a dictionary with parameters that 
+        aren't ConvUnit parameters"""
+        return dict(
+                    in_channels=10,
+                    out_features=10,
+                    initializer=nn.init.xavier_uniform_,
+                    bias_init=0.1,
+                    norm='batch',
+                    activation=nn.ReLU(),
+                    dropout=0.5
+                )
+    
+    def test_create_convunit(self, test_convunit_parameters):
+        """Check if passing wrong parameters raises TypeError"""
+        with pytest.raises(TypeError) as e:
+            DenseUnit(**test_convunit_parameters)
+            assert e.message == "__init__() got an unexpected \
+                                keyword argument 'out_features'"
+
     def test_init(self, convunit):
         """Initialization Test of a ConvUnit object"""
         assert hasattr(convunit, 'in_channels')
@@ -89,4 +131,3 @@ class TestConvUnit:
         output = convunit.forward(test_input)
         # No padding with 2 5x5 kernels leads from 28x28 -> 24x24
         assert output.shape == torch.ones([10, convunit.out_channels, 24, 24]).size()
-
