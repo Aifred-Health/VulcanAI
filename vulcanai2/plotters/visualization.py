@@ -32,10 +32,7 @@ def assert_display_available():
         False if display variable does not exist
 
     """
-    if os.environ.get("DISPLAY"):
-        return True
-    else:
-        return False
+    True if os.environ.get("DISPLAY") else False
 
 def save_visualization(plot, path=None):
     """
@@ -53,7 +50,7 @@ def save_visualization(plot, path=None):
     None
 
     """
-    if not assert_display_available() and save_path is None:
+    if not assert_display_available() and path is None:
         raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
     else:
         plot.savefig(path)
