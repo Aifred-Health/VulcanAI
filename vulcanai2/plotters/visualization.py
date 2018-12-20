@@ -55,6 +55,12 @@ def save_visualization(plot, path=None):
     else:
         plot.savefig(path)
 
+def get_time():
+    curr_time = str(datetime.now())
+    curr_time = curr_time.replace(" ", '_')
+    curr_time = curr_time.split('.')[0]
+    return curr_time
+
 def display_record(record=None, load_path=None, save_path=None, interactive=True):
     """
     Display the training curve for a network training session.
@@ -182,9 +188,7 @@ def display_tsne(input_data, targets, label_map=None, save_path=None):
 def _plot_reduction(x_transform, targets, label_map, title, save_path=None):
     """Once PCA and t-SNE has been calculated, this is used to plot."""
     if save_path:
-        time = str(datetime.now())
-        time = time.replace(" ", '_')
-        time = time.split('.')[0]
+        time = get_time()
         save_path = save_path + '/' + title + '_' + time + '.png'
         save_visualization(plt, save_path)
 
@@ -255,9 +259,7 @@ def display_confusion_matrix(cm, class_list=None, save_path=None):
     plt.colorbar(im, cax=cax)
 
     if save_path:
-        time = str(datetime.now())
-        time = time.replace(" ", '_')
-        time = time.split('.')[0]
+        time = get_time()
         save_path = save_path + '/confusion_matrix' + '_' + time + '.png'
         save_visualization(plt, save_path)
 
@@ -350,9 +352,7 @@ def display_saliency_overlay(image, saliency_map, shape=(28, 28), save_path=None
     plt.colorbar(im, cax=cax, format='%.0e')
 
     if save_path:
-        time = str(datetime.now())
-        time = time.replace(" ", '_')
-        time = time.split('.')[0]
+        time = get_time()
         save_path = save_path + '/saliency_map' + '_' + time + '.png'
         save_visualization(plt, save_path)
 
@@ -411,9 +411,7 @@ def display_receptive_fields(network, top_k=5, save_path=None):
         plt.colorbar()
 
     if save_path:
-        time = str(datetime.now())
-        time = time.replace(" ", '_')
-        time = time.split('.')[0]
+        time = get_time()
         save_path = save_path + '/feature_importance' + '_' + time + '.png'
         save_visualization(plt, save_path)
 
