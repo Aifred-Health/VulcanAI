@@ -170,7 +170,7 @@ class TestConvNet:
         # Check the parameters are copying properly
         copy_params = [torch.allclose(param1, param2)
                        for param1, param2 in zip(multi_input_cnn.parameters(),
-                                                  test_net.parameters())]
+                                                 test_net.parameters())]
         assert all(copy_params)
 
         # Check the parameters change after copy and fit

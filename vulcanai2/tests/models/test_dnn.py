@@ -14,24 +14,29 @@ from vulcanai2.models import BaseNetwork
 from vulcanai2.models.dnn import DenseNet, DenseNetConfig
 from vulcanai2.models.utils import master_device_setter
 
+logger = logging.getLogger(__name__)
+
+
 class TestDenseNet:
     """Define DenseNet test class."""
 
     @pytest.fixture
     def multi_input_dnn_train_loader(self, multi_input_dnn_data):
+        """Synthetic train data pytorch dataloader object."""
         test_train = Subset(multi_input_dnn_data, 
                             range(len(multi_input_dnn_data)//2))
         return DataLoader(test_train, batch_size=2) 
 
     @pytest.fixture
     def multi_input_dnn_test_loader(self, multi_input_dnn_data):
-        test_val = Subset(multi_input_dnn_data, 
+        """Synthetic test data pytorch dataloader object."""
+        test_val = Subset(multi_input_dnn_data,
                           range(len(multi_input_dnn_data)//2, 
-                                    len(multi_input_dnn_data)))
-        return DataLoader(test_val, batch_size=2)  
+                                len(multi_input_dnn_data)))
+        return DataLoader(test_val, batch_size=2)
 
     def test_init(self, dnn_noclass):
-        """Initialization Test of a DenseNet object"""
+        """Initialization Test of a DenseNet object."""
         assert isinstance(dnn_noclass, BaseNetwork)
         assert isinstance(dnn_noclass, nn.Module)
         assert hasattr(dnn_noclass, 'network')
@@ -44,33 +49,33 @@ class TestDenseNet:
 
         assert dnn_noclass.input_networks is None
         assert dnn_noclass.epoch == 0
-        assert dnn_noclass.optim == None
-        assert dnn_noclass.criterion == None
-        
+        assert dnn_noclass.optim is None
+        assert dnn_noclass.criterion is None
+
         assert not hasattr(dnn_noclass, 'metrics')
 
     def test_function_multi_input(self, dnn_noclass,
                                   multi_input_dnn):
-        """Test functions wrt multi_input_dnn"""
+        """Test functions wrt multi_input_dnn."""
         assert isinstance(multi_input_dnn.input_networks, nn.ModuleDict)
         assert len(list(multi_input_dnn.input_networks)) == 2
         assert multi_input_dnn._merge_input_network_outputs([
-                                torch.ones([10, 1, 28]),
-                                torch.ones([10, 1, 28, 28])
-               ]).shape == (10, 812)
+                torch.ones([10, 1, 28]),
+                torch.ones([10, 1, 28, 28])
+            ]).shape == (10, 812)
         test_net = pickle.loads(pickle.dumps(multi_input_dnn))
         test_net._add_input_network(dnn_noclass)
         assert len(list(test_net.input_networks)) == 3
         assert 'dnn_noclass' in test_net.input_networks
         assert isinstance(test_net.input_networks['dnn_noclass'], DenseNet)
-    
+
     def test_forward(self, dnn_class):
-        """Test Forward of DenseNet"""
+        """Test Forward of DenseNet."""
         out = dnn_class(torch.ones([10, *dnn_class.in_dim]))
         assert out.shape == (10, 3)
-    
+
     def test_forward_multi_input(self, multi_input_dnn):
-        """Test Forward of Multi Input ConvNet"""
+        """Test Forward of Multi Input ConvNet."""
         master_device_setter(multi_input_dnn, 'cpu')
         input_tensor = [torch.ones([10, 1, 28]),
                         torch.ones([10, 1, 28, 28])]
@@ -127,13 +132,17 @@ class TestDenseNet:
     def test_fit_multi_input(self, multi_input_dnn_class,
                              multi_input_dnn_train_loader,
                              multi_input_dnn_test_loader):
-        """Test for fit function"""        
-        init_weights = pickle.loads(pickle.dumps(multi_input_dnn_class.network[0]._kernel.weight.detach()))
-        multi_input_dnn_class_no_fit = pickle.loads(pickle.dumps(multi_input_dnn_class))
+        """Test for fit function."""
+        init_weights = pickle.loads(pickle.dumps(
+            multi_input_dnn_class.network[0]._kernel.weight.detach()))
+        multi_input_dnn_class_no_fit = pickle.loads(
+            pickle.dumps(multi_input_dnn_class))
         parameters1 = multi_input_dnn_class_no_fit.parameters()
         try:
-            multi_input_dnn_class.fit(multi_input_dnn_train_loader, 
-                                multi_input_dnn_test_loader, 2)
+            multi_input_dnn_class.fit(
+                multi_input_dnn_train_loader,
+                multi_input_dnn_test_loader,
+                2)
         except RuntimeError:
             logger.error("The network multi_input_dnn_class failed to train.")
         finally:
@@ -141,28 +150,28 @@ class TestDenseNet:
             trained_weights = multi_input_dnn_class.network[0]._kernel.weight.detach()
             
             # Sanity check if the network parameters are training
-            assert (torch.equal(init_weights.cpu(), trained_weights.cpu()) is False)
+            assert not (torch.equal(init_weights.cpu(), trained_weights.cpu()))
             compare_params = [not torch.allclose(param1, param2)
-                        for param1, param2 in zip(parameters1,
-                                                  parameters2)]
+                              for param1, param2 in zip(parameters1,
+                                                        parameters2)]
             assert all(compare_params)
 
     def test_params_multi_input(self, multi_input_dnn_class,
                                 multi_input_dnn_train_loader,
                                 multi_input_dnn_test_loader):
-        """Test for change in network params/specifications"""
-        
+        """Test for change in network params/specifications."""
         test_net = pickle.loads(pickle.dumps(multi_input_dnn_class))
-        
         # Check the parameters are copying properly
         copy_params = [torch.allclose(param1, param2)
-                        for param1, param2 in zip(multi_input_dnn_class.parameters(),
-                                                  test_net.parameters())]
+                       for param1, param2 in zip(multi_input_dnn_class.parameters(),
+                                                 test_net.parameters())]
         assert all(copy_params)
 
         # Check the parameters change after copy and fit
-        test_net.fit(multi_input_dnn_train_loader, 
-                      multi_input_dnn_test_loader, 2)
+        test_net.fit(
+            multi_input_dnn_train_loader,
+            multi_input_dnn_test_loader,
+            2)
         close_params = [not torch.allclose(param1, param2)
                         for param1, param2 in zip(multi_input_dnn_class.parameters(),
                                                   test_net.parameters())]
@@ -176,14 +185,14 @@ class TestDenseNet:
             for param, opt_param in zip(test_net.parameters(),
                                         test_net.optim.param_groups[0]['params']):
                 assert param is opt_param
-        
+
         # Check the params after saving loaading
         test_net.save_model()
         save_path = test_net.save_path
         abs_save_path = os.path.dirname(os.path.abspath(save_path))
         loaded_test_net = BaseNetwork.load_model(load_path=save_path)
         load_params = [torch.allclose(param1, param2)
-                        for param1, param2 in zip(test_net.parameters(),
-                                                  loaded_test_net.parameters())]
+                       for param1, param2 in zip(test_net.parameters(),
+                                                 loaded_test_net.parameters())]
         shutil.rmtree(abs_save_path)
         assert all(load_params)
