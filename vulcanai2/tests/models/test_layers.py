@@ -78,8 +78,8 @@ class TestDenseUnit:
         """Check if passing wrong parameters raises TypeError."""
         with pytest.raises(TypeError) as e:
             DenseUnit(**test_denseunit_parameters)
-            assert e.message == "__init__() got an unexpected \
-                                keyword argument 'in_channels'"
+        assert e.message == "__init__() got an unexpected \
+                            keyword argument 'in_channels'"
 
     def test_forward(self, denseunit):
         """Confirm size is expected after forward."""
@@ -123,8 +123,8 @@ class TestConvUnit:
         """Check if passing wrong parameters raises TypeError."""
         with pytest.raises(TypeError) as e:
             DenseUnit(**test_convunit_parameters)
-            assert e.message == "__init__() got an unexpected \
-                                keyword argument 'out_features'"
+        assert e.message == "__init__() got an unexpected \
+                            keyword argument 'out_features'"
 
     def test_init(self, convunit):
         """Initialization Test of a ConvUnit object."""
