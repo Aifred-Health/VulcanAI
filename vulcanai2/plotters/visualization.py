@@ -4,9 +4,8 @@ import os
 import numpy as np
 
 from math import sqrt, ceil, floor
-from datetime import datetime
 import pickle
-
+from datetime import datetime
 from .utils import GuidedBackprop, get_notable_indices
 
 from sklearn.manifold import TSNE
@@ -32,7 +31,7 @@ def assert_display_available():
         False if display variable does not exist
 
     """
-    True if os.environ.get("DISPLAY") else False
+    return True if os.environ.get("DISPLAY") else False
 
 def save_visualization(plot, path=None):
     """
