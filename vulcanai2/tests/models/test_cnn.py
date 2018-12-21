@@ -16,24 +16,27 @@ from vulcanai2.models.utils import master_device_setter
 
 logger = logging.getLogger(__name__)
 
+
 class TestConvNet:
     """Define ConvNet test class."""
-    
+
     @pytest.fixture
     def multi_input_cnn_train_loader(self, multi_input_cnn_data):
-        test_train = Subset(multi_input_cnn_data, 
+        """Synthetic test data pytorch dataloader object."""
+        test_train = Subset(multi_input_cnn_data,
                             range(len(multi_input_cnn_data)//2))
-        return DataLoader(test_train, batch_size=2) 
+        return DataLoader(test_train, batch_size=2)
 
     @pytest.fixture
     def multi_input_cnn_test_loader(self, multi_input_cnn_data):
-        test_val = Subset(multi_input_cnn_data, 
-                          range(len(multi_input_cnn_data)//2, 
-                                    len(multi_input_cnn_data)))
-        return DataLoader(test_val, batch_size=2)  
+        """Synthetic train data pytorch dataloader object."""
+        test_val = Subset(multi_input_cnn_data,
+                          range(len(multi_input_cnn_data)//2,
+                                len(multi_input_cnn_data)))
+        return DataLoader(test_val, batch_size=2)
 
     def test_init(self, conv1D_net):
-        """Initialization Test of a ConvNet object"""
+        """Initialization Test of a ConvNet object."""
         assert isinstance(conv1D_net, BaseNetwork)
         assert isinstance(conv1D_net, nn.Module)
         assert hasattr(conv1D_net, 'network')
@@ -52,33 +55,35 @@ class TestConvNet:
         assert not hasattr(conv1D_net, 'metrics')
 
     def test_function_multi_input(self, conv1D_net, multi_input_cnn):
-        """Test functions wrt multi_input_cnn"""
+        """Test functions wrt multi_input_cnn."""
         assert isinstance(multi_input_cnn.input_networks, nn.ModuleDict)
         assert len(list(multi_input_cnn.input_networks)) == 3
         assert all(multi_input_cnn._get_max_incoming_spatial_dims() == (8, 8, 8))
         assert multi_input_cnn._merge_input_network_outputs([
-                                torch.ones([10, 1, 28, 28]),
-                                torch.ones([10, 1, 28, 28, 28]),
-                                torch.ones(10, *multi_input_cnn.\
-                                input_networks['multi_input_dnn'].out_dim)
-               ]).shape == (10, 3, 8, 8, 8)
+                torch.ones([10, 1, 28, 28]),
+                torch.ones([10, 1, 28, 28, 28]),
+                torch.ones(10, *multi_input_cnn.
+                           input_networks['multi_input_dnn'].out_dim)
+            ]).shape == (10, 3, 8, 8, 8)
         test_net = pickle.loads(pickle.dumps(multi_input_cnn))
         test_net._add_input_network(conv1D_net)
         assert len(list(test_net.input_networks)) == 4
         assert 'conv1D_net' in test_net.input_networks
         assert isinstance(test_net.input_networks['conv1D_net'], ConvNet)
-    
+
     def test_forward(self, conv1D_net):
-        """Test Forward of ConvNet"""
+        """Test Forward of ConvNet."""
         out = conv1D_net(torch.ones([10, *conv1D_net.in_dim]))
         assert out.shape == (10, 64, 1)
 
     def test_forward_multi_input(self, multi_input_cnn, conv1D_net):
-        """Test Forward of Multi Input ConvNet"""
+        """Test Forward of Multi Input ConvNet."""
         master_device_setter(multi_input_cnn, 'cpu')
-        input_tensor = [torch.ones([10, 1, 28, 28]),
-               torch.ones([10, 1, 28, 28, 28]),
-               [torch.ones([10, 1, 28]),
+        input_tensor = [
+            torch.ones([10, 1, 28, 28]),
+            torch.ones([10, 1, 28, 28, 28]),
+            [
+                torch.ones([10, 1, 28]),
                 torch.ones([10, 1, 28, 28])]
             ]
         out = multi_input_cnn(input_tensor)
@@ -134,42 +139,45 @@ class TestConvNet:
     def test_fit_multi_input(self, multi_input_cnn,
                              multi_input_cnn_train_loader,
                              multi_input_cnn_test_loader):
-        """Test for fit function"""        
-        init_weights = pickle.loads(pickle.dumps(multi_input_cnn.network[0]._kernel.weight.detach()))
+        """Test for fit function."""
+        init_weights = pickle.loads(pickle.dumps(
+            multi_input_cnn.network[0]._kernel.weight.detach()))
         multi_input_cnn_no_fit = pickle.loads(pickle.dumps(multi_input_cnn))
         parameters1 = multi_input_cnn_no_fit.parameters()
         try:
-            multi_input_cnn.fit(multi_input_cnn_train_loader, 
-                                multi_input_cnn_test_loader, 2)
+            multi_input_cnn.fit(
+                multi_input_cnn_train_loader,
+                multi_input_cnn_test_loader,
+                2)
         except RuntimeError:
             logger.error("The network multi_input_cnn failed to train.")
         finally:
             parameters2 = multi_input_cnn.parameters()
             trained_weights = multi_input_cnn.network[0]._kernel.weight.detach()
-            
+
             # Sanity check if the network parameters are training
-            assert (torch.equal(init_weights.cpu(), trained_weights.cpu()) is False)
+            assert not (torch.equal(init_weights.cpu(), trained_weights.cpu()))
             compare_params = [not torch.allclose(param1, param2)
-                        for param1, param2 in zip(parameters1,
-                                                  parameters2)]
+                              for param1, param2 in zip(parameters1,
+                                                        parameters2)]
             assert all(compare_params)
-    
+
     def test_params_multi_input(self, multi_input_cnn,
                                 multi_input_cnn_train_loader,
                                 multi_input_cnn_test_loader):
-        """Test for change in network params/specifications"""
-        
+        """Test for change in network params/specifications."""
         test_net = pickle.loads(pickle.dumps(multi_input_cnn))
-        
         # Check the parameters are copying properly
         copy_params = [torch.allclose(param1, param2)
-                        for param1, param2 in zip(multi_input_cnn.parameters(),
+                       for param1, param2 in zip(multi_input_cnn.parameters(),
                                                   test_net.parameters())]
         assert all(copy_params)
 
         # Check the parameters change after copy and fit
-        test_net.fit(multi_input_cnn_train_loader, 
-                      multi_input_cnn_test_loader, 2)
+        test_net.fit(
+            multi_input_cnn_train_loader,
+            multi_input_cnn_test_loader,
+            2)
         close_params = [not torch.allclose(param1, param2)
                         for param1, param2 in zip(multi_input_cnn.parameters(),
                                                   test_net.parameters())]
@@ -183,14 +191,14 @@ class TestConvNet:
             for param, opt_param in zip(test_net.parameters(),
                                         test_net.optim.param_groups[0]['params']):
                 assert param is opt_param
-        
+
         # Check the params after saving loaading
         test_net.save_model()
         save_path = test_net.save_path
         abs_save_path = os.path.dirname(os.path.abspath(save_path))
         loaded_test_net = BaseNetwork.load_model(load_path=save_path)
         load_params = [torch.allclose(param1, param2)
-                        for param1, param2 in zip(test_net.parameters(),
-                                                  loaded_test_net.parameters())]
+                       for param1, param2 in zip(test_net.parameters(),
+                                                 loaded_test_net.parameters())]
         shutil.rmtree(abs_save_path)
         assert all(load_params)

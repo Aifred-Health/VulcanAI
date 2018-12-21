@@ -54,10 +54,10 @@ class TestDenseUnit:
         assert hasattr(denseunit, 'in_features')
         assert hasattr(denseunit, 'out_features')
         for unit in denseunit.named_children():
-            assert any(unit[0] == i for i in ['_kernel', '_norm', 
+            assert any(unit[0] == i for i in ['_kernel', '_norm',
                        '_activation', '_dropout'])
-            assert isinstance(unit[1], (nn.Linear, 
-                              nn.modules.batchnorm._BatchNorm, 
+            assert isinstance(unit[1], (nn.Linear,
+                              nn.modules.batchnorm._BatchNorm,
                               nn.ReLU, modules.dropout._DropoutNd))
             assert callable(unit[1])
 
@@ -134,8 +134,8 @@ class TestConvUnit:
         for unit in convunit.named_children():
             assert any(unit[0] == i for i in
                        ['_kernel', '_norm', '_activation', '_dropout'])
-            assert isinstance(unit[1], (modules.conv._ConvNd, 
-                              nn.modules.batchnorm._BatchNorm, 
+            assert isinstance(unit[1], (modules.conv._ConvNd,
+                              nn.modules.batchnorm._BatchNorm,
                               nn.ReLU, modules.dropout._DropoutNd))
             assert callable(unit[1])
 
@@ -144,7 +144,8 @@ class TestConvUnit:
         test_input = torch.ones([10, convunit.in_channels, 28, 28])
         output = convunit.forward(test_input)
         # No padding with 2 5x5 kernels leads from 28x28 -> 24x24
-        assert output.shape == torch.ones([10, convunit.out_channels, 24, 24]).shape
+        assert output.shape == \
+            torch.ones([10, convunit.out_channels, 24, 24]).shape
 
 
 class TestSeluInit:

@@ -238,7 +238,7 @@ class ConvNet(BaseNetwork):
         # How much pad to add to either sides to reshape the linear tensor
         # into cast_shape spatial dimensions.
         pad_shape = sequence_length * n_channels
-        tensor = pad(tensor=tensor, padded_shape=[pad_shape])
+        tensor = pad(tensor=tensor, target_shape=[pad_shape])
         return tensor.view(-1, n_channels, *cast_shape)
 
     def _cast_conv_to_shape(self, tensor, cast_shape):
@@ -271,7 +271,7 @@ class ConvNet(BaseNetwork):
                 len(tensor.shape[spatial_dim_idx_start:])
             for _ in range(n_unsqueezes):
                 tensor = tensor.unsqueeze(dim=spatial_dim_idx_start)
-        return pad(tensor=tensor, padded_shape=cast_shape)
+        return pad(tensor=tensor, target_shape=cast_shape)
 
     def __str__(self):
         """Specify how to print network."""
