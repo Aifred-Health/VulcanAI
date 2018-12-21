@@ -42,6 +42,23 @@ def test_pad():
     assert padded_tensor.shape == (test_nchannels, padded_shape)
     assert padded_tensor.nonzero().size(0) == test_nchannels*\
                                               test_nfeatures
+    #2d
+    padded_shape1 = 100
+    test_inp = torch.randn([test_nchannels, test_nfeatures, test_nfeatures])
+    padded_tensor = pad(tensor=test_inp, padded_shape=[padded_shape, padded_shape1])
+    assert padded_tensor.shape == (test_nchannels, padded_shape, padded_shape1)
+    assert padded_tensor.nonzero().size(0) == test_nchannels*test_nfeatures*\
+                                              test_nfeatures
+    #2d
+    padded_shape2 = 50
+    test_inp = torch.randn([test_nchannels, test_nfeatures, test_nfeatures,
+                            test_nfeatures])
+    padded_tensor = pad(tensor=test_inp, padded_shape=[padded_shape, padded_shape1,
+                                                       padded_shape2])
+    assert padded_tensor.shape == (test_nchannels, padded_shape, padded_shape1,
+                                   padded_shape2)
+    assert padded_tensor.nonzero().size(0) == test_nchannels*test_nfeatures*\
+                                              test_nfeatures*test_nfeatures
 
 @pytest.mark.skipif(not TEST_CUDA, reason="No CUDA"
                     " supported devices available")
