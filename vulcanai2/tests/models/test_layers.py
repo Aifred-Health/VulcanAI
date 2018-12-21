@@ -78,8 +78,7 @@ class TestDenseUnit:
         """Check if passing wrong parameters raises TypeError."""
         with pytest.raises(TypeError) as e:
             DenseUnit(**test_denseunit_parameters)
-        assert e.message == "__init__() got an unexpected \
-                            keyword argument 'in_channels'"
+        assert 'in_channels' in str(e.value)
 
     def test_forward(self, denseunit):
         """Confirm size is expected after forward."""
@@ -110,8 +109,10 @@ class TestConvUnit:
     def test_convunit_parameters(self):
         """Create dictionary with incorrect ConvUnit parameters."""
         return dict(
+            conv_dim=2,
             in_channels=10,
             out_features=10,
+            kernel_size=(5, 5),
             weight_init=nn.init.xavier_uniform_,
             bias_init=nn.init.zeros_,
             norm='batch',
@@ -122,9 +123,8 @@ class TestConvUnit:
     def test_create_convunit(self, test_convunit_parameters):
         """Check if passing wrong parameters raises TypeError."""
         with pytest.raises(TypeError) as e:
-            DenseUnit(**test_convunit_parameters)
-        assert e.message == "__init__() got an unexpected \
-                            keyword argument 'out_features'"
+            ConvUnit(**test_convunit_parameters)
+        assert 'out_features' in str(e.value)
 
     def test_init(self, convunit):
         """Initialization Test of a ConvUnit object."""
