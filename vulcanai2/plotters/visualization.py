@@ -61,7 +61,7 @@ def get_time():
     curr_time = curr_time.split('.')[0]
     return curr_time
 
-def display_record(record=None, load_path=None, save_path=None, interactive=True):
+def display_record(record=None, save_path=None, interactive=True):
     """
     Display the training curve for a network training session.
 
@@ -69,8 +69,6 @@ def display_record(record=None, load_path=None, save_path=None, interactive=True
     ----------
     record : dict
         the network record dictionary for dynamic graphs during training.
-    load_path : str
-        (deprecated) Where records could be loaded from.
     save_path : String
         String that designates the path to save figure to be produced.
     interactive : boolean
@@ -82,12 +80,6 @@ def display_record(record=None, load_path=None, save_path=None, interactive=True
 
     """
     title = 'Training curve'
-    if load_path is not None:
-        with open(load_path) as in_file:
-            record = pickle.load(in_file)
-        title = 'Training curve for model: {}'.format(
-            os.path.basename(load_path))
-
     if record is None or not isinstance(record, dict):
         raise ValueError('No record exists and cannot be displayed.')
 
