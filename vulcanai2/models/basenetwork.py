@@ -10,7 +10,7 @@ from .layers import *
 from .utils import set_tensor_device
 
 from .metrics import Metrics
-from ..plotters.visualization import display_record
+from ..plotters.visualization import display_record, get_time
 
 # Generic imports
 import pydash as pdash
@@ -567,9 +567,7 @@ class BaseNetwork(nn.Module):
                 plt.show()
 
             if save_path:
-                time = str(datetime.now())
-                time = time.replace(" ", '_')
-                time = time.split('.')[0]
+                time = get_time()
                 save_path = save_path + '/' + str(self.name) + '_' + time
             for epoch in trange(epochs, desc='Epoch: '):
 
