@@ -29,6 +29,7 @@ class Metrics(object):
     def __init__(self):
         """Initialize the metrics class for a BaseNetwork."""
 
+    # TODO: consider making class_converted default True
     def get_score(self, targets, predictions, metrics='accuracy', average=None,
                   class_converted=False):
         """
@@ -194,7 +195,8 @@ class Metrics(object):
     @staticmethod
     def get_sensitivity(targets, predictions, average=None):
         """
-        Calculate the sensitivity.
+        Calculate the sensitivity. Also referred to as recall,
+        or the true positive rate.
 
         Parameters
         ----------
@@ -414,6 +416,7 @@ class Metrics(object):
 
         return f1
 
+    # TODO: what type are the raw predicted values that come out??
     @staticmethod
     def get_auc(targets, raw_predictions, num_classes, average=None):
         """
@@ -452,10 +455,8 @@ class Metrics(object):
                 fpr, tpr, _ = skl_metrics.roc_curve(targets,
                                                     raw_predictions[:, i],
                                                     pos_label=i)
-
             auc = skl_metrics.auc(fpr, tpr)
             all_class_auc += [auc]
-
         # TODO: implement other options
         if average == "macro":
             all_class_auc = np.average(all_class_auc)
