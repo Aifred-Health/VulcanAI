@@ -159,7 +159,7 @@ class TestDenseNet:
                                 multi_input_dnn_train_loader,
                                 multi_input_dnn_test_loader):
         """Test for change in network params/specifications."""
-        test_net = (multi_input_dnn_class)
+        test_net = copy.deepcopy(multi_input_dnn_class)
         # Check the parameters are copying properly
         copy_params = [torch.allclose(param1, param2)
                        for param1, param2 in zip(multi_input_dnn_class.parameters(),
