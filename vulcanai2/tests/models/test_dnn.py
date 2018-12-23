@@ -1,7 +1,7 @@
 """Test all DenseNet capabilities."""
 import pytest
 import numpy as np
-import pickle
+import copy
 import logging
 import os
 import shutil
@@ -63,7 +63,7 @@ class TestDenseNet:
                 torch.ones([10, 1, 28]),
                 torch.ones([10, 1, 28, 28])
             ]).shape == (10, 812)
-        test_net = pickle.loads(pickle.dumps(multi_input_dnn))
+        test_net = copy.deepcopy(multi_input_dnn)
         test_net._add_input_network(dnn_noclass)
         assert len(list(test_net.input_networks)) == 3
         assert 'dnn_noclass' in test_net.input_networks
@@ -133,10 +133,9 @@ class TestDenseNet:
                              multi_input_dnn_train_loader,
                              multi_input_dnn_test_loader):
         """Test for fit function."""
-        init_weights = pickle.loads(pickle.dumps(
-            multi_input_dnn_class.network[0]._kernel.weight.detach()))
-        multi_input_dnn_class_no_fit = pickle.loads(
-            pickle.dumps(multi_input_dnn_class))
+        init_weights = copy.deepcopy(multi_input_dnn_class.network[0].\
+                                    _kernel.weight.detach())
+        multi_input_dnn_class_no_fit = copy.deepcopy(multi_input_dnn_class)
         parameters1 = multi_input_dnn_class_no_fit.parameters()
         try:
             multi_input_dnn_class.fit(
@@ -160,7 +159,7 @@ class TestDenseNet:
                                 multi_input_dnn_train_loader,
                                 multi_input_dnn_test_loader):
         """Test for change in network params/specifications."""
-        test_net = pickle.loads(pickle.dumps(multi_input_dnn_class))
+        test_net = (multi_input_dnn_class)
         # Check the parameters are copying properly
         copy_params = [torch.allclose(param1, param2)
                        for param1, param2 in zip(multi_input_dnn_class.parameters(),

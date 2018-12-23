@@ -1,7 +1,7 @@
 """Test all ConvNet capabilities."""
 import pytest
 import numpy as np
-import pickle
+import copy
 import logging
 import os
 import shutil
@@ -65,7 +65,7 @@ class TestConvNet:
                 torch.ones(10, *multi_input_cnn.
                            input_networks['multi_input_dnn'].out_dim)
             ]).shape == (10, 3, 8, 8, 8)
-        test_net = pickle.loads(pickle.dumps(multi_input_cnn))
+        test_net = copy.deepcopy(multi_input_cnn)
         test_net._add_input_network(conv1D_net)
         assert len(list(test_net.input_networks)) == 4
         assert 'conv1D_net' in test_net.input_networks
@@ -140,9 +140,9 @@ class TestConvNet:
                              multi_input_cnn_train_loader,
                              multi_input_cnn_test_loader):
         """Test for fit function."""
-        init_weights = pickle.loads(pickle.dumps(
-            multi_input_cnn.network[0]._kernel.weight.detach()))
-        multi_input_cnn_no_fit = pickle.loads(pickle.dumps(multi_input_cnn))
+        init_weights = copy.deepcopy(multi_input_cnn.network[0].\
+                                    _kernel.weight.detach())
+        multi_input_cnn_no_fit = copy.deepcopy(multi_input_cnn)
         parameters1 = multi_input_cnn_no_fit.parameters()
         try:
             multi_input_cnn.fit(
@@ -166,7 +166,7 @@ class TestConvNet:
                                 multi_input_cnn_train_loader,
                                 multi_input_cnn_test_loader):
         """Test for change in network params/specifications."""
-        test_net = pickle.loads(pickle.dumps(multi_input_cnn))
+        test_net = copy.deepcopy(multi_input_cnn)
         # Check the parameters are copying properly
         copy_params = [torch.allclose(param1, param2)
                        for param1, param2 in zip(multi_input_cnn.parameters(),
