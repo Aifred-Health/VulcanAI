@@ -61,22 +61,6 @@ class TestVisualization:
             num_classes=3
         )
 
-    @pytest.fixture
-    def dnn_class_two(self):
-        """Create DenseNet with no prediction layer."""
-        from vulcanai2.models.dnn import DenseNet
-        return DenseNet(
-            name='Test_DenseNet_class',
-            in_dim=(150),
-            activation=torch.nn.SELU(),
-            num_classes=150,
-            config={
-                'dense_units': [150],
-                'dropout': [0.3],
-            },
-            optim_spec={'name': 'Adam', 'lr': 0.001}
-        )
-
     def test_compute_saliency_map_cnn(self, cnn_class):
         """Confirm hooks are removed, and gradient shape."""
         test_input_1B = torch.ones([1, *cnn_class.in_dim])
