@@ -129,15 +129,14 @@ class TestVisualization:
 
     def test_receptive_field(self, dnn_class_two):
         curr_path = str(os.path.dirname(__file__)) + '/'
-        fan_in = dnn_class_two.in_dim[0]
         test_input = torch.ones([10, *dnn_class_two.in_dim]).float()
         test_target = torch.LongTensor([0, 1, 1, 0, 0, 1, 0, 1, 0 , 1])
         test_dataloader = DataLoader(TensorDataset(test_input, test_target))
 
-        #curr_path = str(os.path.dirname(__file__)) + '/'
-        #test_input = torch.ones([150, *dnn_class_two.in_dim]).float()
-        #test_target = torch.ones([150])
-        #test_dataloader = DataLoader(TensorDataset(test_input, test_target))
-
         dnn_class_two.fit(test_dataloader, test_dataloader, 5)
         display_receptive_fields(dnn_class_two)
+        for file in os.listdir(curr_path):
+            if file.startswith('feature_importance'):
+                assert True
+                file_path = curr_path + file
+                os.remove(file_path)
