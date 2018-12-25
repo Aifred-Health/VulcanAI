@@ -1,3 +1,4 @@
+"""Define the tests for all metrics."""
 import pytest
 import numpy as np
 import torch
@@ -6,15 +7,22 @@ from vulcanai2.models.cnn import ConvNet
 from vulcanai2.models.dnn import DenseNet
 from vulcanai2.models.ensemble import SnapshotNet
 from torch.utils.data import TensorDataset, DataLoader
-import unittest
+
 
 class TestMetrics:
+    """
+    Test metric functionality.
 
-    #note that the number of classes needs to stay consistent
+    Note: The number of classes NEEDS to stay consistent
+    since the metric values were calculated externally.
+
+    """
 
     @pytest.fixture
     def metrics(self):
-        np.random.seed(1234)  # TODO: check that this won't mess with replicability
+        """Create a metric object fixture to test."""
+        # TODO: check that this won't mess with replicability
+        np.random.seed(1234)
         return Metrics()
 
     @pytest.fixture
@@ -41,7 +49,7 @@ class TestMetrics:
             },
             num_classes=10
         )
-    
+
     def test_extract_class_labels(self, metrics):
         """Correctly represents max likelihood class."""
         test_input = np.array([
@@ -53,10 +61,11 @@ class TestMetrics:
         assert np.all(output == np.array([1, 0, 1]))
 
     def test_cross_validate_outputs(self, metrics, cnn_class):
-
-        num_items = 300
         """Tests that the cross-validate outputs are in the correct form."""
-        test_input = torch.Tensor(np.random.randint(0, 9, size=(num_items, *cnn_class.in_dim)))
+        num_items = 300
+
+        test_input = torch.Tensor(
+            np.random.randint(0, 9, size=(num_items, *cnn_class.in_dim)))
         test_target = torch.LongTensor(np.random.randint(0, 9, size=num_items))
         test_dataloader = DataLoader(TensorDataset(test_input, test_target))
 
@@ -77,6 +86,7 @@ class TestMetrics:
             assert isinstance(all_results[k], list)
 
     def test_get_score(self, metrics):
+        """Test the get_score function for some arbitrary set of metrics."""
         num_items = 300
         test_target = np.random.randint(0, 9, size=num_items)
         test_predictions = np.random.randint(0, 9, size=num_items)
@@ -100,6 +110,14 @@ class TestMetrics:
                                        target_res)
 
     def test_get_confusion_matrix_values(self, metrics):
+        """
+        Test get_confusion_matrix_values if it returns the correct values.
+
+        The values being true positives, true negatives, false positives,
+        and false negatives (tp, tn, fp, fn, respectively). It will return
+        class-specific values.
+
+        """
         num_items = 300
         test_target = np.random.randint(0, 9, size=num_items)
         test_predictions = np.random.randint(0, 9, size=num_items)
@@ -117,8 +135,8 @@ class TestMetrics:
         np.testing.assert_almost_equal(fp, target_fp)
         np.testing.assert_almost_equal(fn, target_fn)
 
-
     def test_check_average_parameter(self, metrics):
+        """Test average parameter get used properly for binary/multi-class."""
         num_items = 10
         test_target = np.random.randint(0, 9, size=num_items)
         test_predictions = np.random.randint(0, 9, size=num_items)
@@ -134,6 +152,7 @@ class TestMetrics:
                                              average="macro")
 
     def test_get_sensitivity(self, metrics):
+        """Test sensitivity metric calculation."""
         num_items = 300
         test_target = np.random.randint(0, 9, size=num_items)
         test_predictions = np.random.randint(0, 9, size=num_items)
@@ -149,8 +168,8 @@ class TestMetrics:
                       0.06896552]
         np.testing.assert_almost_equal(res, target_res)
 
-
     def test_get_specificity(self, metrics):
+        """Test specificity metric calculation."""
         num_items = 300
         test_target = np.random.randint(0, 9, size=num_items)
         test_predictions = np.random.randint(0, 9, size=num_items)
@@ -166,31 +185,31 @@ class TestMetrics:
                       0.88560885]
         np.testing.assert_almost_equal(res, target_res)
 
-
     def test_get_dice(self, metrics):
+        """Test dice metric calculation."""
         num_items = 300
         test_target = np.random.randint(0, 9, size=num_items)
         test_predictions = np.random.randint(0, 9, size=num_items)
 
         res = metrics.get_dice(test_target, test_predictions,
-                                      average="macro")
+                               average="macro")
         target_res = 0.08713134
         np.testing.assert_almost_equal(res, target_res)
 
         res = metrics.get_dice(test_target, test_predictions)
         target_res = [0.06557377, 0.1025641, 0.06060606, 0.05263158,
-                      0.09677419,0.11267605, 0.13793103, 0.09090909,
+                      0.09677419, 0.11267605, 0.13793103, 0.09090909,
                       0.06451613]
         np.testing.assert_almost_equal(res, target_res)
 
-
     def test_get_ppv(self, metrics):
+        """Test positive predictive value metric calculation."""
         num_items = 300
         test_target = np.random.randint(0, 9, size=num_items)
         test_predictions = np.random.randint(0, 9, size=num_items)
 
         res = metrics.get_ppv(test_target, test_predictions,
-                                      average="macro")
+                              average="macro")
         target_res = 0.08706903640689172
         np.testing.assert_almost_equal(res, target_res)
 
@@ -200,12 +219,13 @@ class TestMetrics:
         np.testing.assert_almost_equal(res, target_res)
 
     def test_get_npv(self, metrics):
+        """Test negative predictive value metric calculation."""
         num_items = 300
         test_target = np.random.randint(0, 9, size=num_items)
         test_predictions = np.random.randint(0, 9, size=num_items)
 
         res = metrics.get_npv(test_target, test_predictions,
-                                      average="macro")
+                              average="macro")
         target_res = 0.88584304
         np.testing.assert_almost_equal(res, target_res)
 
@@ -215,6 +235,7 @@ class TestMetrics:
         np.testing.assert_almost_equal(res, target_res)
 
     def test_get_accuracy(self, metrics):
+        """Test accuracy metric calculation."""
         num_items = 300
         test_target = np.random.randint(0, 9, size=num_items)
         test_predictions = np.random.randint(0, 9, size=num_items)
@@ -224,12 +245,13 @@ class TestMetrics:
         np.testing.assert_almost_equal(res, target_res)
 
     def test_get_f1(self, metrics):
+        """Test f1 metric calculation."""
         num_items = 300
         test_target = np.random.randint(0, 9, size=num_items)
         test_predictions = np.random.randint(0, 9, size=num_items)
 
         res = metrics.get_f1(test_target, test_predictions,
-                                      average="macro")
+                             average="macro")
         target_res = 0.08713133521331753
         np.testing.assert_almost_equal(res, target_res)
 
@@ -240,12 +262,14 @@ class TestMetrics:
         np.testing.assert_almost_equal(res, target_res)
 
     def test_get_auc(self, metrics):
+        """Test AUC metric calculation."""
         num_items = 300
         test_target = torch.LongTensor(np.random.randint(0, 9, size=num_items))
 
-        raw_predictions = np.random.randint(0, 9, size=(300, 10))
+        raw_predictions = np.random.randint(0, 9, size=(num_items, 10))
         res = metrics.get_f1(test_target, raw_predictions,
-                                      average="macro")
+                             average="macro")
 
     def test_run_test(self, metrics):
+        """Test the vulcan test suite via run_test."""
         pass
