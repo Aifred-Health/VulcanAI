@@ -131,7 +131,7 @@ class TestVisualization:
     def test_display_pca(self, dnn_class):
         curr_path = str(os.path.dirname(__file__)) + '/'
         digits = load_digits()
-        dnn_pca = display_pca(digits.data, digits.target, save_path=curr_path)
+        dnn_pca = display_pca(digits.data[0:10], digits.target[0:10], save_path=curr_path)
         for file in os.listdir(curr_path):
             if file.startswith('PCA'):
                 assert True
@@ -141,7 +141,7 @@ class TestVisualization:
     def test_display_tsne(self, dnn_class):
         curr_path = str(os.path.dirname(__file__)) + '/'
         digits = load_digits()
-        dnn_tsne = display_tsne(digits.data, digits.target, save_path=curr_path)
+        dnn_tsne = display_tsne(digits.data[0:10], digits.target[0:10], save_path=curr_path)
         for file in os.listdir(curr_path):
             if file.startswith('t-SNE'):
                 assert True
