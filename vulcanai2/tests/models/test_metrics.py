@@ -1,16 +1,11 @@
-<<<<<<< HEAD
-"""Define the tests for all metrics."""
-=======
 # coding=utf-8
 """ Includes TestMetrics which tests the metrics class of vulcanai"""
->>>>>>> 9ebcb3b7363015fc8f8289d4f1b1c14bdaacebdd
 import pytest
 import numpy as np
 import torch
 from vulcanai2.models.metrics import Metrics
 from vulcanai2.models.cnn import ConvNet
 from torch.utils.data import TensorDataset, DataLoader
-<<<<<<< HEAD
 
 
 class TestMetrics:
@@ -21,20 +16,14 @@ class TestMetrics:
     since the metric values were calculated externally.
 
     """
-=======
 
->>>>>>> 9ebcb3b7363015fc8f8289d4f1b1c14bdaacebdd
 
 # noinspection PyProtectedMember
 class TestMetrics:
     """Test the metrics class"""
     @pytest.fixture
     def metrics(self):
-<<<<<<< HEAD
         """Create a metric object fixture to test."""
-=======
-        """Returns the metrics class"""
->>>>>>> 9ebcb3b7363015fc8f8289d4f1b1c14bdaacebdd
         # TODO: check that this won't mess with replicability
         np.random.seed(1234)
         return Metrics()
@@ -76,13 +65,6 @@ class TestMetrics:
 
     def test_cross_validate_outputs(self, metrics, cnn_class):
         """Tests that the cross-validate outputs are in the correct form."""
-<<<<<<< HEAD
-        num_items = 300
-
-        test_input = torch.Tensor(
-            np.random.randint(0, 9, size=(num_items, *cnn_class.in_dim)))
-        test_target = torch.LongTensor(np.random.randint(0, 9, size=num_items))
-=======
 
         num_items = 300
         test_input = torch.Tensor(np.random.randint(0, 10,
@@ -90,7 +72,6 @@ class TestMetrics:
                                                           *cnn_class.in_dim)))
         test_target = torch.LongTensor(np.random.randint(0, 10,
                                                          size=num_items))
->>>>>>> 9ebcb3b7363015fc8f8289d4f1b1c14bdaacebdd
         test_dataloader = DataLoader(TensorDataset(test_input, test_target))
 
         k = 2
