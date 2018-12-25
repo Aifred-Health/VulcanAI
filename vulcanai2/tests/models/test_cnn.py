@@ -140,8 +140,8 @@ class TestConvNet:
                              multi_input_cnn_train_loader,
                              multi_input_cnn_test_loader):
         """Test for fit function."""
-        init_weights = copy.deepcopy(multi_input_cnn.network[0].\
-                                    _kernel.weight.detach())
+        init_weights = copy.deepcopy(multi_input_cnn.network[0].
+                                     _kernel.weight.detach())
         multi_input_cnn_no_fit = copy.deepcopy(multi_input_cnn)
         parameters1 = multi_input_cnn_no_fit.parameters()
         try:

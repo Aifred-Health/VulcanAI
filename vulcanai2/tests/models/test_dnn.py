@@ -23,15 +23,15 @@ class TestDenseNet:
     @pytest.fixture
     def multi_input_dnn_train_loader(self, multi_input_dnn_data):
         """Synthetic train data pytorch dataloader object."""
-        test_train = Subset(multi_input_dnn_data, 
+        test_train = Subset(multi_input_dnn_data,
                             range(len(multi_input_dnn_data)//2))
-        return DataLoader(test_train, batch_size=2) 
+        return DataLoader(test_train, batch_size=2)
 
     @pytest.fixture
     def multi_input_dnn_test_loader(self, multi_input_dnn_data):
         """Synthetic test data pytorch dataloader object."""
         test_val = Subset(multi_input_dnn_data,
-                          range(len(multi_input_dnn_data)//2, 
+                          range(len(multi_input_dnn_data)//2,
                                 len(multi_input_dnn_data)))
         return DataLoader(test_val, batch_size=2)
 
@@ -133,8 +133,8 @@ class TestDenseNet:
                              multi_input_dnn_train_loader,
                              multi_input_dnn_test_loader):
         """Test for fit function."""
-        init_weights = copy.deepcopy(multi_input_dnn_class.network[0].\
-                                    _kernel.weight.detach())
+        init_weights = copy.deepcopy(multi_input_dnn_class.network[0].
+                                     _kernel.weight.detach())
         multi_input_dnn_class_no_fit = copy.deepcopy(multi_input_dnn_class)
         parameters1 = multi_input_dnn_class_no_fit.parameters()
         try:
@@ -147,7 +147,7 @@ class TestDenseNet:
         finally:
             parameters2 = multi_input_dnn_class.parameters()
             trained_weights = multi_input_dnn_class.network[0]._kernel.weight.detach()
-            
+
             # Sanity check if the network parameters are training
             assert not (torch.equal(init_weights.cpu(), trained_weights.cpu()))
             compare_params = [not torch.allclose(param1, param2)

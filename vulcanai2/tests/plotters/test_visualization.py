@@ -128,9 +128,10 @@ class TestVisualization:
         assert dnn_class._backward_hooks == model_copy._backward_hooks
 
     def test_receptive_field(self, dnn_class_two):
+        """Test receptive field visualization gets created and can be saved."""
         curr_path = str(os.path.dirname(__file__)) + '/'
         test_input = torch.ones([10, *dnn_class_two.in_dim]).float()
-        test_target = torch.LongTensor([0, 1, 1, 0, 0, 1, 0, 1, 0 , 1])
+        test_target = torch.LongTensor([0, 1, 1, 0, 0, 1, 0, 1, 0, 1])
         test_dataloader = DataLoader(TensorDataset(test_input, test_target))
 
         dnn_class_two.fit(test_dataloader, test_dataloader, 5)
