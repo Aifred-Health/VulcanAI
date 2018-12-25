@@ -178,11 +178,6 @@ def display_tsne(input_data, targets, label_map=None, save_path=None):
 
 def _plot_reduction(x_transform, targets, label_map, title, save_path=None):
     """Once PCA and t-SNE has been calculated, this is used to plot."""
-    if save_path:
-        time = get_time()
-        save_path = save_path + '/' + title + '_' + time + '.png'
-        save_visualization(plt, save_path)
-
     y_unique = np.unique(targets)
     if label_map is None:
         label_map = {str(i): str(i) for i in y_unique}
@@ -204,6 +199,12 @@ def _plot_reduction(x_transform, targets, label_map, title, save_path=None):
     plt.ylabel('Y')
     plt.legend(loc='upper right')
     plt.title(title)
+
+    if save_path:
+        time = get_time()
+        save_path = save_path + '/' + title + '_' + time + '.png'
+        save_visualization(plt, save_path)
+
     plt.show(False)
 
 
