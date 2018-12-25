@@ -1,5 +1,5 @@
 # coding=utf-8
-""" Includes TestMetrics which tests the metrics class of vulcanai"""
+"""Includes TestMetrics which tests the metrics class of vulcanai."""
 import pytest
 import numpy as np
 import torch
@@ -8,6 +8,7 @@ from vulcanai2.models.cnn import ConvNet
 from torch.utils.data import TensorDataset, DataLoader
 
 
+# noinspection PyProtectedMember
 class TestMetrics:
     """
     Test metric functionality.
@@ -17,10 +18,6 @@ class TestMetrics:
 
     """
 
-
-# noinspection PyProtectedMember
-class TestMetrics:
-    """Test the metrics class"""
     @pytest.fixture
     def metrics(self):
         """Create a metric object fixture to test."""
@@ -65,7 +62,6 @@ class TestMetrics:
 
     def test_cross_validate_outputs(self, metrics, cnn_class):
         """Tests that the cross-validate outputs are in the correct form."""
-
         num_items = 300
         test_input = torch.Tensor(np.random.randint(0, 10,
                                                     size=(num_items,
@@ -91,7 +87,7 @@ class TestMetrics:
             assert isinstance(all_results[k], list)
 
     def test_get_score(self, metrics):
-        """ Test that get score returns correct values, with complex params"""
+        """Test that get score returns correct values, with complex params."""
         num_items = 300
         test_target = np.random.randint(0, 10, size=num_items)
         test_predictions = np.random.randint(0, 10, size=num_items)
@@ -142,8 +138,7 @@ class TestMetrics:
         np.testing.assert_almost_equal(fn, target_fn)
 
     def test_check_average_parameter(self, metrics):
-        """ Test that the test for the average-ing parameter returns error as
-        expected"""
+        """Test the test average-ing parameter returns error as expected."""
         num_items = 300
         test_target = np.random.randint(0, 10, size=num_items)
         test_predictions = np.random.randint(0, 10, size=num_items)
@@ -173,7 +168,7 @@ class TestMetrics:
         np.testing.assert_almost_equal(res, target_res)
 
     def test_get_specificity(self, metrics):
-        """Test that specificity returns values as expected"""
+        """Test that specificity returns values as expected."""
         num_items = 300
         test_target = np.random.randint(0, 10, size=num_items)
         test_predictions = np.random.randint(0, 10, size=num_items)
@@ -189,7 +184,7 @@ class TestMetrics:
         np.testing.assert_almost_equal(res, target_res)
 
     def test_get_dice(self, metrics):
-        """Test that dic returns values as expected"""
+        """Test that dic returns values as expected."""
         num_items = 300
         test_target = np.random.randint(0, 10, size=num_items)
         test_predictions = np.random.randint(0, 10, size=num_items)
@@ -205,7 +200,7 @@ class TestMetrics:
         np.testing.assert_almost_equal(res, target_res)
 
     def test_get_ppv(self, metrics):
-        """Test that ppv returns values as expected"""
+        """Test that ppv returns values as expected."""
         num_items = 300
         test_target = np.random.randint(0, 10, size=num_items)
         test_predictions = np.random.randint(0, 10, size=num_items)
@@ -222,7 +217,7 @@ class TestMetrics:
         np.testing.assert_almost_equal(res, target_res)
 
     def test_get_npv(self, metrics):
-        """Test that npv returns values as expected"""
+        """Test that npv returns values as expected."""
         num_items = 300
         test_target = np.random.randint(0, 10, size=num_items)
         test_predictions = np.random.randint(0, 10, size=num_items)
@@ -238,7 +233,7 @@ class TestMetrics:
         np.testing.assert_almost_equal(res, target_res)
 
     def test_get_accuracy(self, metrics):
-        """Test that accuracy returns values as expected"""
+        """Test that accuracy returns values as expected."""
         num_items = 300
         test_target = np.random.randint(0, 10, size=num_items)
         test_predictions = np.random.randint(0, 10, size=num_items)
@@ -248,7 +243,7 @@ class TestMetrics:
         np.testing.assert_almost_equal(res, target_res)
 
     def test_get_f1(self, metrics):
-        """Test that f1 returns values as expected"""
+        """Test that f1 returns values as expected."""
         num_items = 300
         test_target = np.random.randint(0, 10, size=num_items)
         test_predictions = np.random.randint(0, 10, size=num_items)
@@ -265,7 +260,7 @@ class TestMetrics:
         np.testing.assert_almost_equal(res, target_res)
 
     def test_get_auc(self, metrics):
-        """Test that auc returns values as expected"""
+        """Test that auc returns values as expected."""
         num_items = 300
         test_target = torch.LongTensor(np.random.randint(0, 10,
                                                          size=num_items))
@@ -283,8 +278,7 @@ class TestMetrics:
         np.testing.assert_almost_equal(res, target_res)
 
     def test_run_test(self, metrics, cnn_class):
-        """Test that run_test returns values as expected"""
-
+        """Test that run_test returns values as expected."""
         num_items = 300
 
         test_input = torch.Tensor(np.random.randint(0, 10,
