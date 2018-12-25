@@ -50,6 +50,14 @@ class TestMetrics:
             num_classes=10
         )
 
+    def create_target_predictions(self):
+        """Create target and predictions, used in most metric tests"""
+        num_items = 300
+        test_target = np.random.randint(0, 10, size=num_items)
+        test_predictions = np.random.randint(0, 10, size=num_items)
+
+        return test_target, test_predictions
+
     def test_extract_class_labels(self, metrics):
         """Correctly represents max likelihood class."""
         test_input = np.array([
@@ -88,9 +96,7 @@ class TestMetrics:
 
     def test_get_score(self, metrics):
         """Test that get score returns correct values, with complex params."""
-        num_items = 300
-        test_target = np.random.randint(0, 10, size=num_items)
-        test_predictions = np.random.randint(0, 10, size=num_items)
+        test_target, test_predictions = self.create_target_predictions()
 
         metrics_to_test = ["sensitivity", "specificity", "accuracy"]
 
@@ -119,9 +125,7 @@ class TestMetrics:
         class-specific values.
 
         """
-        num_items = 300
-        test_target = np.random.randint(0, 10, size=num_items)
-        test_predictions = np.random.randint(0, 10, size=num_items)
+        test_target, test_predictions = self.create_target_predictions()
 
         tp, tn, fp, fn = metrics.get_confusion_matrix_values(test_target,
                                                              test_predictions)
@@ -139,12 +143,12 @@ class TestMetrics:
 
     def test_check_average_parameter(self, metrics):
         """Test the test average-ing parameter returns error as expected."""
-        num_items = 300
-        test_target = np.random.randint(0, 10, size=num_items)
-        test_predictions = np.random.randint(0, 10, size=num_items)
+        test_target, test_predictions = self.create_target_predictions()
 
         metrics._check_average_parameter(test_target, test_predictions,
                                          average="macro")
+        # try again with binary data
+        num_items = 300
         test_target = np.random.randint(0, 2, size=num_items)
         test_predictions = np.random.randint(0, 2, size=num_items)
         with pytest.raises(ValueError):
@@ -153,9 +157,7 @@ class TestMetrics:
 
     def test_get_sensitivity(self, metrics):
         """Test sensitivity metric calculation."""
-        num_items = 300
-        test_target = np.random.randint(0, 10, size=num_items)
-        test_predictions = np.random.randint(0, 10, size=num_items)
+        test_target, test_predictions = self.create_target_predictions()
 
         res = metrics.get_sensitivity(test_target, test_predictions,
                                       average="macro")
@@ -169,9 +171,7 @@ class TestMetrics:
 
     def test_get_specificity(self, metrics):
         """Test that specificity returns values as expected."""
-        num_items = 300
-        test_target = np.random.randint(0, 10, size=num_items)
-        test_predictions = np.random.randint(0, 10, size=num_items)
+        test_target, test_predictions = self.create_target_predictions()
 
         res = metrics.get_specificity(test_target, test_predictions,
                                       average="macro")
@@ -185,9 +185,7 @@ class TestMetrics:
 
     def test_get_dice(self, metrics):
         """Test that dic returns values as expected."""
-        num_items = 300
-        test_target = np.random.randint(0, 10, size=num_items)
-        test_predictions = np.random.randint(0, 10, size=num_items)
+        test_target, test_predictions = self.create_target_predictions()
 
         res = metrics.get_dice(test_target, test_predictions,
                                average="macro")
@@ -201,9 +199,7 @@ class TestMetrics:
 
     def test_get_ppv(self, metrics):
         """Test that ppv returns values as expected."""
-        num_items = 300
-        test_target = np.random.randint(0, 10, size=num_items)
-        test_predictions = np.random.randint(0, 10, size=num_items)
+        test_target, test_predictions = self.create_target_predictions()
 
         res = metrics.get_ppv(test_target, test_predictions,
                               average="macro")
@@ -218,9 +214,7 @@ class TestMetrics:
 
     def test_get_npv(self, metrics):
         """Test that npv returns values as expected."""
-        num_items = 300
-        test_target = np.random.randint(0, 10, size=num_items)
-        test_predictions = np.random.randint(0, 10, size=num_items)
+        test_target, test_predictions = self.create_target_predictions()
 
         res = metrics.get_npv(test_target, test_predictions,
                               average="macro")
@@ -234,9 +228,7 @@ class TestMetrics:
 
     def test_get_accuracy(self, metrics):
         """Test that accuracy returns values as expected."""
-        num_items = 300
-        test_target = np.random.randint(0, 10, size=num_items)
-        test_predictions = np.random.randint(0, 10, size=num_items)
+        test_target, test_predictions = self.create_target_predictions()
 
         res = metrics.get_accuracy(test_target, test_predictions)
         target_res = 0.08666666666666667
@@ -244,9 +236,7 @@ class TestMetrics:
 
     def test_get_f1(self, metrics):
         """Test that f1 returns values as expected."""
-        num_items = 300
-        test_target = np.random.randint(0, 10, size=num_items)
-        test_predictions = np.random.randint(0, 10, size=num_items)
+        test_target, test_predictions = self.create_target_predictions()
 
         res = metrics.get_f1(test_target, test_predictions,
                              average="macro")
