@@ -113,4 +113,4 @@ class TestSnapshotNet:
             epochs=15,
             plot=False
         )
-        assert test_snap.template_network.lr_scheduler.get_lr() != 0.001
+        assert test_snap.template_network.lr_scheduler.get_lr()[0] < 0.001
