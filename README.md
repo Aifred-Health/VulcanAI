@@ -24,4 +24,4 @@ It can be installed using PyPI:
 ```
 
 ## Contributions
-We welcome contributions, particularily to TabularDataset additional processing methods and to generalized and generalizable network architectures. Please create an issue before embarking on a solution, however, as we may already have something similar in the works!
+We welcome contributions, particularily to TabularDataset, additional processing methods, and to generalized and generalizable network architectures. Please create an issue before embarking on a solution, however, as we may already have something similar in the works!
