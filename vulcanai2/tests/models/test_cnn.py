@@ -15,7 +15,7 @@ from vulcanai2.models.cnn import ConvNet, ConvNetConfig
 from vulcanai2.models.utils import master_device_setter
 
 logger = logging.getLogger(__name__)
-
+torch.manual_seed(1234)
 
 class TestConvNet:
     """Define ConvNet test class."""
@@ -56,15 +56,19 @@ class TestConvNet:
 
     def test_function_multi_input(self, conv1D_net, multi_input_cnn):
         """Test functions wrt multi_input_cnn."""
+        tensor_size = [10, 1, 28, 28]
         assert isinstance(multi_input_cnn.input_networks, nn.ModuleDict)
         assert len(list(multi_input_cnn.input_networks)) == 3
-        assert all(multi_input_cnn._get_max_incoming_spatial_dims() == (8, 8, 8))
+        assert all(multi_input_cnn._get_max_incoming_spatial_dims() ==
+                   (8, 8, 8))
+        # TODO: make more elegant
         assert multi_input_cnn._merge_input_network_outputs([
-                torch.ones([10, 1, 28, 28]),
-                torch.ones([10, 1, 28, 28, 28]),
-                torch.ones(10, *multi_input_cnn.
-                           input_networks['multi_input_dnn'].out_dim)
-            ]).shape == (10, 3, 8, 8, 8)
+                torch.randint(0, 10, size=tensor_size),
+                torch.randint(0, 10, size=tensor_size + [28]),
+                torch.randint(0, 10, size=[10] +
+                                          list(multi_input_cnn.input_networks
+                                          ['multi_input_dnn'].out_dim))
+        ]).shape == (10, 3, 8, 8, 8)
         test_net = copy.deepcopy(multi_input_cnn)
         test_net._add_input_network(conv1D_net)
         assert len(list(test_net.input_networks)) == 4
@@ -73,25 +77,24 @@ class TestConvNet:
 
     def test_forward(self, conv1D_net):
         """Test Forward of ConvNet."""
-        out = conv1D_net(torch.ones([10, *conv1D_net.in_dim]))
+        out = conv1D_net(torch.randint(0, 10, size=[10, *conv1D_net.in_dim]))
         assert out.shape == (10, 64, 1)
 
-    def test_forward_multi_input(self, multi_input_cnn, conv1D_net):
+    def test_forward_multi_input(self, multi_input_cnn):
         """Test Forward of Multi Input ConvNet."""
         master_device_setter(multi_input_cnn, 'cpu')
         input_tensor = [
-            torch.ones([10, 1, 28, 28]),
-            torch.ones([10, 1, 28, 28, 28]),
-            [
-                torch.ones([10, 1, 28]),
-                torch.ones([10, 1, 28, 28])]
-            ]
+            torch.randint(0, 10, size=[10, 1, 28, 28]),
+            torch.randint(0, 10, size=[10, 1, 28, 28, 28]),
+            [torch.randint(0, 10, size=[10, 1, 28]),
+             torch.randint(0, 10, size=[10, 1, 28, 28])]
+        ]
         out = multi_input_cnn(input_tensor)
         assert out.shape == (10, 10)
 
     def test_forward_pass_not_nan(self, conv3D_net):
         """Confirm out is non nan."""
-        test_input = torch.ones([1, *conv3D_net.in_dim])
+        test_input = torch.randint(0, 10, size=[1, *conv3D_net.in_dim])
         test_dataloader = DataLoader(TensorDataset(test_input, test_input))
         output = conv3D_net.forward_pass(
             data_loader=test_dataloader,
@@ -100,7 +103,7 @@ class TestConvNet:
 
     def test_forward_pass_class_not_nan(self, conv3D_net_class):
         """Confirm out is non nan."""
-        test_input = torch.ones([1, *conv3D_net_class.in_dim])
+        test_input = torch.randint(0, 10, size=[1, *conv3D_net_class.in_dim])
         test_dataloader = DataLoader(TensorDataset(test_input, test_input))
         raw_output = conv3D_net_class.forward_pass(
             data_loader=test_dataloader,
