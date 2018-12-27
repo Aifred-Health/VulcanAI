@@ -70,7 +70,7 @@ class TestSnapshotNet:
 
     def test_snapshot_structure(self, cnn_noclass, dnn_class):
         """Confirm Snapshot structure is generated properly."""
-        test_input = torch.ones([3, *cnn_noclass.in_dim]).float()
+        test_input = torch.randint(0, 10, size=[3, *cnn_noclass.in_dim]).float()
         test_target = torch.LongTensor([0, 2, 1])
         test_dataloader = DataLoader(TensorDataset(test_input, test_target))
         test_snap = SnapshotNet(
@@ -101,7 +101,7 @@ class TestSnapshotNet:
 
     def test_snapshot_lr(self, cnn_noclass, dnn_class_two):
         """Confirm Snapshot structure is generated properly."""
-        test_input = torch.ones([3, *cnn_noclass.in_dim]).float()
+        test_input = torch.randint(0, 10, size=[3, *cnn_noclass.in_dim]).float()
         test_target = torch.LongTensor([0, 2, 1])
         test_dataloader = DataLoader(TensorDataset(test_input, test_target))
         test_snap = SnapshotNet(
