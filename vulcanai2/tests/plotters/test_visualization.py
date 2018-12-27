@@ -122,38 +122,58 @@ class TestVisualization:
             dnn_class,
             test_input_1B, torch.LongTensor([2])))
         display_saliency_overlay(img, sal_map_1B, shape=(25,25), save_path=curr_path)
+        file_created = False
         for file in os.listdir(curr_path):
             if file.startswith('saliency'):
-                assert True
+                file_created = True
                 file_path = curr_path + file
-        os.remove(file_path)
+                os.remove(file_path)
+        if file_created:
+            assert True
+        else:
+            assert False
 
     def test_display_pca(self, dnn_class):
         curr_path = str(os.path.dirname(__file__)) + '/'
         digits = load_digits()
         dnn_pca = display_pca(digits.data[0:10], digits.target[0:10], save_path=curr_path)
+        file_created = False
         for file in os.listdir(curr_path):
             if file.startswith('PCA'):
-                assert True
+                file_created = True
                 file_path = curr_path + file
                 os.remove(file_path)
+        if file_created:
+            assert True
+        else:
+            assert False
 
     def test_display_tsne(self, dnn_class):
         curr_path = str(os.path.dirname(__file__)) + '/'
         digits = load_digits()
         dnn_tsne = display_tsne(digits.data[0:10], digits.target[0:10], save_path=curr_path)
+        file_created = False
         for file in os.listdir(curr_path):
             if file.startswith('t-SNE'):
-                assert True
+                file_created = True
                 file_path = curr_path + file
                 os.remove(file_path)
+        if file_created:
+            assert True
+        else:
+            assert False
 
     def test_display_confusion_matrix(self):
         curr_path = str(os.path.dirname(__file__)) + '/'
         cm = confusion_matrix(y_true=[0,1,1,0,0], y_pred=[1,1,0,1,0])
         display_confusion_matrix(cm, class_list=[0, 1], save_path=curr_path)
+        file_created = False
         for file in os.listdir(curr_path):
             if file.startswith('confusion'):
-                assert True
+                file_created = True
                 file_path = curr_path + file
                 os.remove(file_path)
+        if file_created:
+            assert True
+        else:
+            assert False
