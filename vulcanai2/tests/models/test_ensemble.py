@@ -7,6 +7,8 @@ from vulcanai2.models.dnn import DenseNet
 from vulcanai2.models.ensemble import SnapshotNet
 from torch.utils.data import TensorDataset, DataLoader
 
+torch.manual_seed(1234)
+
 
 class TestSnapshotNet:
     """Test SnapshotNet functionality."""

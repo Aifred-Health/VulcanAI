@@ -12,6 +12,7 @@ from vulcanai2.models.dnn import DenseNet
 from vulcanai2.models.cnn import ConvNet
 from torch.utils.data import TensorDataset, DataLoader
 
+torch.manual_seed(1234)
 
 class TestBaseUnit:
     """To test BaseUnit layer."""
@@ -82,9 +83,9 @@ class TestDenseUnit:
 
     def test_forward(self, denseunit):
         """Confirm size is expected after forward."""
-        test_input = torch.ones([10, denseunit.in_features])
+        test_input = torch.randint(0, 10, size=[10, denseunit.in_features])
         output = denseunit.forward(test_input)
-        assert output.shape == torch.ones([10, denseunit.out_features]).shape
+        assert output.shape == torch.randint(0, 10, size=[10, denseunit.out_features]).shape
 
 
 class TestConvUnit:
@@ -141,11 +142,11 @@ class TestConvUnit:
 
     def test_forward(self, convunit):
         """Confirm size is expected after forward."""
-        test_input = torch.ones([10, convunit.in_channels, 28, 28])
+        test_input = torch.randint(0, 10, size=[10, convunit.in_channels, 28, 28])
         output = convunit.forward(test_input)
         # No padding with 2 5x5 kernels leads from 28x28 -> 24x24
         assert output.shape == \
-            torch.ones([10, convunit.out_channels, 24, 24]).shape
+               torch.randint(0, 10, size=[10, convunit.out_channels, 24, 24]).shape
 
 
 class TestSeluInit:
@@ -266,7 +267,7 @@ class TestSeluInitTrain:
         """Confirm SELU weight and bias properties hold for a dense net."""
         fan_in = dnn_class.in_dim[0]
         std = round(math.sqrt(1. / fan_in), 1)
-        test_input = torch.ones([10, *dnn_class.in_dim]).float()
+        test_input = torch.randint(0, 10, size=[10, *dnn_class.in_dim]).float()
         test_target = torch.LongTensor([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
         test_dataloader = DataLoader(TensorDataset(test_input, test_target))
         dnn_class.fit(test_dataloader, test_dataloader, 5)
@@ -281,7 +282,7 @@ class TestSeluInitTrain:
         fan_in = cnn_class.network[0].in_channels * \
             reduce(lambda k1, k2: k1 * k2, cnn_class.network[0].kernel_size)
         std = round(math.sqrt(1. / fan_in), 1)
-        test_input = torch.ones([10, *cnn_class.in_dim]).float()
+        test_input = torch.randint(0, 10, size=[10, *cnn_class.in_dim]).float()
         test_target = torch.LongTensor([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
         test_dataloader = DataLoader(TensorDataset(test_input, test_target))
         cnn_class.fit(test_dataloader, test_dataloader, 5)
