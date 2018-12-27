@@ -1,3 +1,4 @@
+"""Define tests for ensemble networks such as Snapshot ensembling."""
 import pytest
 import numpy as np
 import torch
@@ -40,7 +41,6 @@ class TestSnapshotNet:
         return DenseNet(
             name='Test_DenseNet_class',
             input_networks=cnn_noclass,
-            in_dim=cnn_noclass.out_dim,
             config={
                 'dense_units': [100, 50],
                 'initializer': None,
@@ -50,14 +50,14 @@ class TestSnapshotNet:
             },
             num_classes=3
         )
+
     @pytest.fixture
     def dnn_class_two(self, cnn_noclass):
         """Create dnn module prediction leaf node."""
         return DenseNet(
             name='Test_DenseNet_class',
             input_networks=cnn_noclass,
-            in_dim=cnn_noclass.out_dim,
-            optim_spec={'name':'Adam', 'lr':0.001},
+            optim_spec={'name': 'Adam', 'lr': 0.001},
             config={
                 'dense_units': [100, 50],
                 'initializer': None,
@@ -84,7 +84,9 @@ class TestSnapshotNet:
             epochs=3,
             plot=False
         )
-        assert test_snap.template_network.lr_scheduler is not None
+        assert isinstance(
+            test_snap.template_network.lr_scheduler,
+            torch.optim.lr_scheduler.CosineAnnealingLR)
         # Check correct number of generated snapshots
         assert len(test_snap.network) == 3
         # Check snapshots are not identical
