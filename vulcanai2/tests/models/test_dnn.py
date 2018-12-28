@@ -149,7 +149,21 @@ class TestDenseNet:
             trained_weights = multi_input_dnn_class.network[0]._kernel.weight.detach()
 
             # Sanity check if the network parameters are training
-            assert not (torch.equal(init_weights.cpu(), trained_weights.cpu()))
+            # We want to be sure weights are different.
+            # Hacked so that we can be sure we're properly comparing floats
+            # There is no negation of np.testing.assert_almost_equal.
+            # Thus we throw an error if an error doesn't occur from checking eq
+            weights_same = True
+            try:
+                np.testing.assert_almost_equal(init_weights.cpu().numpy(),
+                                               trained_weights.cpu().numpy())
+            except AssertionError:
+                weights_same = False
+
+            if weights_same:
+                raise AssertionError
+
+            #assert not (torch.equal(init_weights.cpu(), trained_weights.cpu()))
             compare_params = [not torch.allclose(param1, param2)
                               for param1, param2 in zip(parameters1,
                                                         parameters2)]
