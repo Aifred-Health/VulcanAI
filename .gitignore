@@ -20,3 +20,4 @@ examples/saved_models
 *.json
 *.zip
 *.cache
+*.log

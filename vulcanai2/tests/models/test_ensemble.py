@@ -1,3 +1,4 @@
+"""Define tests for ensemble networks such as Snapshot ensembling."""
 import pytest
 import numpy as np
 import torch
@@ -5,6 +6,8 @@ from vulcanai2.models.cnn import ConvNet
 from vulcanai2.models.dnn import DenseNet
 from vulcanai2.models.ensemble import SnapshotNet
 from torch.utils.data import TensorDataset, DataLoader
+
+torch.manual_seed(1234)
 
 
 class TestSnapshotNet:
@@ -40,7 +43,23 @@ class TestSnapshotNet:
         return DenseNet(
             name='Test_DenseNet_class',
             input_networks=cnn_noclass,
-            in_dim=cnn_noclass.out_dim,
+            config={
+                'dense_units': [100, 50],
+                'initializer': None,
+                'bias_init': None,
+                'norm': None,
+                'dropout': 0.5,  # Single value or List
+            },
+            num_classes=3
+        )
+
+    @pytest.fixture
+    def dnn_class_two(self, cnn_noclass):
+        """Create dnn module prediction leaf node."""
+        return DenseNet(
+            name='Test_DenseNet_class',
+            input_networks=cnn_noclass,
+            optim_spec={'name': 'Adam', 'lr': 0.001},
             config={
                 'dense_units': [100, 50],
                 'initializer': None,
@@ -53,7 +72,7 @@ class TestSnapshotNet:
 
     def test_snapshot_structure(self, cnn_noclass, dnn_class):
         """Confirm Snapshot structure is generated properly."""
-        test_input = torch.ones([3, *cnn_noclass.in_dim]).float()
+        test_input = torch.randint(0, 10, size=[3, *cnn_noclass.in_dim]).float()
         test_target = torch.LongTensor([0, 2, 1])
         test_dataloader = DataLoader(TensorDataset(test_input, test_target))
         test_snap = SnapshotNet(
@@ -67,7 +86,9 @@ class TestSnapshotNet:
             epochs=3,
             plot=False
         )
-        assert test_snap.template_network.lr_scheduler is not None
+        assert isinstance(
+            test_snap.template_network.lr_scheduler,
+            torch.optim.lr_scheduler.CosineAnnealingLR)
         # Check correct number of generated snapshots
         assert len(test_snap.network) == 3
         # Check snapshots are not identical
@@ -79,3 +100,21 @@ class TestSnapshotNet:
             convert_to_class=False)
         assert output.shape == (3, test_snap._num_classes)
         assert np.any(~np.isnan(output))
+
+    def test_snapshot_lr(self, cnn_noclass, dnn_class_two):
+        """Confirm Snapshot structure is generated properly."""
+        test_input = torch.randint(0, 10, size=[3, *cnn_noclass.in_dim]).float()
+        test_target = torch.LongTensor([0, 2, 1])
+        test_dataloader = DataLoader(TensorDataset(test_input, test_target))
+        test_snap = SnapshotNet(
+            name='test_snap',
+            template_network=dnn_class_two,
+            n_snapshots=3,
+        )
+        test_snap.fit(
+            train_loader=test_dataloader,
+            val_loader=test_dataloader,
+            epochs=15,
+            plot=False
+        )
+        assert test_snap.template_network.lr_scheduler.get_lr()[0] < 0.001

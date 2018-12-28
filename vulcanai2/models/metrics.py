@@ -29,7 +29,9 @@ class Metrics(object):
     def __init__(self):
         """Initialize the metrics class for a BaseNetwork."""
 
-    def get_score(self, targets, predictions, metrics='accuracy', average=None,
+    # TODO: consider making class_converted default True
+    @staticmethod
+    def get_score(targets, predictions, metrics='accuracy', average=None,
                   class_converted=False):
         """
         Calculate the provided metrics given some targets and predictions.
@@ -62,7 +64,7 @@ class Metrics(object):
         double_parametered_functions = ["get_accuracy"]
 
         if not class_converted:
-            predictions = self.extract_class_labels(predictions)
+            predictions = Metrics.extract_class_labels(predictions)
 
         if isinstance(metrics, str):
             metrics = [metrics]
@@ -194,7 +196,8 @@ class Metrics(object):
     @staticmethod
     def get_sensitivity(targets, predictions, average=None):
         """
-        Calculate the sensitivity.
+        Calculate the sensitivity. Also referred to as recall,
+        or the true positive rate.
 
         Parameters
         ----------
@@ -414,6 +417,7 @@ class Metrics(object):
 
         return f1
 
+    # TODO: what type are the raw predicted values that come out??
     @staticmethod
     def get_auc(targets, raw_predictions, num_classes, average=None):
         """
@@ -452,10 +456,8 @@ class Metrics(object):
                 fpr, tpr, _ = skl_metrics.roc_curve(targets,
                                                     raw_predictions[:, i],
                                                     pos_label=i)
-
             auc = skl_metrics.auc(fpr, tpr)
             all_class_auc += [auc]
-
         # TODO: implement other options
         if average == "macro":
             all_class_auc = np.average(all_class_auc)
@@ -464,7 +466,8 @@ class Metrics(object):
 
         return all_class_auc
 
-    def run_test(self, network, data_loader, figure_path=None, plot=False):
+    @staticmethod
+    def run_test(network, data_loader, figure_path=None, plot=False):
         """
         Will conduct the test suite to determine network strength.
 
@@ -498,7 +501,7 @@ class Metrics(object):
             data_loader=data_loader,
             convert_to_class=False)
 
-        predictions = self.extract_class_labels(raw_predictions)
+        predictions = Metrics.extract_class_labels(raw_predictions)
 
         cm = skl_metrics.confusion_matrix(targets, predictions)
         if plot:
@@ -581,7 +584,8 @@ class Metrics(object):
         }
 
     # TODO: include support
-    def cross_validate(self, network, data_loader, k, epochs,
+    @staticmethod
+    def cross_validate(network, data_loader, k, epochs,
                        average_results=True, retain_graph=None,
                        valid_interv=4, plot=False, figure_path=None):
         """
@@ -666,7 +670,7 @@ class Metrics(object):
                     retain_graph=retain_graph,
                     valid_interv=valid_interv, plot=plot)
                 # Validate network performance on validation data loader.
-                results = self.run_test(
+                results = Metrics.run_test(
                     cross_val_network, val_loader,
                     figure_path=figure_path, plot=plot)
 

@@ -3,8 +3,10 @@ import pytest
 import numpy as np
 import torch
 from copy import deepcopy
-
-from vulcanai2.plotters.visualization import compute_saliency_map
+import os
+from torch.utils.data import TensorDataset, DataLoader
+from vulcanai2.plotters.visualization import compute_saliency_map, \
+                                             display_receptive_fields
 
 
 class TestVisualization:
@@ -49,6 +51,26 @@ class TestVisualization:
                 'dropouts': 0.3,
             },
             num_classes=3
+        )
+
+    @pytest.fixture
+    def dnn_class_two(self):
+        """Create DenseNet with no prediction layer."""
+        from vulcanai2.models.dnn import DenseNet
+        return DenseNet(
+            name='Test_DenseNet_class',
+            in_dim=(200),
+            activation=torch.nn.SELU(),
+            num_classes=2,
+            input_networks=None,
+            config={
+                'dense_units': [100],
+                'dropout': [0.3],
+                'initializer': None,
+                'bias_init': None,
+                'norm': None
+            },
+            optim_spec={'name': 'Adam', 'lr': 0.001}
         )
 
     def test_compute_saliency_map_cnn(self, cnn_class):
@@ -104,3 +126,18 @@ class TestVisualization:
 
         # Test hook removal
         assert dnn_class._backward_hooks == model_copy._backward_hooks
+
+    def test_receptive_field(self, dnn_class_two):
+        """Test receptive field visualization gets created and can be saved."""
+        curr_path = str(os.path.dirname(__file__)) + '/'
+        test_input = torch.ones([10, *dnn_class_two.in_dim]).float()
+        test_target = torch.LongTensor([0, 1, 1, 0, 0, 1, 0, 1, 0, 1])
+        test_dataloader = DataLoader(TensorDataset(test_input, test_target))
+
+        dnn_class_two.fit(test_dataloader, test_dataloader, 5)
+        display_receptive_fields(dnn_class_two)
+        for file in os.listdir(curr_path):
+            if file.startswith('feature_importance'):
+                assert True
+                file_path = curr_path + file
+                os.remove(file_path)

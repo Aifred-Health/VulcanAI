@@ -60,11 +60,11 @@ def get_one_hot(in_matrix):
     return np.array(lb.fit_transform(custom_array), dtype='float32')
 
 
-def pad(tensor, padded_shape):
+def pad(tensor, target_shape):
     """
-    Pad incoming tensor to the size of padded_shape.
+    Pad incoming tensor to the size of target_shape.
 
-    tensor must have same spatial dimenison as the padded_shape.
+    tensor must have same spatial dimenison as the target_shape.
     Useful for combining various conv dimension outputs and to implement
     'same' padding for conv operations.
 
@@ -72,22 +72,22 @@ def pad(tensor, padded_shape):
     ----------
     tensor : torch.Tensor
         Tensor to be padded
-    padded_shape : np.array
+    target_shape : np.array
         Final padded tensor shape [*spatial_dimensions]
 
     Returns
     -------
     tensor : torch.Tensor
-        zero padded tensor with spatial dimension as padded_shape
+        zero padded tensor with spatial dimension as target_shape
 
     """
     # Ignore channels and batch and focus on spatial dimensions
     # from incoming tensor
-    if not isinstance(padded_shape, np.ndarray):
-        padded_shape = np.array(padded_shape)
-    n_dim = len(padded_shape)
+    if not isinstance(target_shape, np.ndarray):
+        target_shape = np.array(target_shape)
+    n_dim = len(target_shape)
     # Calculate, element-wise, how much needs to be padded for each dim.
-    dims_size_diff = padded_shape - np.array(tensor.shape[-n_dim:])
+    dims_size_diff = target_shape - np.array(tensor.shape[-n_dim:])
     # TODO: Use torch.nn.ConstantPadding?
     padding_needed = []
     for dim_diff in reversed(dims_size_diff):
@@ -278,5 +278,5 @@ def master_device_setter(network, device=None):
     """
     network.device = device
     if network.input_networks:
-        for net in network.input_networks.values():           
+        for net in network.input_networks.values():
             master_device_setter(net, device)
