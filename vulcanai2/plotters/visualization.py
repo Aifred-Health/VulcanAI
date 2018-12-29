@@ -61,6 +61,12 @@ def get_time():
     curr_time = curr_time.split('.')[0]
     return curr_time
 
+def load_vis(load_path=None):
+    if load_path is not None:
+        with open(load_path) as in_file:
+            record = pickle.load(in_file)
+    display_record(record=record, interactive=False)
+
 def display_record(record=None, save_path=None, interactive=True):
     """
     Display the training curve for a network training session.
