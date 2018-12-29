@@ -20,18 +20,7 @@ import itertools
 import logging
 logger = logging.getLogger(__name__)
 
-def assert_display_available():
-    """
-    Check that display variable exists
-
-    Returns
-    -------
-    Boolean
-        True if display variable exists
-        False if display variable does not exist
-
-    """
-    return True if os.environ.get("DISPLAY") else False
+DISPLAY_AVAILABLE = True if os.environ.get("DISPLAY") else False
 
 def save_visualization(plot, path=None):
     """
@@ -137,7 +126,7 @@ def display_record(record=None, save_path=None, interactive=True):
         save_path = get_save_path(save_path, vis_type='train')
         save_visualization(plt, save_path)
 
-    if not assert_display_available() and save_path is None:
+    if not DISPLAY_AVAILABLE and save_path is None:
         raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
 
     elif interactive is True:
@@ -214,7 +203,7 @@ def _plot_reduction(x_transform, targets, label_map, title, save_path=None):
         save_path = get_save_path(save_path, vis_type=title)
         save_visualization(plt, save_path)
 
-    if not assert_display_available() and save_path is None:
+    if not DISPLAY_AVAILABLE and save_path is None:
         raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
     else:
         plt.show(False)
@@ -266,7 +255,7 @@ def display_confusion_matrix(cm, class_list=None, save_path=None):
         save_path = get_save_path(save_path, vis_type='confusion_matrix')
         save_visualization(plt, save_path)
 
-    if not assert_display_available() and save_path is None:
+    if not DISPLAY_AVAILABLE and save_path is None:
         raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
     else:
         plt.show(False)
@@ -361,7 +350,7 @@ def display_saliency_overlay(image, saliency_map, shape=(28, 28), save_path=None
         save_path = get_save_path(save_path, vis_type='saliency_map')
         save_visualization(plt, save_path)
 
-    if not assert_display_available() and save_path is None:
+    if not DISPLAY_AVAILABLE and save_path is None:
         raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
     else:
         plt.show(False)
@@ -422,7 +411,7 @@ def display_receptive_fields(network, top_k=5, save_path=None):
         save_path = get_save_path(save_path, vis_type='feature_importance')
         save_visualization(plt, save_path)
 
-    if not assert_display_available() and save_path is None:
+    if not DISPLAY_AVAILABLE and save_path is None:
         raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
     else:
         plt.show(False)
