@@ -49,10 +49,7 @@ def save_visualization(plot, path=None):
     None
 
     """
-    if not assert_display_available() and path is None:
-        raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
-    else:
-        plot.savefig(path)
+    plot.savefig(path)
 
 def get_time():
     curr_time = str(datetime.now())
@@ -130,7 +127,10 @@ def display_record(record=None, save_path=None, interactive=True):
         save_path = save_path + '_train.png'
         save_visualization(plt, save_path)
 
-    if interactive is True:
+    if not assert_display_available() and save_path is None:
+        raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
+
+    elif interactive is True:
         plt.draw()
         plt.pause(1e-17)
 
@@ -205,7 +205,10 @@ def _plot_reduction(x_transform, targets, label_map, title, save_path=None):
         save_path = save_path + '/' + title + '_' + time + '.png'
         save_visualization(plt, save_path)
 
-    plt.show(False)
+    if not assert_display_available() and save_path is None:
+        raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
+    else:
+        plt.show(False)
 
 
 def display_confusion_matrix(cm, class_list=None, save_path=None):
@@ -255,7 +258,10 @@ def display_confusion_matrix(cm, class_list=None, save_path=None):
         save_path = save_path + '/confusion_matrix' + '_' + time + '.png'
         save_visualization(plt, save_path)
 
-    plt.show(False)
+    if not assert_display_available() and save_path is None:
+        raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
+    else:
+        plt.show(False)
 
 def compute_saliency_map(network, input_data, targets):
     """
@@ -348,7 +354,10 @@ def display_saliency_overlay(image, saliency_map, shape=(28, 28), save_path=None
         save_path = save_path + '/saliency_map' + '_' + time + '.png'
         save_visualization(plt, save_path)
 
-    plt.show(False)
+    if not assert_display_available() and save_path is None:
+        raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
+    else:
+        plt.show(False)
 
 def display_receptive_fields(network, top_k=5, save_path=None):
     """
@@ -407,6 +416,9 @@ def display_receptive_fields(network, top_k=5, save_path=None):
         save_path = save_path + '/feature_importance' + '_' + time + '.png'
         save_visualization(plt, save_path)
 
-    plt.show(False)
+    if not assert_display_available() and save_path is None:
+        raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
+    else:
+        plt.show(False)
 
     return feature_importance
