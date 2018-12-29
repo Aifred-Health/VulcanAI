@@ -51,6 +51,14 @@ def save_visualization(plot, path=None):
     """
     plot.savefig(path)
 
+def get_save_path(path, vis_type):
+    path = path + "{}_{date:%Y-%m-%d_%H:%M:%S}".format(vis_type, date=datetime.now()) + '.png'
+    #curr_time = str(datetime.now())
+    #curr_time = curr_time.replace(" ", '_')
+    #curr_time = curr_time.split('.')[0]
+    #path = path + '/' + vis_type + '_' + curr_time + '.png'
+    return path
+
 def get_time():
     curr_time = str(datetime.now())
     curr_time = curr_time.replace(" ", '_')
@@ -124,7 +132,7 @@ def display_record(record=None, save_path=None, interactive=True):
                loc=0)
 
     if save_path:
-        save_path = save_path + '_train.png'
+        save_path = get_save_path(save_path, vis_type='train')
         save_visualization(plt, save_path)
 
     if not assert_display_available() and save_path is None:
@@ -201,8 +209,7 @@ def _plot_reduction(x_transform, targets, label_map, title, save_path=None):
     plt.title(title)
 
     if save_path:
-        time = get_time()
-        save_path = save_path + '/' + title + '_' + time + '.png'
+        save_path = get_save_path(save_path, vis_type=title)
         save_visualization(plt, save_path)
 
     if not assert_display_available() and save_path is None:
@@ -254,8 +261,7 @@ def display_confusion_matrix(cm, class_list=None, save_path=None):
     plt.colorbar(im, cax=cax)
 
     if save_path:
-        time = get_time()
-        save_path = save_path + '/confusion_matrix' + '_' + time + '.png'
+        save_path = get_save_path(save_path, vis_type='confusion_matrix')
         save_visualization(plt, save_path)
 
     if not assert_display_available() and save_path is None:
@@ -350,8 +356,7 @@ def display_saliency_overlay(image, saliency_map, shape=(28, 28), save_path=None
     plt.colorbar(im, cax=cax, format='%.0e')
 
     if save_path:
-        time = get_time()
-        save_path = save_path + '/saliency_map' + '_' + time + '.png'
+        save_path = get_save_path(save_path, vis_type='saliency_map')
         save_visualization(plt, save_path)
 
     if not assert_display_available() and save_path is None:
@@ -412,8 +417,7 @@ def display_receptive_fields(network, top_k=5, save_path=None):
         plt.colorbar()
 
     if save_path:
-        time = get_time()
-        save_path = save_path + '/feature_importance' + '_' + time + '.png'
+        save_path = get_save_path(save_path, vis_type='feature_importance')
         save_visualization(plt, save_path)
 
     if not assert_display_available() and save_path is None:
