@@ -7,6 +7,7 @@ from math import sqrt, ceil, floor
 import pickle
 from datetime import datetime
 from .utils import GuidedBackprop, get_notable_indices
+from ..models import basenetwork
 
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
@@ -49,12 +50,6 @@ def get_time():
     curr_time = curr_time.replace(" ", '_')
     curr_time = curr_time.split('.')[0]
     return curr_time
-
-def load_vis(load_path=None):
-    if load_path is not None:
-        with open(load_path) as in_file:
-            record = pickle.load(in_file)
-    display_record(record=record, interactive=False)
 
 def display_record(record=None, save_path=None, interactive=True):
     """
