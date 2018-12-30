@@ -7,7 +7,6 @@ from math import sqrt, ceil, floor
 import pickle
 from datetime import datetime
 from .utils import GuidedBackprop, get_notable_indices
-from ..models import basenetwork
 
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
