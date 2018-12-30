@@ -128,10 +128,7 @@ class TestVisualization:
                 file_created = True
                 file_path = curr_path + file
                 os.remove(file_path)
-        if file_created:
-            assert True
-        else:
-            assert False
+        assert file_created
 
     def test_display_pca(self, dnn_class):
         curr_path = str(os.path.dirname(__file__)) + '/'
@@ -143,10 +140,7 @@ class TestVisualization:
                 file_created = True
                 file_path = curr_path + file
                 os.remove(file_path)
-        if file_created:
-            assert True
-        else:
-            assert False
+        assert file_created
 
     def test_display_tsne(self, dnn_class):
         curr_path = str(os.path.dirname(__file__)) + '/'
@@ -158,10 +152,7 @@ class TestVisualization:
                 file_created = True
                 file_path = curr_path + file
                 os.remove(file_path)
-        if file_created:
-            assert True
-        else:
-            assert False
+        assert file_created
 
     def test_display_confusion_matrix(self):
         curr_path = str(os.path.dirname(__file__)) + '/'
@@ -173,7 +164,4 @@ class TestVisualization:
                 file_created = True
                 file_path = curr_path + file
                 os.remove(file_path)
-        if file_created:
-            assert True
-        else:
-            assert False
+        assert file_created
