@@ -49,14 +49,6 @@ def get_save_path(path, vis_type):
     return path
 
 
-def get_time():
-    """Return the time in a formatted string."""
-    curr_time = str(datetime.now())
-    curr_time = curr_time.replace(" ", '_')
-    curr_time = curr_time.split('.')[0]
-    return curr_time
-
-
 def display_record(record=None, save_path=None, interactive=True):
     """
     Display the training curve for a network training session.
