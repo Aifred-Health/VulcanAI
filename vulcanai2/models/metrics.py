@@ -5,11 +5,14 @@ from torch.utils import data
 
 import math
 import numpy as np
+import pandas as pd
 from sklearn import metrics as skl_metrics
 
 from .utils import round_list
 from ..plotters.visualization import display_confusion_matrix
 from collections import defaultdict
+from . import DenseNet
+from ..datasets import TabularDataset
 
 import copy
 
@@ -688,3 +691,87 @@ class Metrics(object):
             return averaged_all_results
         else:
             return all_results
+
+
+    def conduct_sensitivity_analysis(self, network, data_loader, filename, cutoff=20):
+        """
+        Will conduct tests to figure out directionality of features by finding all the unique feature values present in
+        the dataset and setting the feature for all examples to every unique value of that feature.
+
+        Parameters
+        ----------
+            network : BaseNetwork
+                Network descendant of BaseNetwork.
+            data_loader : DataLoader
+                A DataLoader object which contains all the data
+            filename: string
+                The name of the file to save the test results to
+            cutoff: int
+                Maximum number of unique feature values for a particular feature that will be tested
+
+        Returns
+        -------
+        #TODO
+        """
+
+        #check for dense net
+        if not isinstance(network, DenseNet):
+            return NotImplementedError
+
+        if network._num_classes is None or network._num_classes == 0:
+            raise ValueError('There\'s no classification layer')
+
+        if not isinstance(data_loader.dataset, TabularDataset):
+            return NotImplementedError
+        else:
+            tabular_data = data_loader.dataset.df
+
+        features = tabular_data.list_all_features()
+
+        test_df = None
+        col_headers = None
+
+        for feature in range(len(features)):
+            feature_val_list = data[features[feature]]
+            unique_feature_values = list(np.unique(feature_val_list))
+
+            if len(unique_feature_values) > cutoff:
+                print("================================")
+                print("Cutting off number of features to be tested for feature {} from {} to {}" \
+                      .format(features[feature],len(unique_feature_values),cutoff))
+                print("================================")
+                unique_feature_values = unique_feature_values[0::(len(unique_feature_values) / cutoff)]
+            tabular_data_temp = copy.deepcopy(tabular_data)
+            for feature_value in range(len(unique_feature_values)):
+                tabular_data_temp[:, feature] = unique_feature_values[feature_value]
+                print("Testing value {} for feature {}".format(unique_feature_values[feature_value],
+                                                               features[feature]))
+
+                targets = np.array([v[1] for v in data_loader.dataset])
+
+                raw_predictions = network.forward_pass(
+                    data_loader=data_loader,
+                    convert_to_class=False)
+
+                predictions = self.extract_class_labels(raw_predictions)
+
+                tp, _, fp, _ = Metrics.get_confusion_matrix_values(targets,
+                                                                     predictions)
+
+                if test_df is None and col_headers is None:
+                    num_classes = network._num_classes
+                    col_headers = ["Feature", "Value"]
+                    for i in range(num_classes):
+                        col_headers.append("Number of examples classified as class " + str(i))
+                    test_df = pd.DataFrame(columns=col_headers)
+
+                row_to_append = [features[feature], unique_feature_values[feature_value]]
+
+                for i in range(len(tp)):
+                    row_to_append.append(tp[i] + fp[i])
+
+                test_df.append(pd.DataFrame(row_to_append, columns=col_headers))
+            print("***************************")
+        test_df.to_csv("{}.csv".format(filename))
+        return test_df
+
