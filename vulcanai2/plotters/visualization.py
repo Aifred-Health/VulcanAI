@@ -40,6 +40,7 @@ def save_visualization(plot, path=None):
 
     """
     plot.savefig(path)
+    logger.info(f"Saved visualization at {path}")
 
 
 def get_save_path(path, vis_type):
