@@ -59,6 +59,8 @@ def display_record(record=None, save_path=None, interactive=True):
         the network record dictionary for dynamic graphs during training.
     save_path : String
         String that designates the path to save figure to be produced.
+        Save_path must be a proper path that ends with a filename with an
+        image filetype.
     interactive : boolean
         To display during training or afterwards.
 
@@ -116,7 +118,6 @@ def display_record(record=None, save_path=None, interactive=True):
                loc=0)
 
     if save_path:
-        save_path = get_save_path(save_path, vis_type='train')
         save_visualization(plt, save_path)
 
     if not DISPLAY_AVAILABLE and save_path is None:

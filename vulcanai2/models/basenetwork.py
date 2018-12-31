@@ -568,7 +568,11 @@ class BaseNetwork(nn.Module):
                 plt.show()
 
             if save_path:
-                save_path = get_save_path(save_path, vis_type=self.name)
+                if save_path.endswith('/'):
+                    save_path = save_path + self.name + '_'
+                else:
+                    save_path = save_path + '/' + self.name + '_'
+                save_path = get_save_path(save_path, vis_type='train')
             for epoch in trange(epochs, desc='Epoch: '):
 
                 train_loss, train_acc = self._train_epoch(train_loader,
