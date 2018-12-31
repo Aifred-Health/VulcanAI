@@ -97,13 +97,12 @@ class BaseNetwork(nn.Module):
         if input_networks:
             self.input_networks = nn.ModuleDict()
             for in_net in input_networks:
-                self.add_input_network(in_net)
+                self._add_input_network(in_net)
         else:
             self.input_networks = input_networks
 
         self._num_classes = num_classes
 
-        self._optim_spec = optim_spec
         self._lr_scheduler = lr_scheduler
         self._early_stopping = early_stopping
 
@@ -142,9 +141,10 @@ class BaseNetwork(nn.Module):
         self.out_dim = self._get_out_dim()
 
         self.device = device
+        self._optim_spec = optim_spec
         self._criter_spec = criter_spec
 
-    def add_input_network(self, in_network):
+    def _add_input_network(self, in_network):
         """
         Add a new network to  an input for this network.
 
@@ -161,11 +161,12 @@ class BaseNetwork(nn.Module):
         None
 
         """
-        if self.input_networks is None:
-            self.input_networks = nn.ModuleDict()
         assert isinstance(in_network, BaseNetwork)
         assert in_network is not self
-        assert isinstance(self.input_networks, nn.ModuleDict)
+        if not self.input_networks:
+            self.input_networks = nn.ModuleDict()
+        else:
+            assert isinstance(self.input_networks, nn.ModuleDict)
         self.input_networks[in_network.name] = in_network
         self.in_dim = self._get_in_dim()
 
