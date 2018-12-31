@@ -22,9 +22,10 @@ logger = logging.getLogger(__name__)
 
 DISPLAY_AVAILABLE = True if os.environ.get("DISPLAY") else False
 
+
 def save_visualization(plot, path=None):
     """
-    Save plot at designated path
+    Save plot at designated path.
 
     Parameters
     ----------
@@ -40,15 +41,21 @@ def save_visualization(plot, path=None):
     """
     plot.savefig(path)
 
+
 def get_save_path(path, vis_type):
-    path = path + "{}_{date:%Y-%m-%d_%H:%M:%S}".format(vis_type, date=datetime.now()) + '.png'
+    """Return a save_path string."""
+    path = "{}{}_{date:%Y-%m-%d_%H:%M:%S}.png".format(
+        path, vis_type, date=datetime.now())
     return path
 
+
 def get_time():
+    """Return the time in a formatted string."""
     curr_time = str(datetime.now())
     curr_time = curr_time.replace(" ", '_')
     curr_time = curr_time.split('.')[0]
     return curr_time
+
 
 def display_record(record=None, save_path=None, interactive=True):
     """
@@ -121,7 +128,10 @@ def display_record(record=None, save_path=None, interactive=True):
         save_visualization(plt, save_path)
 
     if not DISPLAY_AVAILABLE and save_path is None:
-        raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
+        raise RuntimeError(
+            "No display environment found. "
+            "Display environment needed to plot, "
+            "or set save_path=path/to/dir")
 
     elif interactive is True:
         plt.draw()
@@ -198,7 +208,10 @@ def _plot_reduction(x_transform, targets, label_map, title, save_path=None):
         save_visualization(plt, save_path)
 
     if not DISPLAY_AVAILABLE and save_path is None:
-        raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
+        raise RuntimeError(
+            "No display environment found. "
+            "Display environment needed to plot, "
+            "or set save_path=path/to/dir")
     else:
         plt.show(False)
 
@@ -250,9 +263,13 @@ def display_confusion_matrix(cm, class_list=None, save_path=None):
         save_visualization(plt, save_path)
 
     if not DISPLAY_AVAILABLE and save_path is None:
-        raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
+        raise RuntimeError(
+            "No display environment found. "
+            "Display environment needed to plot, "
+            "or set save_path=path/to/dir")
     else:
         plt.show(False)
+
 
 def compute_saliency_map(network, input_data, targets):
     """
@@ -345,9 +362,13 @@ def display_saliency_overlay(image, saliency_map, shape=(28, 28), save_path=None
         save_visualization(plt, save_path)
 
     if not DISPLAY_AVAILABLE and save_path is None:
-        raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
+        raise RuntimeError(
+            "No display environment found. "
+            "Display environment needed to plot, "
+            "or set save_path=path/to/dir")
     else:
         plt.show(False)
+
 
 def display_receptive_fields(network, top_k=5, save_path=None):
     """
@@ -406,7 +427,10 @@ def display_receptive_fields(network, top_k=5, save_path=None):
         save_visualization(plt, save_path)
 
     if not DISPLAY_AVAILABLE and save_path is None:
-        raise RuntimeError("No display environment found. Display environment needed to plot, or set save_path=path/to/dir")
+        raise RuntimeError(
+            "No display environment found. "
+            "Display environment needed to plot, "
+            "or set save_path=path/to/dir")
     else:
         plt.show(False)
 

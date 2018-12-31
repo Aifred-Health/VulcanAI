@@ -601,12 +601,9 @@ class BaseNetwork(nn.Module):
                     plt.figure(fig_number)
                     display_record(record=self.record, save_path=save_path)
 
-
-
                 self.epoch += 1
 
         except KeyboardInterrupt:
-
             logger.warning(
                 "\n\n**********KeyboardInterrupt: "
                 "Training stopped prematurely.**********\n\n")
