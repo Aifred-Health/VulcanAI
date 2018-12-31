@@ -136,6 +136,7 @@ class TestVisualization:
         assert dnn_class._backward_hooks == model_copy._backward_hooks
 
     def test_display_saliency_overlay(self, dnn_class):
+        """Test saliency overlay displays and saves."""
         curr_path = str(os.path.dirname(__file__)) + '/'
         img = np.zeros((25,25))
         test_input_1B = torch.ones([1, *dnn_class.in_dim])
@@ -152,9 +153,11 @@ class TestVisualization:
         assert file_created
 
     def test_display_pca(self, dnn_class):
+        """Test PCA displays and saves."""
         curr_path = str(os.path.dirname(__file__)) + '/'
         digits = load_digits()
-        dnn_pca = display_pca(digits.data[0:10], digits.target[0:10], save_path=curr_path)
+        display_pca(
+            digits.data[0:10], digits.target[0:10], save_path=curr_path)
         file_created = False
         for file in os.listdir(curr_path):
             if file.startswith('PCA'):
@@ -164,9 +167,11 @@ class TestVisualization:
         assert file_created
 
     def test_display_tsne(self, dnn_class):
+        """Test t-SNE displays and saves."""
         curr_path = str(os.path.dirname(__file__)) + '/'
         digits = load_digits()
-        dnn_tsne = display_tsne(digits.data[0:10], digits.target[0:10], save_path=curr_path)
+        display_tsne(
+            digits.data[0:10], digits.target[0:10], save_path=curr_path)
         file_created = False
         for file in os.listdir(curr_path):
             if file.startswith('t-SNE'):
@@ -176,6 +181,7 @@ class TestVisualization:
         assert file_created
 
     def test_display_confusion_matrix(self):
+        """Test confusion matrix displays and saves."""
         curr_path = str(os.path.dirname(__file__)) + '/'
         cm = confusion_matrix(y_true=[0, 1, 1, 0, 0], y_pred=[1, 1, 0, 1, 0])
         display_confusion_matrix(cm, class_list=[0, 1], save_path=curr_path)
