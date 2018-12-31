@@ -468,7 +468,7 @@ class Metrics(object):
 
 
     @staticmethod
-    def run_test(network, data_loader, figure_path=None, plot=False):
+    def run_test(network, data_loader, plot=False, save_path=None):
         """
         Will conduct the test suite to determine network strength.
 

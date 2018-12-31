@@ -177,7 +177,7 @@ class TestVisualization:
 
     def test_display_confusion_matrix(self):
         curr_path = str(os.path.dirname(__file__)) + '/'
-        cm = confusion_matrix(y_true=[0,1,1,0,0], y_pred=[1,1,0,1,0])
+        cm = confusion_matrix(y_true=[0, 1, 1, 0, 0], y_pred=[1, 1, 0, 1, 0])
         display_confusion_matrix(cm, class_list=[0, 1], save_path=curr_path)
         file_created = False
         for file in os.listdir(curr_path):
@@ -195,9 +195,11 @@ class TestVisualization:
         test_dataloader = DataLoader(TensorDataset(test_input, test_target))
 
         dnn_class_two.fit(test_dataloader, test_dataloader, 5)
-        display_receptive_fields(dnn_class_two)
+        display_receptive_fields(dnn_class_two, save_path=curr_path)
+        file_created = False
         for file in os.listdir(curr_path):
             if file.startswith('feature_importance'):
-                assert True
+                file_created = True
                 file_path = curr_path + file
                 os.remove(file_path)
+        assert file_created
