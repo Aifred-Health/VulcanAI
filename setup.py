@@ -16,8 +16,6 @@ setup(
                       'scipy>=0.17.1',
                       'matplotlib>=1.5.3',
                       'scikit-learn>=0.18',
-                      'jsonschema>=2.6.0',
-                      'torch>=0.4',
                       'pydash>=4.7.3',
                       'tqdm>=4.25.0'],
     packages=['vulcanai'],
