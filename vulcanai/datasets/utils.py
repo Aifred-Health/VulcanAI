@@ -28,9 +28,15 @@ def clean_dataframe(df):
 def check_split_ratio(split_ratio):
     """
     Check that the split ratio argument is not malformed
-    :param split_ratio: desired split ratio, either a list of length 2 or 3
-    depending if the validation set is desired.
-    :return: split ratio as tuple
+
+    Parameters:
+
+        split_ratio: desired split ratio, either a list of length 2 or 3
+            depending if the validation set is desired.
+    
+    Returns:
+        split ratio as tuple
+
     """
     valid_ratio = 0.
     if isinstance(split_ratio, float):
@@ -144,22 +150,23 @@ def stitch_datasets(df_main=None, merge_on_columns=None,
     """
     Function to produce a single dataset from multiple.
 
-    Parameters
-    ----------
-    df_dict : dictionary of dataframes to concatenated
-        dictionary {key = df name: value = dataframe} of dataframes to stitch
-        together.
-    merge_on_columns : list of strings
-        key(s) that specifies which columns to use to uniquely stitch dataset
-        (default None)
-    index_list: list of strings
-        columns to establish as index for final stitched dataset (default None)
-    dataset_dict : keyword parameter, value is dataframe
-        pandas dataframe assigned to keyword argument that produces a dictionary variable.
-    Returns
-    -------
-    merged_df : dataframe
-        concatenated dataframe
+    Parameters:
+        df_dict : dictionary of dataframes to concatenated
+            dictionary {key = df name: value = dataframe} of dataframes to
+            stitch together.
+        merge_on_columns : list of strings
+            key(s) that specifies which columns to use to uniquely stitch
+            dataset (default None)
+        index_list: list of strings
+            columns to establish as index for final stitched dataset
+            (default None)
+        dataset_dict : keyword parameter, value is dataframe
+            pandas dataframe assigned to keyword argument that produces a
+            dictionary variable.
+
+    Returns:
+        merged_df : dataframe
+            concatenated dataframe
 
     :Example:
 
@@ -175,6 +182,7 @@ def stitch_datasets(df_main=None, merge_on_columns=None,
                                     'D': ['D4', 'D5', 'D6', 'D7']},
                                     index=[4, 5, 6, 7])}
     >>> df_stitched = stitch_datasets(merge_on_columns=['A'], index_list=['A'], df1=df_test_one, df2=df_test_two)
+
     """
     # Get name of a dataframe to extract
     if df_main is not None:

@@ -1,5 +1,18 @@
 """Setup script for uploading package to PyPI servers."""
-from setuptools import setup
+from setuptools import setup, find_packages
+
+tests_require = [
+    'pytest',
+    'numpydoc'
+]
+
+docs_require = [
+    'Sphinx', #TODO: maybe numpydoc?
+]
+
+with open('requirements.txt') as f:
+    install_requires = [l.strip() for l in f]
+
 
 setup(
     name='vulcanai',
@@ -9,16 +22,17 @@ setup(
                 'all of the tools needed for visualizing and processing '
                 'high-dimensional data, modular neural networks, '
                 'and model evaluation',
-    author='Robert Fratila, Priyatharsan Rajasekar, Caitrin Armstrong',
+    author='Robert Fratila, Priyatharsan Rajasekar, Caitrin Armstrong, '
+            'Joseph Mehltretter',
     author_email='robertfratila10@gmail.com',
     url='https://github.com/Aifred-Health/Vulcan',
-    install_requires=['numpy>=1.12.0',
-                      'scipy>=0.17.1',
-                      'matplotlib>=1.5.3',
-                      'scikit-learn>=0.18',
-                      'pydash>=4.7.3',
-                      'tqdm>=4.25.0'],
-    packages=['vulcanai'],
+    install_requires=install_requires,
+    extras_require={
+        'testing': tests_require,
+        'docs': docs_require,
+    },
+    packages=find_packages(),
+    include_package_data=True,
     classifiers=['Development Status :: 3 - Alpha',
                  'Intended Audience :: Developers',
                  'Intended Audience :: Science/Research',

@@ -29,10 +29,9 @@ class ConvNetConfig:
 
         Cleaned units is stored in self.units
 
-        Parameters
-        ----------
-        raw_config : dict of dict
-            User specified dict
+        Parameters:
+            raw_config : dict of dict
+                User specified dict
 
         """
         if 'conv_units' not in raw_config:
@@ -59,14 +58,12 @@ class ConvNetConfig:
 
         Infer dimension of Conv using the kernel shape.
 
-        Parameters
-        ----------
-        raw_unit : dict
+        Parameters:
+            raw_unit : dict
 
-        Returns
-        -------
-        unit : dict
-            Cleaned unit config.
+        Returns:
+            unit : dict
+                Cleaned unit config.
 
         """
         unit = raw_unit
@@ -86,38 +83,36 @@ class ConvNet(BaseNetwork):
     """
     Subclass of BaseNetwork defining a ConvNet.
 
-    Parameters
-    ----------
-    name : str
-        The name of the network. Used when saving the file.
-    config : dict
-        The configuration of the network module, as a dict.
-    in_dim : tuple
-        The input dimensions of the network. Not required to specify when the
-        network has input_networks.
-    save_path : str
-        The name of the file to which you would like to save this network.
-    input_networks : list of BaseNetwork
-        A network object provided as input.
-    num_classes : int or None
-        The number of classes to predict.
-    activation : torch.nn.Module
-        The desired activation function for use in the network.
-    pred_activation : torch.nn.Module
-        The desired activation function for use in the prediction layer.
-    optim_spec : dict
-        A dictionary of parameters for the desired optimizer.
-    lr_scheduler : torch.optim.lr_scheduler
-        A callable torch.optim.lr_scheduler
-    early_stopping : str or None
-        So far just 'best_validation_error' is implemented.
-    criter_spec : dict
-        criterion specification with name and all its parameters.
+    Parameters:
+        name : str
+            The name of the network. Used when saving the file.
+        config : dict
+            The configuration of the network module, as a dict.
+        in_dim : tuple
+            The input dimensions of the network. Not required to specify when the
+            network has input_networks.
+        save_path : str
+            The name of the file to which you would like to save this network.
+        input_networks : list of BaseNetwork
+            A network object provided as input.
+        num_classes : int or None
+            The number of classes to predict.
+        activation : torch.nn.Module
+            The desired activation function for use in the network.
+        pred_activation : torch.nn.Module
+            The desired activation function for use in the prediction layer.
+        optim_spec : dict
+            A dictionary of parameters for the desired optimizer.
+        lr_scheduler : torch.optim.lr_scheduler
+            A callable torch.optim.lr_scheduler
+        early_stopping : str or None
+            So far just 'best_validation_error' is implemented.
+        criter_spec : dict
+            criterion specification with name and all its parameters.
 
-    Returns
-    -------
-    network : ConvNet
-        A network of type BaseNetwork.
+    Returns:
+        network : ConvNet
+            A network of type BaseNetwork.
 
     """
 
@@ -138,17 +133,15 @@ class ConvNet(BaseNetwork):
         """
         Build the layers of the network into a nn.Sequential object.
 
-        Parameters
-        ----------
-        conv_hid_layers : ConvNetConfig.units (list of dict)
-            The hidden layers specification
-        activation : torch.nn.Module
-            the non-linear activation to apply to each layer
+        Parameters:
+            conv_hid_layers : ConvNetConfig.units (list of dict)
+                The hidden layers specification
+            activation : torch.nn.Module
+                the non-linear activation to apply to each layer
 
-        Returns
-        -------
-        output : torch.nn.Sequential
-            the conv network as a nn.Sequential object
+        Returns:
+            output : torch.nn.Sequential
+                the conv network as a nn.Sequential object
 
         """
         conv_hid_layers = self._config.units
@@ -216,18 +209,16 @@ class ConvNet(BaseNetwork):
         """
         Convert Linear outputs into Conv outputs.
 
-        Parameters
-        ----------
-        tensor : torch.Tensor
-            The Linear tensor to reshape of shape [out_features]
-        cast_shape : numpy.ndarray
-            The Conv shape to cast linear to of shape
-            [batch, num_channels, *spatial_dimensions].
+        Parameters:
+            tensor : torch.Tensor
+                The Linear tensor to reshape of shape [out_features]
+            cast_shape : numpy.ndarray
+                The Conv shape to cast linear to of shape
+                [batch, num_channels, *spatial_dimensions].
 
-        Returns
-        -------
-        tensor : torch.Tensor
-            Tensor of shape [batch, num_channels, *spatial_dimensions]
+        Returns:
+            tensor : torch.Tensor
+                Tensor of shape [batch, num_channels, *spatial_dimensions]
 
         """
         # Equivalent to calculating tensor.numel() in pytorch.
@@ -245,19 +236,17 @@ class ConvNet(BaseNetwork):
         """
         Convert Conv outputs into Conv outputs.
 
-        Parameters
-        ----------
-        tensor : torch.Tensor
-            The Conv tensor to reshape of shape
-            [batch, num_channels, *spatial_dimensions]
-        cast_shape : numpy.ndarray
-            The Conv shape to cast incoming Conv to shape
-            [batch, num_channels, *spatial_dimensions].
+        Parameters:
+            tensor : torch.Tensor
+                The Conv tensor to reshape of shape
+                [batch, num_channels, *spatial_dimensions]
+            cast_shape : numpy.ndarray
+                The Conv shape to cast incoming Conv to shape
+                [batch, num_channels, *spatial_dimensions].
 
-        Returns
-        -------
-        tensor : torch.Tensor
-            Tensor of shape [batch, num_channels, *spatial_dimensions]
+        Returns:
+            tensor : torch.Tensor
+                Tensor of shape [batch, num_channels, *spatial_dimensions]
 
         """
         # Extract only the spatial dimensions by ignoring the batch and channel

@@ -13,19 +13,17 @@ def get_notable_indices(feature_importances, top_k=5):
     """
     Return dict of top k and bottom k features useful from matrix.
 
-    Parameters
-    ----------
-    feature_importance : numpy.ndarray
-        1D numpy array to extract the top of bottom indices.
-    top_k : int
-        How many features from top and bottom to extract.
-        Defaults to 5.
+    Parameters:
+        feature_importance : numpy.ndarray
+            1D numpy array to extract the top of bottom indices.
+        top_k : int
+            How many features from top and bottom to extract.
+            Defaults to 5.
 
-    Returns
-    -------
-    notable_indices : dict
-        Indices of the top most important features.
-        Indices of the bottom mos unimportant features.
+    Returns:
+        notable_indices : dict
+            Indices of the top most important features.
+            Indices of the bottom mos unimportant features.
 
     """
     important_features = feature_importances.argsort()[-top_k:][::-1]
@@ -41,15 +39,13 @@ class GuidedBackprop(object):
     Modified from https://github.com/utkuozbulak/pytorch-cnn-visualizations
     Insert backward hooks for activations to propagate positive gradients.
 
-    Parameters
-    ----------
-    network : BaseNetwork
-        Network to conduct guided backprop on.
+    Parameters:
+        network : BaseNetwork
+            Network to conduct guided backprop on.
 
-    Returns
-    -------
-    gradients : list of numpy.ndarray
-        Gradients of top most layer w.r.t the input sample.
+    Returns:
+        gradients : list of numpy.ndarray
+            Gradients of top most layer w.r.t the input sample.
 
     """
 
@@ -97,17 +93,15 @@ class GuidedBackprop(object):
         """
         Compute guided backprop gradients and returns top layer gradients.
 
-        Parameters
-        ----------
-        input_data : numpy.ndarray or torch.Tensor
-            2D for DenseNet, 4D (for 2D images) or 5D (for 3D images) Tensor.
-        targets : numpy.ndarray or torch.LongTensor
-            1D list of class labels
+        Parameters:
+            input_data : numpy.ndarray or torch.Tensor
+                2D for DenseNet, 4D (for 2D images) or 5D (for 3D images) Tensor.
+            targets : numpy.ndarray or torch.LongTensor
+                1D list of class labels
 
-        Returns
-        -------
-        gradients : list of numpy.ndarray
-            Gradient list of numpy array with same shape as inputs.
+        Returns:
+            gradients : list of numpy.ndarray
+                Gradient list of numpy array with same shape as inputs.
 
         """
         assert isinstance(targets, torch.LongTensor)

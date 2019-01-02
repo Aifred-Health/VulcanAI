@@ -21,3 +21,4 @@ examples/saved_models
 *.zip
 *.cache
 *.log
+docs/build

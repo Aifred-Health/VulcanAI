@@ -27,16 +27,14 @@ def save_visualization(plot, path=None):
     """
     Save plot at designated path.
 
-    Parameters
-    ----------
-    plot : matplotlib
-        Matplotlib variable with savefig ability.
-    path : string
-        String that designates the path to save the given figure to.
+    Parameters:
+        plot : matplotlib
+            Matplotlib variable with savefig ability.
+        path : string
+            String that designates the path to save the given figure to.
 
-    Returns
-    -------
-    None
+    Returns:
+        None
 
     """
     plot.savefig(path)
@@ -54,20 +52,18 @@ def display_record(record=None, save_path=None, interactive=True):
     """
     Display the training curve for a network training session.
 
-    Parameters
-    ----------
-    record : dict
-        the network record dictionary for dynamic graphs during training.
-    save_path : String
-        String that designates the path to save figure to be produced.
-        Save_path must be a proper path that ends with a filename with an
-        image filetype.
-    interactive : boolean
-        To display during training or afterwards.
+    Parameters:
+        record : dict
+            the network record dictionary for dynamic graphs during training.
+        save_path : String
+            String that designates the path to save figure to be produced.
+            Save_path must be a proper path that ends with a filename with an
+            image filetype.
+        interactive : boolean
+            To display during training or afterwards.
 
-    Returns
-    -------
-    None
+    Returns:
+        None
 
     """
     title = 'Training curve'
@@ -133,7 +129,20 @@ def display_record(record=None, save_path=None, interactive=True):
 
 
 def display_pca(input_data, targets, label_map=None, save_path=None):
-    """Calculate pca reduction and plot it."""
+    """
+    Calculate pca reduction and plot it.
+
+    Parameters:
+        input_data : numpy.dnarray
+            Input data to reduce in dimensions.
+        targets : numpy.ndarray
+            size (batch, labels) for samples.
+        label_map : dict
+            labelled {str(int), string} key, value pairs.
+        save_path : String
+            String that designates the path to save figure to be produced.
+
+    """
     pca = PCA(n_components=2, random_state=0)
     x_transform = pca.fit_transform(input_data)
     _plot_reduction(
@@ -151,16 +160,15 @@ def display_tsne(input_data, targets, label_map=None, save_path=None):
     [1]: Maaten, L., Hinton, G. (2008). Visualizing Data using t-SNE.
             JMLR 9(Nov):2579--2605.
 
-    Parameters
-    ----------
-    input_data : numpy.dnarray
-        Input data to reduce in dimensions.
-    targets : numpy.ndarray
-        size (batch, labels) for samples.
-    label_map : dict
-        labelled {str(int), string} key, value pairs.
-    save_path : String
-        String that designates the path to save figure to be produced.
+    Parameters:
+        input_data : numpy.dnarray
+            Input data to reduce in dimensions.
+        targets : numpy.ndarray
+            size (batch, labels) for samples.
+        label_map : dict
+            labelled {str(int), string} key, value pairs.
+        save_path : String
+            String that designates the path to save figure to be produced.
 
     """
     tsne = TSNE(n_components=2, random_state=0)
@@ -216,14 +224,13 @@ def display_confusion_matrix(cm, class_list=None, save_path=None):
 
     inspired from: https://github.com/zaidalyafeai/Machine-Learning
 
-    Parameters
-    ----------
-    cm : numpy.ndarray
-        2D confustion_matrix obtained using utils.get_confusion_matrix
-    class_list : list
-        Actual class labels (e.g.: MNIST - [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-    save_path : String
-        String that designates the path to save figure to be produced.
+    Parameters:
+        cm : numpy.ndarray
+            2D confustion_matrix obtained using utils.get_confusion_matrix
+        class_list : list
+            Actual class labels (e.g.: MNIST - [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+        save_path : String
+            String that designates the path to save figure to be produced.
 
     """
     if class_list is None:
@@ -273,20 +280,18 @@ def compute_saliency_map(network, input_data, targets):
          Striving for Simplicity: The All Convolutional Net. ICLR 2015
          (https://arxiv.org/pdf/1412.6806.pdf)
 
-    Parameters
-    ----------
-    network : BaseNetwork
-        A network to get saliency maps on.
-    input_data : numpy.ndarray
-        Input array of shape (batch, channel, width, height) or
-        (batch, channel, width, height, depth).
-    targets : numpy.ndarray
-        1D array with class targets of size [batch].
+    Parameters:
+        network : BaseNetwork
+            A network to get saliency maps on.
+        input_data : numpy.ndarray
+            Input array of shape (batch, channel, width, height) or
+            (batch, channel, width, height, depth).
+        targets : numpy.ndarray
+            1D array with class targets of size [batch].
 
-    Returns
-    -------
-    saliency_map : list of numpy.ndarray
-        Top layer gradients of the same shape as input data.
+    Returns:
+        saliency_map : list of numpy.ndarray
+            Top layer gradients of the same shape as input data.
 
     """
     guided_backprop = GuidedBackprop(network)
@@ -298,16 +303,15 @@ def display_saliency_overlay(image, saliency_map, shape=(28, 28), save_path=None
     """
     Plot overlay saliency map over image.
 
-    Parameters
-    ----------
-    image : numpy.ndarray
-        (1D, 2D, 3D) for single image or linear output.
-    saliency_map: numpy.ndarray
-        (1D, 2D, 3D) for single image or linear output.
-    shape : tuple, list
-        The dimensions of the image. Defaults to mnist.
-    save_path : String
-        String that designates the path to save figure to be produced.
+    Parameters:
+        image : numpy.ndarray
+            (1D, 2D, 3D) for single image or linear output.
+        saliency_map: numpy.ndarray
+            (1D, 2D, 3D) for single image or linear output.
+        shape : tuple, list
+            The dimensions of the image. Defaults to mnist.
+        save_path : String
+            String that designates the path to save figure to be produced.
 
     """
     # Handle different colour channels and shapes for image input
@@ -373,17 +377,17 @@ def display_receptive_fields(network, top_k=5, save_path=None):
          Convolutional Neural Networks. Advances in Neural Information
          Processing Systems, 29 (NIPS 2016)
 
-    network : BaseNetwork
-        Network to get receptive fields of.
-    top_k : int
-        To return the most and least k important features from field
-    save_path : String
-        String that designates the path to save figure to be produced.
+    Parameters:
+        network : BaseNetwork
+            Network to get receptive fields of.
+        top_k : int
+            To return the most and least k important features from field
+        save_path : String
+            String that designates the path to save figure to be produced.
 
-    Returns
-    -------
-    k_features: dict
-        A dict of the top k and bottom k important features.
+    Returns:
+        k_features: dict
+            A dict of the top k and bottom k important features.
 
     """
     if type(network).__name__ == "ConvNet":

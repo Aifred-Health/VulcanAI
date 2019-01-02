@@ -13,18 +13,17 @@ class MultiDataset(Dataset):
     Takes in a list of datasets, and whether or not their input_data
     and target data should be output.
 
-    Parameters
-    ----------
-    dataset_tuples : list tuple(Dataset, use_data_boolean, use_target_boolean)
-        A list of tuples, wherein each tuple should have the Dataset in the
-        zero index, a boolean of whether or not to include the input_data in
-        the first index, and a boolean of whether or not to include the target
-        data in the second index. You can only specificy one target at a time
-        Throughout all incoming datasets.
+    Parameters:
+        dataset_tuples : list of tuples
+            Each tuple being (Dataset, use_data_boolean, use_target_boolean).
+            A list of tuples, wherein each tuple should have the Dataset in the
+            zero index, a boolean of whether to include the input_data in
+            the first index, and a boolean of whether to include the target
+            data in the second index. You can only specificy one target at a
+            time throughout all incoming datasets.
 
-    Returns
-    -------
-    multi_dataset : torch.utils.data.Dataset
+    Returns:
+        multi_dataset : torch.utils.data.Dataset
 
     """
 
@@ -55,9 +54,8 @@ class MultiDataset(Dataset):
         default the length to that so as to avoid getting a sample that doesn't
         exist in another dataset.
 
-        Returns
-        -------
-        length : int
+        Returns:
+            length : int
 
         """
         logger.warning("Defaulting to the length of the smallest dataset")
@@ -79,16 +77,14 @@ class MultiDataset(Dataset):
         """
         Override getitem used by DataLoader required by torch Dataset.
 
-        Parameters
-        ----------
-        idx : index
-            Index of sample to extract
+        Parameters:
+            idx : index
+                Index of sample to extract
 
-        Returns
-        -------
-        (input_data, targets) : (torch.Tensor, torch.Tensor)
-            Tuple of input_data and target at that index as specific in config.
-            Target data is always last.
+        Returns:
+            (input_data, targets) : (torch.Tensor, torch.Tensor)
+                Tuple of input_data and target at that index as specific in
+                config. Target data is always last.
 
         """
         input_data_items = []
