@@ -24,7 +24,7 @@ Pytorch must be installed seperately as per your devices requirements (e.g. GPU/
 ```
 or you can install from source after cloning the repository:
 ```
-git clone git@github.com:Aifred-Health/Vulcan.git
+git clone https://github.com/Aifred-Health/Vulcan.git
 cd Vulcan
 pip install -e vulcanai
 ```
