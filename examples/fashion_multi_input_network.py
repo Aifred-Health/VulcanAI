@@ -194,7 +194,8 @@ multi_input_conv_3D.fit(
     train_loader_multi,
     val_loader_multi,
     epochs=3,
-    # plot=True
+    plot=True,
+    save_path="."
 )
-multi_input_conv_3D.run_test(val_loader_multi, plot=True)
+multi_input_conv_3D.run_test(val_loader_multi, plot=True, save_path=".")
 multi_input_conv_3D.save_model()
