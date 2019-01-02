@@ -211,14 +211,16 @@ def multi_input_dnn_data(conv1D_net, conv2D_net,
     return MultiDataset([
         (
             TensorDataset(
-                torch.randint(0, 10, size=[10, *conv1D_net.in_dim]),
+                torch.rand(size=[10, *conv1D_net.in_dim]),
                 torch.tensor([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]).long()),
             True, True),
         (
-            TensorDataset(torch.randint(
-                0, 10, size=[10,
-                             *multi_input_dnn.input_networks['conv2D_net'].
-                                 in_dim])),
+            TensorDataset(
+                torch.rand(
+                    size=[
+                        10,
+                        *multi_input_dnn.input_networks['conv2D_net'].
+                        in_dim])),
             True, False)
     ])
 
@@ -226,7 +228,7 @@ def multi_input_dnn_data(conv1D_net, conv2D_net,
 @pytest.fixture(scope="module")
 def multi_input_cnn_data(conv2D_net, conv3D_net, multi_input_dnn_data):
     return MultiDataset([
-        (TensorDataset(torch.randint(0, 10, size=[10, *conv2D_net.in_dim])), True, False),
-        (TensorDataset(torch.randint(0, 10, size=[10, *conv3D_net.in_dim])), True, False),
+        (TensorDataset(torch.rand(size=[10, *conv2D_net.in_dim])), True, False),
+        (TensorDataset(torch.rand(size=[10, *conv3D_net.in_dim])), True, False),
         multi_input_dnn_data
     ])

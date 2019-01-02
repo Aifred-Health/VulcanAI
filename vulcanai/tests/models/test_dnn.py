@@ -61,8 +61,8 @@ class TestDenseNet:
         assert isinstance(multi_input_dnn.input_networks, nn.ModuleDict)
         assert len(list(multi_input_dnn.input_networks)) == 2
         assert multi_input_dnn._merge_input_network_outputs([
-                torch.randint(0, 10, size=[10, 1, 28]),
-                torch.randint(0, 10, size=[10, 1, 28, 28])
+                torch.rand(size=[10, 1, 28]),
+                torch.rand(size=[10, 1, 28, 28])
             ]).shape == (10, 812)
         test_net = copy.deepcopy(multi_input_dnn)
         test_net._add_input_network(dnn_noclass)
@@ -72,20 +72,20 @@ class TestDenseNet:
 
     def test_forward(self, dnn_class):
         """Test Forward of DenseNet."""
-        out = dnn_class(torch.randint(0, 10, size=[10, *dnn_class.in_dim]))
+        out = dnn_class(torch.rand(size=[10, *dnn_class.in_dim]))
         assert out.shape == (10, 3)
 
     def test_forward_multi_input(self, multi_input_dnn):
         """Test Forward of Multi Input ConvNet."""
         master_device_setter(multi_input_dnn, 'cpu')
-        input_tensor = [torch.randint(0, 10, size=[10, 1, 28]),
-                        torch.randint(0, 10, size=[10, 1, 28, 28])]
+        input_tensor = [torch.rand(size=[10, 1, 28]),
+                        torch.rand(size=[10, 1, 28, 28])]
         out = multi_input_dnn(input_tensor)
         assert out.shape == (10, 50)
 
     def test_forward_pass_not_nan(self, dnn_noclass):
         """Confirm out is non nan."""
-        test_input = torch.randint(0, 10, size=[5, *dnn_noclass.in_dim])
+        test_input = torch.rand(size=[5, *dnn_noclass.in_dim])
         test_dataloader = DataLoader(TensorDataset(test_input, test_input))
         output = dnn_noclass.forward_pass(
             data_loader=test_dataloader,
@@ -94,7 +94,7 @@ class TestDenseNet:
 
     def test_forward_pass_class_not_nan(self, dnn_class):
         """Confirm out is non nan."""
-        test_input = torch.randint(0, 10, size=[5, *dnn_class.in_dim])
+        test_input = torch.rand(size=[5, *dnn_class.in_dim])
         test_dataloader = DataLoader(TensorDataset(test_input, test_input))
         raw_output = dnn_class.forward_pass(
             data_loader=test_dataloader,
