@@ -1,7 +1,7 @@
 """Example for a complex multi-modality (i.e. multi-input) network."""
-from vulcanai2 import datasets
-from vulcanai2.models import ConvNet, DenseNet
-from vulcanai2.datasets import MultiDataset
+from vulcanai import datasets
+from vulcanai.models import ConvNet, DenseNet
+from vulcanai.datasets import MultiDataset
 
 import torch
 

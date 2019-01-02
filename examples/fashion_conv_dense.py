@@ -1,6 +1,6 @@
 """Simple Convolution and fully connected blocks example."""
-from vulcanai2 import datasets
-from vulcanai2.models import ConvNet, DenseNet
+from vulcanai import datasets
+from vulcanai.models import ConvNet, DenseNet
 
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
