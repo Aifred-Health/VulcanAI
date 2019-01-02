@@ -1,26 +1,18 @@
-import sys
-sys.path.append('../')
-from vulcanai2 import models, datasets, plotters
-from vulcanai2.models import ConvNet, DenseNet, SnapshotNet, BaseNetwork
+"""Example for a complex multi-modality (i.e. multi-input) network."""
+from vulcanai2 import datasets
+from vulcanai2.models import ConvNet, DenseNet
 from vulcanai2.datasets import MultiDataset
-from vulcanai2.plotters.visualization import (compute_saliency_map, 
-                                              display_saliency_overlay,
-                                              display_receptive_fields,
-                                              display_confusion_matrix)
 
 import torch
 
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader, TensorDataset
-# from torchviz import make_dot
 
-
-sys.path.append('../')
 normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
                                  std=[x/255.0 for x in [63.0, 62.1, 66.7]])
 
 transform = transforms.Compose([transforms.ToTensor(),
-                                transforms.Normalize((0.1307,), (0.3081,))])
+                                normalize])
 
 
 data_path = "../data"
@@ -29,7 +21,7 @@ train_dataset = datasets.FashionData(root=data_path,
                                      transform=transform,
                                      download=True)
 
-train_dataset = torch.utils.data.Subset(train_dataset, range(0,1000))
+train_dataset = torch.utils.data.Subset(train_dataset, range(0, 1000))
 
 val_dataset = datasets.FashionData(root=data_path,
                                    train=False,
