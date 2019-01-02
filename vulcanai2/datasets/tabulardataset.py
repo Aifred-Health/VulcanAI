@@ -127,7 +127,6 @@ class TabularDataset(Dataset):
         -------
         The values of the row and the value of the label columns. Xs, Y
         """
-
         # Where df.drop is used to access the dataframe without
         # the label column, iloc gets the row, then access values and convert
 

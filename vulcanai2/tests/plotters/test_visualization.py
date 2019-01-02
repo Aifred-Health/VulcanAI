@@ -1,12 +1,21 @@
 """Will test visualization functions."""
 import pytest
 import numpy as np
+import pandas as pd
 import torch
-from copy import deepcopy
-import os
 from torch.utils.data import TensorDataset, DataLoader
+from vulcanai2.datasets import tabulardataset
+import os
+from copy import deepcopy
+
+from sklearn.datasets import load_digits
+from sklearn.metrics import confusion_matrix
 from vulcanai2.plotters.visualization import compute_saliency_map, \
-                                             display_receptive_fields
+                                            display_pca, \
+                                            display_tsne, \
+                                            display_receptive_fields, \
+                                            display_saliency_overlay, \
+                                            display_confusion_matrix
 
 
 class TestVisualization:
@@ -104,7 +113,6 @@ class TestVisualization:
         """Confirm hooks are removed, and gradient shape."""
         test_input_1B = torch.ones([1, *dnn_class.in_dim])
         test_input_5B = torch.ones([5, *dnn_class.in_dim])
-
         model_copy = deepcopy(dnn_class)
         # Test shape conservation
         dnn_class.freeze(apply_inputs=False)
@@ -127,6 +135,64 @@ class TestVisualization:
         # Test hook removal
         assert dnn_class._backward_hooks == model_copy._backward_hooks
 
+    def test_display_saliency_overlay(self, dnn_class):
+        """Test saliency overlay displays and saves."""
+        curr_path = str(os.path.dirname(__file__)) + '/'
+        img = np.zeros((25,25))
+        test_input_1B = torch.ones([1, *dnn_class.in_dim])
+        sal_map_1B = np.array(compute_saliency_map(
+            dnn_class,
+            test_input_1B, torch.LongTensor([2])))
+        display_saliency_overlay(img, sal_map_1B, shape=(25,25), save_path=curr_path)
+        file_created = False
+        for file in os.listdir(curr_path):
+            if file.startswith('saliency'):
+                file_created = True
+                file_path = curr_path + file
+                os.remove(file_path)
+        assert file_created
+
+    def test_display_pca(self, dnn_class):
+        """Test PCA displays and saves."""
+        curr_path = str(os.path.dirname(__file__)) + '/'
+        digits = load_digits()
+        display_pca(
+            digits.data[0:10], digits.target[0:10], save_path=curr_path)
+        file_created = False
+        for file in os.listdir(curr_path):
+            if file.startswith('PCA'):
+                file_created = True
+                file_path = curr_path + file
+                os.remove(file_path)
+        assert file_created
+
+    def test_display_tsne(self, dnn_class):
+        """Test t-SNE displays and saves."""
+        curr_path = str(os.path.dirname(__file__)) + '/'
+        digits = load_digits()
+        display_tsne(
+            digits.data[0:10], digits.target[0:10], save_path=curr_path)
+        file_created = False
+        for file in os.listdir(curr_path):
+            if file.startswith('t-SNE'):
+                file_created = True
+                file_path = curr_path + file
+                os.remove(file_path)
+        assert file_created
+
+    def test_display_confusion_matrix(self):
+        """Test confusion matrix displays and saves."""
+        curr_path = str(os.path.dirname(__file__)) + '/'
+        cm = confusion_matrix(y_true=[0, 1, 1, 0, 0], y_pred=[1, 1, 0, 1, 0])
+        display_confusion_matrix(cm, class_list=[0, 1], save_path=curr_path)
+        file_created = False
+        for file in os.listdir(curr_path):
+            if file.startswith('confusion'):
+                file_created = True
+                file_path = curr_path + file
+                os.remove(file_path)
+        assert file_created
+
     def test_receptive_field(self, dnn_class_two):
         """Test receptive field visualization gets created and can be saved."""
         curr_path = str(os.path.dirname(__file__)) + '/'
@@ -135,9 +201,11 @@ class TestVisualization:
         test_dataloader = DataLoader(TensorDataset(test_input, test_target))
 
         dnn_class_two.fit(test_dataloader, test_dataloader, 5)
-        display_receptive_fields(dnn_class_two)
+        display_receptive_fields(dnn_class_two, save_path=curr_path)
+        file_created = False
         for file in os.listdir(curr_path):
             if file.startswith('feature_importance'):
-                assert True
+                file_created = True
                 file_path = curr_path + file
                 os.remove(file_path)
+        assert file_created
