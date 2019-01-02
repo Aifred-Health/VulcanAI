@@ -1,6 +1,6 @@
 """Simple Convolution and fully connected blocks example."""
-from vulcanai2 import datasets
-from vulcanai2.models import ConvNet, DenseNet
+from vulcanai import datasets
+from vulcanai.models import ConvNet, DenseNet
 
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
@@ -80,7 +80,8 @@ dense_model.fit(
     train_loader,
     val_loader,
     epochs=3,
-    # plot=True
+    plot=True,
+    save_path="."
 )
-dense_model.run_test(val_loader, plot=True)
+dense_model.run_test(val_loader, plot=True, save_path=".")
 dense_model.save_model()

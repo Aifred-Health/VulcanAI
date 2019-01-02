@@ -2,7 +2,7 @@
 import pytest
 import numpy as np
 import torch
-from vulcanai2.models.utils import (round_list,
+from vulcanai.models.utils import (round_list,
                                     get_one_hot,
                                     pad,
                                     set_tensor_device,

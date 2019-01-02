@@ -1,4 +1,4 @@
-from vulcanai2.datasets.utils import stitch_datasets
+from vulcanai.datasets.utils import stitch_datasets
 import pytest
 import pandas as pd
 import numpy as np

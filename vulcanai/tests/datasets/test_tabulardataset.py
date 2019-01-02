@@ -1,7 +1,7 @@
 # coding=utf-8
 """ Defines test cases for tabular dataset """
 import pytest
-from vulcanai2.datasets import TabularDataset
+from vulcanai.datasets import TabularDataset
 import os
 import numpy as np
 import pandas as pd

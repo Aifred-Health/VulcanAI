@@ -4,8 +4,8 @@ import pytest
 import torch
 from torch.utils.data import DataLoader, Subset
 
-from vulcanai2.models import ConvNet, DenseNet
-from vulcanai2.models.utils import master_device_setter
+from vulcanai.models import ConvNet, DenseNet
+from vulcanai.models.utils import master_device_setter
 
 TEST_CUDA = torch.cuda.is_available()
 TEST_MULTIGPU = TEST_CUDA and torch.cuda.device_count() >= 2

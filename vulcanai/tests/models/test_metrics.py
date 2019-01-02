@@ -3,8 +3,8 @@
 import pytest
 import numpy as np
 import torch
-from vulcanai2.models.metrics import Metrics
-from vulcanai2.models.cnn import ConvNet
+from vulcanai.models.metrics import Metrics
+from vulcanai.models.cnn import ConvNet
 from torch.utils.data import TensorDataset, DataLoader
 
 

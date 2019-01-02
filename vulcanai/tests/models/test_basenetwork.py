@@ -1,8 +1,9 @@
 """Test BaseNetwork functionality."""
 import pytest
-from vulcanai2.models.basenetwork import BaseNetwork
+from vulcanai.models.basenetwork import BaseNetwork
 
 import torch
+
 
 class TestBaseNetwork:
     """Define BaseNetwork test class."""
@@ -15,9 +16,9 @@ class TestBaseNetwork:
             in_dim=(None, 10),
             config={}
         )
-    
+
     def test_init(self, basenet):
-        """Initialization Test of a BaseNetwork object"""
+        """Initialization Test of a BaseNetwork object."""
         assert isinstance(basenet, BaseNetwork)
         assert isinstance(basenet, torch.nn.Module)
         assert hasattr(basenet, 'network')

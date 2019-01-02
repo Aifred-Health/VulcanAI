@@ -6,10 +6,10 @@ from functools import reduce
 import torch
 import torch.nn as nn
 from torch.nn import modules
-from vulcanai2.models.layers import BaseUnit, ConvUnit, DenseUnit
-from vulcanai2.models.utils import selu_weight_init_, selu_bias_init_
-from vulcanai2.models.dnn import DenseNet
-from vulcanai2.models.cnn import ConvNet
+from vulcanai.models.layers import BaseUnit, ConvUnit, DenseUnit
+from vulcanai.models.utils import selu_weight_init_, selu_bias_init_
+from vulcanai.models.dnn import DenseNet
+from vulcanai.models.cnn import ConvNet
 from torch.utils.data import TensorDataset, DataLoader
 
 torch.manual_seed(1234)

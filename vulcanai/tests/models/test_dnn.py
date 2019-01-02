@@ -10,12 +10,13 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Subset, TensorDataset
 
-from vulcanai2.models import BaseNetwork
-from vulcanai2.models.dnn import DenseNet, DenseNetConfig
-from vulcanai2.models.utils import master_device_setter
+from vulcanai.models import BaseNetwork
+from vulcanai.models.dnn import DenseNet, DenseNetConfig
+from vulcanai.models.utils import master_device_setter
 
 logger = logging.getLogger(__name__)
 torch.manual_seed(1234)
+
 
 class TestDenseNet:
     """Define DenseNet test class."""

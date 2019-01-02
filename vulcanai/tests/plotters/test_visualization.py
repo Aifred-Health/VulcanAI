@@ -4,13 +4,13 @@ import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data import TensorDataset, DataLoader
-from vulcanai2.datasets import tabulardataset
+from vulcanai.datasets import tabulardataset
 import os
 from copy import deepcopy
 
 from sklearn.datasets import load_digits
 from sklearn.metrics import confusion_matrix
-from vulcanai2.plotters.visualization import compute_saliency_map, \
+from vulcanai.plotters.visualization import compute_saliency_map, \
                                             display_pca, \
                                             display_tsne, \
                                             display_receptive_fields, \
@@ -24,7 +24,7 @@ class TestVisualization:
     @pytest.fixture
     def cnn_class(self):
         """Create ConvNet with classes fixture."""
-        from vulcanai2.models.cnn import ConvNet
+        from vulcanai.models.cnn import ConvNet
         return ConvNet(
             name='Test_ConvNet_class',
             in_dim=(1, 28, 28),
@@ -51,7 +51,7 @@ class TestVisualization:
     @pytest.fixture
     def dnn_class(self):
         """Create DenseNet with classes fixture."""
-        from vulcanai2.models.dnn import DenseNet
+        from vulcanai.models.dnn import DenseNet
         return DenseNet(
             name='Test_DenseNet_class',
             in_dim=(200),
@@ -65,7 +65,7 @@ class TestVisualization:
     @pytest.fixture
     def dnn_class_two(self):
         """Create DenseNet with no prediction layer."""
-        from vulcanai2.models.dnn import DenseNet
+        from vulcanai.models.dnn import DenseNet
         return DenseNet(
             name='Test_DenseNet_class',
             in_dim=(200),

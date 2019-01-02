@@ -1,10 +1,12 @@
+"""Specify dummy networks to test vulcan functionality."""
 import pytest
 
 import torch
 from torch.utils.data import TensorDataset
 
-from vulcanai2.datasets import MultiDataset
-from vulcanai2.models import ConvNet, DenseNet
+from vulcanai.datasets import MultiDataset
+from vulcanai.models import ConvNet, DenseNet
+
 
 @pytest.fixture(scope="module")
 def conv1D_net():
@@ -34,6 +36,7 @@ def conv1D_net():
         device='cpu'
     )
 
+
 @pytest.fixture(scope="module")
 def conv2D_net():
     """conv2D fixture."""
@@ -62,6 +65,7 @@ def conv2D_net():
         device='cpu'
     )
 
+
 @pytest.fixture(scope="module")
 def conv3D_net():
     """conv3D fixture."""
@@ -87,6 +91,7 @@ def conv3D_net():
         },
         device='cpu'
     )
+
 
 @pytest.fixture(scope="module")
 def conv3D_net_class():
@@ -115,6 +120,7 @@ def conv3D_net_class():
         device='cpu'
     )
 
+
 @pytest.fixture(scope="module")
 def dnn_noclass():
     """DenseNet fixture."""
@@ -126,6 +132,7 @@ def dnn_noclass():
             'dropout': [0.3, 0.5],
         }
     )
+
 
 @pytest.fixture(scope="module")
 def dnn_class():
@@ -139,6 +146,7 @@ def dnn_class():
         },
         num_classes=3
     )
+
 
 @pytest.fixture(scope="module")
 def multi_input_dnn(conv1D_net, conv2D_net):
@@ -155,6 +163,7 @@ def multi_input_dnn(conv1D_net, conv2D_net):
         },
         device='cpu'
     )
+
 
 @pytest.fixture(scope="module")
 def multi_input_cnn(conv2D_net, conv3D_net, multi_input_dnn):
@@ -177,6 +186,7 @@ def multi_input_cnn(conv2D_net, conv3D_net, multi_input_dnn):
         device='cpu'
     )
 
+
 @pytest.fixture(scope="module")
 def multi_input_dnn_class(conv1D_net, conv2D_net):
     """Dense network fixture with two inputs."""
@@ -194,6 +204,7 @@ def multi_input_dnn_class(conv1D_net, conv2D_net):
         device='cpu'
     )
 
+
 @pytest.fixture(scope="module")
 def multi_input_dnn_data(conv1D_net, conv2D_net,
                          multi_input_dnn):
@@ -210,6 +221,7 @@ def multi_input_dnn_data(conv1D_net, conv2D_net,
                                  in_dim])),
             True, False)
     ])
+
 
 @pytest.fixture(scope="module")
 def multi_input_cnn_data(conv2D_net, conv3D_net, multi_input_dnn_data):

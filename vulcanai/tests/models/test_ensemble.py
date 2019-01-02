@@ -2,9 +2,9 @@
 import pytest
 import numpy as np
 import torch
-from vulcanai2.models.cnn import ConvNet
-from vulcanai2.models.dnn import DenseNet
-from vulcanai2.models.ensemble import SnapshotNet
+from vulcanai.models.cnn import ConvNet
+from vulcanai.models.dnn import DenseNet
+from vulcanai.models.ensemble import SnapshotNet
 from torch.utils.data import TensorDataset, DataLoader
 
 torch.manual_seed(1234)
