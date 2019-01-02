@@ -4,9 +4,8 @@ import os
 import numpy as np
 
 from math import sqrt, ceil, floor
-
 import pickle
-
+from datetime import datetime
 from .utils import GuidedBackprop, get_notable_indices
 
 from sklearn.manifold import TSNE
@@ -21,8 +20,37 @@ import itertools
 import logging
 logger = logging.getLogger(__name__)
 
+DISPLAY_AVAILABLE = True if os.environ.get("DISPLAY") else False
 
-def display_record(record=None, load_path=None, interactive=True):
+
+def save_visualization(plot, path=None):
+    """
+    Save plot at designated path.
+
+    Parameters
+    ----------
+    plot : matplotlib
+        Matplotlib variable with savefig ability.
+    path : string
+        String that designates the path to save the given figure to.
+
+    Returns
+    -------
+    None
+
+    """
+    plot.savefig(path)
+    logger.info(f"Saved visualization at {path}")
+
+
+def get_save_path(path, vis_type):
+    """Return a save_path string."""
+    path = "{}{}_{date:%Y-%m-%d_%H:%M:%S}.png".format(
+        path, vis_type, date=datetime.now())
+    return path
+
+
+def display_record(record=None, save_path=None, interactive=True):
     """
     Display the training curve for a network training session.
 
@@ -30,8 +58,10 @@ def display_record(record=None, load_path=None, interactive=True):
     ----------
     record : dict
         the network record dictionary for dynamic graphs during training.
-    load_path : str
-        (deprecated) Where records could be loaded from.
+    save_path : String
+        String that designates the path to save figure to be produced.
+        Save_path must be a proper path that ends with a filename with an
+        image filetype.
     interactive : boolean
         To display during training or afterwards.
 
@@ -41,12 +71,6 @@ def display_record(record=None, load_path=None, interactive=True):
 
     """
     title = 'Training curve'
-    if load_path is not None:
-        with open(load_path) as in_file:
-            record = pickle.load(in_file)
-        title = 'Training curve for model: {}'.format(
-            os.path.basename(load_path))
-
     if record is None or not isinstance(record, dict):
         raise ValueError('No record exists and cannot be displayed.')
 
@@ -94,12 +118,21 @@ def display_record(record=None, load_path=None, interactive=True):
                         validation_accuracy],
                loc=0)
 
-    if interactive is True:
+    if save_path:
+        save_visualization(plt, save_path)
+
+    if not DISPLAY_AVAILABLE and save_path is None:
+        raise RuntimeError(
+            "No display environment found. "
+            "Display environment needed to plot, "
+            "or set save_path=path/to/dir")
+
+    elif interactive is True:
         plt.draw()
         plt.pause(1e-17)
 
 
-def display_pca(input_data, targets, label_map=None):
+def display_pca(input_data, targets, label_map=None, save_path=None):
     """Calculate pca reduction and plot it."""
     pca = PCA(n_components=2, random_state=0)
     x_transform = pca.fit_transform(input_data)
@@ -107,10 +140,11 @@ def display_pca(input_data, targets, label_map=None):
         x_transform,
         targets,
         label_map=label_map,
-        title='PCA Visualization')
+        title='PCA Visualization',
+        save_path=save_path)
 
 
-def display_tsne(input_data, targets, label_map=None):
+def display_tsne(input_data, targets, label_map=None, save_path=None):
     """
     t-distributed Stochastic Neighbor Embedding (t-SNE) visualization [1].
 
@@ -125,6 +159,8 @@ def display_tsne(input_data, targets, label_map=None):
         size (batch, labels) for samples.
     label_map : dict
         labelled {str(int), string} key, value pairs.
+    save_path : String
+        String that designates the path to save figure to be produced.
 
     """
     tsne = TSNE(n_components=2, random_state=0)
@@ -133,10 +169,11 @@ def display_tsne(input_data, targets, label_map=None):
         x_transform,
         targets,
         label_map=label_map,
-        title='t-SNE Visualization')
+        title='t-SNE Visualization',
+        save_path=save_path)
 
 
-def _plot_reduction(x_transform, targets, label_map, title):
+def _plot_reduction(x_transform, targets, label_map, title, save_path=None):
     """Once PCA and t-SNE has been calculated, this is used to plot."""
     y_unique = np.unique(targets)
     if label_map is None:
@@ -159,10 +196,21 @@ def _plot_reduction(x_transform, targets, label_map, title):
     plt.ylabel('Y')
     plt.legend(loc='upper right')
     plt.title(title)
-    plt.show(False)
+
+    if save_path:
+        save_path = get_save_path(save_path, vis_type=title)
+        save_visualization(plt, save_path)
+
+    if not DISPLAY_AVAILABLE and save_path is None:
+        raise RuntimeError(
+            "No display environment found. "
+            "Display environment needed to plot, "
+            "or set save_path=path/to/dir")
+    else:
+        plt.show(False)
 
 
-def display_confusion_matrix(cm, class_list=None):
+def display_confusion_matrix(cm, class_list=None, save_path=None):
     """
     Print and plot the confusion matrix.
 
@@ -174,6 +222,8 @@ def display_confusion_matrix(cm, class_list=None):
         2D confustion_matrix obtained using utils.get_confusion_matrix
     class_list : list
         Actual class labels (e.g.: MNIST - [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    save_path : String
+        String that designates the path to save figure to be produced.
 
     """
     if class_list is None:
@@ -201,7 +251,18 @@ def display_confusion_matrix(cm, class_list=None):
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="4%", pad=0.03)
     plt.colorbar(im, cax=cax)
-    plt.show(False)
+
+    if save_path:
+        save_path = get_save_path(save_path, vis_type='confusion_matrix')
+        save_visualization(plt, save_path)
+
+    if not DISPLAY_AVAILABLE and save_path is None:
+        raise RuntimeError(
+            "No display environment found. "
+            "Display environment needed to plot, "
+            "or set save_path=path/to/dir")
+    else:
+        plt.show(False)
 
 
 def compute_saliency_map(network, input_data, targets):
@@ -233,7 +294,7 @@ def compute_saliency_map(network, input_data, targets):
     return saliency_map
 
 
-def display_saliency_overlay(image, saliency_map, shape=(28, 28)):
+def display_saliency_overlay(image, saliency_map, shape=(28, 28), save_path=None):
     """
     Plot overlay saliency map over image.
 
@@ -245,6 +306,8 @@ def display_saliency_overlay(image, saliency_map, shape=(28, 28)):
         (1D, 2D, 3D) for single image or linear output.
     shape : tuple, list
         The dimensions of the image. Defaults to mnist.
+    save_path : String
+        String that designates the path to save figure to be produced.
 
     """
     # Handle different colour channels and shapes for image input
@@ -287,10 +350,21 @@ def display_saliency_overlay(image, saliency_map, shape=(28, 28)):
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="4%", pad=0.03)
     plt.colorbar(im, cax=cax, format='%.0e')
-    plt.show(False)
+
+    if save_path:
+        save_path = get_save_path(save_path, vis_type='saliency_map')
+        save_visualization(plt, save_path)
+
+    if not DISPLAY_AVAILABLE and save_path is None:
+        raise RuntimeError(
+            "No display environment found. "
+            "Display environment needed to plot, "
+            "or set save_path=path/to/dir")
+    else:
+        plt.show(False)
 
 
-def display_receptive_fields(network, top_k=5):
+def display_receptive_fields(network, top_k=5, save_path=None):
     """
     Display receptive fields of layers from a network [1].
 
@@ -303,6 +377,8 @@ def display_receptive_fields(network, top_k=5):
         Network to get receptive fields of.
     top_k : int
         To return the most and least k important features from field
+    save_path : String
+        String that designates the path to save figure to be produced.
 
     Returns
     -------
@@ -339,5 +415,17 @@ def display_receptive_fields(network, top_k=5):
         plt.title(layer_name)
         plt.imshow(np.resize(field, field_shape), cmap='Blues')
         plt.colorbar()
-    plt.show(False)
+
+    if save_path:
+        save_path = get_save_path(save_path, vis_type='feature_importance')
+        save_visualization(plt, save_path)
+
+    if not DISPLAY_AVAILABLE and save_path is None:
+        raise RuntimeError(
+            "No display environment found. "
+            "Display environment needed to plot, "
+            "or set save_path=path/to/dir")
+    else:
+        plt.show(False)
+
     return feature_importance

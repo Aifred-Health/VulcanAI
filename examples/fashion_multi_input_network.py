@@ -198,9 +198,12 @@ val_multi = torch.utils.data.Subset(
 train_loader_multi = DataLoader(train_multi, batch_size=100)
 val_loader_multi = DataLoader(val_multi, batch_size=100)
 
-multi_input_conv_3D.fit(train_loader_multi, val_loader_multi,
-                        epochs=3,
-                        # plot=True
-                        )
-multi_input_conv_3D.run_test(val_loader_multi, plot=True)
+multi_input_conv_3D.fit(
+    train_loader_multi,
+    val_loader_multi,
+    epochs=3,
+    plot=True,
+    save_path="."
+)
+multi_input_conv_3D.run_test(val_loader_multi, plot=True, save_path=".")
 multi_input_conv_3D.save_model()
