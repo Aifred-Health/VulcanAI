@@ -18,7 +18,7 @@ Vulcan is built on Pytorch. We think Pytorch is great, so our framework was buil
 For a more detailed runthrough on how to use the tools, please look at the wiki (IN PROGRESS)
 
 ## Installation
-Pytorch must be installed seperately as per your devices requirements (e.g. GPU/CPU). Afterwards, Vulcan can be installed using PyPI:
+[Pytorch](https://pytorch.org) must be installed separately as per your devices requirements (e.g. GPU/CPU). Afterwards, Vulcan can be installed using PyPI:
 ```
 <sudo> pip install vulcanai
 ```
