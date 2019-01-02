@@ -80,7 +80,8 @@ dense_model.fit(
     train_loader,
     val_loader,
     epochs=3,
-    # plot=True
+    plot=True,
+    save_path="."
 )
-dense_model.run_test(val_loader, plot=True)
+dense_model.run_test(val_loader, plot=True, save_path=".")
 dense_model.save_model()
