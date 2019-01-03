@@ -21,7 +21,8 @@ sys.path.insert(0, os.path.abspath('../../'))
 
 project = 'vulcanai'
 copyright = '2019, Aifred Health'
-author = 'Robert Fratila, Priyatharsan Rajasekar, Caitrin Armstrong'
+author = 'Robert Fratila, Priyatharsan Rajasekar, Caitrin Armstrong, \
+          Joseph Mehltretter'
 
 # The short X.Y version
 version = ''
@@ -135,7 +136,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'vulcanai.tex', 'vulcanai Documentation',
-     'Robert Fratila, Priyatharsan Rajasekar, Caitrin Armstrong', 'manual'),
+     [author], 'manual'),
 ]
 
 
