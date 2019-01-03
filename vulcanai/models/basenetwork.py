@@ -38,40 +38,38 @@ class BaseNetwork(nn.Module):
     """
     Defines the BaseNetwork object.
 
-    Parameters
-    ----------
-    name : str
-        The name of the network. Used when saving the file.
-    config : dict
-        The configuration of the network module, as a dict.
-    in_dim : tuple
-        The input dimensions of the network. Not required to specify when the
-        network has input_networks.
-    save_path : str
-        The name of the file to which you would like to save this network.
-    input_networks : list of BaseNetwork
-        A network object provided as input.
-    num_classes : int or None
-        The number of classes to predict.
-    activation : torch.nn.Module
-        The desired activation function for use in the network.
-    pred_activation : torch.nn.Module
-        The desired activation function for use in the prediction layer.
-    optim_spec : dict
-        A dictionary of parameters for the desired optimizer.
-    lr_scheduler : torch.optim.lr_scheduler
-        A callable torch.optim.lr_scheduler
-    early_stopping : str or None
-        So far just 'best_validation_error' is implemented.
-    criter_spec : dict
-        criterion specification with name and all its parameters.
-    device : str or torch.device
-        Sets the network module to the relevant device. If cuda available
-        in the host console, "cuda:0" will be run which can be overriden.
+    Parameters:
+        name : str
+            The name of the network. Used when saving the file.
+        config : dict
+            The configuration of the network module, as a dict.
+        in_dim : tuple
+            The input dimensions of the network. Not required to specify when the
+            network has input_networks.
+        save_path : str
+            The name of the file to which you would like to save this network.
+        input_networks : list of BaseNetwork
+            A network object provided as input.
+        num_classes : int or None
+            The number of classes to predict.
+        activation : torch.nn.Module
+            The desired activation function for use in the network.
+        pred_activation : torch.nn.Module
+            The desired activation function for use in the prediction layer.
+        optim_spec : dict
+            A dictionary of parameters for the desired optimizer.
+        lr_scheduler : torch.optim.lr_scheduler
+            A callable torch.optim.lr_scheduler
+        early_stopping : str or None
+            So far just 'best_validation_error' is implemented.
+        criter_spec : dict
+            criterion specification with name and all its parameters.
+        device : str or torch.device
+            Sets the network module to the relevant device. If cuda available
+            in the host console, "cuda:0" will be run which can be overriden.
 
-    Returns
-    -------
-    network : BaseNetwork
+    Returns:
+        network : BaseNetwork
 
     """
 
@@ -151,14 +149,12 @@ class BaseNetwork(nn.Module):
         New input network will exist at the end of the current set of
         input_networks which will need to correspond with .
 
-        Parameters
-        ----------
-        in_network : BaseNetwork
-            A network to append to the set of self.input_networks.
+        Parameters:
+            in_network : BaseNetwork
+                A network to append to the set of self.input_networks.
 
-        Returns
-        -------
-        None
+        Returns:
+            None
 
         """
         assert isinstance(in_network, BaseNetwork)
@@ -185,14 +181,12 @@ class BaseNetwork(nn.Module):
         If not, the input is passed through the network and
         returned without passing through a classification layer.
 
-        Parameters
-        ----------
-        inputs : list(torch.Tensor)
-            The inputs to pass throught the network.
+        Parameters:
+            inputs : list(torch.Tensor)
+                The inputs to pass throught the network.
 
-        Returns
-        -------
-        output : torch.Tensor
+        Returns:
+            output : torch.Tensor
 
         """
         if not isinstance(inputs, list):
@@ -230,10 +224,9 @@ class BaseNetwork(nn.Module):
 
         Perform a single forward pass using made-up data.
 
-        Returns
-        -------
-        shape : tuple
-            The output shape of the network.
+        Returns:
+            shape : tuple
+                The output shape of the network.
 
         """
         if self.network:
@@ -250,10 +243,9 @@ class BaseNetwork(nn.Module):
         Perform a single forward pass through all the input networks
         and merge together to get input shape of this network.
 
-        Returns
-        -------
-        shape : tuple
-            The input shape of the network.
+        Returns:
+            shape : tuple
+                The input shape of the network.
 
         """
         # Create empty input tensors
@@ -268,10 +260,9 @@ class BaseNetwork(nn.Module):
         """
         Return the relevant device associalted with network module.
 
-        Returns
-        -------
-        device : torch.device
-            Relevant device associalted with the network module.
+        Returns:
+            device : torch.device
+                Relevant device associalted with the network module.
 
         """
         return next(self.network.parameters()).device
@@ -284,10 +275,9 @@ class BaseNetwork(nn.Module):
         If the user specifies invalid device id, raises
         RuntimeError for invalid device ordinal.
 
-        Parameters
-        ----------
-        device : str or torch.device
-            The device to transfer network to.
+        Parameters:
+            device : str or torch.device
+                The device to transfer network to.
 
         """
         device = torch.device(device if torch.cuda.is_available() else 'cpu')
@@ -304,10 +294,9 @@ class BaseNetwork(nn.Module):
         """
         Return  boolean about whether the network is on cuda device (i.e gpu).
 
-        Returns
-        -------
-        is_cuda : boolean
-            Specifies whether the network is on gpu or not.
+        Returns:
+            is_cuda : boolean
+                Specifies whether the network is on gpu or not.
 
         """
         return next(self.network.parameters()).is_cuda
@@ -317,10 +306,9 @@ class BaseNetwork(nn.Module):
         """
         Return the name.
 
-        Returns
-        -------
-        name : string
-            The name of the network.
+        Returns:
+            name : string
+                The name of the network.
 
         """
         return self._name
@@ -333,10 +321,9 @@ class BaseNetwork(nn.Module):
     def save_path(self):
         """Return the save path of the network.
 
-        Returns
-        -------
-        save_path : string
-            The save path of the network.
+        Returns:
+            save_path : string
+                The save path of the network.
 
         """
         return self._save_path
@@ -354,9 +341,8 @@ class BaseNetwork(nn.Module):
         """
         Return the network lr_scheduler.
 
-        Returns
-        -------
-        lr_scheduler : torch.optim.lr_scheduler
+        Returns:
+            lr_scheduler : torch.optim.lr_scheduler
 
         """
         return self._lr_scheduler
@@ -370,10 +356,9 @@ class BaseNetwork(nn.Module):
         """
         Return the stopping rule.
 
-        Returns
-        -------
-        stopping_rule : str
-            The stoping rule
+        Returns:
+            stopping_rule : str
+                The stoping rule
 
         """
         return self._early_stopping
@@ -387,10 +372,9 @@ class BaseNetwork(nn.Module):
         """
         Return the criterion specification.
 
-        Returns
-        -------
-        _criter_spec : dict
-            The criterion specification.
+        Returns:
+            _criter_spec : dict
+                The criterion specification.
 
         """
         return self._criter_spec
@@ -403,9 +387,8 @@ class BaseNetwork(nn.Module):
         """
         Return an ordered dict of all modules in this network (layers).
 
-        Returns
-        -------
-        layers : OrderedDict()
+        Returns:
+            layers : OrderedDict()
 
         """
         return self._modules
@@ -414,10 +397,9 @@ class BaseNetwork(nn.Module):
         """
         Return a dictionary containing a whole state of the module.
 
-        Returns
-        -------
-        weights : dict
-            A dictionary containing a whole state of the module.
+        Returns:
+            weights : dict
+                A dictionary containing a whole state of the module.
 
         """
         return self.state_dict()
@@ -427,9 +409,8 @@ class BaseNetwork(nn.Module):
         """
         Define the network. Abstract method that needs to be overridden.
 
-        Returns
-        -------
-        None
+        Returns:
+            None
 
         """
         self.network = None
@@ -439,14 +420,12 @@ class BaseNetwork(nn.Module):
         """
         Freeze network weights so training doesn't modify them.
 
-        Parameters
-        ----------
-        apply_inputs : boolean
-            Whether to freeze all input networks recursively
+        Parameters:
+            apply_inputs : boolean
+                Whether to freeze all input networks recursively
 
-        Returns
-        -------
-        None
+        Returns:
+            None
 
         """
         self._toggle_freeze(freeze=True, apply_inputs=apply_inputs)
@@ -455,14 +434,12 @@ class BaseNetwork(nn.Module):
         """
         Unfreeze network weights so training does modify them.
 
-        Parameters
-        ----------
-        apply_inputs : boolean
-            Whether to unfreeze all input networks recursively
+        Parameters:
+            apply_inputs : boolean
+                Whether to unfreeze all input networks recursively
 
-        Returns
-        -------
-        None
+        Returns:
+            None
 
         """
         self._toggle_freeze(freeze=False, apply_inputs=apply_inputs)
@@ -505,10 +482,9 @@ class BaseNetwork(nn.Module):
         several devices not compatible with optimizer. Temporary until
         replaced with nn.DataParallel or better multi-gpu implmentation.
 
-        Parameters
-        ----------
-        comparison_device : str or torch.device
-            The device to compare current device to.
+        Parameters:
+            comparison_device : str or torch.device
+                The device to compare current device to.
 
         """
         if comparison_device is None:
@@ -532,26 +508,24 @@ class BaseNetwork(nn.Module):
         """
         Train the network on the provided data.
 
-        Parameters
-        ----------
-        train_loader : DataLoader
-            The DataLoader object containing the training data.
-        val_loader : DataLoader
-            The DataLoader object containing the validation data.
-        epochs : int
-            The number of epochs to train for.
-        retain_graph : {None, True, False}
-            Whether retain_graph will be true when .backwards is called.
-        valid_interv : int
-            Specifies the period of epochs before validation calculation.
-        plot : boolean
-            Whether or not to plot training metrics in real-time.
-        save_path : str
-            Path to save graphics at
+        Parameters:
+            train_loader : DataLoader
+                The DataLoader object containing the training data.
+            val_loader : DataLoader
+                The DataLoader object containing the validation data.
+            epochs : int
+                The number of epochs to train for.
+            retain_graph : {None, True, False}
+                Whether retain_graph will be true when .backwards is called.
+            valid_interv : int
+                Specifies the period of epochs before validation calculation.
+            plot : boolean
+                Whether or not to plot training metrics in real-time.
+            save_path : str
+                Path to save graphics at
 
-        Returns
-        -------
-        None
+        Returns:
+            None
 
         """
         # Check all networks are on same device.
@@ -616,15 +590,13 @@ class BaseNetwork(nn.Module):
         """
         Trains the network for 1 epoch.
 
-        Parameters
-        ----------
-        train_loader : DataLoader
-            The DataLoader object containing the dataset to train on.
+        Parameters:
+            train_loader : DataLoader
+                The DataLoader object containing the dataset to train on.
 
-        Returns
-        -------
-        (train_loss, train_accuracy) : (float, float)
-            Returns the train loss and accuracy.
+        Returns:
+            (train_loss, train_accuracy) : (float, float)
+                Returns the train loss and accuracy.
 
         """
         self.train()  # Set model to training mode
@@ -667,15 +639,13 @@ class BaseNetwork(nn.Module):
         """
         Validate the network on the validation data.
 
-        Parameters
-        ----------
-        val_loader : DataLoader
-            The DataLoader object containing the dataset to evaluate on
+        Parameters:
+            val_loader : DataLoader
+                The DataLoader object containing the dataset to evaluate on
 
-        Returns
-        -------
-        (val_loss, val_accuracy) : (float, float)
-            Returns the validation loss and accuracy
+        Returns:
+            (val_loss, val_accuracy) : (float, float)
+                Returns the validation loss and accuracy
 
         """
         self.eval()  # Set model to evaluate mode
@@ -739,17 +709,15 @@ class BaseNetwork(nn.Module):
         """
         Allow the user to pass data through the network.
 
-        Parameters
-        ----------
-        data_loader : DataLoader
-            DataLoader object to make the pass with.
-        convert_to_class : boolean
-            If true, list of class predictions instead of class probabilites.
+        Parameters:
+            data_loader : DataLoader
+                DataLoader object to make the pass with.
+            convert_to_class : boolean
+                If true, list of class predictions instead of class probabilites.
 
-        Returns
-        -------
-        outputs : numpy.ndarray
-            Numpy matrix with the output. Same shape as network out_dim.
+        Returns:
+            outputs : numpy.ndarray
+                Numpy matrix with the output. Same shape as network out_dim.
 
         """
         self.eval()
@@ -776,15 +744,13 @@ class BaseNetwork(nn.Module):
         """
         Save the model (and it's input networks).
 
-        Parameters
-        ----------
-        save_path : str
-            The save directory (not a file)
+        Parameters:
+            save_path : str
+                The save directory (not a file)
 
-        Returns
-        -------
-        save_path : str
-            The save path where you'll find the model directly.
+        Returns:
+            save_path : str
+                The save path where you'll find the model directly.
 
         """
         if not save_path:
@@ -818,17 +784,15 @@ class BaseNetwork(nn.Module):
         """
         Load the model from the given directory.
 
-        Parameters
-        ----------
-        load_path : str
-            The load directory (not a file)
-        load_complete_model_stack : boolean
-            Whether to load all parent networks as well. Not yet implemented.
+        Parameters:
+            load_path : str
+                The load directory (not a file)
+            load_complete_model_stack : boolean
+                Whether to load all parent networks as well. Not yet implemented.
 
-        Returns
-        -------
-        network : BaseNetwork
-            A network object with all components intact.
+        Returns:
+            network : BaseNetwork
+                A network object with all components intact.
 
         """
         # TODO: does this break windows?? no idea.

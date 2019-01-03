@@ -20,28 +20,23 @@ logger = logging.getLogger(__name__)
 class TabularDataset(Dataset):
     """
     This defines a dataset, subclassed from torch.utils.data.Dataset.
+
     It uses pd.dataframe as the backend, with utility
     functions.
-    """
-    def __init__(self, label_column=None, merge_on_columns=None,
-                 index_list=None, na_values=None, **dataset_dict):
-        """
-        Creates an instance of TabularDataset
 
-        Parameters
-        ----------
-        label_column: String
-            The name of the label column.
-            Provide None if you do not want a target.
-        merge_on_columns: list of strings
-            Key(s) that specifies which columns to use to uniquely stitch
-            dataset (default None)
-        index_list: list of strings
-            List of columns to make the index of the dataframe
-        na_values: The values to convert to NaN when reading from csv
-        dataset_dict: keyword parameter, value is dataframe or path string
-            pandas dataframe assigned to keyword argument that produces a
-            dictionary variable.
+    Parameters:
+            label_column: String
+                The name of the label column.
+                Provide None if you do not want a target.
+            merge_on_columns: list of strings
+                Key(s) that specifies which columns to use to uniquely stitch
+                dataset (default None)
+            index_list: list of strings
+                List of columns to make the index of the dataframe
+            na_values: The values to convert to NaN when reading from csv
+            dataset_dict: keyword parameter, value is dataframe or path string
+                pandas dataframe assigned to keyword argument that produces a
+                dictionary variable.
 
         :Example:
 
@@ -58,7 +53,12 @@ class TabularDataset(Dataset):
                                     index=[4, 5, 6, 7])}
         >>> tab_dataset_var = TabularDataset(merge_on_columns=['A'],
                             index_list=['A'], df1=df_test_one, df2=df_test_two)
-        """
+
+    """
+
+    def __init__(self, label_column=None, merge_on_columns=None,
+                 index_list=None, na_values=None, **dataset_dict):
+        """Creates an instance of TabularDataset."""
         for dataset_name in dataset_dict:
             dataset_value = dataset_dict[dataset_name]
             if isinstance(dataset_value, str):
@@ -94,10 +94,10 @@ class TabularDataset(Dataset):
     def set_global_random_seed(self, seed_value):
         """
         Initializes the random state using the seed_value
-        Parameters
-        ----------
-        seed_value Int
-            The seed value
+
+        Parameters:
+            seed_value Int
+                The seed value
 
         """
         np.random.seed(seed_value)  # cpu vars
@@ -106,26 +106,24 @@ class TabularDataset(Dataset):
 
     def __len__(self):
         """
-        The total number of samples
+        The total number of samples.
 
-        Returns
-        -------
-        The total number of samples: int
+        Returns:
+            The total number of samples: int
         """
         return self.df.shape[0]
 
     def __getitem__(self, idx):
         """
-        Generates one sample of data
+        Generates one sample of data.
 
-        Parameters
-        ----------
-        idx: int
-            The index of the data
+        Parameters:
+            idx: int
+                The index of the data
 
-        Returns
-        -------
-        The values of the row and the value of the label columns. Xs, Y
+        Returns:
+            The values of the row and the value of the label columns. Xs, Y
+
         """
         # Where df.drop is used to access the dataframe without
         # the label column, iloc gets the row, then access values and convert
@@ -147,17 +145,17 @@ class TabularDataset(Dataset):
         """
         Merges additional data into a TabularDataset isntance
 
-        Parameters
-        ----------
-        merge_on_columns: list of strings
-            Key(s) that specifies which columns to use to uniquely stitch
-            dataset (default None)
-        index_list: list of strings
-            List of columns to make the index of the dataframe
-        na_values: The values to convert to NaN when reading from csv
-        dataset_dict: keyword parameter, value is dataframe or path string
-            pandas dataframe assigned to keyword argument that produces a
-            dictionary variable.
+        Parameters:
+            merge_on_columns: list of strings
+                Key(s) that specifies which columns to use to uniquely stitch
+                dataset (default None)
+            index_list: list of strings
+                List of columns to make the index of the dataframe
+            na_values: The values to convert to NaN when reading from csv
+            dataset_dict: keyword parameter, value is dataframe or path string
+                pandas dataframe assigned to keyword argument that produces a
+                dictionary variable.
+
         """
         for dataset in dataset_dict:
             dict_value = dataset_dict[dataset]
@@ -194,10 +192,10 @@ class TabularDataset(Dataset):
         """
         Save the dataframe to a file.
 
-        Parameters
-        ----------
-        file_path: String
-            Path to the file where you want your dataframe to be saved
+        Parameters:
+            file_path: String
+                Path to the file where you want your dataframe to be save
+
         """
         self.df.to_csv(file_path, encoding='utf-8', index=True)
         logger.info(f"You have saved the dataframe as a csv to {file_path}")
@@ -212,17 +210,16 @@ class TabularDataset(Dataset):
     def replace_value_in_column(self, column_name, current_values,
                                 target_values):
         """
-        Replaces one or more values in the given columns
+        Replaces one or more values in the given columns.
 
-        Parameters
-        ----------
-        column_name: String
-        current_values: List
-            Must be existing values
-        target_values: List
-            Must be valid for pandas dataframe
+        Parameters:
+            column_name: String
+            current_values: List
+                Must be existing values
+            target_values: List
+                Must be valid for pandas dataframe
+
         """
-
         if not isinstance(current_values, list):
             current_values = [current_values]
             target_values = [target_values]
@@ -238,32 +235,28 @@ class TabularDataset(Dataset):
 
     def list_all_column_values(self, column_name):
         """
-        Return a list of all values in this column
+        Return a list of all values in this column.
 
-        Parameters
-        ----------
-        column_name: String
-            Name of the column
+        Parameters:
+            column_name: String
+                Name of the column
+
         """
         return list(getattr(self.df, column_name).unique())
 
     def print_column_data_types(self):
-        """
-        Prints the data types of all columns
-
-        """
+        """Prints the data types of all columns. """
         print(self.df.dtypes)
 
     def delete_column(self, column_name):
         """
-        Deletes the given column
+        Deletes the given column.
 
-        Parameters
-        ----------
-        column_name: String
-            The name of the column you want deleted
+        Parameters:
+            column_name: String
+                The name of the column you want deleted
+
         """
-
         self.df = self.df.drop(column_name, axis=1)
 
         logger.info(f"You have dropped {column_name}")
@@ -273,16 +266,15 @@ class TabularDataset(Dataset):
         """
         Create label encoding for the given column
 
-        Parameters
-        ----------
-        column_name: String
-            The name of the column you want encoded
-        ordered_values: List or Dict
-            Either an ordered list of possible column values.
-            Or a mapping of column value to label value.
-            Must include all possible values
-        """
+        Parameters:
+            column_name: String
+                The name of the column you want encoded
+            ordered_values: List or Dict
+                Either an ordered list of possible column values.
+                Or a mapping of column value to label value.
+                Must include all possible values
 
+        """
         if isinstance(ordered_values, list):
             ordered_values = dict(map(lambda t: (t[1], t[0]), enumerate(
                 ordered_values)))
@@ -306,14 +298,13 @@ class TabularDataset(Dataset):
         """
         Create one-hot encoding for the given column.
 
-        Parameters
-        ----------
-        column_name: String
-            The name of the column you want to one-hot encode
-        prefix_sep String default("@")
-            The prefix used when creating a one-hot encoding
-        """
+        Parameters:
+            column_name: String
+                The name of the column you want to one-hot encode
+            prefix_sep String default("@")
+                The prefix used when creating a one-hot encoding
 
+        """
         # TODO: ensure dummy_na =False is what you want
         self.df = pd.get_dummies(self.df, columns=[column_name],
                                     prefix_sep=prefix_sep)
@@ -327,12 +318,13 @@ class TabularDataset(Dataset):
         to create one-hot encodings and nowhere else. If a column_name is
         provided, only that column will be reverse-encoded, otherwise all will
         be reverse-encoded.
+
         Parameters
-        ----------
-        column_name: String
-            The name of the column to reverse the one-hot encoding for
-        prefix_sep: String default("@")
-            The prefix used when creating a one-hot encodin
+            column_name: String
+                The name of the column to reverse the one-hot encoding for
+            prefix_sep: String default("@")
+                The prefix used when creating a one-hot encoding
+
         """
         result_series = {}
 
@@ -376,17 +368,15 @@ class TabularDataset(Dataset):
         Return columns where there is at least threshold percent of
         non-null values.
 
-        Parameters
-        ----------
-        threshold: Float
-            A number between 0 and 1, representing proportion of non-null.
+        Parameters:
+            threshold: Float
+                A number between 0 and 1, representing proportion of non-null.
 
-        Returns
-        -------
-        cols: List
-            A list of those columns with threshold percentage null values
+        Returns:
+            cols: List
+                A list of those columns with threshold percentage null values
+
         """
-
         if threshold >= 1 or threshold <= 0:
             raise ValueError(
                 "Threshold needs to be a proportion between 0 and 1 \
@@ -401,18 +391,16 @@ class TabularDataset(Dataset):
         """
         Returns columns that have at least threshold number of values
 
-        Parameters
-        ----------
-        threshold: The minimum number of values needed.
-            Must be greater than 1. Not between 0 and 1, but rather
-            represents the number of values
+        Parameters:
+            threshold: The minimum number of values needed.
+                Must be greater than 1. Not between 0 and 1, but rather
+                represents the number of values
 
-        Returns
-        -------
-        column_list: list
-            The list of columns having threshold number of values
+        Returns:
+            column_list: list
+                The list of columns having threshold number of values
+
         """
-
         column_list = []
         for col in self.df.columns:
             if len(self.df[col].unique()) >= threshold:
@@ -424,19 +412,18 @@ class TabularDataset(Dataset):
         This returns columns that are highly unbalanced.
         Those that have a disproportionate amount of one value.
 
-        Parameters
-        ----------
-        threshold: Float
-            Proportion needed to define unbalanced, between 0 and 1
-            0 is a lesser proportion of the one value, 
-            (less imbalanced)
-        non_numeric: Boolean
-            Whether non-numeric columns are also considered.
+        Parameters:
+            threshold: Float
+                Proportion needed to define unbalanced, between 0 and 1
+                0 is a lesser proportion of the one value, 
+                (less imbalanced)
+            non_numeric: Boolean
+                Whether non-numeric columns are also considered.
 
-        Returns
-        -------
-        column_list: List
-            The list of column names
+        Returns:
+            column_list: List
+                The list of column names
+
         """
         if non_numeric:
             columns = list(self.df.columns)
@@ -458,16 +445,15 @@ class TabularDataset(Dataset):
         """
         Identify columns that are highly correlated with one-another.
 
-        Parameters
-        ----------
-        threshold: Between 0 (weakest correlation) and 1
-        (strongest correlation).
-        Minimum amount of correlation necessary to be identified.
+        Parameters:
+            threshold: Between 0 (weakest correlation) and 1
+                (strongest correlation).
+                Minimum amount of correlation necessary to be identified.
 
-        Returns
-        -------
-        column list: List of tuples
-            The correlation values above threshold
+        Returns:
+            column list: List of tuples
+                The correlation values above threshold
+
         """
         column_list = set()
         features_correlation = self.df.corr().abs()
@@ -481,17 +467,17 @@ class TabularDataset(Dataset):
         """
         Identify those columns that have low variance
 
-        Parameters
-        ----------
-        threshold: Float
-            Between 0 an 1.
-            Maximum amount of variance necessary to be identified as low
-            variance.
+        Parameters:
+            threshold: Float
+                Between 0 an 1.
+                Maximum amount of variance necessary to be identified as low
+                variance.
 
-        Returns
-        -------
-        variance_dict: Dict
-            A dictionary of column names, with the value being their variance
+        Returns:
+            variance_dict: Dict
+                A dictionary of column names, with the value being their
+                variance.
+
         """
         dct_low_var = {}
         scaler = preprocessing.MinMaxScaler()
@@ -519,29 +505,28 @@ class TabularDataset(Dataset):
         https://stackoverflow.com/questions/38250710/
         how-to-split-data-into-3-sets-train-validation-and-test
 
-        Parameters
-        ----------
-        split_ratio: Float
-            a number [0, 1] denoting the amount
-            of data to be used for the training split (rest is used for
-            validation),or a list of numbers denoting the relative sizes of
-            train, test and valid splits respectively.
-            If the relative size for valid is missing, only the
-            train-test split is returned. Default is 0.7 (for th train set).
-        stratified: Boolean
-            whether the sampling should be stratified.
-                Default is False.
-        strata_field: String
-            name of the examples Field stratified over.
-            Default is 'label' for the conventional label field.
-        random_state: int
-            The random seed used for shuffling.
+        Parameters:
+            split_ratio: Float
+                a number [0, 1] denoting the amount
+                of data to be used for the training split (rest is used for
+                validation), or a list of numbers denoting the relative sizes
+                of train, test and valid splits respectively.
+                If the relative size for valid is missing, only the
+                train-test split is returned.
+                Default is 0.7 (for th train set).
+            stratified: Boolean
+                whether the sampling should be stratified.
+                    Default is False.
+            strata_field: String
+                name of the examples Field stratified over.
+                Default is 'label' for the conventional label field.
+            random_state: int
+                The random seed used for shuffling.
 
-        Returns
-        -------
-        datasets: Tuple of TabularDatasets
-            Datasets for train, validation, and
-            test splits in that order, if the splits are provided.
+        Returns:
+            datasets: Tuple of TabularDatasets
+                Datasets for train, validation, and
+                test splits in that order, if the splits are provided.
 
         """
         if stratified:

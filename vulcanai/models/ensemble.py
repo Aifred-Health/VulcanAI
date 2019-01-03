@@ -21,18 +21,16 @@ class SnapshotNet(BaseNetwork):
     A wrapper class for any Network inheriting from BaseNetwork to
     train the template network using Snapshot Ensembling.
 
-    Parameters
-    ----------
-    name : str
-        String of snapshot ensemble name.
-    template_network : BaseNetwork
-        Network object which you want to ensemble.
-    n_snapshots : int
-        Number of snapshots in ensemble.
+    Parameters:
+        name : str
+            String of snapshot ensemble name.
+        template_network : BaseNetwork
+            Network object which you want to ensemble.
+        n_snapshots : int
+            Number of snapshots in ensemble.
 
-    Returns
-    -------
-    network : SnapshotNet
+    Returns:
+        network : SnapshotNet
 
     """
 
@@ -72,18 +70,16 @@ class SnapshotNet(BaseNetwork):
 
         Collects each model in a class variable self.network
 
-        Parameters
-        ----------
-        train_loader : DataLoader
-            Input data and targets to train against
-        val_loader : DataLoader
-            Input data and targets to validate against
-        epochs : int
-            Total number of epochs (evenly distributed between snapshots)
+        Parameters:
+            train_loader : DataLoader
+                Input data and targets to train against
+            val_loader : DataLoader
+                Input data and targets to validate against
+            epochs : int
+                Total number of epochs (evenly distributed between snapshots)
 
-        Returns
-        -------
-        None
+        Returns:
+            None
 
         """
         # There must be at least one train epoch for each snapshot
@@ -129,12 +125,11 @@ class SnapshotNet(BaseNetwork):
         Recursively traverse each input network to update names
         with the appended string.
 
-        Parameters
-        ----------
-        network : BaseNetwork
-            Network stack to update names of with new append_str.
-        append_str : int, str
-            The characters to append at the end of BaseNetwork stack of names.
+        Parameters:
+            network : BaseNetwork
+                Network stack to update names of with new append_str.
+            append_str : int, str
+                The characters to append at the end of BaseNetwork stack of names.
 
         """
         if network.input_networks:
@@ -148,14 +143,12 @@ class SnapshotNet(BaseNetwork):
 
         Collect outputs of all internal networks and average outputs.
 
-        Parameters
-        ----------
-        x : torch.Tensor
-            Input tensor to pass through self.
+        Parameters:
+            inputs : torch.Tensor
+                Input tensor to pass through self.
 
-        Returns
-        -------
-        output : torch.Tensor
+        Returns:
+            output : torch.Tensor
 
         """
         if len(self.network) == 0:
@@ -173,14 +166,12 @@ class SnapshotNet(BaseNetwork):
         """
         Save all ensembled network in a folder with ensemble name.
 
-        Parameters
-        ----------
-        save_path : str
-            The folder path to save models in.
+        Parameters:
+            save_path : str
+                The folder path to save models in.
 
-        Returns
-        -------
-        None
+        Returns:
+            None
 
         """
         if not save_path:

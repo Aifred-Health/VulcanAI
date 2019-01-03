@@ -10,21 +10,19 @@ class BaseUnit(nn.Sequential):
     """
     The base class for all layers.
 
-    Parameters
-    ----------
-    weight_init : torch.nn.init
-        Torch initialization function for weights.
-    bias_init : int or float
-        A constant int or float to initialize biases with.
-    norm : str
-        'batch' for batch norm of 'instance' for instance norm.
-    dropout : float between 0-1
-        The probability of dropping out a feature during training.
+    Parameters:
+        weight_init : torch.nn.init
+            Torch initialization function for weights.
+        bias_init : int or float
+            A constant int or float to initialize biases with.
+        norm : str
+            'batch' for batch norm of 'instance' for instance norm.
+        dropout : float between 0-1
+            The probability of dropping out a feature during training.
 
-    Returns
-    -------
-    dense_unit : torch.nn.Sequential
-        A single fully connected layer.
+    Returns:
+        dense_unit : torch.nn.Sequential
+            A single fully connected layer.
 
     """
 
@@ -70,10 +68,9 @@ class FlattenUnit(BaseUnit):
     """
     Layer to flatten the input.
 
-    Returns
-    -------
-    flatten_unit : torch.Sequential
-        A flatten layer.
+    Returns:
+        flatten_unit : torch.Sequential
+            A flatten layer.
 
     """
 
@@ -90,27 +87,25 @@ class DenseUnit(BaseUnit):
     """
     Define the DenseUnit object.
 
-    Parameters
-    ----------
-    in_features : int
-        The incoming feature size of a sample.
-    out_features : int
-        The number of hidden Linear units for this layer.
-    weight_init : torch.nn.init
-        Torch initialization function.
-    bias_init : int or float
-        A constant int or float to initialize biases with.
-    norm : str
-        'batch' for batch norm of 'instance' for instance norm.
-    activation : torch.nn.Module
-        An activation function to apply after Linear unit.
-    dropout : float between 0-1
-        The probability of dropping out a feature during training.
+    Parameters:
+        in_features : int
+            The incoming feature size of a sample.
+        out_features : int
+            The number of hidden Linear units for this layer.
+        weight_init : torch.nn.init
+            Torch initialization function.
+        bias_init : int or float
+            A constant int or float to initialize biases with.
+        norm : str
+            'batch' for batch norm of 'instance' for instance norm.
+        activation : torch.nn.Module
+            An activation function to apply after Linear unit.
+        dropout : float between 0-1
+            The probability of dropping out a feature during training.
 
-    Returns
-    -------
-    dense_unit : torch.nn.Sequential
-        A single fully connected layer.
+    Returns:
+        dense_unit : torch.nn.Sequential
+            A single fully connected layer.
 
     """
 
@@ -165,37 +160,35 @@ class ConvUnit(BaseUnit):
     """
     Define the ConvUnit object.
 
-    Parameters
-    ----------
-    conv_dim : int
-        1, 2, or 3 representing spatial dimensional inputs.
-    in_channels : int
-        The number of incoming channels.
-    out_channels : int
-        The number of convolution kernels for this layer.
-    kernel_size : int or tuple
-        The size of the 1, 2, or 3 dimensional convolution kernel.
-    weight_init : torch.nn.init
-        Torch initialization function.
-    bias_init : int or float
-        A constant int or float to initialize biases with.
-    stride : int or tuple
-        The stride of the 1, 2, or 3 dimensional convolution kernel.
-    padding : int
-        Number of zero-padding on both sides per dimension.
-    norm : str
-        'batch' for batch norm of 'instance' for instance norm.
-    activation : torch.nn.Module
-        An activation function to apply after Linear unit.
-    pool_size : int
-        Max pooling by a factor of pool_size in each dimension.
-    dropout : float between 0-1
-        The probability of dropping out a feature during training.
+    Parameters:
+        conv_dim : int
+            1, 2, or 3 representing spatial dimensional inputs.
+        in_channels : int
+            The number of incoming channels.
+        out_channels : int
+            The number of convolution kernels for this layer.
+        kernel_size : int or tuple
+            The size of the 1, 2, or 3 dimensional convolution kernel.
+        weight_init : torch.nn.init
+            Torch initialization function.
+        bias_init : int or float
+            A constant int or float to initialize biases with.
+        stride : int or tuple
+            The stride of the 1, 2, or 3 dimensional convolution kernel.
+        padding : int
+            Number of zero-padding on both sides per dimension.
+        norm : str
+            'batch' for batch norm of 'instance' for instance norm.
+        activation : torch.nn.Module
+            An activation function to apply after Linear unit.
+        pool_size : int
+            Max pooling by a factor of pool_size in each dimension.
+        dropout : float between 0-1
+            The probability of dropping out a feature during training.
 
-    Returns
-    -------
-    conv_unit : torch.nn.Sequential
-        A single convolution layer.
+    Returns:
+        conv_unit : torch.nn.Sequential
+            A single convolution layer.
 
     """
 

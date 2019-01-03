@@ -16,17 +16,15 @@ def round_list(raw_list, decimals=4):
     """
     Return the same list with each item rounded off.
 
-    Parameters
-    ----------
-    raw_list : float list
-        float list to round.
-    decimals : int
-        How many decimal points to round to.
+    Parameters:
+        raw_list : float list
+            float list to round.
+        decimals : int
+            How many decimal points to round to.
 
-    Returns
-    -------
-    rounded_list : float list
-        The rounded list in the same shape as raw_list.
+    Returns:
+        rounded_list : float list
+            The rounded list in the same shape as raw_list.
 
     """
     return [round(item, decimals) for item in raw_list]
@@ -36,15 +34,13 @@ def get_one_hot(in_matrix):
     """
     Reformat truth matrix to same size as the output of the dense network.
 
-    Parameters
-    ----------
-    in_matrix : numpy.ndarray
-        The categorized 1D matrix
+    Parameters:
+        in_matrix : numpy.ndarray
+            The categorized 1D matrix
 
-    Returns
-    -------
-    one_hot : numpy.ndarray
-        A one-hot matrix representing the categorized matrix
+    Returns:
+        one_hot : numpy.ndarray
+            A one-hot matrix representing the categorized matrix
 
     """
     if in_matrix.dtype.name == 'category':
@@ -68,17 +64,15 @@ def pad(tensor, target_shape):
     Useful for combining various conv dimension outputs and to implement
     'same' padding for conv operations.
 
-    Parameters
-    ----------
-    tensor : torch.Tensor
-        Tensor to be padded
-    target_shape : np.array
-        Final padded tensor shape [*spatial_dimensions]
+    Parameters:
+        tensor : torch.Tensor
+            Tensor to be padded
+        target_shape : np.array
+            Final padded tensor shape [*spatial_dimensions]
 
-    Returns
-    -------
-    tensor : torch.Tensor
-        zero padded tensor with spatial dimension as target_shape
+    Returns:
+        tensor : torch.Tensor
+            zero padded tensor with spatial dimension as target_shape
 
     """
     # Ignore channels and batch and focus on spatial dimensions
@@ -196,17 +190,15 @@ def selu_weight_init_(tensor, mean=0.0):
     Function assigned to variable that will be called within
     _init_weights function to assign weights for selu.
 
-    Parameters
-    ----------
-    tensor :  torch.tensor
-        Weight tensor to be adjusted
-    mean : float
-        Mean value for the normal distribution
+    Parameters:
+        tensor :  torch.tensor
+            Weight tensor to be adjusted
+        mean : float
+            Mean value for the normal distribution
 
-    Returns
-    -------
-    torch.tensor
-        weight tensor with normal distribution
+    Returns:
+        torch.tensor
+            weight tensor with normal distribution
 
     """
     with torch.no_grad():
@@ -222,17 +214,15 @@ def selu_bias_init_(tensor, const=0.0):
     Function assigned to variable that will be called within
     _init_bias function to assign bias for selu.
 
-    Parameters
-    ----------
-    tensor : torch.tensor
-        Bias tensor to be adjusted
-    const : float
-        Constant value to be assigned to tensor.
+    Parameters:
+        tensor : torch.tensor
+            Bias tensor to be adjusted
+        const : float
+            Constant value to be assigned to tensor.
 
-    Returns
-    -------
-    torch.tensor
-        bias tensor with constant values.
+    Returns:
+        torch.tensor
+            bias tensor with constant values.
 
     """
     with torch.no_grad():
@@ -243,17 +233,15 @@ def set_tensor_device(data, device=None):
     """
     Convert list of data tensors to specified device.
 
-    Parameters
-    ----------
-    data : torch.tensor or list
-        data to be converted to the specified device.
-    device : str or torch.device
-        the desired device
+    Parameters:
+        data : torch.tensor or list
+            data to be converted to the specified device.
+        device : str or torch.device
+            the desired device
 
-    Returns
-    -------
-    data : torch.tensor or list
-        data converted to the specified device
+    Returns:
+        data : torch.tensor or list
+            data converted to the specified device
 
     """
     if not isinstance(data, (list, tuple)):
@@ -268,12 +256,11 @@ def master_device_setter(network, device=None):
     """
     Convert network and input_networks to specified device.
 
-    Parameters
-    ----------
-    network : BaseNetwork
-        network to be converted to the specified device.
-    device : str or torch.device
-        the desired device
+    Parameters:
+        network : BaseNetwork
+            network to be converted to the specified device.
+        device : str or torch.device
+            the desired device
 
     """
     network.device = device
