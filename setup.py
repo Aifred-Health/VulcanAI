@@ -16,6 +16,7 @@ setup(
                       'scipy>=0.17.1',
                       'matplotlib>=1.5.3',
                       'scikit-learn>=0.18',
+                      'pandas>=0.23.4',
                       'pydash>=4.7.3',
                       'tqdm>=4.25.0'],
     packages=['vulcanai'],
