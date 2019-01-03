@@ -6,8 +6,10 @@
 Welcome to vulcanai's documentation!
 ====================================
 
+:github_url: https://github.com/Aifred-Health/Vulcan
+
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Package Reference:
 
    datasets
