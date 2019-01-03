@@ -1,17 +1,7 @@
 dill==0.2.8.2
-distributed==1.25.1
-docutils==0.14
-glob2==0.6
-h5py==2.8.0
-Markdown==2.6.11
-MarkupSafe==1.1.0
 matplotlib==3.0.0
-mkl-fft==1.0.6
-nibabel==2.3.0
 numpy==1.15.4
-numpydoc==0.8.0
 pandas==0.23.4
-scikit-image==0.14.0
 scikit-learn==0.20.0
 scipy==1.1.0
 torch==1.0.0
