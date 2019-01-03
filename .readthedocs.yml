@@ -3,5 +3,5 @@
 #    https://github.com/rtfd/readthedocs.org/issues/855#issuecomment-261337038
 python:
    version: 3
-   pip_install: true
+   setup_py_install: true
 requirements_file: .rtd_requirements.txt
