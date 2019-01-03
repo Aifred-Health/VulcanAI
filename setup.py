@@ -17,7 +17,7 @@ setup(
                       'matplotlib>=1.5.3',
                       'scikit-learn>=0.18',
                       'pandas>=0.23.4',
-                      'pydash>=4.7.3',
+                      'pydash>=4.7.4',
                       'tqdm>=4.25.0'],
     packages=['vulcanai'],
     classifiers=['Development Status :: 3 - Alpha',
