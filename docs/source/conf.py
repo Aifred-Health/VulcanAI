@@ -17,6 +17,7 @@ import sys
 import sys
 from unittest.mock import MagicMock
 
+
 sys.path.insert(0, os.path.abspath('../../'))
 
 
@@ -202,6 +203,12 @@ class Mock(MagicMock):
         return MagicMock()
 
 
-MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'scikit-learn', 'pandas', 'pydash', 'tqdm', 'torch']
+MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'scikit-learn', 'pandas',
+                'pydash', 'tqdm', 'torch', 'torch.utils.data',
+                'torchvision.transforms', 'sklearn.preprocessing', 'sklearn',
+                'torch.nn', 'matplotlib.pyplot', 'torch.optim.lr_scheduler',
+                'torch.optim', 'sklearn.metrics', 'torch.nn.functional',
+                'sklearn.preprocessing', 'sklearn.manifold',
+                'sklearn.decomposition', 'mpl_toolkits.axes_grid1', 'seaborn']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
