@@ -203,7 +203,7 @@ class Mock(MagicMock):
         return MagicMock()
 
 
-MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'scikit-learn', 'pandas',
+MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'scikit-learn=0.17', 'pandas',
                 'pydash', 'tqdm', 'torch', 'torch.utils.data',
                 'torchvision.transforms', 'sklearn.preprocessing', 'sklearn',
                 'torch.nn', 'matplotlib.pyplot', 'torch.optim.lr_scheduler',
