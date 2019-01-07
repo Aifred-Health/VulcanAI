@@ -401,7 +401,7 @@ def display_receptive_fields(network, top_k=5, save_path=None):
     fig.suptitle("Feature importance")
     num_layers = len(network._modules['network'])
     for i, layer in enumerate(network._modules['network']):
-        raw_field = layer._kernel._parameters['weight'].detach().cpu().numpy()
+        raw_field = layer._kernel._parameters['weight'].cpu().detach().numpy()
         field = np.average(raw_field, axis=0)  # average all outgoing
         field_shape = [
             floor(sqrt(field.shape[0])),
