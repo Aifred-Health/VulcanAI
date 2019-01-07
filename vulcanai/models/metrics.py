@@ -61,6 +61,9 @@ class Metrics(object):
         """
         double_parametered_functions = ["get_accuracy"]
 
+        if isinstance(targets, torch.Tensor):
+            targets = targets.cpu().numpy()
+
         if not class_converted:
             predictions = Metrics.extract_class_labels(predictions)
 
