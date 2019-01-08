@@ -6,37 +6,37 @@ vulcanai.plotters
 Visualization
 -----------------------------
 
-:hidden:`display_record`
+display_record
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: vulcanai.plotters.display_record
 
-:hidden:`display_pca`
+display_pca
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: vulcanai.plotters.display_pca
 
-:hidden:`display_tsne`
+display_tsne
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: vulcanai.plotters.display_tsne
 
-:hidden:`display_confusion_matrix`
+display_confusion_matrix
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: vulcanai.plotters.display_confusion_matrix
 
-:hidden:`compute_saliency_map`
+compute_saliency_map
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: vulcanai.plotters.compute_saliency_map
 
-:hidden:`display_saliency_overlay`
+display_saliency_overlay
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: vulcanai.plotters.display_saliency_overlay
 
-:hidden:`display_receptive_fields`
+display_receptive_fields
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: vulcanai.plotters.display_receptive_fields
@@ -44,12 +44,12 @@ Visualization
 Visualization Utilities
 ------------------------
 
-:hidden:`get_notable_indices`
+get_notable_indices
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: vulcanai.plotters.utils.get_notable_indices
 
-:hidden:`GuidedBackprop`
+GuidedBackprop
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: GuidedBackprop

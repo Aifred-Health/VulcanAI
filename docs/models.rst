@@ -5,24 +5,24 @@ vulcanai.models
 Models
 -----------------------------
 
-:hidden:`BaseNetwork`
+BaseNetwork
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automodule:: vulcanai.models.basenetwork
     :members:
 
-:hidden:`ConvNet`
+ConvNet
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: vulcanai.models.cnn
     :members:
 
-:hidden:`DenseNet`
+DenseNet
 ~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: vulcanai.models.dnn
     :members:
 
-:hidden:`SnapshotNet`
+SnapshotNet
 ~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: vulcanai.models.ensemble
@@ -31,25 +31,25 @@ Models
 Layers/Units
 -----------------------------
 
-:hidden:`BaseUnit`
+BaseUnit
 ~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: vulcanai.models.layers.BaseUnit
     :members:
 
-:hidden:`FlattenUnit`
+FlattenUnit
 ~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: vulcanai.models.layers.FlattenUnit
     :members:
 
-:hidden:`ConvUnit`
+ConvUnit
 ~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: vulcanai.models.layers.ConvUnit
     :members:
 
-:hidden:`DenseUnit`
+DenseUnit
 ~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: vulcanai.models.layers.DenseUnit
@@ -58,7 +58,7 @@ Layers/Units
 Metrics
 -----------------------------
 
-:hidden:`Metrics`
+Metrics
 ~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: vulcanai.models.metrics.Metrics
@@ -67,37 +67,37 @@ Metrics
 Model Utilities
 -----------------------------
 
-:hidden:`round_list`
+round_list
 ~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: vulcanai.models.utils.round_list
 
-:hidden:`get_one_hot`
+get_one_hot
 ~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: vulcanai.models.utils.get_one_hot
 
-:hidden:`pad`
+pad
 ~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: vulcanai.models.utils.pad
 
-:hidden:`selu_weight_init_`
+selu_weight_init_
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: vulcanai.models.utils.selu_weight_init_
 
-:hidden:`selu_bias_init_`
+selu_bias_init_
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: vulcanai.models.utils.selu_bias_init_
 
-:hidden:`set_tensor_device`
+set_tensor_device
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: vulcanai.models.utils.set_tensor_device
 
-:hidden:`master_device_setter`
+master_device_setter
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: vulcanai.models.utils.master_device_setter
