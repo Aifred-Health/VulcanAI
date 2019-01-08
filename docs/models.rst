@@ -5,40 +5,27 @@ vulcanai.models
 Models
 -----------------------------
 
-:hidden:`vulcanai.models.basenetwork.BaseNetwork`
+:hidden:`BaseNetwork`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automodule:: vulcanai.models.basenetwork.BaseNetwork
-    :members:
-
-:hidden:`vulcanai.models.cnn.ConvNetConfig`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. automodule:: vulcanai.models.cnn.ConvNetConfig
+.. automodule:: vulcanai.models.basenetwork
     :members:
 
 :hidden:`ConvNet`
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: vulcanai.models.cnn.ConvNet
-    :members:
-
-
-:hidden:`DenseNetConfig`
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. automodule:: vulcanai.models.dnn.DenseNetConfig
+.. automodule:: vulcanai.models.cnn
     :members:
 
 :hidden:`DenseNet`
 ~~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: vulcanai.models.dnn.DenseNet
+.. automodule:: vulcanai.models.dnn
     :members:
 
 :hidden:`SnapshotNet`
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: SnapshotNet
+.. automodule:: vulcanai.models.ensemble
     :members:
 
 Layers/Units
