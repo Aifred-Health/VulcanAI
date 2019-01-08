@@ -7,19 +7,19 @@ Data Containers
 -----------------------------
 These are all extensions of torch.utils.data.Dataset.
 
-:hidden:`FashionData`
+FashionData
 ~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: vulcanai.datasets.fashion.FashionData
     :members:
 
-:hidden:`MultiDataset`
+MultiDataset
 ~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: vulcanai.datasets.multidataset.MultiDataset
     :members:
 
-:hidden:`TabularDataset`
+TabularDataset
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: vulcanai.datasets.tabulardataset.TabularDataset
@@ -28,12 +28,12 @@ These are all extensions of torch.utils.data.Dataset.
 Data Utilities
 -----------------------------
 
-:hidden:`check_split_ratio`
+check_split_ratio
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: vulcanai.datasets.utils.check_split_ratio
 
-:hidden:`stitch_datasets`
+stitch_datasets
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: vulcanai.datasets.utils.stitch_datasets
