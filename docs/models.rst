@@ -4,22 +4,19 @@
 vulcanai.models
 =============================
 
-.. automodule:: vulcanai.models
-.. currentmodule:: vulcanai.models
-
 Models
 -----------------------------
 
 :hidden:`BaseNetwork`
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: BaseNetwork
+.. automodule:: vulcanai.models.basenetwork.BaseNetwork
     :members:
 
 :hidden:`ConvNetConfig`
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: ConvNetConfig
+.. automodule:: vulcanai.models.cnn.ConvNetConfig
     :members:
 
 :hidden:`ConvNet`
@@ -32,19 +29,19 @@ Models
 :hidden:`DenseNetConfig`
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: DenseNetConfig
+.. automodule:: vulcanai.models.dnn.DenseNetConfig
     :members:
 
 :hidden:`DenseNet`
 ~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: DenseNet
+.. automodule:: vulcanai.models.dnn.DenseNet
     :members:
 
 :hidden:`SnapshotNet`
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: SnapshotNet
+.. automodule:: SnapshotNet
     :members:
 
 Layers/Units
@@ -53,25 +50,25 @@ Layers/Units
 :hidden:`BaseUnit`
 ~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: BaseUnit
+.. automodule:: vulcanai.models.layers.BaseUnit
     :members:
 
 :hidden:`FlattenUnit`
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: FlattenUnit
+.. automodule:: vulcanai.models.layers.FlattenUnit
     :members:
 
 :hidden:`ConvUnit`
 ~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: ConvUnit
+.. automodule:: vulcanai.models.layers.ConvUnit
     :members:
 
 :hidden:`DenseUnit`
 ~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: DenseUnit
+.. automodule:: vulcanai.models.layers.DenseUnit
     :members:
 
 Metrics
@@ -80,7 +77,7 @@ Metrics
 :hidden:`Metrics`
 ~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: Metrics
+.. automodule:: vulcanai.models.metrics.Metrics
     :members:
 
 Model Utilities
