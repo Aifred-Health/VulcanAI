@@ -25,7 +25,9 @@ Models
 :hidden:`ConvNet`
 ~~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: vulcanai.models.ConvNet
+.. automodule:: vulcanai.models.cnn.ConvNet
+    :members:
+
 
 :hidden:`DenseNetConfig`
 ~~~~~~~~~~~~~~~~~~~~~~~~
