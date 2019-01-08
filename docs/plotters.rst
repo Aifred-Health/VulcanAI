@@ -47,10 +47,10 @@ Visualization Utilities
 get_notable_indices
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: vulcanai.plotters.visualization.utils.get_notable_indices
+.. autofunction:: vulcanai.plotters.utils.get_notable_indices
 
 GuidedBackprop
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: GuidedBackprop
+.. autoclass:: vulcanai.plotters.utils.GuidedBackprop
     :members:
