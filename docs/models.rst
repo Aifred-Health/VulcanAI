@@ -7,13 +7,13 @@ vulcanai.models
 Models
 -----------------------------
 
-:hidden:`BaseNetwork`
+`BaseNetwork`
 ~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: vulcanai.models.basenetwork.BaseNetwork
         :members:
 
-:hidden:`ConvNetConfig`
+`ConvNetConfig`
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: vulcanai.models.cnn.ConvNetConfig
