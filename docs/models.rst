@@ -1,23 +1,19 @@
 vulcanai.models
 =============================
 
-.. automodule:: vulcanai.models
-.. currentmodule:: vulcanai.models
-
 Models
 -----------------------------
 
-`BaseNetwork`
-~~~~~~~~~~~~~~~~~~~~~
-
+BaseNetwork
+----------------------
 .. automodule:: vulcanai.models.basenetwork.BaseNetwork
-        :members:
+    :members:
 
 `ConvNetConfig`
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: vulcanai.models.cnn.ConvNetConfig
-        :members:
+    :members:
 
 :hidden:`ConvNet`
 ~~~~~~~~~~~~~~~~~~~~
