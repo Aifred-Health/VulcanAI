@@ -1,15 +1,16 @@
 vulcanai.models
 =============================
+.. automodule:: vulcanai.models
 
 Models
 -----------------------------
 
-BaseNetwork
-----------------------
+:hidden:`BaseNetwork`
+~~~~~~~~~~~~~~~~~~~~~~~
 .. automodule:: vulcanai.models.basenetwork.BaseNetwork
     :members:
 
-`ConvNetConfig`
+:hidden:`ConvNetConfig`
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: vulcanai.models.cnn.ConvNetConfig
@@ -19,7 +20,7 @@ BaseNetwork
 ~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: vulcanai.models.cnn.ConvNet
-        :members:
+    :members:
 
 
 :hidden:`DenseNetConfig`
