@@ -1,8 +1,8 @@
-.. role:: hidden
-    :class: hidden-section
-
 vulcanai.models
 =============================
+
+.. automodule:: vulcanai.models
+.. currentmodule:: vulcanai.models
 
 Models
 -----------------------------
