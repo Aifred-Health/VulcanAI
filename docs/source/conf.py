@@ -123,10 +123,10 @@ def setup(app):
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
-if not on_rtd:  # only import and set the theme if we're building docs locally
-    import sphinx_rtd_theme
-    html_theme = 'sphinx_rtd_theme'
-    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+# if not on_rtd:  # only import and set the theme if we're building docs locally
+#     import sphinx_rtd_theme
+#     html_theme = 'sphinx_rtd_theme'
+#     html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 
 # -- Options for HTMLHelp output ------------------------------------------
@@ -229,7 +229,7 @@ def _linkcode_resolve(domain, info, package, url_fmt, revision):
 def project_linkcode_resolve(domain, info):
     global _linkcode_git_revision
     return _linkcode_resolve(domain, info,
-            package='Vulcan',
+            package='vulcanai',
             revision=_linkcode_git_revision,
             url_fmt='https://github.com/Aifred-Health/Vulcan'
                     'blob/{revision}/'

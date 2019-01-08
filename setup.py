@@ -1,5 +1,5 @@
 """Setup script for uploading package to PyPI servers."""
-from setuptools import setup
+from setuptools import setup, find_packages
 
 tests_require = [
     'pytest',
@@ -31,7 +31,8 @@ setup(
         'testing': tests_require,
         'docs': docs_require,
     },
-    packages=['vulcanai'],
+    packages=find_packages(),
+    include_package_data=True,
     classifiers=['Development Status :: 3 - Alpha',
                  'Intended Audience :: Developers',
                  'Intended Audience :: Science/Research',
