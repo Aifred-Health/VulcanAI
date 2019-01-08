@@ -1,11 +1,7 @@
-.. role:: hidden
-    :class: hidden-section
-
 vulcanai.datasets
 =============================
 
 .. automodule:: vulcanai.datasets
-.. currentmodule:: vulcanai.datasets
 
 Data Containers
 -----------------------------
@@ -14,19 +10,19 @@ These are all extensions of torch.utils.data.Dataset.
 :hidden:`FashionData`
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: FashionData
+.. autoclass:: vulcanai.datasets.fashion.FashionData
     :members:
 
 :hidden:`MultiDataset`
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: MultiDataset
+.. autoclass:: vulcanai.datasets.multidataset.MultiDataset
     :members:
 
 :hidden:`TabularDataset`
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: TabularDataset
+.. autoclass:: vulcanai.datasets.tabulardataset.TabularDataset
     :members:
 
 Data Utilities
