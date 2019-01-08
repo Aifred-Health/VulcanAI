@@ -11,19 +11,19 @@ Models
 ~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: vulcanai.models.basenetwork.BaseNetwork
-    :members:
+        :members:
 
 :hidden:`ConvNetConfig`
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: vulcanai.models.cnn.ConvNetConfig
-    :members:
+        :members:
 
 :hidden:`ConvNet`
 ~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: vulcanai.models.cnn.ConvNet
-    :members:
+        :members:
 
 
 :hidden:`DenseNetConfig`
