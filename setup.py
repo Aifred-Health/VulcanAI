@@ -3,6 +3,7 @@ from setuptools import setup
 
 tests_require = [
     'pytest',
+    'numpydoc'
 ]
 
 docs_require = [
