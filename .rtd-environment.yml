@@ -1,7 +1,0 @@
-# Conda environment file used by our custom ReadTheDocs environment.
-
-name: vulcan
-
-dependencies:
-    - python=3.6
-    - numpy
