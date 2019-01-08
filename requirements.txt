@@ -5,4 +5,3 @@ scikit-learn==0.18
 pandas==0.23.4
 pydash==4.7.4
 tqdm==4.25.0
-torch==0.4.1
