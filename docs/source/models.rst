@@ -62,7 +62,7 @@ Metrics
 ~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: vulcanai.models.metrics.Metrics
-    :members:
+   :members:
 
 Model Utilities
 -----------------------------
