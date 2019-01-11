@@ -10,6 +10,7 @@ Welcome to Vulcan's documentation!
    :maxdepth: 4
    :caption: Contents:
 
+   modules
    vulcanai.datasets
    vulcanai.models
    vulcanai.plotters
