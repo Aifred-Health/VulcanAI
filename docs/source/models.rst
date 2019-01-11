@@ -61,7 +61,7 @@ Metrics
 Metrics
 ~~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: vulcanai.models.metrics.Metrics
+.. autoclass:: vulcanai.models.metrics.Metrics
    :members:
 
 Model Utilities
