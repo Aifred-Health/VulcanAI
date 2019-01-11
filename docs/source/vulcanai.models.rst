@@ -1,5 +1,6 @@
 vulcanai.models package
 =======================
+.. automodule:: vulcanai.models
 
 Submodules
 ----------
