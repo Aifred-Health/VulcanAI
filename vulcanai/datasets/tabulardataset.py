@@ -309,7 +309,7 @@ class TabularDataset(Dataset):
         # TODO: ensure dummy_na =False is what you want
         self.df = pd.get_dummies(self.df, columns=[column_name],
                                     prefix_sep=prefix_sep)
-        logger.info(f"Successfully encoded {column_name}")
+        logger.info("Successfully encoded %s", column_name)
 
     # if a use case presents itself column_name could easily become a list
     def reverse_create_one_hot_encoding(self, column_name=None,
@@ -361,8 +361,8 @@ class TabularDataset(Dataset):
 
         self.df = pd.DataFrame(result_series)
 
-        logger.info(f"Successfully converted {len(dummy_tuples)} \
-                    columns back from dummy format.")
+        logger.info(f"Successfully converted %d \
+                    columns back from dummy format.", len(dummy_tuples))
 
     def identify_sufficient_non_null(self, threshold):
         """
