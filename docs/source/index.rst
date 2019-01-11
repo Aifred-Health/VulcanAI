@@ -14,3 +14,9 @@ Welcome to Vulcan's documentation!
    models
    plotters
 
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
