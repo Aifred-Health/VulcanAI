@@ -63,9 +63,77 @@
 <h2>Visualization Utilities<a class="headerlink" href="#visualization-utilities" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="get-notable-indices">
 <h3>get_notable_indices<a class="headerlink" href="#get-notable-indices" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="vulcanai.plotters.utils.get_notable_indices">
+<code class="descclassname">vulcanai.plotters.utils.</code><code class="descname">get_notable_indices</code><span class="sig-paren">(</span><em>feature_importances</em>, <em>top_k=5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vulcanai/plotters/utils.html#get_notable_indices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vulcanai.plotters.utils.get_notable_indices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return dict of top k and bottom k features useful from matrix.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>feature_importance <span class="classifier-delimiter">:</span> <span class="classifier">numpy.ndarray</span></dt>
+<dd>1D numpy array to extract the top of bottom indices.</dd>
+<dt>top_k <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>How many features from top and bottom to extract.
+Defaults to 5.</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>notable_indices <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd>Indices of the top most important features.
+Indices of the bottom mos unimportant features.</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
 <div class="section" id="guidedbackprop">
 <h3>GuidedBackprop<a class="headerlink" href="#guidedbackprop" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="vulcanai.plotters.utils.GuidedBackprop">
+<em class="property">class </em><code class="descclassname">vulcanai.plotters.utils.</code><code class="descname">GuidedBackprop</code><span class="sig-paren">(</span><em>network</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vulcanai/plotters/utils.html#GuidedBackprop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vulcanai.plotters.utils.GuidedBackprop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate gradients with guided back propagation w.r.t given input.</p>
+<p>Modified from <a class="reference external" href="https://github.com/utkuozbulak/pytorch-cnn-visualizations">https://github.com/utkuozbulak/pytorch-cnn-visualizations</a>
+Insert backward hooks for activations to propagate positive gradients.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>network <span class="classifier-delimiter">:</span> <span class="classifier">BaseNetwork</span></dt>
+<dd>Network to conduct guided backprop on.</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>gradients <span class="classifier-delimiter">:</span> <span class="classifier">list of numpy.ndarray</span></dt>
+<dd>Gradients of top most layer w.r.t the input sample.</dd>
+</dl>
+</dd>
+</dl>
+<dl class="method">
+<dt id="vulcanai.plotters.utils.GuidedBackprop.generate_gradients">
+<code class="descname">generate_gradients</code><span class="sig-paren">(</span><em>input_data</em>, <em>targets</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vulcanai/plotters/utils.html#GuidedBackprop.generate_gradients"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vulcanai.plotters.utils.GuidedBackprop.generate_gradients" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute guided backprop gradients and returns top layer gradients.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>input_data <span class="classifier-delimiter">:</span> <span class="classifier">numpy.ndarray or torch.Tensor</span></dt>
+<dd>2D for DenseNet, 4D (for 2D images) or 5D (for 3D images) Tensor.</dd>
+<dt>targets <span class="classifier-delimiter">:</span> <span class="classifier">numpy.ndarray or torch.LongTensor</span></dt>
+<dd>1D list of class labels</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>gradients <span class="classifier-delimiter">:</span> <span class="classifier">list of numpy.ndarray</span></dt>
+<dd>Gradient list of numpy array with same shape as inputs.</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 </div>
 </div>

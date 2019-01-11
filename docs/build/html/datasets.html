@@ -41,6 +41,35 @@
 <p>These are all extensions of torch.utils.data.Dataset.</p>
 <div class="section" id="fashiondata">
 <h3>FashionData<a class="headerlink" href="#fashiondata" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="vulcanai.datasets.fashion.FashionData">
+<em class="property">class </em><code class="descclassname">vulcanai.datasets.fashion.</code><code class="descname">FashionData</code><span class="sig-paren">(</span><em>root</em>, <em>train=True</em>, <em>transform=None</em>, <em>target_transform=None</em>, <em>download=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vulcanai/datasets/fashion.html#FashionData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vulcanai.datasets.fashion.FashionData" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference external" href="http://yann.lecun.com/exdb/mnist/">MNIST</a> Dataset.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>root (string): Root directory of dataset where <code class="docutils literal notranslate"><span class="pre">processed/training.pt</span></code></dt>
+<dd>and  <code class="docutils literal notranslate"><span class="pre">processed/test.pt</span></code> exist.</dd>
+<dt>train (bool, optional): If True, creates dataset from <code class="docutils literal notranslate"><span class="pre">training.pt</span></code>,</dt>
+<dd>otherwise from <code class="docutils literal notranslate"><span class="pre">test.pt</span></code>.</dd>
+<dt>download (bool, optional): If true, downloads the dataset from the internet and</dt>
+<dd>puts it in root directory. If dataset is already downloaded, it is not
+downloaded again.</dd>
+<dt>transform (callable, optional): A function/transform that  takes in an PIL image</dt>
+<dd>and returns a transformed version. E.g, <code class="docutils literal notranslate"><span class="pre">transforms.RandomCrop</span></code></dd>
+<dt>target_transform (callable, optional): A function/transform that takes in the</dt>
+<dd>target and transforms it.</dd>
+</dl>
+</dd>
+</dl>
+<dl class="method">
+<dt id="vulcanai.datasets.fashion.FashionData.download">
+<code class="descname">download</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vulcanai/datasets/fashion.html#FashionData.download"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vulcanai.datasets.fashion.FashionData.download" title="Permalink to this definition">¶</a></dt>
+<dd><p>Download the MNIST data if it doesn’t exist in processed_folder already.</p>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 <div class="section" id="multidataset">
 <h3>MultiDataset<a class="headerlink" href="#multidataset" title="Permalink to this headline">¶</a></h3>
