@@ -7,11 +7,9 @@ Welcome to Vulcan's documentation!
 ==================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
    :caption: Contents:
 
-   vulcanai
-   modules
    vulcanai.datasets
    vulcanai.models
    vulcanai.plotters
