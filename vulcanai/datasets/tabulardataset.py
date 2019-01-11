@@ -187,7 +187,7 @@ class TabularDataset(Dataset):
                     index_list=index_list,
                     **dataset_dict)
 
-        logger.info("Successfully merged %d datasets", len(dataset_dict)
+        logger.info("Successfully merged %d datasets", len(dataset_dict))
 
     def save_dataframe(self, file_path):
         """
