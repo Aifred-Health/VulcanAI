@@ -1,6 +1,8 @@
 vulcanai.datasets package
 =========================
 
+.. automodule:: vulcanai.datasets
+
 Submodules
 ----------
 
