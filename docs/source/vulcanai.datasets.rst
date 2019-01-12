@@ -8,9 +8,11 @@ vulcanai.datasets.fashion module
 --------------------------------
 
 .. automodule:: vulcanai.datasets.fashion
-    :members:
+    :members: get_int, read_label_file, read_image_file
     :undoc-members:
-    :show-inheritance:
+    :show-inheritance
+.. autoclass:: FashionData
+   :members: __init__, __getitem__, __len__, __check_exists, download
 
 vulcanai.datasets.multidataset module
 -------------------------------------
