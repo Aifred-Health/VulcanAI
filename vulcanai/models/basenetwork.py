@@ -331,7 +331,7 @@ class BaseNetwork(nn.Module):
     @save_path.setter
     def save_path(self, value):
         if not value:
-            self._save_path = "{}_{date:%Y-%m-%d_%H:%M:%S}/".format(
+            self._save_path = "{}_{date:%Y-%m-%d_%H_%M_%S}/".format(
                 self.name, date=datetime.now())
         else:
             self._save_path = value
