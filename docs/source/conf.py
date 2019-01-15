@@ -14,14 +14,13 @@
 #
 import os
 import sys
-from unittest.mock import MagicMock
+from unittest.mock import Mock, MagicMock
 
 sys.path.insert(0, os.path.abspath('../../'))
-sys.path.insert(0, os.path.abspath('../../vulcanai'))
-sys.path.insert(0, os.path.abspath('../../vulcanai/datasets'))
-sys.path.insert(0, os.path.abspath('../../vulcanai/models'))
-sys.path.insert(0, os.path.abspath('../../vulcanai/plotters'))
-sys.path.insert(0, os.path.abspath('../../vulcanai/tests'))
+sys.path.insert(0, os.path.abspath('../../vulcanai/'))
+sys.path.insert(0, os.path.abspath('../../vulcanai/datasets/'))
+sys.path.insert(0, os.path.abspath('../../vulcanai/models/'))
+sys.path.insert(0, os.path.abspath('../../vulcanai/plotters/'))
 
 # -- Project information -----------------------------------------------------
 
