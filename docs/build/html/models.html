@@ -1,0 +1,427 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vulcanai.models &#8212; Vulcan 1.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="vulcanai.plotters" href="plotters.html" />
+    <link rel="prev" title="vulcanai.datasets" href="datasets.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="vulcanai-models">
+<h1>vulcanai.models<a class="headerlink" href="#vulcanai-models" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="models">
+<h2>Models<a class="headerlink" href="#models" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="basenetwork">
+<h3>BaseNetwork<a class="headerlink" href="#basenetwork" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="convnet">
+<h3>ConvNet<a class="headerlink" href="#convnet" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="densenet">
+<h3>DenseNet<a class="headerlink" href="#densenet" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="snapshotnet">
+<h3>SnapshotNet<a class="headerlink" href="#snapshotnet" title="Permalink to this headline">¶</a></h3>
+</div>
+</div>
+<div class="section" id="layers-units">
+<h2>Layers/Units<a class="headerlink" href="#layers-units" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-vulcanai.models.layers.BaseUnit">
+<span id="baseunit"></span><h3>BaseUnit<a class="headerlink" href="#module-vulcanai.models.layers.BaseUnit" title="Permalink to this headline">¶</a></h3>
+<p>The base class for all layers.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>weight_init <span class="classifier-delimiter">:</span> <span class="classifier">torch.nn.init</span></dt>
+<dd>Torch initialization function for weights.</dd>
+<dt>bias_init <span class="classifier-delimiter">:</span> <span class="classifier">int or float</span></dt>
+<dd>A constant int or float to initialize biases with.</dd>
+<dt>norm <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>‘batch’ for batch norm of ‘instance’ for instance norm.</dd>
+<dt>dropout <span class="classifier-delimiter">:</span> <span class="classifier">float between 0-1</span></dt>
+<dd>The probability of dropping out a feature during training.</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>dense_unit <span class="classifier-delimiter">:</span> <span class="classifier">torch.nn.Sequential</span></dt>
+<dd>A single fully connected layer.</dd>
+</dl>
+</dd>
+</dl>
+</div>
+<div class="section" id="module-vulcanai.models.layers.FlattenUnit">
+<span id="flattenunit"></span><h3>FlattenUnit<a class="headerlink" href="#module-vulcanai.models.layers.FlattenUnit" title="Permalink to this headline">¶</a></h3>
+<p>Layer to flatten the input.</p>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>flatten_unit <span class="classifier-delimiter">:</span> <span class="classifier">torch.Sequential</span></dt>
+<dd>A flatten layer.</dd>
+</dl>
+</dd>
+</dl>
+</div>
+<div class="section" id="module-vulcanai.models.layers.ConvUnit">
+<span id="convunit"></span><h3>ConvUnit<a class="headerlink" href="#module-vulcanai.models.layers.ConvUnit" title="Permalink to this headline">¶</a></h3>
+<p>Define the ConvUnit object.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>conv_dim <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>1, 2, or 3 representing spatial dimensional inputs.</dd>
+<dt>in_channels <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>The number of incoming channels.</dd>
+<dt>out_channels <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>The number of convolution kernels for this layer.</dd>
+<dt>kernel_size <span class="classifier-delimiter">:</span> <span class="classifier">int or tuple</span></dt>
+<dd>The size of the 1, 2, or 3 dimensional convolution kernel.</dd>
+<dt>weight_init <span class="classifier-delimiter">:</span> <span class="classifier">torch.nn.init</span></dt>
+<dd>Torch initialization function.</dd>
+<dt>bias_init <span class="classifier-delimiter">:</span> <span class="classifier">int or float</span></dt>
+<dd>A constant int or float to initialize biases with.</dd>
+<dt>stride <span class="classifier-delimiter">:</span> <span class="classifier">int or tuple</span></dt>
+<dd>The stride of the 1, 2, or 3 dimensional convolution kernel.</dd>
+<dt>padding <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>Number of zero-padding on both sides per dimension.</dd>
+<dt>norm <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>‘batch’ for batch norm of ‘instance’ for instance norm.</dd>
+<dt>activation <span class="classifier-delimiter">:</span> <span class="classifier">torch.nn.Module</span></dt>
+<dd>An activation function to apply after Linear unit.</dd>
+<dt>pool_size <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>Max pooling by a factor of pool_size in each dimension.</dd>
+<dt>dropout <span class="classifier-delimiter">:</span> <span class="classifier">float between 0-1</span></dt>
+<dd>The probability of dropping out a feature during training.</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>conv_unit <span class="classifier-delimiter">:</span> <span class="classifier">torch.nn.Sequential</span></dt>
+<dd>A single convolution layer.</dd>
+</dl>
+</dd>
+</dl>
+</div>
+<div class="section" id="module-vulcanai.models.layers.DenseUnit">
+<span id="denseunit"></span><h3>DenseUnit<a class="headerlink" href="#module-vulcanai.models.layers.DenseUnit" title="Permalink to this headline">¶</a></h3>
+<p>Define the DenseUnit object.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>in_features <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>The incoming feature size of a sample.</dd>
+<dt>out_features <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>The number of hidden Linear units for this layer.</dd>
+<dt>weight_init <span class="classifier-delimiter">:</span> <span class="classifier">torch.nn.init</span></dt>
+<dd>Torch initialization function.</dd>
+<dt>bias_init <span class="classifier-delimiter">:</span> <span class="classifier">int or float</span></dt>
+<dd>A constant int or float to initialize biases with.</dd>
+<dt>norm <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>‘batch’ for batch norm of ‘instance’ for instance norm.</dd>
+<dt>activation <span class="classifier-delimiter">:</span> <span class="classifier">torch.nn.Module</span></dt>
+<dd>An activation function to apply after Linear unit.</dd>
+<dt>dropout <span class="classifier-delimiter">:</span> <span class="classifier">float between 0-1</span></dt>
+<dd>The probability of dropping out a feature during training.</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>dense_unit <span class="classifier-delimiter">:</span> <span class="classifier">torch.nn.Sequential</span></dt>
+<dd>A single fully connected layer.</dd>
+</dl>
+</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="metrics">
+<h2>Metrics<a class="headerlink" href="#metrics" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id1">
+<h3>Metrics<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+</div>
+</div>
+<div class="section" id="model-utilities">
+<h2>Model Utilities<a class="headerlink" href="#model-utilities" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="round-list">
+<h3>round_list<a class="headerlink" href="#round-list" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="vulcanai.models.utils.round_list">
+<code class="descclassname">vulcanai.models.utils.</code><code class="descname">round_list</code><span class="sig-paren">(</span><em>raw_list</em>, <em>decimals=4</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vulcanai/models/utils.html#round_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vulcanai.models.utils.round_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the same list with each item rounded off.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>raw_list <span class="classifier-delimiter">:</span> <span class="classifier">float list</span></dt>
+<dd>float list to round.</dd>
+<dt>decimals <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>How many decimal points to round to.</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>rounded_list <span class="classifier-delimiter">:</span> <span class="classifier">float list</span></dt>
+<dd>The rounded list in the same shape as raw_list.</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="get-one-hot">
+<h3>get_one_hot<a class="headerlink" href="#get-one-hot" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="vulcanai.models.utils.get_one_hot">
+<code class="descclassname">vulcanai.models.utils.</code><code class="descname">get_one_hot</code><span class="sig-paren">(</span><em>in_matrix</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vulcanai/models/utils.html#get_one_hot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vulcanai.models.utils.get_one_hot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reformat truth matrix to same size as the output of the dense network.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>in_matrix <span class="classifier-delimiter">:</span> <span class="classifier">numpy.ndarray</span></dt>
+<dd>The categorized 1D matrix</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>one_hot <span class="classifier-delimiter">:</span> <span class="classifier">numpy.ndarray</span></dt>
+<dd>A one-hot matrix representing the categorized matrix</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="pad">
+<h3>pad<a class="headerlink" href="#pad" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="vulcanai.models.utils.pad">
+<code class="descclassname">vulcanai.models.utils.</code><code class="descname">pad</code><span class="sig-paren">(</span><em>tensor</em>, <em>target_shape</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vulcanai/models/utils.html#pad"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vulcanai.models.utils.pad" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pad incoming tensor to the size of target_shape.</p>
+<p>tensor must have same spatial dimenison as the target_shape.
+Useful for combining various conv dimension outputs and to implement
+‘same’ padding for conv operations.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>tensor <span class="classifier-delimiter">:</span> <span class="classifier">torch.Tensor</span></dt>
+<dd>Tensor to be padded</dd>
+<dt>target_shape <span class="classifier-delimiter">:</span> <span class="classifier">np.array</span></dt>
+<dd>Final padded tensor shape [<a href="#id2"><span class="problematic" id="id3">*</span></a>spatial_dimensions]</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>tensor <span class="classifier-delimiter">:</span> <span class="classifier">torch.Tensor</span></dt>
+<dd>zero padded tensor with spatial dimension as target_shape</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="selu-weight-init">
+<h3><a class="reference internal" href="#selu-weight-init">selu_weight_init</a><a class="headerlink" href="#selu-weight-init" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="vulcanai.models.utils.selu_weight_init_">
+<code class="descclassname">vulcanai.models.utils.</code><code class="descname">selu_weight_init_</code><span class="sig-paren">(</span><em>tensor</em>, <em>mean=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vulcanai/models/utils.html#selu_weight_init_"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vulcanai.models.utils.selu_weight_init_" title="Permalink to this definition">¶</a></dt>
+<dd><p>SELU layer weight initialization function.</p>
+<p>Function assigned to variable that will be called within
+_init_weights function to assign weights for selu.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>tensor <span class="classifier-delimiter">:</span> <span class="classifier">torch.tensor</span></dt>
+<dd>Weight tensor to be adjusted</dd>
+<dt>mean <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>Mean value for the normal distribution</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>torch.tensor</dt>
+<dd>weight tensor with normal distribution</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="selu-bias-init">
+<h3><a class="reference internal" href="#selu-bias-init">selu_bias_init</a><a class="headerlink" href="#selu-bias-init" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="vulcanai.models.utils.selu_bias_init_">
+<code class="descclassname">vulcanai.models.utils.</code><code class="descname">selu_bias_init_</code><span class="sig-paren">(</span><em>tensor</em>, <em>const=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vulcanai/models/utils.html#selu_bias_init_"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vulcanai.models.utils.selu_bias_init_" title="Permalink to this definition">¶</a></dt>
+<dd><p>SELU layer bias initialization function.</p>
+<p>Function assigned to variable that will be called within
+_init_bias function to assign bias for selu.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>tensor <span class="classifier-delimiter">:</span> <span class="classifier">torch.tensor</span></dt>
+<dd>Bias tensor to be adjusted</dd>
+<dt>const <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>Constant value to be assigned to tensor.</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>torch.tensor</dt>
+<dd>bias tensor with constant values.</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="set-tensor-device">
+<h3>set_tensor_device<a class="headerlink" href="#set-tensor-device" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="vulcanai.models.utils.set_tensor_device">
+<code class="descclassname">vulcanai.models.utils.</code><code class="descname">set_tensor_device</code><span class="sig-paren">(</span><em>data</em>, <em>device=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vulcanai/models/utils.html#set_tensor_device"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vulcanai.models.utils.set_tensor_device" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert list of data tensors to specified device.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>data <span class="classifier-delimiter">:</span> <span class="classifier">torch.tensor or list</span></dt>
+<dd>data to be converted to the specified device.</dd>
+<dt>device <span class="classifier-delimiter">:</span> <span class="classifier">str or torch.device</span></dt>
+<dd>the desired device</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>data <span class="classifier-delimiter">:</span> <span class="classifier">torch.tensor or list</span></dt>
+<dd>data converted to the specified device</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="master-device-setter">
+<h3>master_device_setter<a class="headerlink" href="#master-device-setter" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="vulcanai.models.utils.master_device_setter">
+<code class="descclassname">vulcanai.models.utils.</code><code class="descname">master_device_setter</code><span class="sig-paren">(</span><em>network</em>, <em>device=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vulcanai/models/utils.html#master_device_setter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vulcanai.models.utils.master_device_setter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert network and input_networks to specified device.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>network <span class="classifier-delimiter">:</span> <span class="classifier">BaseNetwork</span></dt>
+<dd>network to be converted to the specified device.</dd>
+<dt>device <span class="classifier-delimiter">:</span> <span class="classifier">str or torch.device</span></dt>
+<dd>the desired device</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Vulcan</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="datasets.html">vulcanai.datasets</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">vulcanai.models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#models">Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#layers-units">Layers/Units</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#metrics">Metrics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#model-utilities">Model Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="plotters.html">vulcanai.plotters</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="datasets.html" title="previous chapter">vulcanai.datasets</a></li>
+      <li>Next: <a href="plotters.html" title="next chapter">vulcanai.plotters</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Robert Fratila, Priyatharsan Rajasekar, Caitrin Armstrong, Joseph Mehltretter.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/models.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

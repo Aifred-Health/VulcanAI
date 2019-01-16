@@ -16,12 +16,9 @@ import os
 import sys
 from unittest.mock import MagicMock
 
+
 sys.path.insert(0, os.path.abspath('../../'))
-sys.path.insert(0, os.path.abspath('../../vulcanai'))
-sys.path.insert(0, os.path.abspath('../../vulcanai/datasets'))
-sys.path.insert(0, os.path.abspath('../../vulcanai/models'))
-sys.path.insert(0, os.path.abspath('../../vulcanai/plotters'))
-sys.path.insert(0, os.path.abspath('../../vulcanai/tests'))
+
 
 # -- Project information -----------------------------------------------------
 
@@ -56,6 +53,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
+    'sphinx.ext.pngmath',
     'sphinx.ext.ifconfig',
 ]
 
