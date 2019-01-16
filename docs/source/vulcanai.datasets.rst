@@ -1,8 +1,6 @@
 vulcanai.datasets package
 =========================
 
-.. automodule:: vulcanai.datasets
-
 Submodules
 ----------
 
@@ -10,11 +8,9 @@ vulcanai.datasets.fashion module
 --------------------------------
 
 .. automodule:: vulcanai.datasets.fashion
-    :members: get_int, read_label_file, read_image_file
+    :members:
     :undoc-members:
-    :show-inheritance
-.. autoclass:: FashionData
-   :members: __init__, __getitem__, __len__, __check_exists, download
+    :show-inheritance:
 
 vulcanai.datasets.multidataset module
 -------------------------------------
