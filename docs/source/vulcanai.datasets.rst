@@ -1,14 +1,6 @@
 vulcanai.datasets package
 =========================
 
-Module contents
----------------
-
-.. automodule:: vulcanai.datasets
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 Submodules
 ----------
 
@@ -44,3 +36,11 @@ vulcanai.datasets.utils module
     :undoc-members:
     :show-inheritance:
 
+
+Module contents
+---------------
+
+.. automodule:: vulcanai.datasets
+    :members:
+    :undoc-members:
+    :show-inheritance:
