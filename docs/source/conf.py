@@ -14,6 +14,7 @@
 #
 import os
 import sys
+
 from unittest.mock import Mock, MagicMock
 
 sys.path.insert(0, os.path.abspath('../../'))
@@ -21,6 +22,7 @@ sys.path.insert(0, os.path.abspath('../../vulcanai/'))
 sys.path.insert(0, os.path.abspath('../../vulcanai/datasets/'))
 sys.path.insert(0, os.path.abspath('../../vulcanai/models/'))
 sys.path.insert(0, os.path.abspath('../../vulcanai/plotters/'))
+
 # -- Project information -----------------------------------------------------
 
 project = 'Vulcan'
@@ -44,9 +46,19 @@ release = '1.0'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx.ext.todo',
-    'sphinx.ext.mathjax',
+    'sphinx.ext.intersphinx',
     'sphinx.ext.ifconfig',
+    'sphinx.ext.viewcode',
+    'sphinx.ext.githubpages',
+    'matplotlib.sphinxext.only_directives',
+    'matplotlib.sphinxext.plot_directive',
+    'sphinx.ext.autosummary',
+    'sphinx.ext.coverage',
+    'sphinx.ext.graphviz',
+    'sphinx.ext.doctest',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.todo',
+    'sphinx.ext.coverage'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -183,7 +195,15 @@ epub_exclude_files = ['search.html']
 
 # -- Extension configuration -------------------------------------------------
 
-# -- Options for todo extension ----------------------------------------------
+# -- Options for intersphinx extension ---------------------------------------
 
-# If true, `todo` and `todoList` produce output, else they produce nothing.
-todo_include_todos = True
+# Example configuration for intersphinx: refer to the Python standard library.
+intersphinx_mapping = {'https://docs.python.org/': None}
+
+def skip(app, what, name, obj, skip, options):
+    if name == "__init__":
+        return False
+    return skip
+
+def setup(app):
+    app.connect("autodoc-skip-member", skip)
