@@ -1,13 +1,6 @@
 vulcanai.models package
 =======================
-
-Module contents
----------------
-
-.. adutomodule:: vulcanai.modelss
-     :members:
-     :undoc-members:
-     :show-inheritance:
+.. adutomodule:: vulcanai.models.layers
 
 Submodules
 ----------
@@ -15,7 +8,5 @@ Submodules
 BaseUnit -- auto members
 ========================
 
-.. automodule:: vulcanai.models.layers
+.. automodule:: vulcanai.models.layers.BaseUnit
     :members:
-    :undoc-members:
-    :show-inheritance:
