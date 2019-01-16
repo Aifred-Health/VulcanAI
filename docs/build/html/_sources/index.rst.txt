@@ -10,9 +10,9 @@ Welcome to Vulcan's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   datasets
-   models
-   plotters
+   vulcanai.datasets
+   vulcanai.models
+   vulcanai.plotters
 
 Indices and tables
 ==================
