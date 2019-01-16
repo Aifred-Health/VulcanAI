@@ -14,11 +14,16 @@
 #
 import os
 import sys
-from unittest.mock import MagicMock
+sys.path.insert(0, os.path.abspath('../vulcanai'))
 
+# Ensure that the __init__ method gets documented.
+def skip(app, what, name, obj, skip, options):
+    if name == "__init__":
+        return False
+    return skip
 
-sys.path.insert(0, os.path.abspath('../../'))
-
+def setup(app):
+    app.connect("autodoc-skip-member", skip)
 
 # -- Project information -----------------------------------------------------
 
@@ -43,17 +48,6 @@ release = '1.0'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx.ext.viewcode',
-    'matplotlib.sphinxext.only_directives',
-    'matplotlib.sphinxext.plot_directive',
-    'sphinx.ext.autosummary',
-    'sphinx.ext.coverage',
-    'sphinx.ext.graphviz',
-    'sphinx.ext.doctest',
-    'sphinx.ext.intersphinx',
-    'sphinx.ext.todo',
-    'sphinx.ext.coverage',
-    'sphinx.ext.ifconfig',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -78,7 +72,7 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = []
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
@@ -187,11 +181,5 @@ epub_title = project
 # A list of files that should not be packed into the epub file.
 epub_exclude_files = ['search.html']
 
-def skip(app, what, name, obj, skip, options):
-    if name == "__init__":
-        return False
-    return skip
 
-def setup(app):
-    app.connect("autodoc-skip-member", skip)
 # -- Extension configuration -------------------------------------------------
