@@ -20,3 +20,6 @@ __all__ = [
     'display_record',
     'display_receptive_fields'
 ]
+
+def start():
+    " Start module"

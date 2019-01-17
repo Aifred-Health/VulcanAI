@@ -6,6 +6,7 @@ from .dnn import DenseNet, DenseNetConfig
 from .ensemble import SnapshotNet
 from .metrics import Metrics
 from .layers import BaseUnit, ConvUnit, DenseUnit, FlattenUnit
+
 __all__ = [
     'basenetwork',
     'cnn',
@@ -26,3 +27,6 @@ __all__ = [
     'FlattenUnit',
     'BaseUnit'
 ]
+
+def start():
+    " Start module"

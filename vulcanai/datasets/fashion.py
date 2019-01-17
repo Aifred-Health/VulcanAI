@@ -14,9 +14,9 @@ import io
 
 # FROM https://raw.githubusercontent.com/mayurbhangale/fashion-mnist-pytorch/master/fashion.py
 class FashionData(data.Dataset):
-    """`MNIST <http://yann.lecun.com/exdb/mnist/>`_ Dataset.
+    """'MNIST <http://yann.lecun.com/exdb/mnist/>`_ Dataset.
 
-    Parameters:
+    Args:
         root (string): Root directory of dataset where ``processed/training.pt``
             and  ``processed/test.pt`` exist.
         train (bool, optional): If True, creates dataset from ``training.pt``,
@@ -37,7 +37,7 @@ class FashionData(data.Dataset):
     ]
     raw_folder = 'raw'
     processed_folder = 'processed'
-    training_file = 'training.pt'
+    traiining_file = 'training.pt'
     test_file = 'test.pt'
 
     def __init__(self, root, train=True, transform=None, target_transform=None, download=False):
