@@ -5,7 +5,7 @@ from .utils import (
         get_one_hot,
         pad,
         network_summary,
-        print_model_summary,
+        print_model_structure,
         selu_weight_init_,
         selu_bias_init_,
         set_tensor_device,

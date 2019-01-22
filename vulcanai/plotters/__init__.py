@@ -1,8 +1,4 @@
-from .utils import (
-    get_notable_indices,
-    GuidedBackprop
-    )
-
+# -*- coding: utf-8 -*-
 from .visualization import (
     compute_saliency_map,
     display_saliency_overlay,
