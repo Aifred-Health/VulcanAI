@@ -6,4 +6,4 @@ sphinx==1.8.3
 pandas==0.23.4
 pydash==4.7.4
 tqdm==4.25.0
-http://download.pytorch.org/whl/cu80/torch-0.3.1-cp35-cp35m-linux_x86_64.whl 
+https://download.pytorch.org/whl/cpu/torch-0.4.1-cp36-cp36m-linux_x86_64.whl
