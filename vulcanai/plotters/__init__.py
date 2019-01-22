@@ -1,4 +1,12 @@
-# -*- coding: utf-8 -*-
+from .baseplotter import (
+    Plotter
+    )
+
+from .utils import (
+    get_notable_indices,
+    GuidedBackprop
+    )
+
 from .visualization import (
     compute_saliency_map,
     display_saliency_overlay,
@@ -18,8 +26,11 @@ __all__ = [
     'display_tsne',
     'display_confusion_matrix',
     'display_record',
-    'display_receptive_fields'
-]
+    'display_receptive_fields',
+    'Plotter',
+    'get_notable_indices',
+    'GuidedBackprop'
+    ]
 
 def start():
     " Start module"
