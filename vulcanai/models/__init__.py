@@ -1,5 +1,17 @@
 # -*- coding: utf-8 -*-
 """ Imports network classes so they can be used directly"""
+from .utils import (
+        round_list,
+        get_one_hot,
+        pad,
+        network_summary,
+        print_model_summary,
+        selu_weight_init_,
+        selu_bias_init_,
+        set_tensor_device,
+        master_device_setter
+    )
+
 from .basenetwork import BaseNetwork
 from .cnn import ConvNet, ConvNetConfig
 from .dnn import DenseNet, DenseNetConfig

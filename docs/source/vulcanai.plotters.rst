@@ -4,14 +4,6 @@ vulcanai.plotters package
 Submodules
 ----------
 
-vulcanai.plotters.baseplotter module
-------------------------------------
-
-.. automodule:: vulcanai.plotters.baseplotter
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 vulcanai.plotters.utils module
 ------------------------------
 
