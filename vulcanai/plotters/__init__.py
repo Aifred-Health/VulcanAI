@@ -23,8 +23,6 @@ __all__ = [
     'display_confusion_matrix',
     'display_record',
     'display_receptive_fields',
-    'get_notable_indices',
-    'GuidedBackprop'
     ]
 
 def start():
