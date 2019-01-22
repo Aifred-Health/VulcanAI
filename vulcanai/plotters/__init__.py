@@ -1,7 +1,3 @@
-from .baseplotter import (
-    Plotter
-    )
-
 from .utils import (
     get_notable_indices,
     GuidedBackprop
@@ -27,7 +23,6 @@ __all__ = [
     'display_confusion_matrix',
     'display_record',
     'display_receptive_fields',
-    'Plotter',
     'get_notable_indices',
     'GuidedBackprop'
     ]
