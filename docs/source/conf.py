@@ -28,7 +28,6 @@ except:
     import warnings
     warnings.warn('unable to load torchvision package')
 
-import pytorch_sphinx_theme
 # -- Project information -----------------------------------------------------
 
 project = 'Vulcan'
