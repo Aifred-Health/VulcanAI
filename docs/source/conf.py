@@ -22,11 +22,7 @@ sys.path.insert(0, os.path.abspath('../../vulcanai/models/'))
 sys.path.insert(0, os.path.abspath('../../vulcanai/plotters/'))
 
 import torch
-try:
-    import torchvision
-except:
-    import warnings
-    warnings.warn('unable to load torchvision package')
+import torchvision
 
 # -- Project information -----------------------------------------------------
 
