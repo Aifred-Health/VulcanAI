@@ -1,8 +1,4 @@
 """ Imports network classes so they can be used directly"""
-import matplotlib
-matplotlib.use('agg')
-import matplotlib.pyplot as plt
-
 from .utils import (
         round_list,
         get_one_hot,
