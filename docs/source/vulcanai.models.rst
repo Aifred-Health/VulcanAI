@@ -1,9 +1,6 @@
 vulcanai.models package
 =======================
 
-Submodules
-----------
-
 vulcanai.models.basenetwork module
 ----------------------------------
 

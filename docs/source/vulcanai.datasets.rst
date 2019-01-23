@@ -1,9 +1,6 @@
 vulcanai.datasets package
 =========================
 
-Submodules
-----------
-
 vulcanai.datasets.fashion module
 --------------------------------
 

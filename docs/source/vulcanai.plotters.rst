@@ -1,9 +1,6 @@
 vulcanai.plotters package
 =========================
 
-Submodules
-----------
-
 vulcanai.plotters.utils module
 ------------------------------
 
