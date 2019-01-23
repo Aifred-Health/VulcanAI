@@ -20,11 +20,3 @@ vulcanai.plotters.visualization module
     :undoc-members:
     :show-inheritance:
 
-
-Module contents
----------------
-
-.. automodule:: vulcanai.plotters
-    :members:
-    :undoc-members:
-    :show-inheritance:

@@ -60,11 +60,3 @@ vulcanai.models.utils module
     :undoc-members:
     :show-inheritance:
 
-
-Module contents
----------------
-
-.. automodule:: vulcanai.models
-    :members:
-    :undoc-members:
-    :show-inheritance:
