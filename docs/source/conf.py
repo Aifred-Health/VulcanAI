@@ -23,7 +23,6 @@ sys.path.insert(0, os.path.abspath('../../vulcanai/plotters/'))
 
 import torch
 import torchvision
-
 # -- Project information -----------------------------------------------------
 
 project = 'Vulcan'

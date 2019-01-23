@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """ Imports network classes so they can be used directly"""
 import matplotlib
 matplotlib.use('agg')
