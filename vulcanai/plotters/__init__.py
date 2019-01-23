@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+import matplotlib
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
+
 from .visualization import (
     compute_saliency_map,
     display_saliency_overlay,
