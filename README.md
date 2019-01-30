@@ -15,7 +15,7 @@ Vulcan provides the tools for:
 
 Vulcan is built on Pytorch. We think Pytorch is great, so our framework was built with the goal of facilitating but not impeding access to all of Pytorch. Want to do things the easy way? Great, create a network using our simple configuration dict. Need something a little more complicated? Extend our classes or write your own Pytorch module to use within the rest of our framework. 
 
-For a more detailed runthrough on how to use the tools, please look at the [wiki](https://vulcanai.readthedocs.io/en/latest/) (IN PROGRESS)
+For a more detailed runthrough on how to use the tools, please look at the [wiki](https://vulcanai.readthedocs.io/en/latest/)
 
 ## Installation
 [Pytorch](https://pytorch.org) must be installed separately as per your devices requirements (e.g. GPU/CPU). Afterwards, Vulcan can be installed using PyPI:
