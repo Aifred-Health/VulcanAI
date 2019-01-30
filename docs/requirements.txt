@@ -4,6 +4,7 @@ scipy==1.1.0
 matplotlib==2.0.2
 scikit-learn==0.18.0
 sphinx==1.8.3
+sphinx_rtd_theme
 pandas==0.23.4
 pydash==4.7.4
 tqdm==4.25.0
