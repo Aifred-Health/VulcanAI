@@ -16,7 +16,7 @@ import io
 class FashionData(data.Dataset):
     """'MNIST <http://yann.lecun.com/exdb/mnist/>`_ Dataset.
 
-    Args:
+    Parameters:
         root (string): Root directory of dataset where ``processed/training.pt``
             and  ``processed/test.pt`` exist.
         train (bool, optional): If True, creates dataset from ``training.pt``,
