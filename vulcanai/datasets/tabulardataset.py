@@ -86,10 +86,11 @@ class TabularDataset(Dataset):
         self.seed_value = int(time.time())
 
         self.set_global_random_seed(self.seed_value)
+        
+        logger.info("You have created a new dataset with %d rows", len(self))
+        #logger.info(f"You have created a new dataset with {len(self)} rows")
 
-        logger.info(f"You have created a new dataset with {len(self)} rows")
-
-        logger.info(f"The random seed was set to a value of {self.seed_value}")
+        logger.info("The random seed was set to a value of %d", self.seed_value)
 
     def set_global_random_seed(self, seed_value):
         """
@@ -186,7 +187,7 @@ class TabularDataset(Dataset):
                     index_list=index_list,
                     **dataset_dict)
 
-        logger.info(f"Successfully merged {len(dataset_dict)} datasets")
+        logger.info("Successfully merged %d datasets", len(dataset_dict))
 
     def save_dataframe(self, file_path):
         """
@@ -198,7 +199,7 @@ class TabularDataset(Dataset):
 
         """
         self.df.to_csv(file_path, encoding='utf-8', index=True)
-        logger.info(f"You have saved the dataframe as a csv to {file_path}")
+        logger.info("You have saved the dataframe as a csv to %s", file_path)
 
     def list_all_features(self):
         """
@@ -231,7 +232,7 @@ class TabularDataset(Dataset):
         self.df[column_name] = self.df[column_name].replace(current_values,
                                                             target_values)
 
-        logger.info(f"replaced values in {column_name}")
+        logger.info("replaced values in %s", column_name)
 
     def list_all_column_values(self, column_name):
         """
@@ -259,7 +260,7 @@ class TabularDataset(Dataset):
         """
         self.df = self.df.drop(column_name, axis=1)
 
-        logger.info(f"You have dropped {column_name}")
+        logger.info("You have dropped %s", column_name)
 
     # TODO: use kwargs
     def create_label_encoding(self, column_name, ordered_values):
@@ -292,7 +293,7 @@ class TabularDataset(Dataset):
         self.df[column_name] = getattr(self.df, column_name).map(
             ordered_values)
 
-        logger.info(f"Successfully remapped {column_name}")
+        logger.info("Successfully remapped %s", column_name)
 
     def create_one_hot_encoding(self, column_name, prefix_sep="@"):
         """
@@ -308,7 +309,7 @@ class TabularDataset(Dataset):
         # TODO: ensure dummy_na =False is what you want
         self.df = pd.get_dummies(self.df, columns=[column_name],
                                     prefix_sep=prefix_sep)
-        logger.info(f"Successfully encoded {column_name}")
+        logger.info("Successfully encoded %s", column_name)
 
     # if a use case presents itself column_name could easily become a list
     def reverse_create_one_hot_encoding(self, column_name=None,
@@ -360,8 +361,8 @@ class TabularDataset(Dataset):
 
         self.df = pd.DataFrame(result_series)
 
-        logger.info(f"Successfully converted {len(dummy_tuples)} \
-                    columns back from dummy format.")
+        logger.info("Successfully converted %d \
+                    columns back from dummy format.", len(dummy_tuples))
 
     def identify_sufficient_non_null(self, threshold):
         """

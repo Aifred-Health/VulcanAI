@@ -265,6 +265,6 @@ class ConvNet(BaseNetwork):
     def __str__(self):
         """Specify how to print network."""
         if self.optim is not None:
-            return super(ConvNet, self).__str__() + f'\noptim: {self.optim}'
+            return super(ConvNet, self).__str__() + '\noptim: {}'.format(self.optim)
         else:
             return super(ConvNet, self).__str__()
