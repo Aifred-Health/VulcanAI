@@ -1,4 +1,6 @@
 # Vulcan
+[![Build Status](https://travis-ci.com/Aifred-Health/Vulcan.svg?branch=master)](https://travis-ci.com/Aifred-Health/Vulcan)
+
 Vulcan is Aifred Health's framework for rapid deep learning model prototyping and analysis.
 
 Vulcan provides the tools for:
