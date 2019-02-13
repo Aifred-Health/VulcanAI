@@ -384,7 +384,7 @@ class TabularDataset(Dataset):
         num_threshold = (threshold * len(self))
         # thresh is "Require that many non-NA values."
         tmp = self.df.dropna(thresh=num_threshold, axis=1)
-        cols = list(set(self.df.columns).difference(set(tmp.columns)))
+        cols = tmp.columns
         return cols
 
     def identify_unique(self, threshold):
