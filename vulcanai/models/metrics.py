@@ -190,8 +190,8 @@ class Metrics(object):
     @staticmethod
     def get_sensitivity(targets, predictions, average=None):
         """
-        Calculate the sensitivity. 
-        
+        Calculate the sensitivity.
+
         Also referred to as recall, or the true positive rate.
 
         Parameters:
@@ -471,6 +471,12 @@ class Metrics(object):
             raise ValueError('There\'s no classification layer')
 
         num_classes = network._num_classes
+
+        if num_classes == 2:
+            average = "binary"
+        else:
+            average = "macro"
+
         # getting just the y values out of the dataset
         # TODO: store in tensor for continuity?
         targets = np.array([v[1] for v in data_loader.dataset])
@@ -488,31 +494,31 @@ class Metrics(object):
         tp, tn, fp, fn = Metrics.get_confusion_matrix_values(targets,
                                                              predictions)
 
-        sensitivity = Metrics.get_specificity(targets, predictions)
-        sensitivity_macro = Metrics.get_specificity(targets, predictions,
-                                                    average="macro")
+        sensitivity = Metrics.get_sensitivity(targets, predictions)
+        sensitivity_macro = Metrics.get_sensitivity(targets, predictions,
+                                                    average=average)
 
         specificity = Metrics.get_specificity(targets, predictions)
         specificity_macro = Metrics.get_specificity(targets, predictions,
-                                                    average="macro")
+                                                    average=average)
 
         dice = Metrics.get_dice(targets, predictions)
-        dice_macro = Metrics.get_dice(targets, predictions, average="macro")
+        dice_macro = Metrics.get_dice(targets, predictions, average=average)
 
         ppv = Metrics.get_ppv(targets, predictions)
-        ppv_macro = Metrics.get_ppv(targets, predictions, average="macro")
+        ppv_macro = Metrics.get_ppv(targets, predictions, average=average)
 
         npv = Metrics.get_npv(targets, predictions)
-        npv_macro = Metrics.get_npv(targets, predictions, average="macro")
+        npv_macro = Metrics.get_npv(targets, predictions, average=average)
 
         accuracy = Metrics.get_accuracy(targets, predictions)
 
         f1 = Metrics.get_f1(targets, predictions)
-        f1_macro = Metrics.get_f1(targets, predictions, average="macro")
+        f1_macro = Metrics.get_f1(targets, predictions, average=average)
 
         auc = Metrics.get_auc(targets, raw_predictions, num_classes)
         auc_macro = Metrics.get_auc(targets, raw_predictions, num_classes,
-                                    average="macro")
+                                    average=average)
 
         logger.info('{} test\'s results'.format(network.name))
 
