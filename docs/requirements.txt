@@ -1,5 +1,12 @@
-numpy>=1.13.3
-https://download.pytorch.org/whl/cpu/torch-1.0.0-cp35-cp35m-linux_x86_64.whl
-sphinx-rtd-theme==0.4.0
-numpydoc==0.8.0
--e.
+numpy==1.16.0
+setuptools==40.6.3
+scipy==1.1.0
+matplotlib==2.0.2
+scikit-learn==0.18.0
+sphinx==1.8.3
+pandas==0.23.4
+pydash==4.7.4
+tqdm==4.25.0
+seaborn==0.9.0
+https://download.pytorch.org/whl/cpu/torch-1.0.0-cp36-cp36m-linux_x86_64.whl
+torchvision==0.2.1
