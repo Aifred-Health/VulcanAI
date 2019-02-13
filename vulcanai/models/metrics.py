@@ -178,7 +178,7 @@ class Metrics(object):
                     function if binary data"
                 )
 
-        if np.unique(predictions).size >= 2 or np.unique(targets).size >= 2:
+        if np.unique(predictions).size > 2 or np.unique(targets).size > 2:
             if "binary" in average:
                 raise ValueError(
                     "You cannot provide binary as the average \
@@ -243,7 +243,7 @@ class Metrics(object):
         specificity = tn / (tn + fp)
 
         # TODO: implement other options
-        if average == "macro":
+        if average == "macro" or average == "binary":
             specificity = np.average(specificity)
         elif average:
             raise NotImplementedError
@@ -278,7 +278,7 @@ class Metrics(object):
         dice = 2 * tp / (2 * tp + fp + fn)
 
         # TODO: implement other options
-        if average == "macro":
+        if average == "macro" or average == "binary":
             dice = np.average(dice)
         elif average:
             raise NotImplementedError
@@ -344,7 +344,7 @@ class Metrics(object):
         npv = np.nan_to_num(tn / (tn + fn))
 
         # TODO: implement other options
-        if average == "macro":
+        if average == "macro" or average == "binary":
             npv = np.average(npv)
         elif average:
             raise NotImplementedError
@@ -438,7 +438,7 @@ class Metrics(object):
             auc = skl_metrics.auc(fpr, tpr)
             all_class_auc += [auc]
         # TODO: implement other options
-        if average == "macro":
+        if average == "macro" or average == "binary":
             all_class_auc = np.average(all_class_auc)
         elif average:
             raise NotImplementedError
