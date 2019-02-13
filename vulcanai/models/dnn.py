@@ -164,6 +164,6 @@ class DenseNet(BaseNetwork):
 
     def __str__(self):
         if self.optim is not None:
-            return super(DenseNet, self).__str__() + f'\noptim: {self.optim}'
+            return super(DenseNet, self).__str__() + '\noptim: {}'.format(self.optim)
         else:
             return super(DenseNet, self).__str__()

@@ -7,7 +7,7 @@ tests_require = [
 ]
 
 docs_require = [
-    'Sphinx', #TODO: maybe numpydoc?
+    'Sphinx', # TODO: maybe numpydoc?
 ]
 
 with open('requirements.txt') as f:
@@ -16,7 +16,7 @@ with open('requirements.txt') as f:
 
 setup(
     name='vulcanai',
-    version='1.0rc1',
+    version='1.0',
     description='A high-level framework built on top of Pytorch'
                 ' using added functionality from Scikit-learn to provide '
                 'all of the tools needed for visualizing and processing '
