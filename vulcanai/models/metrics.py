@@ -434,12 +434,7 @@ class Metrics(object):
 
         all_class_auc = []
         for i in range(num_classes):
-            if num_classes == 2:
-                fpr, tpr, _ = skl_metrics.roc_curve(targets,
-                                                    raw_predictions,
-                                                    pos_label=pos_label)
-            else:
-                fpr, tpr, _ = skl_metrics.roc_curve(targets,
+            fpr, tpr, _ = skl_metrics.roc_curve(targets,
                                                     raw_predictions[:, i],
                                                     pos_label=i)
             auc = skl_metrics.auc(fpr, tpr)
