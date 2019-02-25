@@ -320,6 +320,7 @@ class TestMetrics:
                                                           *cnn_class_binary.in_dim)))
         test_target = torch.LongTensor(np.random.randint(0, 2,
                                                          size=num_items))
+
         test_dataloader = DataLoader(TensorDataset(test_input, test_target))
 
         res_dict = metrics.run_test(cnn_class_binary, test_dataloader)
