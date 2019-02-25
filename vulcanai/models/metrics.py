@@ -284,7 +284,7 @@ class Metrics(object):
         if average == "macro":
             dice = np.average(dice)
         elif average == "binary":
-            dice = np.average[1]
+            dice = dice[1]
         elif average:
             raise NotImplementedError
 
