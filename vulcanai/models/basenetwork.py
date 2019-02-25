@@ -680,13 +680,15 @@ class BaseNetwork(nn.Module):
 
         return validation_loss, validation_accuracy
 
-    def run_test(self, data_loader, plot=False, save_path=None):
+    def run_test(self, data_loader, plot=False, save_path=None, pos_label=1):
         """Will conduct the test suite to determine model strength."""
         return self.metrics.run_test(
             network=self,
             data_loader=data_loader,
             save_path=save_path,
-            plot=plot)
+            plot=plot,
+            pos_label=pos_label
+        )
 
     def cross_validate(self, data_loader, k, epochs,
                        average_results=True, retain_graph=None,

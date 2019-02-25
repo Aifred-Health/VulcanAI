@@ -447,7 +447,8 @@ class Metrics(object):
 
 
     @staticmethod
-    def run_test(network, data_loader, plot=False, save_path=None):
+    def run_test(network, data_loader, plot=False, save_path=None,
+                 pos_label=1):
         """
         Will conduct the test suite to determine network strength.
 
@@ -474,6 +475,8 @@ class Metrics(object):
 
         if num_classes == 2:
             average = "binary"
+            logger.warning("Will report scores only for pos_label, which is \
+                           set to {}".format(pos_label))
         else:
             average = "macro"
 
