@@ -188,7 +188,7 @@ class Metrics(object):
         return True
 
     @staticmethod
-    def get_sensitivity(targets, predictions, average=None):
+    def get_sensitivity(targets, predictions, average=None, pos_label=1):
         """
         Calculate the sensitivity.
 
@@ -213,11 +213,11 @@ class Metrics(object):
         """
         assert Metrics._check_average_parameter(targets, predictions, average)
         sensitivity = skl_metrics.recall_score(targets, predictions,
-                                               average=average)
+                                               average=average, pos_label=pos_label)
         return sensitivity
 
     @staticmethod
-    def get_specificity(targets, predictions, average=None):
+    def get_specificity(targets, predictions, average=None, pos_label=1):
         """
         Calculate the specificity.
 
@@ -240,11 +240,14 @@ class Metrics(object):
         """
         _, tn, fp, _ = Metrics.get_confusion_matrix_values(targets,
                                                            predictions)
+
         specificity = tn / (tn + fp)
 
         # TODO: implement other options
-        if average == "macro" or average == "binary":
+        if average == "macro":
             specificity = np.average(specificity)
+        elif average == "binary":
+            specificity = specificity[1]
         elif average:
             raise NotImplementedError
 
@@ -262,7 +265,7 @@ class Metrics(object):
                 The predicted values.
             average: string
                 [None, ‘binary’ (def), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
-                Only None and 'macro' currently implemented.
+                Only None, 'binary', and 'macro' currently implemented.
                 This parameter is required for multiclass/multilabel targets.
                 If None, the scores for each class are returned.
                 Otherwise, this determines the type of averaging performed on
@@ -278,15 +281,17 @@ class Metrics(object):
         dice = 2 * tp / (2 * tp + fp + fn)
 
         # TODO: implement other options
-        if average == "macro" or average == "binary":
+        if average == "macro":
             dice = np.average(dice)
+        elif average == "binary":
+            dice = np.average[1]
         elif average:
             raise NotImplementedError
 
         return dice
 
     @staticmethod
-    def get_ppv(targets, predictions, average=None):
+    def get_ppv(targets, predictions, average=None, pos_label=1):
         """
         Calculate the positive predictive value.
 
@@ -297,7 +302,7 @@ class Metrics(object):
                 The predicted values.
             average: string
                 [None, ‘binary’ (def), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
-                Only None and 'macro' currently implemented.
+                Only None, 'binary', and 'macro' currently implemented.
                 This parameter is required for multiclass/multilabel targets.
                 If None, the scores for each class are returned.
                 Otherwise, this determines the type of averaging performed on
@@ -311,8 +316,7 @@ class Metrics(object):
         assert Metrics._check_average_parameter(targets, predictions,
                                                 average=average)
         ppv = skl_metrics.precision_score(targets, predictions,
-                                          average=average)
-
+                                          average=average, pos_label=pos_label)
         return ppv
 
     @staticmethod
@@ -327,7 +331,7 @@ class Metrics(object):
                 The predicted values.
             average: string
                 [None, ‘binary’ (def), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
-                Only None and 'macro' currently implemented.
+                Only None, 'binary', and 'macro' currently implemented.
                 This parameter is required for multiclass/multilabel targets.
                 If None, the scores for each class are returned.
                 Otherwise, this determines the type of averaging performed on
@@ -344,8 +348,10 @@ class Metrics(object):
         npv = np.nan_to_num(tn / (tn + fn))
 
         # TODO: implement other options
-        if average == "macro" or average == "binary":
+        if average == "macro":
             npv = np.average(npv)
+        elif average == "binary":
+            npv = npv[1]
         elif average:
             raise NotImplementedError
 
@@ -372,7 +378,7 @@ class Metrics(object):
         return accuracy
 
     @staticmethod
-    def get_f1(targets, predictions, average=None):
+    def get_f1(targets, predictions, average=None, pos_label=1):
         """
         Calculate the f1 score.
 
@@ -394,13 +400,14 @@ class Metrics(object):
 
         """
         assert Metrics._check_average_parameter(targets, predictions, average)
-        f1 = skl_metrics.f1_score(targets, predictions, average=average)
+        f1 = skl_metrics.f1_score(targets, predictions, average=average,
+                                  pos_label=pos_label)
 
         return f1
 
     # TODO: what type are the raw predicted values that come out??
     @staticmethod
-    def get_auc(targets, raw_predictions, num_classes, average=None):
+    def get_auc(targets, raw_predictions, num_classes, average=None, pos_label=1):
         """
         Calculate the AUC. Note: raw_predictions and num_classes are required.
 
@@ -438,8 +445,10 @@ class Metrics(object):
             auc = skl_metrics.auc(fpr, tpr)
             all_class_auc += [auc]
         # TODO: implement other options
-        if average == "macro" or average == "binary":
+        if average == "macro":
             all_class_auc = np.average(all_class_auc)
+        elif average == "binary":
+            all_class_auc = all_class_auc[1]
         elif average:
             raise NotImplementedError
 
