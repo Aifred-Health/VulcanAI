@@ -205,6 +205,10 @@ class Metrics(object):
                 If None, the scores for each class are returned.
                 Otherwise, this determines the type of averaging performed on
                 the data. See Scikit learn.
+            pos_label: int
+                0 or 1. Only used in the binary case to indicate which class
+                label will be used to provide the output for average=binary.
+
 
         Returns:
             sensitivity: np.float32 or array of np.float32
@@ -213,7 +217,8 @@ class Metrics(object):
         """
         assert Metrics._check_average_parameter(targets, predictions, average)
         sensitivity = skl_metrics.recall_score(targets, predictions,
-                                               average=average, pos_label=pos_label)
+                                               average=average,
+                                               pos_label=pos_label)
         return sensitivity
 
     @staticmethod
@@ -232,6 +237,9 @@ class Metrics(object):
                 If None, the scores for each class are returned.
                 Otherwise, this determines the type of averaging performed on
                 the data. See Scikit learn.
+            pos_label: int
+                0 or 1. Only used in the binary case to indicate which class
+                label will be used to provide the output for average=binary.
 
         Returns:
             specificity: np.float32 or array of np.float32
@@ -247,14 +255,14 @@ class Metrics(object):
         if average == "macro":
             specificity = np.average(specificity)
         elif average == "binary":
-            specificity = specificity[1]
+            specificity = specificity[pos_label]
         elif average:
             raise NotImplementedError
 
         return specificity
 
     @staticmethod
-    def get_dice(targets, predictions, average=None):
+    def get_dice(targets, predictions, average=None, pos_label=1):
         """
         Calculate the dice metric.
 
@@ -270,6 +278,9 @@ class Metrics(object):
                 If None, the scores for each class are returned.
                 Otherwise, this determines the type of averaging performed on
                 the data. See Scikit learn.
+            pos_label: int
+                0 or 1. Only used in the binary case to indicate which class
+                label will be used to provide the output for average=binary.
 
         Returns:
             dice: np.float32 or array of np.float32
@@ -284,7 +295,7 @@ class Metrics(object):
         if average == "macro":
             dice = np.average(dice)
         elif average == "binary":
-            dice = dice[1]
+            dice = dice[pos_label]
         elif average:
             raise NotImplementedError
 
@@ -307,6 +318,9 @@ class Metrics(object):
                 If None, the scores for each class are returned.
                 Otherwise, this determines the type of averaging performed on
                 the data. See Scikit learn.
+            pos_label: int
+                0 or 1. Only used in the binary case to indicate which class
+                label will be used to provide the output for average=binary.
 
         Returns:
             ppv: float32 or array of np.float32
@@ -320,7 +334,7 @@ class Metrics(object):
         return ppv
 
     @staticmethod
-    def get_npv(targets, predictions, average=None):
+    def get_npv(targets, predictions, average=None, pos_label=1):
         """
         Calculate the negative predictive value.
 
@@ -336,6 +350,9 @@ class Metrics(object):
                 If None, the scores for each class are returned.
                 Otherwise, this determines the type of averaging performed on
                 the data. See Scikit learn.
+            pos_label: int
+                0 or 1. Only used in the binary case to indicate which class
+                label will be used to provide the output for average=binary.
 
         Returns:
             npv: np.float32 or array of np.float32
@@ -351,7 +368,7 @@ class Metrics(object):
         if average == "macro":
             npv = np.average(npv)
         elif average == "binary":
-            npv = npv[1]
+            npv = npv[pos_label]
         elif average:
             raise NotImplementedError
 
@@ -443,7 +460,7 @@ class Metrics(object):
         if average == "macro":
             all_class_auc = np.average(all_class_auc)
         elif average == "binary":
-            all_class_auc = all_class_auc[1]
+            all_class_auc = all_class_auc[pos_label]
         elif average:
             raise NotImplementedError
 
