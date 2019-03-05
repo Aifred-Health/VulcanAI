@@ -1,7 +1,12 @@
 import logging.config
-from os import path
+import os
 
-log_config_path = path.join(__name__, 'logging.conf')
+log_config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                               'logging.conf')
+
+if not os.path.isfile(log_config_path):
+    raise IOError
+
 log_output_path = "logfile.log"
 
 logging.config.fileConfig(log_config_path,
