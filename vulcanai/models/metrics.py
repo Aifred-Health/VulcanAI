@@ -447,11 +447,16 @@ class Metrics(object):
         """
         if raw_predictions.ndim == 1:
             raise ValueError("You must provide raw predictions not \
-                             class_converted predictions")
+                                    class_converted predictions")
 
         all_class_auc = []
         for i in range(num_classes):
-            fpr, tpr, _ = skl_metrics.roc_curve(targets,
+            if num_classes == 1:
+                fpr, tpr, _ = skl_metrics.roc_curve(targets,
+                                                    raw_predictions,
+                                                    pos_label=1)
+            else:
+                fpr, tpr, _ = skl_metrics.roc_curve(targets,
                                                     raw_predictions[:, i],
                                                     pos_label=i)
             auc = skl_metrics.auc(fpr, tpr)
