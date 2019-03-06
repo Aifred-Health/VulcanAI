@@ -37,7 +37,7 @@ class FashionData(data.Dataset):
     ]
     raw_folder = 'raw'
     processed_folder = 'processed'
-    traiining_file = 'training.pt'
+    training_file = 'training.pt'
     test_file = 'test.pt'
 
     def __init__(self, root, train=True, transform=None, target_transform=None, download=False):
