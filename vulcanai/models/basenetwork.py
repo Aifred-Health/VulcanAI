@@ -51,7 +51,7 @@ class BaseNetwork(nn.Module):
         input_networks : list of BaseNetwork
             A network object provided as input.
         num_classes : int or None
-            The number of classes to predict.
+            The number of classes to predict. Must be at least 2.
         activation : torch.nn.Module
             The desired activation function for use in the network.
         pred_activation : torch.nn.Module
@@ -99,6 +99,8 @@ class BaseNetwork(nn.Module):
         else:
             self.input_networks = input_networks
 
+        if self._num_classes and self._num_classes < 2:
+            raise ValueError("num_classes must be at least 2")
         self._num_classes = num_classes
 
         self._lr_scheduler = lr_scheduler
