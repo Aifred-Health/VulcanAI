@@ -99,7 +99,7 @@ class BaseNetwork(nn.Module):
         else:
             self.input_networks = input_networks
 
-        if self._num_classes and self._num_classes < 2:
+        if num_classes and num_classes < 2:
             raise ValueError("num_classes must be at least 2")
         self._num_classes = num_classes
 
