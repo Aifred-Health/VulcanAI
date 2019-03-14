@@ -51,7 +51,8 @@ class BaseNetwork(nn.Module):
         input_networks : list of BaseNetwork
             A network object provided as input.
         num_classes : int or None
-            The number of classes to predict. Must be at least 2.
+            The number of classes to predict. Must be at least 2. In the binary
+            case always specify 2 classes no matter the shape of the data.
         activation : torch.nn.Module
             The desired activation function for use in the network.
         pred_activation : torch.nn.Module
