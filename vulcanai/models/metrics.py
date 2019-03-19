@@ -499,13 +499,15 @@ class Metrics(object):
             raise ValueError('There\'s no classification layer')
 
         if num_classes == 1:
-            Metrics._run_test_single_continuous(network, data_loader,
+            results_dict = Metrics._run_test_single_continuous(network, data_loader,
                                                 plot=False, save_path=None,
                                                 pos_label=1)
         else:
-            Metrics._run_test_multi(network, data_loader,
+            results_dict = Metrics._run_test_multi(network, data_loader,
                                                 plot=False, save_path=None,
                                                 pos_label=1)
+
+        return results_dict
 
     @staticmethod
     def _run_test_single_continuous(network, data_loader,
@@ -551,12 +553,12 @@ class Metrics(object):
 
         num_classes = network._num_classes
 
-        if num_classes > 1:
-            average = "binary"
+        if num_classes > 2:
+            average = "macro"
+        elif num_classes == 2:
             logger.warning("Will report scores only for pos_label, which is \
                            set to {}".format(pos_label))
-        else:
-            average = "macro"
+            average = "binary"
 
         if plot:
             logger.setLevel(logging.INFO)

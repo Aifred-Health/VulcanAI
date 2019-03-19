@@ -767,6 +767,8 @@ class BaseNetwork(nn.Module):
                         self.metrics.extract_class_labels(
                             in_matrix=predictions),
                         device=self.device)
+            else:
+                predictions = raw_outputs
 
             # Aggregate predictions
             pred_collector = torch.cat([pred_collector, predictions])
