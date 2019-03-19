@@ -484,8 +484,9 @@ class Metrics(object):
                 The raw predicted values, not converted to classes.
 
         Returns:
-              The mean squared error
+              results:dict
         """
+
         return skl_metrics.mean_squared_error(targets, raw_predictions)
 
     @staticmethod
