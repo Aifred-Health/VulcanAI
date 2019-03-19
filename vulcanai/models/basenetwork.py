@@ -174,48 +174,6 @@ class BaseNetwork(nn.Module):
         """Abstract method used to define how to handle multi-inputs."""
         raise NotImplementedError
 
-    def forward(self, inputs, **kwargs):
-        """
-        Perform a forward pass through the modules.
-
-        If the network is defined with `num_classes` then it contains a
-        classification layer/network tail. The inputs will be passed
-        through the networks and then through the classifier.
-        If not, the input is passed through the network and
-        returned without passing through a classification layer.
-
-        Parameters:
-            inputs : list(torch.Tensor)
-                The inputs to pass throught the network.
-
-        Returns:
-            output : torch.Tensor
-
-        """
-        if not isinstance(inputs, list):
-            inputs = [inputs]
-
-        if self.input_networks:
-            net_outs = []
-            # Loop through all input networks and pass through respective
-            # input data tensors to collect their outputs. Use the specified
-            # merge_inputs functionality to combine all the outputs to create
-            # the input for this network.
-            for in_net, x in zip(self.input_networks.values(), inputs):
-                net_outs.append(in_net(x))
-            output = self._merge_input_network_outputs(net_outs)
-        else:
-            output = torch.cat(inputs, dim=1)
-
-        output = set_tensor_device(output, device=self.device)
-        # Return actionable error if input shapes don't match up.
-        if output.shape[1:] != self.in_dim:
-            raise ValueError(
-                "Input data incorrect dimension shape for network: {}. "
-                "Expecting shape {} but recieved shape {}".format(
-                    self.name, self.in_dim, output.shape[1:]))
-        return self.network(output)
-
     def extra_repr(self):
         """Set the extra representation of the module."""
         return '(device): torch.'+self.device.__repr__()
@@ -708,6 +666,48 @@ class BaseNetwork(nn.Module):
             valid_interv=valid_interv,
             plot=plot,
             save_path=save_path)
+
+    def forward(self, inputs, **kwargs):
+        """
+        Perform a forward pass through the modules.
+
+        If the network is defined with `num_classes` then it contains a
+        classification layer/network tail. The inputs will be passed
+        through the networks and then through the classifier.
+        If not, the input is passed through the network and
+        returned without passing through a classification layer.
+
+        Parameters:
+            inputs : list(torch.Tensor)
+                The inputs to pass throught the network.
+
+        Returns:
+            output : torch.Tensor
+
+        """
+        if not isinstance(inputs, list):
+            inputs = [inputs]
+
+        if self.input_networks:
+            net_outs = []
+            # Loop through all input networks and pass through respective
+            # input data tensors to collect their outputs. Use the specified
+            # merge_inputs functionality to combine all the outputs to create
+            # the input for this network.
+            for in_net, x in zip(self.input_networks.values(), inputs):
+                net_outs.append(in_net(x))
+            output = self._merge_input_network_outputs(net_outs)
+        else:
+            output = torch.cat(inputs, dim=1)
+
+        output = set_tensor_device(output, device=self.device)
+        # Return actionable error if input shapes don't match up.
+        if output.shape[1:] != self.in_dim:
+            raise ValueError(
+                "Input data incorrect dimension shape for network: {}. "
+                "Expecting shape {} but recieved shape {}".format(
+                    self.name, self.in_dim, output.shape[1:]))
+        return self.network(output)
 
     @torch.no_grad()
     def forward_pass(self, data_loader, convert_to_class=False):
