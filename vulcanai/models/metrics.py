@@ -499,20 +499,17 @@ class Metrics(object):
             raise ValueError('There\'s no classification layer')
 
         if num_classes == 1:
-            results_dict = Metrics._run_test_single_continuous(network, data_loader,
-                                                plot=False, save_path=None,
-                                                pos_label=1)
+            results_dict = Metrics._run_test_single_continuous(network,
+                                                               data_loader)
         else:
             results_dict = Metrics._run_test_multi(network, data_loader,
-                                                plot=False, save_path=None,
-                                                pos_label=1)
+                                                plot=plot, save_path=save_path,
+                                                pos_label=pos_label)
 
         return results_dict
 
     @staticmethod
-    def _run_test_single_continuous(network, data_loader,
-                                                plot=False, save_path=None,
-                                                pos_label=1):
+    def _run_test_single_continuous(network, data_loader):
 
         targets = np.array([v[1] for v in data_loader.dataset])
 
