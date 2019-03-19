@@ -122,6 +122,34 @@ def conv3D_net_class():
 
 
 @pytest.fixture(scope="module")
+def conv3D_net_class_single_value():
+    """conv3D fixture."""
+    return ConvNet(
+        name='conv3D_net',
+        in_dim=(1, 28, 28, 28),
+        num_classes=1,
+        config={
+            'conv_units': [
+                dict(
+                    in_channels=1,
+                    out_channels=16,
+                    kernel_size=(5, 5, 5),
+                    stride=2,
+                    dropout=0.1
+                ),
+                dict(
+                    in_channels=16,
+                    out_channels=64,
+                    kernel_size=(5, 5, 5),
+                    dropout=0.1
+                )
+            ],
+        },
+        device='cpu'
+    )
+
+
+@pytest.fixture(scope="module")
 def dnn_noclass():
     """DenseNet fixture."""
     return DenseNet(
@@ -147,6 +175,18 @@ def dnn_class():
         num_classes=3
     )
 
+@pytest.fixture(scope="module")
+def dnn_class_single_value():
+    """DenseNet with prediction layer."""
+    return DenseNet(
+        name='dnn_class',
+        in_dim=(200),
+        config={
+            'dense_units': [100, 50],
+            'dropout': 0.5,
+        },
+        num_classes=1
+    )
 
 @pytest.fixture(scope="module")
 def multi_input_dnn(conv1D_net, conv2D_net):

@@ -210,3 +210,15 @@ class TestDenseNet:
                                                  loaded_test_net.parameters())]
         shutil.rmtree(abs_save_path)
         assert all(load_params)
+
+
+    def test_forward_pass_class_not_nan_single_value(self,
+                                                     dnn_class_single_value):
+        """Confirm out is non nan."""
+        test_input = torch.rand(size=[10, *dnn_class_single_value.in_dim])
+        test_output = torch.rand(size=[10, 1])
+        test_dataloader = DataLoader(TensorDataset(test_input, test_output))
+        raw_output = dnn_class_single_value.forward_pass(
+            data_loader=test_dataloader,
+            convert_to_class=False)
+        assert np.any(~np.isnan(raw_output))
