@@ -100,8 +100,8 @@ class BaseNetwork(nn.Module):
         else:
             self.input_networks = input_networks
 
-        if num_classes and num_classes < 2:
-            raise ValueError("num_classes must be at least 2")
+        self._set_final_layer_parameters(num_classes, pred_activation)
+
         self._num_classes = num_classes
 
         self._lr_scheduler = lr_scheduler
@@ -168,6 +168,28 @@ class BaseNetwork(nn.Module):
             assert isinstance(self.input_networks, nn.ModuleDict)
         self.input_networks[in_network.name] = in_network
         self.in_dim = self._get_in_dim()
+
+    def _set_final_layer_parameters(self, pred_activation, criter_spec):
+        """
+        Sets and checks the parameters used in the final output layer. Final
+        transform is needed in forward pass in the case of nn.CrossEntropyLoss
+        as this class combines nn.NLLLoss and softmax, meaning the outputs
+        are not softmax transformed.
+        """
+
+        self._final_transform = None
+
+        if isinstance(criter_spec, nn.CrossEntropyLoss):
+            if pred_activation:
+                raise ValueError("The nn.CrossEntropyLoss class combines  \
+                            nn.NLLLoss and softmax for improved efficiency, \
+                            you cannot set pred_activation when \
+                            criter_spec is set to an instance of this class. \
+                            Set pred_activation to none or change criter_spec."
+                                 )
+
+                self._pred_activation = None
+            self._final_transform = nn.Softmax(dim=1)
 
     @abc.abstractmethod
     def _merge_input_network_outputs(self, inputs):
@@ -732,15 +754,19 @@ class BaseNetwork(nn.Module):
         pred_collector = torch.tensor([], dtype=dtype, device=self.device)
         for data, _ in data_loader:
             # Get raw network output
-            raw_output = self(data)
+            raw_outputs = self(data)
             if self._num_classes:
-                # Get probabilities
-                predictions = nn.Softmax(dim=1)(raw_output)
+                if self._final_transform:
+                    predictions = self._final_transform(raw_outputs)
+                else:
+                    predictions = raw_outputs
+
                 if convert_to_class:
                     predictions = torch.tensor(
                         self.metrics.extract_class_labels(
                             in_matrix=predictions),
                         device=self.device)
+
             # Aggregate predictions
             pred_collector = torch.cat([pred_collector, predictions])
         # TODO: check this
