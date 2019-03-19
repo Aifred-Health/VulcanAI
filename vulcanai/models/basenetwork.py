@@ -732,10 +732,10 @@ class BaseNetwork(nn.Module):
         pred_collector = torch.tensor([], dtype=dtype, device=self.device)
         for data, _ in data_loader:
             # Get raw network output
-            predictions = self(data)
+            raw_output = self(data)
             if self._num_classes:
                 # Get probabilities
-                predictions = nn.Softmax(dim=1)(predictions)
+                predictions = nn.Softmax(dim=1)(raw_output)
                 if convert_to_class:
                     predictions = torch.tensor(
                         self.metrics.extract_class_labels(
@@ -743,6 +743,7 @@ class BaseNetwork(nn.Module):
                         device=self.device)
             # Aggregate predictions
             pred_collector = torch.cat([pred_collector, predictions])
+        # TODO: check this
         return pred_collector.cpu().numpy()
 
     def save_model(self, save_path=None):
