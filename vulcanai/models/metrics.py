@@ -471,9 +471,32 @@ class Metrics(object):
 
         return all_class_auc
 
-
     @staticmethod
     def run_test(network, data_loader, plot=False, save_path=None,
+                 pos_label=1):
+
+        num_classes = network._num_classes
+
+        if num_classes is None or num_classes == 0:
+            raise ValueError('There\'s no classification layer')
+
+        if num_classes == 1:
+            Metrics._run_test_single_continuous(network, data_loader,
+                                                plot=False, save_path=None,
+                                                pos_label=1)
+        else:
+            Metrics._run_test_multi(network, data_loader,
+                                                plot=False, save_path=None,
+                                                pos_label=1)
+
+    @staticmethod
+    def _run_test_single_continuous(network, data_loader,
+                                                plot=False, save_path=None,
+                                                pos_label=1):
+        pass
+
+    @staticmethod
+    def _run_test_multi(network, data_loader, plot=False, save_path=None,
                  pos_label=1):
         """
         Will conduct the test suite to determine network strength.
@@ -490,14 +513,19 @@ class Metrics(object):
             results : dict
 
         """
+
+        num_classes = network._num_classes
+
+        if num_classes > 1:
+            average = "binary"
+            logger.warning("Will report scores only for pos_label, which is \
+                           set to {}".format(pos_label))
+        else:
+            average = "macro"
+
         if plot:
             logger.setLevel(logging.INFO)
 
-        if network._num_classes is None or \
-           network._num_classes == 0:
-            raise ValueError('There\'s no classification layer')
-
-        num_classes = network._num_classes
 
         if num_classes == 2:
             average = "binary"
