@@ -109,7 +109,7 @@ class Metrics(object):
         # For one-hot encoded entries
         if in_matrix.shape[1] > 1:
             return np.argmax(in_matrix, axis=1)
-        # For binary entries
+        # For single value entries
         elif in_matrix.shape[1] == 1:
             return np.around(in_matrix)
 
@@ -472,6 +472,23 @@ class Metrics(object):
         return all_class_auc
 
     @staticmethod
+    def get_mse(targets, raw_predictions):
+        """
+        Calculate the AUC. Note: raw_predictions and num_classes are
+        required.
+
+        Parameters:
+            targets: numpy.ndarray of integers
+                The target values.
+            raw_predictions: numpy.ndarray of floats
+                The raw predicted values, not converted to classes.
+
+        Returns:
+              The mean squared error
+        """
+        return skl_metrics.mean_squared_error(targets, raw_predictions)
+
+    @staticmethod
     def run_test(network, data_loader, plot=False, save_path=None,
                  pos_label=1):
 
@@ -493,7 +510,24 @@ class Metrics(object):
     def _run_test_single_continuous(network, data_loader,
                                                 plot=False, save_path=None,
                                                 pos_label=1):
-        pass
+
+        targets = np.array([v[1] for v in data_loader.dataset])
+
+        raw_predictions = network.forward_pass(
+            data_loader=data_loader,
+            convert_to_class=False)
+
+        if plot:
+            logger.setLevel(logging.INFO)
+
+        mse = Metrics.get_mse(targets, raw_predictions)
+
+        logger.info('{} test\'s results'.format(network.name))
+
+        logger.info('\nMean Squared Error: {}'.format(mse))
+
+        return {"mse": mse}
+
 
     @staticmethod
     def _run_test_multi(network, data_loader, plot=False, save_path=None,
@@ -525,14 +559,6 @@ class Metrics(object):
 
         if plot:
             logger.setLevel(logging.INFO)
-
-
-        if num_classes == 2:
-            average = "binary"
-            logger.warning("Will report scores only for pos_label, which is \
-                           set to {}".format(pos_label))
-        else:
-            average = "macro"
 
         # getting just the y values out of the dataset
         # TODO: store in tensor for continuity?
