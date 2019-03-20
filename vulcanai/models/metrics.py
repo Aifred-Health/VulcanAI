@@ -59,7 +59,7 @@ class Metrics(object):
                 Values returned by the metric functions.
 
         """
-        double_parametered_functions = ["get_accuracy"]
+        functions_without_average_parameter = ["get_accuracy", "get_mse"]
 
         if isinstance(targets, torch.Tensor):
             targets = targets.cpu().detach().numpy()
@@ -76,7 +76,7 @@ class Metrics(object):
             method_name = "get_" + metric
             method = getattr(Metrics, method_name)
             try:
-                if method_name in set(double_parametered_functions):
+                if method_name in set(functions_without_average_parameter):
                     metric_results = method(targets, predictions)
                 else:
                     metric_results = method(targets, predictions, average)
@@ -474,8 +474,8 @@ class Metrics(object):
     @staticmethod
     def get_mse(targets, raw_predictions):
         """
-        Calculate the AUC. Note: raw_predictions and num_classes are
-        required.
+        Calculate the negative MSE. Note: raw_predictions and num_classes are
+        required. Negative values are returned so the value can be optimized.
 
         Parameters:
             targets: numpy.ndarray of integers
@@ -516,9 +516,6 @@ class Metrics(object):
         raw_predictions = network.forward_pass(
             data_loader=data_loader,
             convert_to_class=False)
-
-        if plot:
-            logger.setLevel(logging.INFO)
 
         mse = Metrics.get_mse(targets, raw_predictions)
 
