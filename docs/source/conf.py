@@ -93,7 +93,8 @@ html_theme = 'classic'
 html_theme_options = {
     "sidebarbgcolor": "#344054",
     "sidebartextcolor": "#5df6c6",
-    "sidebarlinkcolor": "white"
+    "sidebarlinkcolor": "white",
+    "headtextcolor": "#5df6c6"
 }
 
 # Theme options are theme-specific and customize the look and feel of a theme
