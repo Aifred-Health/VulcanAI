@@ -394,14 +394,20 @@ class BaseNetwork(nn.Module):
         return self.state_dict()
 
     @abc.abstractmethod
-    def _create_network(self, **kwargs):
+    def _create_network(self, activation, pred_activation, **kwargs):
         """
         Define the network. Abstract method that needs to be overridden.
 
-        Returns:
-            None
+        Build the layers of the network into a nn.Sequential object.
 
-        """
+         Parameters:
+             activation : torch.nn.Module
+                 the non-linear activation to apply to each layer
+             pred_activation: torch.nn.Module
+                 the activation for the final layer
+             kwargs: dict
+                Other Parameters
+         """
         self.network = None
         pass
 

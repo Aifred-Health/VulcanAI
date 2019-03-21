@@ -121,16 +121,19 @@ class DenseNet(BaseNetwork):
             num_classes, activation, pred_activation, optim_spec,
             lr_scheduler, early_stopping, criter_spec, device)
 
-    def _create_network(self, **kwargs):
+    def _create_network(self, activation, pred_activation, **kwargs):
         """
-        Build the layers of the network into a nn.Sequential object.
+         Build the layers of the network into a nn.Sequential object.
 
-        Parameters:
-            dense_hid_layers : DenseNetConfig.units (list of dict)
-                The hidden layers specification
-            activation : torch.nn.Module
-                the non-linear activation to apply to each layer
-        """
+         Parameters:
+             activation : torch.nn.Module
+                 the non-linear activation to apply to each layer
+             pred_activation: torch.nn.Module
+                 the activation for the final layer
+             kwargs: dict
+                Other Parameters
+
+         """
         dense_hid_layers = self._config.units
 
         if self.input_networks:
@@ -141,7 +144,7 @@ class DenseNet(BaseNetwork):
         dense_hid_layers[0]['in_features'] = self.in_dim[0]
         dense_layers = OrderedDict()
         for idx, dense_layer_config in enumerate(dense_hid_layers):
-            dense_layer_config['activation'] = kwargs['activation']
+            dense_layer_config['activation'] = activation
             layer_name = 'dense_{}'.format(idx)
             dense_layers[layer_name] = DenseUnit(**dense_layer_config)
         self.network = nn.Sequential(dense_layers)
@@ -151,7 +154,7 @@ class DenseNet(BaseNetwork):
                 'classify', DenseUnit(
                     in_features=self._get_out_dim()[0],
                     out_features=self._num_classes,
-                    activation=kwargs['pred_activation']))
+                    activation=pred_activation))
 
     def _merge_input_network_outputs(self, tensors):
         output_tensors = [FlattenUnit()(t) for t in tensors]
