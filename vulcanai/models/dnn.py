@@ -130,11 +130,6 @@ class DenseNet(BaseNetwork):
                 The hidden layers specification
             activation : torch.nn.Module
                 the non-linear activation to apply to each layer
-
-        Returns:
-            output : torch.nn.Sequential
-                the dense network as a nn.Sequential object
-
         """
         dense_hid_layers = self._config.units
 

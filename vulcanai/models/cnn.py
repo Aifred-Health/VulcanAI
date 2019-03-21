@@ -139,10 +139,6 @@ class ConvNet(BaseNetwork):
             activation : torch.nn.Module
                 the non-linear activation to apply to each layer
 
-        Returns:
-            output : torch.nn.Sequential
-                the conv network as a nn.Sequential object
-
         """
         conv_hid_layers = self._config.units
 
