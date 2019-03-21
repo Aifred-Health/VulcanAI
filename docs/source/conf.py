@@ -92,7 +92,7 @@ pygments_style = None
 html_theme = 'classic'
 html_theme_options = {
     "sidebarbgcolor": "#344054",
-    "sidebarlinkcolor": "#5df6c6"
+    "sidebartextcolor": "#5df6c6"
 }
 
 # Theme options are theme-specific and customize the look and feel of a theme
