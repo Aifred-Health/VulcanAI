@@ -758,7 +758,8 @@ class BaseNetwork(nn.Module):
         return self.network(output)
 
     @torch.no_grad()
-    def forward_pass(self, data_loader, convert_to_class=False):
+    def forward_pass(self, data_loader, convert_to_class=False,
+                     transform_callable=None, **kwargs):
         """
         Allow the user to pass data through the network.
 
@@ -767,6 +768,11 @@ class BaseNetwork(nn.Module):
                 DataLoader object to make the pass with.
             convert_to_class : boolean
                 If true, list of class predictions instead of class probabilites.
+            transform_callable: callable
+                Used to transform values if convert_to_class is true,
+                otherwise defaults in metrics.extract_class_labels will be used
+            kwargs: dict of keyworded parameters
+                Values passed to transform callable
 
         Returns:
             outputs : numpy.ndarray

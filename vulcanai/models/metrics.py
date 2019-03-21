@@ -91,13 +91,19 @@ class Metrics(object):
         return results_dict
 
     @staticmethod
-    def extract_class_labels(in_matrix):
+    def extract_class_labels(in_matrix, transform_callable=None, **kwargs):
         """
         Reformat truth matrix to be the classes in a 1D array.
 
         Parameters:
             in_matrix : numpy.ndarray or torch.Tensor
                 One-hot matrix of shape [batch, num_classes].
+            transform_callable: callable
+                Used to transform values if convert_to_class is true,
+                otherwise np.argmax will be used for one-hot encoded entries
+                (shape[1] > 1) or no tranform for shape[1] = 1
+            kwargs: dict of keyworded parameters
+                Values passed to transform callable
 
         Returns:
             class_list : numpy.ndarray
@@ -106,12 +112,18 @@ class Metrics(object):
         """
         if isinstance(in_matrix, torch.Tensor):
             in_matrix = in_matrix.cpu().detach().numpy()
+
+        # Callable provided
+        if transform_callable:
+            return transform_callable(in_matrix, **kwargs)
         # For one-hot encoded entries
-        if in_matrix.shape[1] > 1:
+        elif in_matrix.shape[1] > 1:
             return np.argmax(in_matrix, axis=1)
         # For single value entries
         elif in_matrix.shape[1] == 1:
-            return np.around(in_matrix)
+            return in_matrix
+        else:
+            return None
 
     @staticmethod
     def get_confusion_matrix_values(targets, predictions):
