@@ -14,3 +14,5 @@ logging.config.fileConfig(log_config_path,
                           defaults={'logfilename': log_output_path})
 
 logger = logging.getLogger(__name__)
+
+logging.getLogger("matplotlib").setLevel(logging.WARNING)
