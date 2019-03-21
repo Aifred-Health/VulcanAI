@@ -484,7 +484,8 @@ class Metrics(object):
                 The raw predicted values, not converted to classes.
 
         Returns:
-              results:dict
+              results: float
+                The MSE value
         """
 
         return skl_metrics.mean_squared_error(targets, raw_predictions)
