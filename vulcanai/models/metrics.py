@@ -493,6 +493,25 @@ class Metrics(object):
     @staticmethod
     def run_test(network, data_loader, plot=False, save_path=None,
                  pos_label=1):
+        """
+        Will conduct the test suite to determine network strength.
+        Calls either _run_test_single_continuous or _run_test_multi
+        depending on the number of classes
+
+        Parameters:
+            network: nn.Module
+                The network
+            data_loader : DataLoader
+                A DataLoader object to run the test with.
+            save_path : string
+                Folder to place images in.
+            plot: bool
+                Determine if graphs should be plotted in real time.
+
+        Returns:
+            results : dict
+
+        """
 
         num_classes = network._num_classes
 
@@ -511,6 +530,19 @@ class Metrics(object):
 
     @staticmethod
     def _run_test_single_continuous(network, data_loader):
+        """
+        Will conduct the test suite to determine network strength.
+
+        Parameters:
+            network: nn.Module
+                The network
+            data_loader : DataLoader
+                A DataLoader object to run the test with.
+
+        Returns:
+            results : dict
+
+        """
 
         targets = np.array([v[1] for v in data_loader.dataset])
 
@@ -534,6 +566,8 @@ class Metrics(object):
         Will conduct the test suite to determine network strength.
 
         Parameters:
+            network: nn.Module
+                The network
             data_loader : DataLoader
                 A DataLoader object to run the test with.
             save_path : string
