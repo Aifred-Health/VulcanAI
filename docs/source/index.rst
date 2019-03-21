@@ -29,10 +29,10 @@ Vulcan provides the tools for:
 
 Vulcan is built on Pytorch. We think Pytorch is great, so our framework was built with the goal of facilitating but not impeding access to all of Pytorch. Want to do things the easy way? Great, create a network using our simple configuration dict. Need something a little more complicated? Extend our classes or write your own Pytorch module to use within the rest of our framework.
 
-
+Contents
+==================
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
 
    vulcanai.datasets
    vulcanai.models
