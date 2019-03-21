@@ -176,6 +176,13 @@ class BaseNetwork(nn.Module):
         transform is needed in forward pass in the case of nn.CrossEntropyLoss
         as this class combines nn.NLLLoss and softmax, meaning the outputs
         are not softmax transformed.
+
+        Parameters:
+            pred_activation : torch.nn.Module
+                The desired activation function for use in the prediction layer.
+            criter_spec : dict
+                criterion specification with name and all its parameters.
+
         """
 
         self._final_transform = None
