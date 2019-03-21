@@ -517,8 +517,7 @@ class Metrics(object):
 
         if num_classes is None or num_classes == 0:
             raise ValueError('There\'s no classification layer')
-
-        if num_classes == 1:
+        elif num_classes == 1:
             results_dict = Metrics._run_test_single_continuous(network,
                                                                data_loader)
         else:
