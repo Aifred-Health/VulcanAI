@@ -94,7 +94,9 @@ html_theme_options = {
     "sidebarbgcolor": "#344054",
     "sidebartextcolor": "#5df6c6",
     "sidebarlinkcolor": "white",
-    "headtextcolor": "#344054"
+    "headtextcolor": "#344054",
+    "textcolor": "#344054",
+    "linkcolor": "#344054"
 }
 
 # Theme options are theme-specific and customize the look and feel of a theme
