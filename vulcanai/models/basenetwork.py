@@ -783,7 +783,7 @@ class BaseNetwork(nn.Module):
         self.eval()
         # prediction_shape used to aggregate network outputs
         # (e.g. with or without class conversion)
-        dtype = torch.long if convert_to_class else torch.float
+        dtype = torch.float
         pred_collector = torch.tensor([], dtype=dtype, device=self.device)
         for data, _ in data_loader:
             # Get raw network output
