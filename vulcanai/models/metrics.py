@@ -662,6 +662,7 @@ class Metrics(object):
 
         logger.info('Sensitivity: {}'.format(round_list(sensitivity,
                                                         decimals=3)))
+        # accuracy and macro sensitivity are the same when classes are balanced
         logger.info('\tMacro Sensitivity: {:.4f}'.format(sensitivity_macro))
 
         logger.info('Specificity: {}'.format(round_list(specificity,
