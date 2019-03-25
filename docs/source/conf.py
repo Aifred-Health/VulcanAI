@@ -91,7 +91,7 @@ pygments_style = None
 #
 html_theme = 'classic'
 html_theme_options = {
-    "stickysidebar": True
+    "stickysidebar": True,
     "sidebarbgcolor": "#344054",
     "sidebartextcolor": "#5df6c6",
     "sidebarlinkcolor": "white",
