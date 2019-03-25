@@ -767,7 +767,8 @@ class BaseNetwork(nn.Module):
             data_loader : DataLoader
                 DataLoader object to make the pass with.
             convert_to_class : boolean
-                If true, list of class predictions instead of class probabilites.
+                If true, list of class predictions instead of
+                class probabilites.
             transform_callable: callable
                 Used to transform values if convert_to_class is true,
                 otherwise defaults in metrics.extract_class_labels will be used
@@ -796,7 +797,9 @@ class BaseNetwork(nn.Module):
                 if convert_to_class:
                     predictions = torch.tensor(
                         self.metrics.extract_class_labels(
-                            in_matrix=predictions),
+                            in_matrix=predictions,
+                            transform_callable=transform_callable, **kwargs
+                        ),
                         device=self.device)
             else:
                 predictions = raw_outputs
