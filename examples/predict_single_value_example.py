@@ -2,7 +2,7 @@ from vulcanai import datasets
 from vulcanai.models import ConvNet, DenseNet
 import torch
 from torch.utils.data import DataLoader, Subset, TensorDataset
-
+import numpy as np
 
 conv_2D_config = {
     'conv_units': [
@@ -52,3 +52,6 @@ test_dataloader,
 )
 
 conv_2D.run_test(test_dataloader)
+res = conv_2D.forward_pass(test_dataloader, convert_to_class=True, transform_callable=np.round, decimals=3)
+
+print(res)
