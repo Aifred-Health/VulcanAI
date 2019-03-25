@@ -51,7 +51,7 @@ class Metrics(object):
                 data.See scikit learn
             class_converted: binary. default False
                 True: If raw_predictions have already been converted using
-                extract_class_labels
+                convert_outputs
                 False: If raw_predictions are used
 
         Returns:
@@ -65,7 +65,7 @@ class Metrics(object):
             targets = targets.cpu().detach().numpy()
 
         if not class_converted:
-            predictions = Metrics.extract_class_labels(predictions)
+            predictions = Metrics.convert_outputs(predictions)
 
         if isinstance(metrics, str):
             metrics = [metrics]
@@ -91,9 +91,13 @@ class Metrics(object):
         return results_dict
 
     @staticmethod
-    def extract_class_labels(in_matrix, transform_callable=None, **kwargs):
+    def convert_outputs(in_matrix, transform_callable=None, **kwargs):
         """
-        Reformat truth matrix to be the classes in a 1D array.
+        Reformat output matrix. If one-hot,
+        truth matrix to be the classes in a 1D array. Otherwise use
+        transform_callable. If this is not provided, then return unchanged.
+
+        Note: This does not handle multiple class prediction.
 
         Parameters:
             in_matrix : numpy.ndarray or torch.Tensor
@@ -102,11 +106,12 @@ class Metrics(object):
                 Used to transform values if convert_to_class is true,
                 otherwise np.argmax will be used for one-hot encoded entries
                 (shape[1] > 1) or no tranform for shape[1] = 1
+                Must return floats.
             kwargs: dict of keyworded parameters
                 Values passed to transform callable
 
         Returns:
-            class_list : numpy.ndarray
+            class_list : numpy.ndarray of floats
                 1D class array.
 
         """
@@ -118,7 +123,7 @@ class Metrics(object):
             return transform_callable(in_matrix, **kwargs)
         # For one-hot encoded entries
         elif in_matrix.shape[1] > 1:
-            return np.argmax(in_matrix, axis=1)
+            return np.argmax(in_matrix, axis=1).astype(np.float32)
         # For single value entries
         elif in_matrix.shape[1] == 1:
             return in_matrix
@@ -611,7 +616,7 @@ class Metrics(object):
             data_loader=data_loader,
             convert_to_class=False)
 
-        predictions = Metrics.extract_class_labels(raw_predictions)
+        predictions = Metrics.convert_outputs(raw_predictions)
 
         cm = skl_metrics.confusion_matrix(targets, predictions)
         if plot:

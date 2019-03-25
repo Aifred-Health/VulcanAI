@@ -90,7 +90,7 @@ class TestMetrics:
                 [0.7, 0.3],
                 [0.25, 0.75]
             ])
-        output = metrics.extract_class_labels(test_input)
+        output = metrics.convert_outputs(test_input)
         assert np.all(output == np.array([1, 0, 1]))
 
     def test_cross_validate_outputs(self, metrics, cnn_class):

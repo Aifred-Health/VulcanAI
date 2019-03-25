@@ -108,7 +108,7 @@ class TestConvNet:
         raw_output = conv3D_net_class.forward_pass(
             data_loader=test_dataloader,
             convert_to_class=False)
-        class_output = conv3D_net_class.metrics.extract_class_labels(
+        class_output = conv3D_net_class.metrics.convert_outputs(
             in_matrix=raw_output)
         assert np.any(~np.isnan(class_output))
         assert np.any(~np.isnan(raw_output))

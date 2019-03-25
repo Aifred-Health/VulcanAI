@@ -758,7 +758,7 @@ class BaseNetwork(nn.Module):
         return self.network(output)
 
     @torch.no_grad()
-    def forward_pass(self, data_loader, convert_to_class=False,
+    def forward_pass(self, data_loader, transform_outputs=False,
                      transform_callable=None, **kwargs):
         """
         Allow the user to pass data through the network.
@@ -766,12 +766,12 @@ class BaseNetwork(nn.Module):
         Parameters:
             data_loader : DataLoader
                 DataLoader object to make the pass with.
-            convert_to_class : boolean
+            transform_outputs : boolean
                 If true, list of class predictions instead of
                 class probabilites.
             transform_callable: callable
-                Used to transform values if convert_to_class is true,
-                otherwise defaults in metrics.extract_class_labels will be used
+                Used to transform values if transform_outputs is true,
+                otherwise defaults in metrics.convert_outputs will be used
             kwargs: dict of keyworded parameters
                 Values passed to transform callable
 
@@ -783,6 +783,7 @@ class BaseNetwork(nn.Module):
         self.eval()
         # prediction_shape used to aggregate network outputs
         # (e.g. with or without class conversion)
+        # so far always a float.
         dtype = torch.float
         pred_collector = torch.tensor([], dtype=dtype, device=self.device)
         for data, _ in data_loader:
@@ -794,9 +795,9 @@ class BaseNetwork(nn.Module):
                 else:
                     predictions = raw_outputs
 
-                if convert_to_class:
+                if transform_outputs:
                     predictions = torch.tensor(
-                        self.metrics.extract_class_labels(
+                        self.metrics.convert_outputs(
                             in_matrix=predictions,
                             transform_callable=transform_callable, **kwargs
                         ),
