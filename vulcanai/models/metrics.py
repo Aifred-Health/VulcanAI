@@ -509,11 +509,14 @@ class Metrics(object):
 
     @staticmethod
     def run_test(network, data_loader, plot=False, save_path=None,
-                 pos_label=1):
+                 pos_label=1, transform_outputs=False,
+                 transform_callable=None, **kwargs):
         """
         Will conduct the test suite to determine network strength.
         Calls either _run_test_single_continuous or _run_test_multi
-        depending on the number of classes
+        depending on the number of classes. If _run_test_multi, then
+        the transform_output callable will not be observed. _run_test_multi
+        only works with raw one-hot encoded output values.
 
         Parameters:
             network: nn.Module
@@ -524,6 +527,20 @@ class Metrics(object):
                 Folder to place images in.
             plot: bool
                 Determine if graphs should be plotted in real time.
+            transform_outputs : boolean
+                Not used in the multi-class case.
+                If true, transform outputs using metrics.transform_outputs.
+                If no transform_callable is provided then the defaults in
+                metrics.transform_outputs will be used: class converstion for
+                one-hot encoded, and identity for one-dimensional outputs.
+                Multiple class multiple outputs are not yet supported.
+            transform_callable: callable
+                Not used in the multi-class case.
+                Used to transform values if transform_outputs is true,
+                otherwise defaults in metrics.transform_outputs will be used.
+                An example could be np.round
+            kwargs: dict of keyworded parameters
+                Values passed to transform callable (function parameters)
 
         Returns:
             results : dict
@@ -535,17 +552,24 @@ class Metrics(object):
         if num_classes is None or num_classes == 0:
             raise ValueError('There\'s no classification layer')
         elif num_classes == 1:
-            results_dict = Metrics._run_test_single_continuous(network,
-                                                               data_loader)
+            results_dict = \
+                Metrics._run_test_single_continuous(network,
+                                                    data_loader,
+                                                    transform_outputs=
+                                                    transform_outputs,
+                                                    transform_callable=
+                                                    transform_callable,
+                                                    **kwargs)
         else:
             results_dict = Metrics._run_test_multi(network, data_loader,
-                                                plot=plot, save_path=save_path,
-                                                pos_label=pos_label)
+                                                   plot=plot, save_path=save_path,
+                                                   pos_label=pos_label)
 
         return results_dict
 
     @staticmethod
-    def _run_test_single_continuous(network, data_loader):
+    def _run_test_single_continuous(network, data_loader, transform_outputs,
+                                    transform_callable, **kwargs):
         """
         Will conduct the test suite to determine network strength.
 
@@ -554,6 +578,16 @@ class Metrics(object):
                 The network
             data_loader : DataLoader
                 A DataLoader object to run the test with.
+            transform_outputs : boolean
+                If true, transform outputs using metrics.transform_outputs.
+                If no transform_callable is provided then the defaults in
+                metrics.transform_outputs will be used: class converstion for
+                one-hot encoded, and identity for one-dimensional outputs.
+                Multiple class multiple outputs are not yet supported.
+            transform_callable: callable
+                Used to transform values if transform_outputs is true,
+                otherwise defaults in metrics.transform_outputs will be used.
+                An example could be np.round
 
         Returns:
             results : dict
@@ -564,7 +598,10 @@ class Metrics(object):
 
         raw_predictions = network.forward_pass(
             data_loader=data_loader,
-            convert_to_class=False)
+            convert_to_class=False,
+            transform_outputs=transform_outputs,
+            transform_callable=transform_callable,
+            **kwargs)
 
         mse = Metrics.get_mse(targets, raw_predictions)
 
@@ -580,6 +617,8 @@ class Metrics(object):
                  pos_label=1):
         """
         Will conduct the test suite to determine network strength.
+        No transforms will be conducted on the outputs, save where
+        necessary for calculating metric values.
 
         Parameters:
             network: nn.Module
@@ -614,7 +653,8 @@ class Metrics(object):
 
         raw_predictions = network.forward_pass(
             data_loader=data_loader,
-            convert_to_class=False)
+            transform_outputs=False
+        )
 
         predictions = Metrics.transform_outputs(raw_predictions)
 
