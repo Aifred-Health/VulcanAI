@@ -51,7 +51,7 @@ class Metrics(object):
                 data.See scikit learn
             class_converted: binary. default False
                 True: If raw_predictions have already been converted using
-                convert_outputs
+                transform_outputs
                 False: If raw_predictions are used
 
         Returns:
@@ -65,7 +65,7 @@ class Metrics(object):
             targets = targets.cpu().detach().numpy()
 
         if not class_converted:
-            predictions = Metrics.convert_outputs(predictions)
+            predictions = Metrics.transform_outputs(predictions)
 
         if isinstance(metrics, str):
             metrics = [metrics]
@@ -91,7 +91,7 @@ class Metrics(object):
         return results_dict
 
     @staticmethod
-    def convert_outputs(in_matrix, transform_callable=None, **kwargs):
+    def transform_outputs(in_matrix, transform_callable=None, **kwargs):
         """
         Reformat output matrix. If one-hot,
         truth matrix to be the classes in a 1D array. Otherwise use
@@ -616,7 +616,7 @@ class Metrics(object):
             data_loader=data_loader,
             convert_to_class=False)
 
-        predictions = Metrics.convert_outputs(raw_predictions)
+        predictions = Metrics.transform_outputs(raw_predictions)
 
         cm = skl_metrics.confusion_matrix(targets, predictions)
         if plot:

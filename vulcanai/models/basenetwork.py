@@ -767,13 +767,17 @@ class BaseNetwork(nn.Module):
             data_loader : DataLoader
                 DataLoader object to make the pass with.
             transform_outputs : boolean
-                If true, list of class predictions instead of
-                class probabilites.
+                If true, transform outputs using metrics.transform_outputs.
+                If no transform_callable is provided then the defaults in
+                metrics.transform_outputs will be used: class converstion for
+                one-hot encoded, and identity for one-dimensional outputs.
+                Multiple class multiple outputs are not yet supported.
             transform_callable: callable
                 Used to transform values if transform_outputs is true,
-                otherwise defaults in metrics.convert_outputs will be used
+                otherwise defaults in metrics.transform_outputs will be used.
+                An example could be np.round
             kwargs: dict of keyworded parameters
-                Values passed to transform callable
+                Values passed to transform callable (function parameters)
 
         Returns:
             outputs : numpy.ndarray
@@ -797,7 +801,7 @@ class BaseNetwork(nn.Module):
 
                 if transform_outputs:
                     predictions = torch.tensor(
-                        self.metrics.convert_outputs(
+                        self.metrics.transform_outputs(
                             in_matrix=predictions,
                             transform_callable=transform_callable, **kwargs
                         ),
