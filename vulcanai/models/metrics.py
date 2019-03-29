@@ -743,7 +743,9 @@ class Metrics(object):
     @staticmethod
     def cross_validate(network, data_loader, k, epochs,
                        average_results=True, retain_graph=None,
-                       valid_interv=4, plot=False, save_path=None):
+                       valid_interv=4, plot=False, save_path=None,
+                       transform_outputs=False, transform_callable=None,
+                       **kwargs):
         """
         Perform k-fold cross validation given a Network and DataLoader object.
 
@@ -767,6 +769,21 @@ class Metrics(object):
                 Whether or not to plot all results in prompt and charts.
             save_path : str
                 Where to save all figures and results.
+            transform_outputs : boolean
+                Not used in the multi-class case.
+                If true, transform outputs using metrics.transform_outputs.
+                If no transform_callable is provided then the defaults in
+                metrics.transform_outputs will be used: class converstion for
+                one-hot encoded, and identity for one-dimensional outputs.
+                Multiple class multiple outputs are not yet supported.
+            transform_callable: callable
+                Not used in the multi-class case.
+                Used to transform values if transform_outputs is true,
+                otherwise defaults in metrics.transform_outputs will be used.
+                An example could be np.round
+            kwargs: dict of keyworded parameters
+                Values passed to transform callable (function parameters)
+
 
         Returns:
             results : dict
@@ -826,7 +843,10 @@ class Metrics(object):
                 # Validate network performance on validation data loader.
                 results = Metrics.run_test(
                     cross_val_network, val_loader,
-                    save_path=save_path, plot=plot)
+                    save_path=save_path, plot=plot,
+                    transform_outputs=transform_outputs,
+                    transform_callable=transform_callable,
+                       **kwargs)
 
                 logger.info(results)
                 for m in results:
