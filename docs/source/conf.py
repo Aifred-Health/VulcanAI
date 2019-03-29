@@ -89,7 +89,16 @@ pygments_style = None
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'classic'
+html_theme_options = {
+    "stickysidebar": True,
+    "sidebarbgcolor": "#344054",
+    "sidebartextcolor": "#5df6c6",
+    "sidebarlinkcolor": "white",
+    "headtextcolor": "#344054",
+    "textcolor": "#344054",
+    "linkcolor": "#344054"
+}
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -110,7 +119,7 @@ html_static_path = []
 # default: ``['localtoc.html', 'relations.html', 'sourcelink.html',
 # 'searchbox.html']``.
 #
-# html_sidebars = {}
+html_sidebars = { '**': ['globaltoc.html', 'relations.html', 'sourcelink.html', 'searchbox.html'] }
 
 
 # -- Options for HTMLHelp output ---------------------------------------------
