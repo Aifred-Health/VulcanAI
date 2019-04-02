@@ -50,8 +50,33 @@ class TestMetrics:
             num_classes=10
         )
 
+    @pytest.fixture
+    def cnn_class_binary(self):
+        """Create ConvNet with prediction layer."""
+        return ConvNet(
+            name='Test_ConvNet_class',
+            in_dim=(1, 28, 28),
+            config={
+                'conv_units': [
+                    {
+                        "in_channels": 10,
+                        "out_channels": 16,
+                        "kernel_size": (5, 5),
+                        "stride": 2
+                    },
+                    {
+                        "in_channels": 16,
+                        "out_channels": 1,
+                        "kernel_size": (5, 5),
+                        "stride": 1,
+                        "padding": 2
+                    }]
+            },
+            num_classes=2
+        )
+
     def create_target_predictions(self):
-        """Create target and predictions, used in most metric tests"""
+        """Create target and predictions, used in most metric tests."""
         num_items = 300
         test_target = np.random.randint(0, 10, size=num_items)
         test_predictions = np.random.randint(0, 10, size=num_items)
@@ -65,7 +90,7 @@ class TestMetrics:
                 [0.7, 0.3],
                 [0.25, 0.75]
             ])
-        output = metrics.extract_class_labels(test_input)
+        output = metrics.transform_outputs(test_input)
         assert np.all(output == np.array([1, 0, 1]))
 
     def test_cross_validate_outputs(self, metrics, cnn_class):
@@ -286,3 +311,22 @@ class TestMetrics:
 
         assert all(k in res_dict for k in required_metrics)
 
+    def test_run_test_binary(self, metrics, cnn_class_binary):
+        """Test that run_test returns values as expected."""
+        num_items = 300
+
+        test_input = torch.Tensor(np.random.randint(0, 2,
+                                                    size=(num_items,
+                                                          *cnn_class_binary.in_dim)))
+        test_target = torch.LongTensor(np.random.randint(0, 2,
+                                                         size=num_items))
+
+        test_dataloader = DataLoader(TensorDataset(test_input, test_target))
+
+        res_dict = metrics.run_test(cnn_class_binary, test_dataloader)
+
+        required_metrics = ['accuracy', 'macro_sensitivity',
+                            'macro_specificity', 'avg_dice', 'macro_ppv',
+                            'macro_npv', 'macro_f1', 'macro_auc']
+
+        assert all(k in res_dict for k in required_metrics)

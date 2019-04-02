@@ -79,7 +79,7 @@ dense_model = DenseNet(
 dense_model.fit(
     train_loader,
     val_loader,
-    epochs=3,
+    epochs=1,
     plot=True,
     save_path="."
 )

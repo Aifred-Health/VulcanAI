@@ -97,7 +97,7 @@ class TestSnapshotNet:
             test_snap.network[2]
         output = test_snap.forward_pass(
             data_loader=test_dataloader,
-            convert_to_class=False)
+            transform_outputs=False)
         assert output.shape == (3, test_snap._num_classes)
         assert np.any(~np.isnan(output))
 
