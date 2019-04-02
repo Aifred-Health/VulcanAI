@@ -50,7 +50,6 @@ class TestMetrics:
             num_classes=10
         )
 
-
     @pytest.fixture
     def cnn_class_binary(self):
         """Create ConvNet with prediction layer."""
@@ -75,8 +74,9 @@ class TestMetrics:
             },
             num_classes=2
         )
+
     def create_target_predictions(self):
-        """Create target and predictions, used in most metric tests"""
+        """Create target and predictions, used in most metric tests."""
         num_items = 300
         test_target = np.random.randint(0, 10, size=num_items)
         test_predictions = np.random.randint(0, 10, size=num_items)

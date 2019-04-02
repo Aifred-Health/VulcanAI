@@ -172,19 +172,19 @@ class BaseNetwork(nn.Module):
 
     def _set_final_layer_parameters(self, pred_activation, criter_spec):
         """
-        Sets and checks the parameters used in the final output layer. Final
-        transform is needed in forward pass in the case of nn.CrossEntropyLoss
-        as this class combines nn.NLLLoss and softmax, meaning the outputs
-        are not softmax transformed.
+        Sets and checks the parameters used in the final output layer.
+
+        Final transform is needed in forward pass in the case of
+        nn.CrossEntropyLoss as this class combines nn.NLLLoss and softmax,
+        meaning the outputs are not softmax transformed.
 
         Parameters:
             pred_activation : torch.nn.Module
-                The desired activation function for use in the prediction layer.
+                The desired activation function for the prediction layer.
             criter_spec : dict
                 criterion specification with name and all its parameters.
 
         """
-
         self._final_transform = None
 
         if isinstance(criter_spec, nn.CrossEntropyLoss):
@@ -677,7 +677,6 @@ class BaseNetwork(nn.Module):
                 predictions=predictions,
                 metrics=metric,
                 average=average)[metric]
-
 
             pbar.update(val_loader.batch_size)
         pbar.close()

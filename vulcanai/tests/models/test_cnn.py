@@ -17,6 +17,7 @@ from vulcanai.models.utils import master_device_setter
 logger = logging.getLogger(__name__)
 torch.manual_seed(1234)
 
+
 class TestConvNet:
     """Define ConvNet test class."""
 
@@ -216,4 +217,3 @@ class TestConvNet:
             data_loader=test_dataloader,
             transform_outputs=False)
         assert np.any(~np.isnan(raw_output))
-

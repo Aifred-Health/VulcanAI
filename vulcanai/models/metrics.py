@@ -93,8 +93,9 @@ class Metrics(object):
     @staticmethod
     def transform_outputs(in_matrix, transform_callable=None, **kwargs):
         """
-        Reformat output matrix. If one-hot,
-        truth matrix to be the classes in a 1D array. Otherwise use
+        Reformat output matrix.
+
+        If one-hot, truth matrix to be the classes in a 1D array. Otherwise use
         transform_callable. If this is not provided, then return unchanged.
 
         Note: This does not handle multiple class prediction.
@@ -491,8 +492,10 @@ class Metrics(object):
     @staticmethod
     def get_mse(targets, raw_predictions):
         """
-        Calculate the negative MSE. Note: raw_predictions and num_classes are
-        required. Negative values are returned so the value can be optimized.
+        Calculate the negative MSE.
+
+        Note: raw_predictions and num_classes are required. Negative
+        values are returned so the value can be optimized.
 
         Parameters:
             targets: numpy.ndarray of integers
@@ -503,8 +506,8 @@ class Metrics(object):
         Returns:
               results: float
                 The MSE value
-        """
 
+        """
         return skl_metrics.mean_squared_error(targets, raw_predictions)
 
     @staticmethod
@@ -513,6 +516,7 @@ class Metrics(object):
                  transform_callable=None, **kwargs):
         """
         Will conduct the test suite to determine network strength.
+
         Calls either _run_test_single_continuous or _run_test_multi
         depending on the number of classes. If _run_test_multi, then
         the transform_output callable will not be observed. _run_test_multi
@@ -549,20 +553,18 @@ class Metrics(object):
             results : dict
 
         """
-
         num_classes = network._num_classes
 
         if num_classes is None or num_classes == 0:
             raise ValueError('There\'s no classification layer')
         elif num_classes == 1:
             results_dict = \
-                Metrics._run_test_single_continuous(network,
-                                                    data_loader,
-                                                    transform_outputs=
-                                                    transform_outputs,
-                                                    transform_callable=
-                                                    transform_callable,
-                                                    **kwargs)
+                Metrics._run_test_single_continuous(
+                    network,
+                    data_loader,
+                    transform_outputs=transform_outputs,
+                    transform_callable=transform_callable,
+                    **kwargs)
         else:
             results_dict = Metrics._run_test_multi(network, data_loader,
                                                    plot=plot, save_path=save_path,
@@ -596,7 +598,6 @@ class Metrics(object):
             results : dict
 
         """
-
         targets = np.array([v[1] for v in data_loader.dataset])
 
         raw_predictions = network.forward_pass(
@@ -614,12 +615,12 @@ class Metrics(object):
 
         return {"mse": mse}
 
-
     @staticmethod
     def _run_test_multi(network, data_loader, plot=False, save_path=None,
-                 pos_label=1):
+                        pos_label=1):
         """
         Will conduct the test suite to determine network strength.
+
         No transforms will be conducted on the outputs, save where
         necessary for calculating metric values.
 
@@ -637,7 +638,6 @@ class Metrics(object):
             results : dict
 
         """
-
         num_classes = network._num_classes
 
         if num_classes > 2:
@@ -849,7 +849,7 @@ class Metrics(object):
                     save_path=save_path, plot=plot,
                     transform_outputs=transform_outputs,
                     transform_callable=transform_callable,
-                       **kwargs)
+                    **kwargs)
 
                 logger.info(results)
                 for m in results:

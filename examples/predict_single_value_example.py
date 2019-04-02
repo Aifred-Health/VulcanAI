@@ -45,7 +45,7 @@ test_dataloader = DataLoader(TensorDataset(test_input, test_output))
 
 conv_2D.fit(
     test_dataloader,
-test_dataloader,
+    test_dataloader,
     epochs=3,
     plot=False,
     save_path="."
