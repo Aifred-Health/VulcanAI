@@ -527,6 +527,9 @@ class Metrics(object):
                 Folder to place images in.
             plot: bool
                 Determine if graphs should be plotted in real time.
+            pos_label: int
+                The label that is positive in the binary case for macro
+                calculations.
             transform_outputs : boolean
                 Not used in the multi-class case.
                 If true, transform outputs using metrics.transform_outputs.

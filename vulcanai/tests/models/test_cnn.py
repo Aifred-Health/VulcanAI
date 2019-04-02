@@ -98,7 +98,7 @@ class TestConvNet:
         test_dataloader = DataLoader(TensorDataset(test_input, test_input))
         output = conv3D_net.forward_pass(
             data_loader=test_dataloader,
-            convert_to_class=False)
+            transform_outputs=False)
         assert np.any(~np.isnan(output))
 
     def test_forward_pass_class_not_nan(self, conv3D_net_class):
@@ -107,7 +107,7 @@ class TestConvNet:
         test_dataloader = DataLoader(TensorDataset(test_input, test_input))
         raw_output = conv3D_net_class.forward_pass(
             data_loader=test_dataloader,
-            convert_to_class=False)
+            transform_outputs=False)
         class_output = conv3D_net_class.metrics.transform_outputs(
             in_matrix=raw_output)
         assert np.any(~np.isnan(class_output))
@@ -214,6 +214,6 @@ class TestConvNet:
         test_dataloader = DataLoader(TensorDataset(test_input, test_output))
         raw_output = conv3D_net_class_single_value.forward_pass(
             data_loader=test_dataloader,
-            convert_to_class=False)
+            transform_outputs=False)
         assert np.any(~np.isnan(raw_output))
 

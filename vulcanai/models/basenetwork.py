@@ -689,20 +689,102 @@ class BaseNetwork(nn.Module):
 
         return validation_loss, validation_accuracy
 
-    def run_test(self, data_loader, plot=False, save_path=None, pos_label=1):
-        """Will conduct the test suite to determine model strength."""
+    def run_test(self, data_loader, plot=False, save_path=None, pos_label=1,
+                 transform_outputs=False, transform_callable=None, **kwargs):
+        """
+        Will conduct the test suite to determine network strength. Using
+        metrics.run_test
+
+        Parameters:
+            data_loader : DataLoader
+                A DataLoader object to run the test with.
+            save_path : string
+                Folder to place images in.
+            plot: bool
+                Determine if graphs should be plotted in real time.
+            pos_label: int
+                The label that is positive in the binary case for macro
+                calculations.
+            transform_outputs : boolean
+                Not used in the multi-class case.
+                If true, transform outputs using metrics.transform_outputs.
+                If no transform_callable is provided then the defaults in
+                metrics.transform_outputs will be used: class converstion for
+                one-hot encoded, and identity for one-dimensional outputs.
+                Multiple class multiple outputs are not yet supported.
+            transform_callable: callable
+                Not used in the multi-class case.
+                Used to transform values if transform_outputs is true,
+                otherwise defaults in metrics.transform_outputs will be used.
+                An example could be np.round
+            kwargs: dict of keyworded parameters
+                Values passed to transform callable (function parameters)
+
+        Returns:
+            results : dict
+
+        """
         return self.metrics.run_test(
             network=self,
             data_loader=data_loader,
             save_path=save_path,
             plot=plot,
-            pos_label=pos_label
+            pos_label=pos_label,
+            transform_outputs=transform_outputs,
+            transform_callable=transform_callable,
+            **kwargs
         )
 
     def cross_validate(self, data_loader, k, epochs,
                        average_results=True, retain_graph=None,
-                       valid_interv=4, plot=False, save_path=None):
-        """Will conduct the test suite to determine model strength."""
+                       valid_interv=4, plot=False, save_path=None,
+                       transform_outputs=False, transform_callable=None,
+                       **kwargs):
+        """
+        Perform k-fold cross validation given a Network and DataLoader object.
+
+        Parameters:
+            network : BaseNetwork
+                Network descendant of BaseNetwork.
+            data_loader : torch.utils.data.DataLoader
+                The DataLoader object containing the totality of the data to use
+                for k-fold cross validation.
+            k : int
+                The number of folds to split the training into.
+            epochs : int
+                The number of epochs to train the network per fold.
+            average_results : boolean
+                Whether or not to return results from all folds or just an average.
+            retain_graph : {None, boolean}
+                Whether retain_graph will be true when .backwards is called.
+            valid_interv : int
+                Specifies after how many epochs validation should occur.
+            plot : boolean
+                Whether or not to plot all results in prompt and charts.
+            save_path : str
+                Where to save all figures and results.
+            transform_outputs : boolean
+                Not used in the multi-class case.
+                If true, transform outputs using metrics.transform_outputs.
+                If no transform_callable is provided then the defaults in
+                metrics.transform_outputs will be used: class converstion for
+                one-hot encoded, and identity for one-dimensional outputs.
+                Multiple class multiple outputs are not yet supported.
+            transform_callable: callable
+                Not used in the multi-class case.
+                Used to transform values if transform_outputs is true,
+                otherwise defaults in metrics.transform_outputs will be used.
+                An example could be np.round
+            kwargs: dict of keyworded parameters
+                Values passed to transform callable (function parameters)
+
+
+        Returns:
+            results : dict
+                If average_results is on, return dict of floats.
+                If average_results is off, return dict of float lists.
+
+        """
         # TODO: deal with repeated default parameters
         return self.metrics.cross_validate(
             network=self,
@@ -713,7 +795,10 @@ class BaseNetwork(nn.Module):
             retain_graph=retain_graph,
             valid_interv=valid_interv,
             plot=plot,
-            save_path=save_path)
+            save_path=save_path,
+            transform_outputs=transform_outputs,
+            transform_callable=transform_callable,
+            **kwargs)
 
     def forward(self, inputs, **kwargs):
         """
