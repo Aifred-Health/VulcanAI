@@ -10,6 +10,7 @@ script:
 branches:
   only:
   - master
+  - /^\d+\.\d+\.\d+$/
 deploy:
   provider: pypi
   user: "rfratila"
