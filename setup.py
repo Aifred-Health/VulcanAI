@@ -16,7 +16,7 @@ with open('requirements.txt') as f:
 
 setup(
     name='vulcanai',
-    version='1.0.1',
+    version='1.0.2',
     description='A high-level framework built on top of Pytorch'
                 ' using added functionality from Scikit-learn to provide '
                 'all of the tools needed for visualizing and processing '
