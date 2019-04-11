@@ -7,6 +7,10 @@ install:
 - pip install -e .
 script:
 - pytest
+branches:
+  only:
+  - master
+  - /^\d+\.\d+\.\d+$/
 deploy:
   provider: pypi
   user: "rfratila"
