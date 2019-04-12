@@ -7,7 +7,7 @@ import math
 import numpy as np
 from sklearn import metrics as skl_metrics
 
-from .utils import round_list
+from .utils import round_list, get_probs, filter_matched_subj
 from ..plotters.visualization import display_confusion_matrix
 from collections import defaultdict
 
@@ -741,8 +741,170 @@ class Metrics(object):
             'macro_f1': float(f1_macro),
             'macro_auc': float(auc_macro)
         }
+    @staticmethod
+    def bootfold_p_estimate(network, data_loader, n_samples, k, epochs,
+			    index_to_iter, ls_feat_vals, 
+			    retain_graph=None, valid_interv=4, plot=False, 
+                            save_path=None, transform_outputs=False, transform_callable=None,
+			    p_output_path=None, **kwargs):
+        """
+        Performs bootfold - estimation to identify whether training model provides statistically significant
+        difference in predicting various values for a given feature when predicting outcome.
 
-    # TODO: include support
+        Parameters:
+            network : BaseNetwork
+                Network descendant of BaseNetwork.
+            data_loader : torch.utils.data.DataLoader
+                The DataLoader object containing the totality of the data to use
+                for k-fold cross validation.
+            k : int
+                The number of folds to split the training into.
+            epochs : int
+                The number of epochs to train the network per fold.
+            index_to_iter : string
+                Name of feature within data_loader who's values will be iterated to assess difference
+            ls_feat_vals : list
+                List of values for feature provided in index_to_iter
+            average_results : boolean
+                Whether or not to return results from all folds or just an average.
+            retain_graph : {None, boolean}
+                Whether retain_graph will be true when .backwards is called.
+            valid_interv : int
+                Specifies after how many epochs validation should occur.
+            plot : boolean
+                Whether or not to plot all results in prompt and charts.
+            save_path : str
+                Where to save all figures and results.
+            transform_outputs : boolean
+                Not used in the multi-class case.
+                If true, transform outputs using metrics.transform_outputs.
+                If no transform_callable is provided then the defaults in
+                metrics.transform_outputs will be used: class converstion for
+                one-hot encoded, and identity for one-dimensional outputs.
+                Multiple class multiple outputs are not yet supported.
+            transform_callable: callable
+                Not used in the multi-class case.
+                Used to transform values if transform_outputs is true,
+                otherwise defaults in metrics.transform_outputs will be used.
+                An example could be np.round
+            p_output_path = str
+                Output file to save p_value to
+            kwargs: dict of keyworded parameters
+                Values passed to transform callable (function parameters)
+
+        Returns:
+            p_value : float
+        """
+        ls_imprv_scores = []
+        for samp in range(n_samples):
+            rand_sample = data.RandomSampler(data_loader.dataset, replacement=True)
+            dl_sample = data.DataLoader(data_loader.dataset, shuffle=rand_sample)
+            imprv_score = Metrics.boot_cv(network, dl_sample, k, epochs, retain_graph, 
+                valid_interv, plot, save_path, index_to_iter, ls_feat_vals)
+            ls_imprv_scores.append(imprv_score)
+
+        tot_num_imprv = float(len(ls_imprv_scores))
+        score_abv_zero = 0.0
+        score_blw_zero = 0.0
+        for val in ls_imprv_scores:
+            if val > 1.0:
+                score_abv_zero += 1.0
+            else:
+                score_blw_zero += 1.0
+        import pdb; pdb.set_trace()
+        p_val = float(float(score_abv_zero)/float(score_blw_zero))
+
+        with open(p_output_path, 'w') as p_file:
+            to_write = str("P value: {}".format(p_val))
+            p_file.write(to_write)
+		
+
+    def boot_cv(network, data_loader, k, epochs, retain_graph, valid_interv, save_path, plot, index_to_iter, ls_feat_vals):
+        """
+        Perform a custom cross validation for bootstrapped p estimation.
+
+        Parameters:
+            network : BaseNetwork
+                Network descendant of BaseNetwork.
+            data_loader : torch.utils.data.DataLoader
+                The DataLoader object containing the totality of the data to use
+                for k-fold cross validation.
+            k : int
+                The number of folds to split the training into.
+            epochs : int
+                The number of epochs to train the network per fold.
+	    index_to_iter : string
+                Index of feature within data_loader who's values will be iterated to assess difference
+            ls_feat_vals : list
+                List of values for feature provided in index_to_iter
+
+	Returns: 
+	    improvement_score : float
+        """
+        dct_improvementScores = defaultdict(list)
+        dct_filteredSubj = defaultdict(list)
+        ls_filteredProbs = []
+	
+        fold_len = math.floor(len(data_loader.dataset) / k)
+        rem = len(data_loader.dataset) % k
+        fold_seq = []
+
+        for _ in range(k-1):
+            fold_seq.append(fold_len)
+        if rem == 0:
+            fold_seq.append(fold_len)
+        else:
+            fold_seq.append(fold_len+rem)  # last one is the longest if unequal
+
+        dataset_splits = data.random_split(data_loader.dataset,
+                                           fold_seq)
+
+        batch_size = data_loader.batch_size
+        shuffle = isinstance(data_loader.sampler, data.sampler.RandomSampler)
+
+        try:
+            for fold in range(k):
+
+                # TODO: this may break on different devices?? test.
+                # TODO: Re-initialize instead of deepcopy?
+                cross_val_network = copy.deepcopy(network)
+
+                # TODO: properly pass params
+
+                # Generate fold training set.
+                train_dataset = data.ConcatDataset(
+                    dataset_splits[:fold] + dataset_splits[fold+1:])
+                # Generate fold validation set.
+                val_dataset = dataset_splits[fold]
+                # Generate fold training data loader object.
+                train_loader = data.DataLoader(
+                    train_dataset, batch_size=batch_size, shuffle=shuffle)
+                # Generate fold validation data loader object.
+                val_loader = data.DataLoader(
+                    val_dataset, batch_size=batch_size)
+                # Train network on fold training data loader.
+                cross_val_network.fit(
+                    train_loader, val_loader, epochs,
+                    retain_graph=retain_graph,
+                    valid_interv=valid_interv, plot=plot, save_path=save_path)
+                dct_scores = get_probs(network, val_loader, index_to_iter, ls_feat_vals)
+                dct_filtered = filter_matched_subj(dct_scores, val_loader, index_to_iter)
+                for val in list(dct_filtered):
+                    dct_filteredSubj[val].append(dct_filtered[val])
+                    ls_filteredProbs.append(dct_filtered[val])
+            V_p = np.array(ls_filteredProbs).mean()
+            ls_pos_rate = [subj for subj in data_loader.dataset if subj[1].item() == 1]
+            V_t = float(len(ls_pos_rate)/len(data_loader.dataset)) * 100
+            improvement_score = float(V_p/V_t)
+            import pdb; pdb.set_trace()
+            if np.isnan(improvement_score):
+                improvement_score = 0.0
+            return improvement_score
+        except KeyboardInterrupt:
+            logger.info(
+                "\n\n***KeyboardInterrupt: Cross validate stopped \
+                prematurely.***\n\n")
+	
     @staticmethod
     def cross_validate(network, data_loader, k, epochs,
                        average_results=True, retain_graph=None,
