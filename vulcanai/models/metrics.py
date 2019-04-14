@@ -811,7 +811,6 @@ class Metrics(object):
                 score_abv_zero += 1.0
             else:
                 score_blw_zero += 1.0
-        import pdb; pdb.set_trace()
         p_val = float(float(score_abv_zero)/float(score_blw_zero))
 
         with open(p_output_path, 'w') as p_file:
@@ -896,7 +895,6 @@ class Metrics(object):
             ls_pos_rate = [subj for subj in data_loader.dataset if subj[1].item() == 1]
             V_t = float(len(ls_pos_rate)/len(data_loader.dataset)) * 100
             improvement_score = float(V_p/V_t)
-            import pdb; pdb.set_trace()
             if np.isnan(improvement_score):
                 improvement_score = 0.0
             return improvement_score
