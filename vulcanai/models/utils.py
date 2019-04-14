@@ -51,6 +51,19 @@ def get_probs(network, loader, index_to_iter, ls_feat_vals):
     return dct_scores
 
 def filter_matched_subj(dct_scores, loader, index_to_iter):
+    """
+    Returns dictionary of filtered keys based on predicted value and value truly assigned in actual set.
+    Parameters:
+        dct_scores : dictionary
+            dictionary of probability scores produced in get_scores function
+        loader : torch.dataloader
+            dataloader containing validation set
+        index_to_iter : string
+            feature to iterate through adjusting values
+    Returns:
+        dct_filtered : dictionary
+            dictionary of filtered entities 
+    """
     dct_filtered = {}
     for subj in list(dct_scores):
         highest_prob = max(dct_scores[subj].values())

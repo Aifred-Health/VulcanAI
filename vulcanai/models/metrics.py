@@ -757,6 +757,8 @@ class Metrics(object):
             data_loader : torch.utils.data.DataLoader
                 The DataLoader object containing the totality of the data to use
                 for k-fold cross validation.
+            n_samples : int
+                Number of samples to be taken and ran through bootfold cv
             k : int
                 The number of folds to split the training into.
             epochs : int
@@ -765,8 +767,6 @@ class Metrics(object):
                 Name of feature within data_loader who's values will be iterated to assess difference
             ls_feat_vals : list
                 List of values for feature provided in index_to_iter
-            average_results : boolean
-                Whether or not to return results from all folds or just an average.
             retain_graph : {None, boolean}
                 Whether retain_graph will be true when .backwards is called.
             valid_interv : int
@@ -832,6 +832,12 @@ class Metrics(object):
                 The number of folds to split the training into.
             epochs : int
                 The number of epochs to train the network per fold.
+            retain_graph : {None, boolean}
+                Whether retain_graph will be true when .backwards is called.
+            valid_interv : int
+                Specifies after how many epochs validation should occur.
+            plot : boolean
+                Whether or not to plot all results in prompt and charts.
 	    index_to_iter : string
                 Index of feature within data_loader who's values will be iterated to assess difference
             ls_feat_vals : list
