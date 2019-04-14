@@ -194,7 +194,6 @@ class TestSeluInit:
         new_weight = conv_unit._kernel.weight
         assert (torch.equal(starting_weight, new_weight) is False)
         assert (math.isclose(new_weight.std().item(), math.sqrt(1./fan_in), rel_tol=0.01) is True)
-        #assert pytest.approx(round(new_weight.std().item(), 1), 0.1) == std
         assert (int(new_weight.mean().item()) == 0)
 
     def test_dense_selu_bias_change(self, dense_unit):
