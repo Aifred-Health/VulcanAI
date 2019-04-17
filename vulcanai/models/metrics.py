@@ -805,13 +805,8 @@ class Metrics(object):
 
         tot_num_imprv = float(len(ls_imprv_scores))
         score_abv_zero = 0.0
-        score_blw_zero = 0.0
-        for val in ls_imprv_scores:
-            if val > 1.0:
-                score_abv_zero += 1.0
-            else:
-                score_blw_zero += 1.0
-        p_val = float(float(score_abv_zero)/float(score_blw_zero))
+        score_avc_zero = sum(val > 1.0 for val in ls_imprv_scores)
+        p_val = float(score_abv_zero)/float(tot_num_imprv)
 
         with open(p_output_path, 'w') as p_file:
             to_write = str("P value: {}".format(p_val))
