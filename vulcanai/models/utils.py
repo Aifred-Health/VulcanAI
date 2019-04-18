@@ -33,17 +33,16 @@ def get_probs(network, loader, index_to_iter, ls_feat_vals):
     for index in range(len(loader)):
         dct_scores[index] = {}
     for index in range(len(loader)):
-        nn_subjFeat = torch.Tensor(loader.dataset[index][0].numpy())
         nn_subjLabel = torch.LongTensor(loader.dataset[index][1].float().numpy())
-        input_loader = DataLoader(TensorDataset(nn_subjFeat.unsqueeze(0), nn_subjLabel.unsqueeze(0)))
+        input_loader = DataLoader(TensorDataset(loader.dataset[index][0].unsqueeze(0), nn_subjLabel.unsqueeze(0)))
         subjProb = network.forward_pass(data_loader=input_loader, transform_outputs=False)
         subjProb = subjProb[0][1] * 100
         subjProb = round(subjProb, 2)
         dct_scores[index][nn_subjFeat[index_to_iter].item()] = subjProb
         for newVal in ls_feat_vals:
             if newVal != nn_subjFeat[index_to_iter].item():
-                nn_subjFeat[index_to_iter] = newVal
-                input_loader = DataLoader(TensorDataset(nn_subjFeat.unsqueeze(0), nn_subjLabel.unsqueeze(0)))
+                loader.dataset[index][0][index_to_iter] = newVal
+                input_loader = DataLoader(TensorDataset(loader.dataset[index][0].unsqueeze(0), nn_subjLabel.unsqueeze(0)))
                 subjProb = network.forward_pass(data_loader=input_loader, transform_outputs=False)
                 subjProb = subjProb[0][1] * 100
                 subjProb = round(subjProb, 2)
@@ -68,9 +67,7 @@ def filter_matched_subj(dct_scores, loader, index_to_iter):
     for subj in list(dct_scores):
         highest_prob = max(dct_scores[subj].values())
         highest_val = [val for val, prob in dct_scores[subj].items() if prob==highest_prob]
-        if len(highest_val) == len(list(dct_scores[subj])):
-             dct_filtered[subj] = highest_prob
-        elif loader.dataset.dataset[subj][0][index_to_iter].item() in highest_val:
+        if loader.dataset.dataset[subj][0][index_to_iter].item() in highest_val:
             dct_filtered[subj] = highest_prob
     return dct_filtered
 
