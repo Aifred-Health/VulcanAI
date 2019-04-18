@@ -33,16 +33,21 @@ def get_probs(network, loader, index_to_iter, ls_feat_vals):
     for index in range(len(loader)):
         dct_scores[index] = {}
     for index in range(len(loader)):
-        nn_subjLabel = torch.LongTensor(loader.dataset[index][1].float().numpy())
-        input_loader = DataLoader(TensorDataset(loader.dataset[index][0].unsqueeze(0), nn_subjLabel.unsqueeze(0)))
+        # Extract specific index from loader and create a DataLoader instance to send to forward_pass
+        input_loader = DataLoader(TensorDataset(loader.dataset[index][0].unsqueeze(0), loader.dataset[index][1].unsqueeze(0)))
+        
         subjProb = network.forward_pass(data_loader=input_loader, transform_outputs=False)
+        # Standardize probability of positive label
         subjProb = subjProb[0][1] * 100
         subjProb = round(subjProb, 2)
+        # Add probability to scores dictionary where keys are the index and value the probability belongs to.
         dct_scores[index][loader.dataset[index][0][index_to_iter].item()] = subjProb
+        # Iterate through other possible values and find probability of positive label and add to dictionary
+        # for current index.
         for newVal in ls_feat_vals:
             if newVal != loader.dataset[index][0][index_to_iter].item():
                 loader.dataset[index][0][index_to_iter] = newVal
-                input_loader = DataLoader(TensorDataset(loader.dataset[index][0].unsqueeze(0), nn_subjLabel.unsqueeze(0)))
+                input_loader = DataLoader(TensorDataset(loader.dataset[index][0].unsqueeze(0), loader.dataset[index][1].unsqueeze(0)))
                 subjProb = network.forward_pass(data_loader=input_loader, transform_outputs=False)
                 subjProb = subjProb[0][1] * 100
                 subjProb = round(subjProb, 2)
