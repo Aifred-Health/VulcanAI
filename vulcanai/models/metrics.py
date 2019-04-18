@@ -889,7 +889,7 @@ class Metrics(object):
                     valid_interv=valid_interv, plot=plot, save_path=save_path)
                 dct_scores = get_probs(network, val_loader, index_to_iter, ls_feat_vals)
                 dct_filtered = filter_matched_subj(dct_scores, val_loader, index_to_iter)
-                for val in list(dct_filtered):
+                for val in dct_filtered:
                     dct_filteredSubj[val].append(dct_filtered[val])
                     ls_filteredProbs.append(dct_filtered[val])
             V_p = np.array(ls_filteredProbs).mean()
