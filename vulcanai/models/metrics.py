@@ -745,8 +745,7 @@ class Metrics(object):
     def bootfold_p_estimate(network, data_loader, n_samples, k, epochs,
 			    index_to_iter, ls_feat_vals, 
 			    retain_graph=None, valid_interv=4, plot=False, 
-                            save_path=None, transform_outputs=False, transform_callable=None,
-			    p_output_path=None, **kwargs):
+                            save_path=None, transform_outputs=False, transform_callable=None, **kwargs):
         """
         Performs bootfold - estimation to identify whether training model provides statistically significant
         difference in predicting various values for a given feature when predicting outcome.
@@ -758,7 +757,7 @@ class Metrics(object):
                 The DataLoader object containing the totality of the data to use
                 for k-fold cross validation.
             n_samples : int
-                Number of samples to be taken and ran through bootfold cv
+                number of times to randomly sample w/ replacement the data_loader and perform boot_cv
             k : int
                 The number of folds to split the training into.
             epochs : int
@@ -787,8 +786,6 @@ class Metrics(object):
                 Used to transform values if transform_outputs is true,
                 otherwise defaults in metrics.transform_outputs will be used.
                 An example could be np.round
-            p_output_path = str
-                Output file to save p_value to
             kwargs: dict of keyworded parameters
                 Values passed to transform callable (function parameters)
 
@@ -808,10 +805,7 @@ class Metrics(object):
         score_avc_zero = sum(val > 1.0 for val in ls_imprv_scores)
         p_val = float(score_abv_zero)/float(tot_num_imprv)
 
-        with open(p_output_path, 'w') as p_file:
-            to_write = str("P value: {}".format(p_val))
-            p_file.write(to_write)
-		
+        logger.info("P value for bootfold p estimate: %d.", p_val)
 
     def boot_cv(network, data_loader, k, epochs, retain_graph, valid_interv, save_path, plot, index_to_iter, ls_feat_vals):
         """
