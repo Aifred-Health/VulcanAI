@@ -749,6 +749,8 @@ class BaseNetwork(nn.Module):
             data_loader : torch.utils.data.DataLoader
                 The DataLoader object containing the totality of the data to use
                 for k-fold cross validation.
+            n_samples : int
+                number of times to randomly sample w/ replacement the data_loader and perform boot_cv
             k : int
                 The number of folds to split the training into.
             epochs : int
