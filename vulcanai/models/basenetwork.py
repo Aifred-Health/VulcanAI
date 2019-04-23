@@ -833,7 +833,6 @@ class BaseNetwork(nn.Module):
         else:
             output = torch.cat(inputs, dim=1)
 
-        output = set_tensor_device(output, device=self.device)
         # Return actionable error if input shapes don't match up.
         if output.shape[1:] != self.in_dim:
             raise ValueError(
@@ -873,10 +872,10 @@ class BaseNetwork(nn.Module):
         # prediction_shape used to aggregate network outputs
         # (e.g. with or without class conversion)
         # so far always a float.
-        dtype = torch.float
         pred_collector = None
         #pred_collector = torch.tensor([], dtype=dtype, device=self.device)
         for data, _ in data_loader:
+            data = set_tensor_device(data, device=self.device)
             # Get raw network output
             raw_outputs = self(data).cpu().detach().numpy()
             if self._num_classes:
