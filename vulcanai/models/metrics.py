@@ -600,6 +600,7 @@ class Metrics(object):
             results : dict
 
         """
+        # TODO: this may not work with current TabularDataset
         targets = np.array([v[1] for v in data_loader.dataset])
 
         raw_predictions = network.forward_pass(
