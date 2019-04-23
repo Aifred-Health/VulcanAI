@@ -86,6 +86,9 @@ class TabularDataset(Dataset):
         self.seed_value = int(time.time())
 
         self.set_global_random_seed(self.seed_value)
+
+        self.all_xs = None
+        self.all_y = None
         
         logger.info("You have created a new dataset with %d rows", len(self))
         #logger.info(f"You have created a new dataset with {len(self)} rows")
@@ -130,14 +133,17 @@ class TabularDataset(Dataset):
         # the label column, iloc gets the row, then access values and convert
 
         if self.label_column:
-            xs = self.df.drop(self.label_column,
-                              axis=1).iloc[[2]].values.tolist()[0]
-            xs = torch.tensor(xs, dtype=torch.float)
-            y = self.df[[self.label_column]].iloc[[idx]].values.tolist()[0][0]
+            if self.all_xs is None:
+                self.all_xs = self.df.drop(self.label_column,
+                              axis=1)
+            if self.all_y is None:
+                self.all_y = self.df[[self.label_column]]
+            xs = torch.from_numpy(self.all_xs.iloc[[idx]].values[0]).float()
+            y = self.all_y.iloc[[idx]].values.tolist()[0][0]
             y = torch.tensor(y, dtype=torch.long)
             return xs, y
         else:
-            xs = self.df.iloc[[2]].values.tolist()[0]
+            xs = self.df.iloc[[idx]].values.tolist()[0]
             xs = torch.tensor(xs, dtype=torch.float)
             return xs, None
 
