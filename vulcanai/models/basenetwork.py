@@ -873,10 +873,11 @@ class BaseNetwork(nn.Module):
         # (e.g. with or without class conversion)
         # so far always a float.
         dtype = torch.float
-        pred_collector = torch.tensor([], dtype=dtype, device=self.device)
+        pred_collector = None
+        #pred_collector = torch.tensor([], dtype=dtype, device=self.device)
         for data, _ in data_loader:
             # Get raw network output
-            raw_outputs = self(data)
+            raw_outputs = self(data).cpu().detach().numpy()
             if self._num_classes:
                 if self._final_transform:
                     predictions = self._final_transform(raw_outputs)
@@ -884,19 +885,21 @@ class BaseNetwork(nn.Module):
                     predictions = raw_outputs
 
                 if transform_outputs:
-                    predictions = torch.tensor(
+
                         self.metrics.transform_outputs(
                             in_matrix=predictions,
                             transform_callable=transform_callable, **kwargs
-                        ),
-                        device=self.device)
+                        )
             else:
                 predictions = raw_outputs
 
             # Aggregate predictions
-            pred_collector = torch.cat([pred_collector, predictions])
+            if pred_collector is None:
+                pred_collector = predictions
+            else:
+                pred_collector = np.vstack((pred_collector, predictions))
         # TODO: check this
-        return pred_collector.cpu().numpy()
+        return pred_collector
 
     def save_model(self, save_path=None):
         """
