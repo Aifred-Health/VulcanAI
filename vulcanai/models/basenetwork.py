@@ -900,6 +900,8 @@ class BaseNetwork(nn.Module):
         # TODO: check this
         return pred_collector
 
+    # TODO: could integrate map location in the future if needed
+    # https://discuss.pytorch.org/t/on-a-cpu-device-how-to-load-checkpoint-saved-on-gpu-device/349
     def save_model(self, save_path=None):
         """
         Save the model (and it's input networks).
