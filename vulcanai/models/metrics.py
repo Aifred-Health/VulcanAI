@@ -62,6 +62,8 @@ class Metrics(object):
         functions_without_average_parameter = ["get_accuracy", "get_mse"]
 
         if isinstance(targets, torch.Tensor):
+            # TODO: this is not necessary if targets was created as numpy on
+            # the CPU and then converted using from_numpy
             targets = targets.cpu().detach().numpy()
 
         if not class_converted:
