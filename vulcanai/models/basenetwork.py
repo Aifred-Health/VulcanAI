@@ -873,7 +873,6 @@ class BaseNetwork(nn.Module):
         # (e.g. with or without class conversion)
         # so far always a float.
         pred_collector = None
-        #pred_collector = torch.tensor([], dtype=dtype, device=self.device)
         for data, _ in data_loader:
             data = set_tensor_device(data, device=self.device)
             # Get raw network output
