@@ -801,8 +801,7 @@ class Metrics(object):
             ls_imprv_scores.append(imprv_score)
 
         tot_num_imprv = float(len(ls_imprv_scores))
-        score_abv_zero = 0.0
-        score_avc_zero = sum(val > 1.0 for val in ls_imprv_scores)
+        score_abv_zero = sum(val > 1.0 for val in ls_imprv_scores)
         p_val = float(score_abv_zero)/float(tot_num_imprv)
 
         logger.info("P value for bootfold p estimate: %d.", p_val)
