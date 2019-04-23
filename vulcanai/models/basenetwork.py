@@ -271,6 +271,7 @@ class BaseNetwork(nn.Module):
         """
         device = torch.device(device if torch.cuda.is_available() else 'cpu')
         if self.network:
+            # nonblocking doesn't seem to matter here
             self.network.to(device=device)
         if self.optim:
             for state in self.optim.state.values():
