@@ -12,6 +12,7 @@ from ..plotters.visualization import display_confusion_matrix
 from collections import defaultdict
 
 import copy
+import inspect
 
 import logging
 logger = logging.getLogger(__name__)
@@ -793,9 +794,26 @@ class Metrics(object):
             p_value : float
         """
         ls_imprv_scores = []
+
+        rand_sample = data.RandomSampler(data_loader.dataset, replacement=True)
+        data_loader_args = inspect.signature(data.DataLoader.__init__)
+        new_params = {}
+
+        for param in data_loader_args.parameters:
+            if param == "self":
+                continue
+            elif param == "shuffle":
+                continue
+            elif param == "sampler":
+                new_params["sampler"] = rand_sample
+            elif param == "batch_sampler":
+                new_params["batch_sampler"] = None
+            else:
+                new_params[param] = getattr(data_loader, param)
+
+        dl_sample = data.DataLoader(**new_params)
+
         for samp in range(n_samples):
-            rand_sample = data.RandomSampler(data_loader.dataset, replacement=True)
-            dl_sample = data.DataLoader(data_loader.dataset, shuffle=rand_sample)
             imprv_score = Metrics.boot_cv(network, dl_sample, k, epochs, retain_graph, 
                 valid_interv, plot, save_path, index_to_iter, ls_feat_vals)
             ls_imprv_scores.append(imprv_score)
