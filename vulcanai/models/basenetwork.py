@@ -833,6 +833,7 @@ class BaseNetwork(nn.Module):
         else:
             output = torch.cat(inputs, dim=1)
 
+        output = set_tensor_device(output, device=self.device)
         # Return actionable error if input shapes don't match up.
         if output.shape[1:] != self.in_dim:
             raise ValueError(
