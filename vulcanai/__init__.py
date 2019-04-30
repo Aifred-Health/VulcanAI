@@ -24,8 +24,12 @@ logger = logging.getLogger(__name__)
 
 def set_global_seed(seed_value):
     """
-    Sets all the random seeds.
-    :param seed_value: seed value
+    Sets all the random seeds, including for torch, GPU, numpy and python.
+
+    Parameters:
+        seed_value : int
+            The random seed value.
+
     """
     random.seed(seed_value)
     np.random.seed(seed_value)  # cpu vars
