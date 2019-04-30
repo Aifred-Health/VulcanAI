@@ -180,7 +180,8 @@ class TestSeluInit:
         dense_unit._init_weights()
         new_weight = dense_unit._kernel.weight
         assert (torch.equal(starting_weight, new_weight) is False)
-        assert pytest.approx(round(new_weight.std().item(), 1), 0.1) == std
+        assert (math.isclose(new_weight.std().item(), math.sqrt(1. / fan_in), rel_tol=0.1) is True)
+        #assert pytest.approx(round(new_weight.std().item(), 1), 0.1) == std
         assert (int(new_weight.mean().item()) == 0.0)
 
     def test_conv_selu_weight_change(self, conv_unit):
