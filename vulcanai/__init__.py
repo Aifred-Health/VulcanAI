@@ -22,7 +22,7 @@ logging.config.fileConfig(log_config_path,
 logger = logging.getLogger(__name__)
 
 
-def random_seeding(seed_value):
+def set_global_seed(seed_value):
     """
     Sets all the random seeds.
     :param seed_value: seed value
@@ -34,5 +34,5 @@ def random_seeding(seed_value):
         torch.cuda.manual_seed_all(seed_value)
 
 
-random_seeding(DEFAULT_RANDOM_SEED)
+set_global_seed(DEFAULT_RANDOM_SEED)
 
