@@ -62,8 +62,6 @@ class Metrics(object):
         functions_without_average_parameter = ["get_accuracy", "get_mse"]
 
         if isinstance(targets, torch.Tensor):
-            # TODO: this is not necessary if targets was created as numpy on
-            # the CPU and then converted using from_numpy
             targets = targets.cpu().detach().numpy()
 
         if not class_converted:
@@ -600,7 +598,6 @@ class Metrics(object):
             results : dict
 
         """
-        # TODO: this may not work with current TabularDataset
         targets = np.array([v[1] for v in data_loader.dataset])
 
         raw_predictions = network.forward_pass(
