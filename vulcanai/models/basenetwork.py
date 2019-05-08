@@ -101,7 +101,8 @@ class BaseNetwork(nn.Module):
         else:
             self.input_networks = input_networks
 
-        self._set_final_layer_parameters(num_classes, pred_activation)
+        self._set_final_layer_parameters(pred_activation=pred_activation,
+                                         criter_spec=criter_spec)
 
         self._num_classes = num_classes
 
