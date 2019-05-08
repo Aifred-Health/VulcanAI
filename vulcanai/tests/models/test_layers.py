@@ -1,5 +1,6 @@
 """The script to test all layers and SELU activation properties hold."""
 import pytest
+import numpy as np
 import math
 import copy
 from functools import reduce
@@ -180,7 +181,7 @@ class TestSeluInit:
         dense_unit._init_weights()
         new_weight = dense_unit._kernel.weight
         assert (torch.equal(starting_weight, new_weight) is False)
-        assert pytest.approx(round(new_weight.std().item(), 1), 0.1) == std
+        assert (math.isclose(new_weight.std().item(), math.sqrt(1. / fan_in), rel_tol=0.1) is True)
         assert (int(new_weight.mean().item()) == 0.0)
 
     def test_conv_selu_weight_change(self, conv_unit):
@@ -188,12 +189,12 @@ class TestSeluInit:
         starting_weight = copy.deepcopy(conv_unit._kernel.weight)
         fan_in = conv_unit._kernel.in_channels * \
             reduce(lambda k1, k2: k1 * k2, conv_unit._kernel.kernel_size)
-        std = round(math.sqrt(1. / fan_in), 1)
+        std = math.sqrt(1. / fan_in)
         conv_unit.weight_init = selu_weight_init_
         conv_unit._init_weights()
         new_weight = conv_unit._kernel.weight
         assert (torch.equal(starting_weight, new_weight) is False)
-        assert pytest.approx(round(new_weight.std().item(), 1), 0.1) == std
+        assert (math.isclose(new_weight.std().item(), math.sqrt(1./fan_in), rel_tol=0.1) is True)
         assert (int(new_weight.mean().item()) == 0)
 
     def test_dense_selu_bias_change(self, dense_unit):
