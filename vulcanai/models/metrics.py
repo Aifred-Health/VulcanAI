@@ -513,7 +513,7 @@ class Metrics(object):
 
     @staticmethod
     def run_test(network, data_loader, plot=False, save_path=None,
-                 pos_label=1, transform_outputs=False,
+                 pos_label=1, transform_outputs=True,
                  transform_callable=None, **kwargs):
         """
         Will conduct the test suite to determine network strength.
@@ -538,6 +538,8 @@ class Metrics(object):
             transform_outputs : boolean
                 Not used in the multi-class case.
                 If true, transform outputs using metrics.transform_outputs.
+                If false, no transforms performed except for those necessary
+                for calculating metric values.
                 If no transform_callable is provided then the defaults in
                 metrics.transform_outputs will be used: class converstion for
                 one-hot encoded, and identity for one-dimensional outputs.
@@ -587,13 +589,13 @@ class Metrics(object):
             transform_outputs : boolean
                 If true, transform outputs using metrics.transform_outputs.
                 If no transform_callable is provided then the defaults in
-                metrics.transform_outputs will be used: class converstion for
+                metrics.transform_outputs will be used: class conversion for
                 one-hot encoded, and identity for one-dimensional outputs.
                 Multiple class multiple outputs are not yet supported.
             transform_callable: callable
                 Used to transform values if transform_outputs is true,
                 otherwise defaults in metrics.transform_outputs will be used.
-                An example could be np.round
+                An example could be np.round()
 
         Returns:
             results : dict
@@ -604,11 +606,14 @@ class Metrics(object):
         raw_predictions = network.forward_pass(
             data_loader=data_loader,
             convert_to_class=False,
-            transform_outputs=transform_outputs,
-            transform_callable=transform_callable,
             **kwargs)
 
-        mse = Metrics.get_mse(targets, raw_predictions)
+        if transform_outputs:
+            predictions = Metrics.transform_outputs(raw_predictions,
+                                                transform_callable=
+                                                transform_callable)
+
+        mse = Metrics.get_mse(targets, predictions)
 
         logger.info('{} test\'s results'.format(network.name))
 
@@ -919,7 +924,7 @@ class Metrics(object):
     def cross_validate(network, data_loader, k, epochs,
                        average_results=True, retain_graph=None,
                        valid_interv=4, plot=False, save_path=None,
-                       transform_outputs=False, transform_callable=None,
+                       transform_outputs=True, transform_callable=None,
                        **kwargs):
         """
         Perform k-fold cross validation given a Network and DataLoader object.
@@ -947,6 +952,8 @@ class Metrics(object):
             transform_outputs : boolean
                 Not used in the multi-class case.
                 If true, transform outputs using metrics.transform_outputs.
+                If false, no transforms performed except for those necessary
+                for calculating metric values.
                 If no transform_callable is provided then the defaults in
                 metrics.transform_outputs will be used: class converstion for
                 one-hot encoded, and identity for one-dimensional outputs.

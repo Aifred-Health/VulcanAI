@@ -619,6 +619,9 @@ class BaseNetwork(nn.Module):
             else:
                 metric = "accuracy"
 
+            if self._final_transform:
+                predictions = self._final_transform(predictions)
+
             # will be fixed in the future
             train_accuracy_accumulator += self.metrics.get_score(
                 targets=targets,
@@ -673,6 +676,9 @@ class BaseNetwork(nn.Module):
                 metric = "mse"
             else:
                 metric = "accuracy"
+
+            if self._final_transform:
+                predictions = self._final_transform(predictions)
 
             # will be fixed in the future
             val_accuracy_accumulator += self.metrics.get_score(
@@ -808,7 +814,7 @@ class BaseNetwork(nn.Module):
     def cross_validate(self, data_loader, k, epochs,
                        average_results=True, retain_graph=None,
                        valid_interv=4, plot=False, save_path=None,
-                       transform_outputs=False, transform_callable=None,
+                       transform_outputs=True, transform_callable=None,
                        **kwargs):
         """
         Perform k-fold cross validation given a Network and DataLoader object.
@@ -913,8 +919,7 @@ class BaseNetwork(nn.Module):
         return self.network(output)
 
     @torch.no_grad()
-    def forward_pass(self, data_loader, transform_outputs=False,
-                     transform_callable=None, **kwargs):
+    def forward_pass(self, data_loader, **kwargs):
         """
         Allow the user to pass data through the network.
 
@@ -946,22 +951,18 @@ class BaseNetwork(nn.Module):
         pred_collector = None
         for data, _ in data_loader:
             data = set_tensor_device(data, device=self.device)
+            raw_output = self(data)
             # Get raw network output
-            raw_outputs = self(data).cpu().detach().numpy()
             if self._num_classes:
                 if self._final_transform:
-                    predictions = self._final_transform(raw_outputs)
+                    predictions = self._final_transform(raw_output)
                 else:
-                    predictions = raw_outputs
+                    predictions = raw_output
 
-                if transform_outputs:
+                predictions = predictions.cpu().detach().numpy()
 
-                        self.metrics.transform_outputs(
-                            in_matrix=predictions,
-                            transform_callable=transform_callable, **kwargs
-                        )
             else:
-                predictions = raw_outputs
+                predictions = raw_output.cpu().detach().numpy()
 
             # Aggregate predictions
             if pred_collector is None:
