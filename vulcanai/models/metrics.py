@@ -612,6 +612,8 @@ class Metrics(object):
             predictions = Metrics.transform_outputs(raw_predictions,
                                                 transform_callable=
                                                 transform_callable)
+        else:
+            predictions = raw_predictions
 
         mse = Metrics.get_mse(targets, predictions)
 
