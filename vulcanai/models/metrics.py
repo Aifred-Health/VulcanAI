@@ -7,11 +7,12 @@ import math
 import numpy as np
 from sklearn import metrics as skl_metrics
 
-from .utils import round_list
+from .utils import round_list, get_probs, filter_matched_subj
 from ..plotters.visualization import display_confusion_matrix
 from collections import defaultdict
 
 import copy
+import inspect
 
 import logging
 logger = logging.getLogger(__name__)
@@ -741,8 +742,179 @@ class Metrics(object):
             'macro_f1': float(f1_macro),
             'macro_auc': float(auc_macro)
         }
+    @staticmethod
+    def bootfold_p_estimate(network, data_loader, n_samples, k, epochs,
+			    index_to_iter, ls_feat_vals, 
+			    retain_graph=None, valid_interv=4, plot=False, 
+                            save_path=None, transform_outputs=False, transform_callable=None, **kwargs):
+        """
+        Performs bootfold - estimation to identify whether training model provides statistically significant
+        difference in predicting various values for a given feature when predicting outcome.
 
-    # TODO: include support
+        Parameters:
+            network : BaseNetwork
+                Network descendant of BaseNetwork.
+            data_loader : torch.utils.data.DataLoader
+                The DataLoader object containing the totality of the data to use
+                for k-fold cross validation.
+            n_samples : int
+                number of times to randomly sample w/ replacement the data_loader and perform boot_cv
+            k : int
+                The number of folds to split the training into.
+            epochs : int
+                The number of epochs to train the network per fold.
+            index_to_iter : string
+                Name of feature within data_loader who's values will be iterated to assess difference
+            ls_feat_vals : list
+                List of values for feature provided in index_to_iter
+            retain_graph : {None, boolean}
+                Whether retain_graph will be true when .backwards is called.
+            valid_interv : int
+                Specifies after how many epochs validation should occur.
+            plot : boolean
+                Whether or not to plot all results in prompt and charts.
+            save_path : str
+                Where to save all figures and results.
+            transform_outputs : boolean
+                Not used in the multi-class case.
+                If true, transform outputs using metrics.transform_outputs.
+                If no transform_callable is provided then the defaults in
+                metrics.transform_outputs will be used: class converstion for
+                one-hot encoded, and identity for one-dimensional outputs.
+                Multiple class multiple outputs are not yet supported.
+            transform_callable: callable
+                Not used in the multi-class case.
+                Used to transform values if transform_outputs is true,
+                otherwise defaults in metrics.transform_outputs will be used.
+                An example could be np.round
+            kwargs: dict of keyworded parameters
+                Values passed to transform callable (function parameters)
+
+        Returns:
+            p_value : float
+        """
+        ls_imprv_scores = []
+
+        rand_sample = data.RandomSampler(data_loader.dataset, replacement=True)
+        data_loader_args = inspect.signature(data.DataLoader.__init__)
+        new_params = {}
+
+        for param in data_loader_args.parameters:
+            if param == "self":
+                continue
+            elif param == "shuffle":
+                continue
+            elif param == "sampler":
+                new_params["sampler"] = rand_sample
+            elif param == "batch_sampler":
+                new_params["batch_sampler"] = None
+            else:
+                new_params[param] = getattr(data_loader, param)
+
+        dl_sample = data.DataLoader(**new_params)
+
+        for samp in range(n_samples):
+            imprv_score = Metrics.boot_cv(network, dl_sample, k, epochs, retain_graph, 
+                valid_interv, plot, save_path, index_to_iter, ls_feat_vals)
+            ls_imprv_scores.append(imprv_score)
+
+        tot_num_imprv = float(len(ls_imprv_scores))
+        score_abv_zero = sum(val > 1.0 for val in ls_imprv_scores)
+        p_val = float(score_abv_zero)/float(tot_num_imprv)
+
+        logger.info("P value for bootfold p estimate: %d.", p_val)
+
+    def boot_cv(network, data_loader, k, epochs, retain_graph, valid_interv, save_path, plot, index_to_iter, ls_feat_vals):
+        """
+        Perform a custom cross validation for bootstrapped p estimation.
+
+        Parameters:
+            network : BaseNetwork
+                Network descendant of BaseNetwork.
+            data_loader : torch.utils.data.DataLoader
+                The DataLoader object containing the totality of the data to use
+                for k-fold cross validation.
+            k : int
+                The number of folds to split the training into.
+            epochs : int
+                The number of epochs to train the network per fold.
+            retain_graph : {None, boolean}
+                Whether retain_graph will be true when .backwards is called.
+            valid_interv : int
+                Specifies after how many epochs validation should occur.
+            plot : boolean
+                Whether or not to plot all results in prompt and charts.
+	    index_to_iter : string
+                Index of feature within data_loader who's values will be iterated to assess difference
+            ls_feat_vals : list
+                List of values for feature provided in index_to_iter
+
+	Returns: 
+	    improvement_score : float
+        """
+        dct_improvementScores = defaultdict(list)
+        dct_filteredSubj = defaultdict(list)
+        ls_filteredProbs = []
+	
+        fold_len = math.floor(len(data_loader.dataset) / k)
+        rem = len(data_loader.dataset) % k
+        fold_seq = []
+
+        for _ in range(k-1):
+            fold_seq.append(fold_len)
+        if rem == 0:
+            fold_seq.append(fold_len)
+        else:
+            fold_seq.append(fold_len+rem)  # last one is the longest if unequal
+
+        dataset_splits = data.random_split(data_loader.dataset,
+                                           fold_seq)
+
+        batch_size = data_loader.batch_size
+        shuffle = isinstance(data_loader.sampler, data.sampler.RandomSampler)
+
+        try:
+            for fold in range(k):
+
+                # TODO: this may break on different devices?? test.
+                # TODO: Re-initialize instead of deepcopy?
+                cross_val_network = copy.deepcopy(network)
+
+                # TODO: properly pass params
+
+                # Generate fold training set.
+                train_dataset = data.ConcatDataset(
+                    dataset_splits[:fold] + dataset_splits[fold+1:])
+                # Generate fold validation set.
+                val_dataset = dataset_splits[fold]
+                # Generate fold training data loader object.
+                train_loader = data.DataLoader(
+                    train_dataset, batch_size=batch_size, shuffle=shuffle)
+                # Generate fold validation data loader object.
+                val_loader = data.DataLoader(
+                    val_dataset, batch_size=batch_size)
+                # Train network on fold training data loader.
+                cross_val_network.fit(
+                    train_loader, val_loader, epochs,
+                    retain_graph=retain_graph,
+                    valid_interv=valid_interv, plot=plot, save_path=save_path)
+                dct_scores = get_probs(network, val_loader, index_to_iter, ls_feat_vals)
+                dct_filtered = filter_matched_subj(dct_scores, val_loader, index_to_iter)
+                for val in dct_filtered:
+                    dct_filteredSubj[val].append(dct_filtered[val])
+                    ls_filteredProbs.append(dct_filtered[val])
+            V_p = np.array(ls_filteredProbs).mean()
+            ls_pos_rate = [subj for subj in data_loader.dataset if subj[1].item() == 1]
+            V_t = float(len(ls_pos_rate)/len(data_loader.dataset)) * 100
+            improvement_score = float(V_p/V_t)
+            if np.isnan(improvement_score):
+                improvement_score = 0.0
+            return improvement_score
+        except KeyboardInterrupt:
+            logger.info(
+                "\n\n***KeyboardInterrupt: Cross validate stopped \
+                prematurely.***\n\n")
+	
     @staticmethod
     def cross_validate(network, data_loader, k, epochs,
                        average_results=True, retain_graph=None,

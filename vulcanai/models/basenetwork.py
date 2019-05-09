@@ -736,6 +736,74 @@ class BaseNetwork(nn.Module):
             **kwargs
         )
 
+    def bootfold_p_estimate(self, data_loader, n_samples, k, epochs, 
+                            index_to_iter, ls_feat_vals, retain_graph=None,
+                            valid_interv=4, plot=False, save_path=None,
+                            transform_outputs=False, transform_callable=None, p_output_path = None,
+			    **kwargs):
+        """
+	Performs bootfold - estimation to identify whether training model provides statistically significant
+	difference in predicting various values for a given feature when predicting outcome. 
+
+	Parameters:
+	    network : BaseNetwork
+                Network descendant of BaseNetwork.
+            data_loader : torch.utils.data.DataLoader
+                The DataLoader object containing the totality of the data to use
+                for k-fold cross validation.
+            n_samples : int
+                number of times to randomly sample w/ replacement the data_loader and perform boot_cv
+            k : int
+                The number of folds to split the training into.
+            epochs : int
+                The number of epochs to train the network per fold.
+	    index_to_iter : string
+		Index of feature within data_loader who's values will be iterated to assess difference
+	    ls_feat_vals : list
+		List of values for feature provided in feat_to_iter
+            valid_interv : int
+                Specifies after how many epochs validation should occur.
+            plot : boolean
+                Whether or not to plot all results in prompt and charts.
+            save_path : str
+                Where to save all figures and results.
+            transform_outputs : boolean
+                Not used in the multi-class case.
+                If true, transform outputs using metrics.transform_outputs.
+                If no transform_callable is provided then the defaults in
+                metrics.transform_outputs will be used: class converstion for
+                one-hot encoded, and identity for one-dimensional outputs.
+                Multiple class multiple outputs are not yet supported.
+            transform_callable: callable
+                Not used in the multi-class case.
+                Used to transform values if transform_outputs is true,
+                otherwise defaults in metrics.transform_outputs will be used.
+                An example could be np.round
+	    p_output_path = str
+		Output file to save p_value to
+            kwargs: dict of keyworded parameters
+                Values passed to transform callable (function parameters)
+
+	Returns:
+	    p_value : float
+        """
+        return self.metrics.bootfold_p_estimate(
+            network=self,
+            data_loader=data_loader,
+            n_samples=n_samples,
+            k=k,
+            epochs=epochs,
+            index_to_iter=index_to_iter,
+            ls_feat_vals=ls_feat_vals,
+            retain_graph=retain_graph,
+            valid_interv=valid_interv,
+            plot=plot,
+            save_path=save_path,
+            transform_outputs=transform_outputs,
+            transform_callable=transform_callable,
+            p_output_path=p_output_path,
+            **kwargs)
+
     def cross_validate(self, data_loader, k, epochs,
                        average_results=True, retain_graph=None,
                        valid_interv=4, plot=False, save_path=None,
