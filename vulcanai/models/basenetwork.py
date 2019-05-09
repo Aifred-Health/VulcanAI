@@ -196,7 +196,7 @@ class BaseNetwork(nn.Module):
                             criter_spec is set to an instance of this class. \
                             Set pred_activation to none or change criter_spec."
                                  )
-            self._final_transform = nn.LogSoftmax(dim=1)
+            self._final_transform = nn.Softmax(dim=1)
 
     @abc.abstractmethod
     def _merge_input_network_outputs(self, inputs):
