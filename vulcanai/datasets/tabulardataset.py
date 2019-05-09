@@ -83,31 +83,6 @@ class TabularDataset(Dataset):
 
         self.df = utils.clean_dataframe(self.df)
 
-        self.seed_value = int(time.time())
-
-        self.set_global_random_seed(self.seed_value)
-
-        self.all_xs = None
-        self.all_y = None
-        
-        logger.info("You have created a new dataset with %d rows", len(self))
-        #logger.info(f"You have created a new dataset with {len(self)} rows")
-
-        logger.info("The random seed was set to a value of %d", self.seed_value)
-
-    def set_global_random_seed(self, seed_value):
-        """
-        Initializes the random state using the seed_value
-
-        Parameters:
-            seed_value Int
-                The seed value
-
-        """
-        np.random.seed(seed_value)  # cpu vars
-        torch.manual_seed(seed_value)  # cpu  vars
-        torch.cuda.manual_seed_all(seed_value)  # gpu vars
-
     def __len__(self):
         """
         The total number of samples.
@@ -501,8 +476,7 @@ class TabularDataset(Dataset):
     # future improvements could come from
     # https://github.com/pytorch/text/blob/master/torchtext/data/dataset.py
     # noinspection PyUnusedLocal
-    def split(self, split_ratio=0.7, stratified=False, strata_field='label',
-              random_state=None):
+    def split(self, split_ratio=0.7, stratified=False, strata_field='label'):
         """
         Create train-test(-validation) splits from the instance's examples.
         Function signature borrowed from torchtext in an effort to maintain
@@ -527,8 +501,6 @@ class TabularDataset(Dataset):
             strata_field: String
                 name of the examples Field stratified over.
                 Default is 'label' for the conventional label field.
-            random_state: int
-                The random seed used for shuffling.
 
         Returns:
             datasets: Tuple of TabularDatasets
