@@ -542,12 +542,13 @@ class BaseNetwork(nn.Module):
 
                 train_loss, train_acc = self._train_epoch(train_loader,
                                                           retain_graph)
-                if self.lr_scheduler:
-                    self.lr_scheduler.step(epoch=epoch)
 
                 valid_loss = valid_acc = np.nan
                 if epoch % valid_interv == 0:
                     valid_loss, valid_acc = self._validate(val_loader)
+
+                if self.lr_scheduler:
+                    self.lr_scheduler.step(epoch=epoch)
 
                 tqdm.write(
                     "\n Epoch {}:\n"
