@@ -272,6 +272,7 @@ class BaseNetwork(nn.Module):
         """
         device = torch.device(device if torch.cuda.is_available() else 'cpu')
         if self.network:
+            # nonblocking doesn't seem to matter here
             self.network.to(device=device)
         if self.optim:
             for state in self.optim.state.values():
@@ -873,11 +874,11 @@ class BaseNetwork(nn.Module):
         # prediction_shape used to aggregate network outputs
         # (e.g. with or without class conversion)
         # so far always a float.
-        dtype = torch.float
-        pred_collector = torch.tensor([], dtype=dtype, device=self.device)
+        pred_collector = None
         for data, _ in data_loader:
+            data = set_tensor_device(data, device=self.device)
             # Get raw network output
-            raw_outputs = self(data)
+            raw_outputs = self(data).cpu().detach().numpy()
             if self._num_classes:
                 if self._final_transform:
                     predictions = self._final_transform(raw_outputs)
@@ -885,20 +886,24 @@ class BaseNetwork(nn.Module):
                     predictions = raw_outputs
 
                 if transform_outputs:
-                    predictions = torch.tensor(
+
                         self.metrics.transform_outputs(
                             in_matrix=predictions,
                             transform_callable=transform_callable, **kwargs
-                        ),
-                        device=self.device)
+                        )
             else:
                 predictions = raw_outputs
 
             # Aggregate predictions
-            pred_collector = torch.cat([pred_collector, predictions])
+            if pred_collector is None:
+                pred_collector = predictions
+            else:
+                pred_collector = np.vstack((pred_collector, predictions))
         # TODO: check this
-        return pred_collector.cpu().numpy()
+        return pred_collector
 
+    # TODO: could integrate map location in the future if needed
+    # https://discuss.pytorch.org/t/on-a-cpu-device-how-to-load-checkpoint-saved-on-gpu-device/349
     def save_model(self, save_path=None):
         """
         Save the model (and it's input networks).

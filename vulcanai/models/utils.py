@@ -245,7 +245,8 @@ def set_tensor_device(data, device=None):
 
     """
     if not isinstance(data, (list, tuple)):
-        data = data.to(device=device)
+        data = data.to(device=device, non_blocking=True)
+
     else:
         for idx, d in enumerate(data):
             data[idx] = set_tensor_device(d, device=device)
