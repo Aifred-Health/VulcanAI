@@ -866,6 +866,10 @@ class Metrics(object):
             averaged_all_results = {}
             for m in all_results:
                 averaged_all_results[m] = np.mean(all_results[m])
+            logger.info(averaged_all_results)
             return averaged_all_results
+
         else:
+            logger.info(all_results)
             return all_results
+
