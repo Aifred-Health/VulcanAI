@@ -92,7 +92,7 @@ class Metrics(object):
         return results_dict
 
     @staticmethod
-    def transform_outputs(in_matrix, transform_callable=None, **kwargs):
+    def transform_outputs(in_matrix):
         """
         Reformat output matrix.
 
@@ -104,11 +104,6 @@ class Metrics(object):
         Parameters:
             in_matrix : numpy.ndarray or torch.Tensor
                 One-hot matrix of shape [batch, num_classes].
-            transform_callable: callable
-                Used to transform values if convert_to_class is true,
-                otherwise np.argmax will be used for one-hot encoded entries
-                (shape[1] > 1) or no tranform for shape[1] = 1
-                Must return floats.
             kwargs: dict of keyworded parameters
                 Values passed to transform callable
 
@@ -120,11 +115,9 @@ class Metrics(object):
         if isinstance(in_matrix, torch.Tensor):
             in_matrix = in_matrix.cpu().detach().numpy()
 
-        # Callable provided
-        if transform_callable:
-            return transform_callable(in_matrix, **kwargs)
+
         # For one-hot encoded entries
-        elif in_matrix.shape[1] > 1:
+        if in_matrix.shape[1] > 1:
             return np.argmax(in_matrix, axis=1).astype(np.float32)
         # For single value entries
         elif in_matrix.shape[1] == 1:
@@ -513,15 +506,17 @@ class Metrics(object):
 
     @staticmethod
     def run_test(network, data_loader, plot=False, save_path=None,
-                 pos_label=1, transform_outputs=True,
-                 transform_callable=None, **kwargs):
+                 pos_label=1, transform_callable=None, **kwargs):
         """
         Will conduct the test suite to determine network strength.
 
         Calls either _run_test_single_continuous or _run_test_multi
-        depending on the number of classes. If _run_test_multi, then
-        the transform_output callable will not be observed. _run_test_multi
-        only works with raw one-hot encoded output values.
+        depending on the number of classes. _run_test_multi
+        only works with raw one-hot encoded output values. Note that multi
+        class multi outputs are not supported: values will either be converted
+        to class values from one-hot encoding or be a single continuous value.
+        However, values can be transformed after the forward pass using
+        transform_callable.
 
         Parameters:
             network: nn.Module
@@ -535,20 +530,8 @@ class Metrics(object):
             pos_label: int
                 The label that is positive in the binary case for macro
                 calculations.
-            transform_outputs : boolean
-                Not used in the multi-class case.
-                If true, transform outputs using metrics.transform_outputs.
-                If false, no transforms performed except for those necessary
-                for calculating metric values.
-                If no transform_callable is provided then the defaults in
-                metrics.transform_outputs will be used: class converstion for
-                one-hot encoded, and identity for one-dimensional outputs.
-                Multiple class multiple outputs are not yet supported.
             transform_callable: callable
-                Not used in the multi-class case.
-                Used to transform values if transform_outputs is true,
-                otherwise defaults in metrics.transform_outputs will be used.
-                An example could be np.round
+                A torch function. e.g. torch.round()
             kwargs: dict of keyworded parameters
                 Values passed to transform callable (function parameters)
 
@@ -565,7 +548,6 @@ class Metrics(object):
                 Metrics._run_test_single_continuous(
                     network,
                     data_loader,
-                    transform_outputs=transform_outputs,
                     transform_callable=transform_callable,
                     **kwargs)
         else:
@@ -576,7 +558,7 @@ class Metrics(object):
         return results_dict
 
     @staticmethod
-    def _run_test_single_continuous(network, data_loader, transform_outputs,
+    def _run_test_single_continuous(network, data_loader,
                                     transform_callable, **kwargs):
         """
         Will conduct the test suite to determine network strength.
@@ -586,16 +568,8 @@ class Metrics(object):
                 The network
             data_loader : DataLoader
                 A DataLoader object to run the test with.
-            transform_outputs : boolean
-                If true, transform outputs using metrics.transform_outputs.
-                If no transform_callable is provided then the defaults in
-                metrics.transform_outputs will be used: class conversion for
-                one-hot encoded, and identity for one-dimensional outputs.
-                Multiple class multiple outputs are not yet supported.
             transform_callable: callable
-                Used to transform values if transform_outputs is true,
-                otherwise defaults in metrics.transform_outputs will be used.
-                An example could be np.round()
+                A torch function. e.g. torch.round()
 
         Returns:
             results : dict
@@ -603,17 +577,12 @@ class Metrics(object):
         """
         targets = np.array([v[1] for v in data_loader.dataset])
 
-        raw_predictions = network.forward_pass(
+        predictions = network.forward_pass(
             data_loader=data_loader,
             convert_to_class=False,
+            transform_callable=transform_callable
             **kwargs)
 
-        if transform_outputs:
-            predictions = Metrics.transform_outputs(raw_predictions,
-                                                transform_callable=
-                                                transform_callable)
-        else:
-            predictions = raw_predictions
 
         mse = Metrics.get_mse(targets, predictions)
 
@@ -625,12 +594,13 @@ class Metrics(object):
 
     @staticmethod
     def _run_test_multi(network, data_loader, plot=False, save_path=None,
-                        pos_label=1):
+                        pos_label=1, transform_callable=None):
         """
         Will conduct the test suite to determine network strength.
 
         No transforms will be conducted on the outputs, save where
-        necessary for calculating metric values.
+        necessary for calculating metric values. You can transform values
+        after the forward pass by using transform_callable.
 
         Parameters:
             network: nn.Module
@@ -641,6 +611,8 @@ class Metrics(object):
                 Folder to place images in.
             plot: bool
                 Determine if graphs should be plotted in real time.
+            transform_callable: callable
+                A torch function. e.g. torch.round()
 
         Returns:
             results : dict
@@ -664,7 +636,7 @@ class Metrics(object):
 
         raw_predictions = network.forward_pass(
             data_loader=data_loader,
-            transform_outputs=False
+            transform_callable=transform_callable
         )
 
         predictions = Metrics.transform_outputs(raw_predictions)
@@ -926,7 +898,7 @@ class Metrics(object):
     def cross_validate(network, data_loader, k, epochs,
                        average_results=True, retain_graph=None,
                        valid_interv=4, plot=False, save_path=None,
-                       transform_outputs=True, transform_callable=None,
+                       transform_callable=None,
                        **kwargs):
         """
         Perform k-fold cross validation given a Network and DataLoader object.
@@ -951,20 +923,8 @@ class Metrics(object):
                 Whether or not to plot all results in prompt and charts.
             save_path : str
                 Where to save all figures and results.
-            transform_outputs : boolean
-                Not used in the multi-class case.
-                If true, transform outputs using metrics.transform_outputs.
-                If false, no transforms performed except for those necessary
-                for calculating metric values.
-                If no transform_callable is provided then the defaults in
-                metrics.transform_outputs will be used: class converstion for
-                one-hot encoded, and identity for one-dimensional outputs.
-                Multiple class multiple outputs are not yet supported.
             transform_callable: callable
-                Not used in the multi-class case.
-                Used to transform values if transform_outputs is true,
-                otherwise defaults in metrics.transform_outputs will be used.
-                An example could be np.round
+                A torch function. e.g. torch.round()
             kwargs: dict of keyworded parameters
                 Values passed to transform callable (function parameters)
 
