@@ -853,7 +853,6 @@ class BaseNetwork(nn.Module):
             valid_interv=valid_interv,
             plot=plot,
             save_path=save_path,
-            transform_outputs=transform_outputs,
             transform_callable=transform_callable,
             **kwargs)
 
