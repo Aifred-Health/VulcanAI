@@ -988,7 +988,6 @@ class Metrics(object):
                 results = Metrics.run_test(
                     cross_val_network, val_loader,
                     save_path=save_path, plot=plot,
-                    transform_outputs=transform_outputs,
                     transform_callable=transform_callable,
                     **kwargs)
 
