@@ -728,7 +728,6 @@ class BaseNetwork(nn.Module):
             save_path=save_path,
             plot=plot,
             pos_label=pos_label,
-            transform_outputs=transform_outputs,
             transform_callable=transform_callable,
             **kwargs
         )
