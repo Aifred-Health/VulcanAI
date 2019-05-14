@@ -698,7 +698,7 @@ class BaseNetwork(nn.Module):
         return validation_loss, validation_accuracy
 
     def run_test(self, data_loader, plot=False, save_path=None, pos_label=1,
-                 transform_outputs=False, transform_callable=None, **kwargs):
+                 transform_callable=None, **kwargs):
         """
         Will conduct the test suite to determine network strength. Using
         metrics.run_test
@@ -713,18 +713,8 @@ class BaseNetwork(nn.Module):
             pos_label: int
                 The label that is positive in the binary case for macro
                 calculations.
-            transform_outputs : boolean
-                Not used in the multi-class case.
-                If true, transform outputs using metrics.transform_outputs.
-                If no transform_callable is provided then the defaults in
-                metrics.transform_outputs will be used: class converstion for
-                one-hot encoded, and identity for one-dimensional outputs.
-                Multiple class multiple outputs are not yet supported.
             transform_callable: callable
-                Not used in the multi-class case.
-                Used to transform values if transform_outputs is true,
-                otherwise defaults in metrics.transform_outputs will be used.
-                An example could be np.round
+                A torch function. e.g. torch.round()
             kwargs: dict of keyworded parameters
                 Values passed to transform callable (function parameters)
 
@@ -738,11 +728,12 @@ class BaseNetwork(nn.Module):
             save_path=save_path,
             plot=plot,
             pos_label=pos_label,
-            transform_outputs=transform_outputs,
             transform_callable=transform_callable,
             **kwargs
         )
 
+    # TODO: need to update transform callable params to match that of
+    # cross_validate
     def bootfold_p_estimate(self, data_loader, n_samples, k, epochs, 
                             index_to_iter, ls_feat_vals, retain_graph=None,
                             valid_interv=4, plot=False, save_path=None,
@@ -814,8 +805,7 @@ class BaseNetwork(nn.Module):
     def cross_validate(self, data_loader, k, epochs,
                        average_results=True, retain_graph=None,
                        valid_interv=4, plot=False, save_path=None,
-                       transform_outputs=True, transform_callable=None,
-                       **kwargs):
+                       transform_callable=None, **kwargs):
         """
         Perform k-fold cross validation given a Network and DataLoader object.
 
@@ -839,18 +829,8 @@ class BaseNetwork(nn.Module):
                 Whether or not to plot all results in prompt and charts.
             save_path : str
                 Where to save all figures and results.
-            transform_outputs : boolean
-                Not used in the multi-class case.
-                If true, transform outputs using metrics.transform_outputs.
-                If no transform_callable is provided then the defaults in
-                metrics.transform_outputs will be used: class converstion for
-                one-hot encoded, and identity for one-dimensional outputs.
-                Multiple class multiple outputs are not yet supported.
             transform_callable: callable
-                Not used in the multi-class case.
-                Used to transform values if transform_outputs is true,
-                otherwise defaults in metrics.transform_outputs will be used.
-                An example could be np.round
+                A torch function. e.g. torch.round()
             kwargs: dict of keyworded parameters
                 Values passed to transform callable (function parameters)
 
@@ -872,7 +852,6 @@ class BaseNetwork(nn.Module):
             valid_interv=valid_interv,
             plot=plot,
             save_path=save_path,
-            transform_outputs=transform_outputs,
             transform_callable=transform_callable,
             **kwargs)
 
@@ -919,58 +898,43 @@ class BaseNetwork(nn.Module):
         return self.network(output)
 
     @torch.no_grad()
-    def forward_pass(self, data_loader, **kwargs):
+    def forward_pass(self, data_loader,
+                     transform_callable=None, **kwargs):
         """
         Allow the user to pass data through the network.
-
         Parameters:
             data_loader : DataLoader
                 DataLoader object to make the pass with.
-            transform_outputs : boolean
-                If true, transform outputs using metrics.transform_outputs.
-                If no transform_callable is provided then the defaults in
-                metrics.transform_outputs will be used: class converstion for
-                one-hot encoded, and identity for one-dimensional outputs.
-                Multiple class multiple outputs are not yet supported.
             transform_callable: callable
-                Used to transform values if transform_outputs is true,
-                otherwise defaults in metrics.transform_outputs will be used.
-                An example could be np.round
+                A torch function. e.g. torch.round()
             kwargs: dict of keyworded parameters
                 Values passed to transform callable (function parameters)
-
         Returns:
             outputs : numpy.ndarray
                 Numpy matrix with the output. Same shape as network out_dim.
-
         """
         self.eval()
         # prediction_shape used to aggregate network outputs
         # (e.g. with or without class conversion)
         # so far always a float.
-        pred_collector = None
+        dtype = torch.float
+        pred_collector = torch.tensor([], dtype=dtype, device=self.device)
         for data, _ in data_loader:
-            data = set_tensor_device(data, device=self.device)
-            raw_output = self(data)
             # Get raw network output
-            if self._num_classes:
-                if self._final_transform:
-                    predictions = self._final_transform(raw_output)
-                else:
-                    predictions = raw_output
+            predictions = self(data)
 
-                predictions = predictions.cpu().detach().numpy()
+            if self._final_transform:
+                predictions = self._final_transform(predictions)
 
-            else:
-                predictions = raw_output.cpu().detach().numpy()
+            if transform_callable:
+                predictions = transform_callable(predictions)
 
             # Aggregate predictions
-            if pred_collector is None:
-                pred_collector = predictions
-            else:
-                pred_collector = np.vstack((pred_collector, predictions))
-        # TODO: check this
+            pred_collector = torch.cat([pred_collector, predictions])
+
+        pred_collector = pred_collector.cpu().detach().numpy()
         return pred_collector
+
 
     # TODO: could integrate map location in the future if needed
     # https://discuss.pytorch.org/t/on-a-cpu-device-how-to-load-checkpoint-saved-on-gpu-device/349
