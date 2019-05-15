@@ -793,17 +793,19 @@ class Metrics(object):
         dl_sample = data.DataLoader(**new_params)
 
         for samp in range(n_samples):
-            imprv_score = Metrics.boot_cv(network, dl_sample, k, epochs, retain_graph, 
+            imprv_score = Metrics._boot_cv(network, dl_sample, k, epochs, retain_graph, 
                 valid_interv, plot, save_path, index_to_iter, ls_feat_vals)
             ls_imprv_scores.append(imprv_score)
 
         tot_num_imprv = float(len(ls_imprv_scores))
-        score_abv_zero = sum(val > 1.0 for val in ls_imprv_scores)
-        p_val = float(score_abv_zero)/float(tot_num_imprv)
-
+        score_below_zero = sum(val <= 0.0 for val in ls_imprv_scores)
+        # calculate p value based on change of not improving 
+        p_val = float(score_below_zero)/float(tot_num_imprv)
+        logger.info("Improvement scores: {}".format(', '.join(map(str, ls_imprv_scores))))
         logger.info("P value for bootfold p estimate: %d.", p_val)
 
-    def boot_cv(network, data_loader, k, epochs, retain_graph, valid_interv, save_path, plot, index_to_iter, ls_feat_vals):
+    def _boot_cv(network, data_loader, k, epochs, retain_graph, valid_interv, 
+                save_path, plot, index_to_iter, ls_feat_vals):
         """
         Perform a custom cross validation for bootstrapped p estimation.
 
