@@ -16,6 +16,7 @@ from collections import defaultdict
 def get_probs(network, loader, index_to_iter, ls_feat_vals):
     """
     Returns probability for each object within loader based on output from training neural network
+
     Parameters:
         network : vulcan.model
 	    training vulcan network
@@ -34,29 +35,31 @@ def get_probs(network, loader, index_to_iter, ls_feat_vals):
         dct_scores[index] = {}
     for index in range(len(loader)):
         # Extract specific index from loader and create a DataLoader instance to send to forward_pass
-        input_loader = DataLoader(TensorDataset(loader.dataset[index][0].unsqueeze(0), loader.dataset[index][1].unsqueeze(0)))
+        input_loader = DataLoader(TensorDataset(loader.dataset[index][0].unsqueeze(0), \
+                                                loader.dataset[index][1].unsqueeze(0)))
         
-        subjProb = network.forward_pass(data_loader=input_loader, transform_outputs=False)
+        subj_prob = network.forward_pass(data_loader=input_loader, transform_outputs=False)
         # Standardize probability of positive label
-        subjProb = subjProb[0][1] * 100
-        subjProb = round(subjProb, 2)
+        subj_prob = subj_prob[0][1] * 100
+        subj_prob = round(subj_prob, 2)
         # Add probability to scores dictionary where keys are the index and value the probability belongs to.
-        dct_scores[index][loader.dataset[index][0][index_to_iter].item()] = subjProb
+        dct_scores[index][loader.dataset[index][0][index_to_iter].item()] = subj_prob
         # Iterate through other possible values and find probability of positive label and add to dictionary
         # for current index.
         for newVal in ls_feat_vals:
             if newVal != loader.dataset[index][0][index_to_iter].item():
                 loader.dataset[index][0][index_to_iter] = newVal
                 input_loader = DataLoader(TensorDataset(loader.dataset[index][0].unsqueeze(0), loader.dataset[index][1].unsqueeze(0)))
-                subjProb = network.forward_pass(data_loader=input_loader, transform_outputs=False)
-                subjProb = subjProb[0][1] * 100
-                subjProb = round(subjProb, 2)
-                dct_scores[index][newVal] = subjProb
+                subj_prob = network.forward_pass(data_loader=input_loader, transform_outputs=False)
+                subj_prob = subj_prob[0][1] * 100
+                subj_prob = round(subj_prob, 2)
+                dct_scores[index][newVal] = subj_prob
     return dct_scores
 
 def filter_matched_subj(dct_scores, loader, index_to_iter):
     """
     Returns dictionary of filtered keys based on predicted value and value truly assigned in actual set.
+
     Parameters:
         dct_scores : dictionary
             dictionary of probability scores produced in get_scores function
