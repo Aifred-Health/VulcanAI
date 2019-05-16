@@ -7,7 +7,7 @@ import math
 import numpy as np
 from sklearn import metrics as skl_metrics
 
-from .utils import round_list, _get_probs, filter_matched_subj
+from .utils import round_list, _get_probs, _filter_matched_subj
 from ..plotters.visualization import display_confusion_matrix
 from collections import defaultdict
 
@@ -877,7 +877,7 @@ class Metrics(object):
                     retain_graph=retain_graph,
                     valid_interv=valid_interv, plot=plot, save_path=save_path)
                 dct_scores = _get_probs(network, val_loader, index_to_iter, ls_feat_vals)
-                dct_filtered = filter_matched_subj(dct_scores, val_loader, index_to_iter)
+                dct_filtered = _filter_matched_subj(dct_scores, val_loader, index_to_iter)
                 for ind in dct_filtered:
                     dct_filteredSubj[ind].append(dct_filtered[ind])
                     ls_filteredProbs.append(dct_filtered[ind])

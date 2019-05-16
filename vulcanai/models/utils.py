@@ -57,7 +57,7 @@ def _get_probs(network, loader, index_to_iter, ls_feat_vals):
                 dct_scores[index][new_val] = subj_prob
     return dct_scores
 
-def filter_matched_subj(dct_scores, loader, index_to_iter):
+def _filter_matched_subj(dct_scores, loader, index_to_iter):
     """
     Returns dictionary of filtered keys based on predicted value and value truly assigned in actual set.
 
