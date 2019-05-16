@@ -96,16 +96,13 @@ class Metrics(object):
         """
         Reformat output matrix.
 
-        If one-hot, truth matrix to be the classes in a 1D array. Otherwise use
-        transform_callable. If this is not provided, then return unchanged.
+        If one-hot, truth matrix to be the classes in a 1D array.
 
         Note: This does not handle multiple class prediction.
 
         Parameters:
             in_matrix : numpy.ndarray or torch.Tensor
                 One-hot matrix of shape [batch, num_classes].
-            kwargs: dict of keyworded parameters
-                Values passed to transform callable
 
         Returns:
             class_list : numpy.ndarray of floats
