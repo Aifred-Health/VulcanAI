@@ -475,10 +475,49 @@ class TabularDataset(Dataset):
                     dct_low_var[col] = col_var
         return dct_low_var
 
+    def convert_all_categorical_binary(self, list_only=False,
+                                       exception_columns = None):
+        """
+        Recodes all columns with only two values as ones and zeros, float
+        valued.
+        This should only be used once you have a final dataset in case values
+        are not actually binary.
+
+        Useful for dealing with all the variations of YES/NO ,yEs/nO etc.
+
+        Parameters:
+             list_only: boolean
+                only return a list of columns for which this would
+                apply, do not actually do the transformation
+            exception_columns: list
+                list of column names you do not wish to convert.
+
+        Returns:
+            list or None
+            list if list_only if true, nothing otherwise.
+        """
+
+        # recoding binary valued columns as ones and zeros
+
+        binary_cols = [(col, self.df[col].value_counts().index) for col
+                       in self.df.columns if
+                       len(self.df[col].value_counts()) == 2]
+
+        if list_only:
+            return binary_cols
+
+        for col, index in binary_cols:
+            di = {index[0]: 1.0, index[1]: 0.0}
+            try:
+                self.df = self.df.replace({col: di})
+            except:
+                continue
+            self.df[col].astype(np.float64)
+
     # future improvements could come from
     # https://github.com/pytorch/text/blob/master/torchtext/data/dataset.py
     # noinspection PyUnusedLocal
-    def split(self, split_ratio=0.7, stratified=False, strata_field='label'):
+    def split(self, split_ratio=0.7, stratified=False, strata_column=None):
         """
         Create train-test(-validation) splits from the instance's examples.
         Function signature borrowed from torchtext in an effort to maintain
