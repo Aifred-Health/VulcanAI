@@ -581,13 +581,13 @@ class TabularDataset(Dataset):
                 utils.rationed_split(self.df, train_ratio,
                                      test_ratio, validation_ratio)
 
-        train = TabularDataset(train=self.df[train_indices],
+        train = TabularDataset(train=self.df.loc[train_indices],
                                label_column=self.label_column)
-        test = TabularDataset(test=self.df[test_indices],
+        test = TabularDataset(test=self.df.loc[test_indices],
                               label_column=self.label_column)
 
         if validation_ratio:
-            validation = TabularDataset(val=self.df[validation_indices],
+            validation = TabularDataset(val=self.df.loc[validation_indices],
                                         label_column=self.label_column)
             return train, validation, test
         else:
