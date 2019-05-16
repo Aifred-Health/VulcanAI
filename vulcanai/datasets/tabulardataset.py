@@ -348,11 +348,12 @@ class TabularDataset(Dataset):
     def identify_sufficient_non_null(self, threshold):
         """
         Return columns where there is at least threshold percent of
-        non-null values.
+        null values.
 
         Parameters:
             threshold: Float
-                A number between 0 and 1, representing proportion of non-null.
+                A number between 0 and 1, representing proportion of null
+                values.
 
         Returns:
             cols: List
@@ -363,7 +364,7 @@ class TabularDataset(Dataset):
             raise ValueError(
                 "Threshold needs to be a proportion between 0 and 1 \
                 (exclusive)")
-        num_threshold = (threshold * len(self))
+        num_threshold = ((1 - threshold) * len(self))
         # thresh is "Require that many non-NA values."
         tmp = self.df.dropna(thresh=num_threshold, axis=1)
         cols = list(set(self.df.columns).difference(set(tmp.columns)))
@@ -371,7 +372,8 @@ class TabularDataset(Dataset):
 
     def identify_unique(self, threshold):
         """
-        Returns columns that have at least threshold number of values
+        Returns columns that do not have have at least threshold number of
+        values
 
         Parameters:
             threshold: The minimum number of values needed.
@@ -385,7 +387,7 @@ class TabularDataset(Dataset):
         """
         column_list = []
         for col in self.df.columns:
-            if len(self.df[col].unique()) >= threshold:
+            if len(self.df[col].unique()) <= threshold:
                 column_list.append(col)
         return column_list
 
