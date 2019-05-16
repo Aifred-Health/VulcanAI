@@ -539,9 +539,9 @@ class TabularDataset(Dataset):
             stratified: Boolean
                 whether the sampling should be stratified.
                     Default is False.
-            strata_field: String
-                name of the examples Field stratified over.
-                Default is 'label' for the conventional label field.
+            strata_column: String
+                name of the examples column stratified over.
+                Default is 'label_column'
 
         Returns:
             datasets: Tuple of TabularDatasets
@@ -549,30 +549,45 @@ class TabularDataset(Dataset):
                 test splits in that order, if the splits are provided.
 
         """
-        if stratified:
-            raise NotImplementedError("We still need to get to this!")
 
         train_ratio, test_ratio, validation_ratio = utils.check_split_ratio(
             split_ratio)
 
-        perm = np.random.permutation(self.df.index)
-        m = len(self.df.index)
+        train_indices = []
+        test_indices = []
+        validation_indices = []
 
-        train_end = int(train_ratio * m)
-        train_df = self.df.loc[perm[:train_end]]
-        validation_df = None  # just to shut up linter
-        if validation_ratio:
-            validation_end = int(validation_ratio * m) + train_end
-            validation_df = self.df.loc[perm[train_end:validation_end]]
-            test_start = validation_end
+        if stratified:
+            if not strata_column:
+                strata_column = self.label_column
+            else:
+                if strata_column not in self.df.columns:
+                    raise ValueError("Invalid strata column name")
+
+            grps = self.df.groupby(strata_column)
+            train_index, test_index, val_index = [], [], []
+            for grp in grps:
+                group_train, group_test, group_val = \
+                    utils.rationed_split(grp, train_ratio, test_ratio,
+                                         validation_ratio)
+
+                train_indices += group_train
+                test_indices += group_test
+                validation_indices += group_val
+
         else:
-            test_start = train_end
-        test_df = self.df.loc[perm[test_start:]]
 
-        train = TabularDataset(train=train_df, label_column=self.label_column)
-        test = TabularDataset(test=test_df, label_column=self.label_column)
+            train_indices, test_indices, validation_indices = \
+                utils.rationed_split(self.df, train_ratio,
+                                     test_ratio, validation_ratio)
+
+        train = TabularDataset(train=self.df[train_indices],
+                               label_column=self.label_column)
+        test = TabularDataset(test=self.df[test_indices],
+                              label_column=self.label_column)
+
         if validation_ratio:
-            validation = TabularDataset(val=validation_df,
+            validation = TabularDataset(val=self.df[validation_indices],
                                         label_column=self.label_column)
             return train, validation, test
         else:
