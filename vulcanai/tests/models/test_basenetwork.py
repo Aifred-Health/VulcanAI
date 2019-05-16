@@ -34,3 +34,8 @@ class TestBaseNetwork:
         """Test learning rate change."""
         basenet.learning_rate = 0.1
         assert basenet.learning_rate is 0.1
+
+    def test_default_criter_spec(self, basenet):
+        """Test default value behaviour for criter spec"""
+        assert isinstance(basenet.criter_spec, torch.nn.CrossEntropyLoss)
+        assert isinstance(basenet._final_transform, torch.nn.Softmax)

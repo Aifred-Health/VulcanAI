@@ -101,7 +101,8 @@ class BaseNetwork(nn.Module):
         else:
             self.input_networks = input_networks
 
-        self._set_final_layer_parameters(num_classes, pred_activation)
+        self._set_final_layer_parameters(pred_activation=pred_activation,
+                                         criter_spec=criter_spec)
 
         self._num_classes = num_classes
 
@@ -271,6 +272,7 @@ class BaseNetwork(nn.Module):
         """
         device = torch.device(device if torch.cuda.is_available() else 'cpu')
         if self.network:
+            # nonblocking doesn't seem to matter here
             self.network.to(device=device)
         if self.optim:
             for state in self.optim.state.values():
@@ -617,6 +619,9 @@ class BaseNetwork(nn.Module):
             else:
                 metric = "accuracy"
 
+            if self._final_transform:
+                predictions = self._final_transform(predictions)
+
             # will be fixed in the future
             train_accuracy_accumulator += self.metrics.get_score(
                 targets=targets,
@@ -672,6 +677,9 @@ class BaseNetwork(nn.Module):
             else:
                 metric = "accuracy"
 
+            if self._final_transform:
+                predictions = self._final_transform(predictions)
+
             # will be fixed in the future
             val_accuracy_accumulator += self.metrics.get_score(
                 targets=targets,
@@ -690,7 +698,7 @@ class BaseNetwork(nn.Module):
         return validation_loss, validation_accuracy
 
     def run_test(self, data_loader, plot=False, save_path=None, pos_label=1,
-                 transform_outputs=False, transform_callable=None, **kwargs):
+                 transform_callable=None, **kwargs):
         """
         Will conduct the test suite to determine network strength. Using
         metrics.run_test
@@ -705,18 +713,8 @@ class BaseNetwork(nn.Module):
             pos_label: int
                 The label that is positive in the binary case for macro
                 calculations.
-            transform_outputs : boolean
-                Not used in the multi-class case.
-                If true, transform outputs using metrics.transform_outputs.
-                If no transform_callable is provided then the defaults in
-                metrics.transform_outputs will be used: class converstion for
-                one-hot encoded, and identity for one-dimensional outputs.
-                Multiple class multiple outputs are not yet supported.
             transform_callable: callable
-                Not used in the multi-class case.
-                Used to transform values if transform_outputs is true,
-                otherwise defaults in metrics.transform_outputs will be used.
-                An example could be np.round
+                A torch function. e.g. torch.round()
             kwargs: dict of keyworded parameters
                 Values passed to transform callable (function parameters)
 
@@ -730,16 +728,84 @@ class BaseNetwork(nn.Module):
             save_path=save_path,
             plot=plot,
             pos_label=pos_label,
-            transform_outputs=transform_outputs,
             transform_callable=transform_callable,
             **kwargs
         )
 
+    # TODO: need to update transform callable params to match that of
+    # cross_validate
+    def bootfold_p_estimate(self, data_loader, n_samples, k, epochs, 
+                            index_to_iter, ls_feat_vals, retain_graph=None,
+                            valid_interv=4, plot=False, save_path=None,
+                            transform_outputs=False, transform_callable=None, p_output_path = None,
+			    **kwargs):
+        """
+	Performs bootfold - estimation to identify whether training model provides statistically significant
+	difference in predicting various values for a given feature when predicting outcome. 
+
+	Parameters:
+	    network : BaseNetwork
+                Network descendant of BaseNetwork.
+            data_loader : torch.utils.data.DataLoader
+                The DataLoader object containing the totality of the data to use
+                for k-fold cross validation.
+            n_samples : int
+                number of times to randomly sample w/ replacement the data_loader and perform boot_cv
+            k : int
+                The number of folds to split the training into.
+            epochs : int
+                The number of epochs to train the network per fold.
+	    index_to_iter : string
+		Index of feature within data_loader who's values will be iterated to assess difference
+	    ls_feat_vals : list
+		List of values for feature provided in feat_to_iter
+            valid_interv : int
+                Specifies after how many epochs validation should occur.
+            plot : boolean
+                Whether or not to plot all results in prompt and charts.
+            save_path : str
+                Where to save all figures and results.
+            transform_outputs : boolean
+                Not used in the multi-class case.
+                If true, transform outputs using metrics.transform_outputs.
+                If no transform_callable is provided then the defaults in
+                metrics.transform_outputs will be used: class converstion for
+                one-hot encoded, and identity for one-dimensional outputs.
+                Multiple class multiple outputs are not yet supported.
+            transform_callable: callable
+                Not used in the multi-class case.
+                Used to transform values if transform_outputs is true,
+                otherwise defaults in metrics.transform_outputs will be used.
+                An example could be np.round
+	    p_output_path = str
+		Output file to save p_value to
+            kwargs: dict of keyworded parameters
+                Values passed to transform callable (function parameters)
+
+	Returns:
+	    p_value : float
+        """
+        return self.metrics.bootfold_p_estimate(
+            network=self,
+            data_loader=data_loader,
+            n_samples=n_samples,
+            k=k,
+            epochs=epochs,
+            index_to_iter=index_to_iter,
+            ls_feat_vals=ls_feat_vals,
+            retain_graph=retain_graph,
+            valid_interv=valid_interv,
+            plot=plot,
+            save_path=save_path,
+            transform_outputs=transform_outputs,
+            transform_callable=transform_callable,
+            p_output_path=p_output_path,
+            **kwargs)
+
     def cross_validate(self, data_loader, k, epochs,
                        average_results=True, retain_graph=None,
                        valid_interv=4, plot=False, save_path=None,
-                       transform_outputs=False, transform_callable=None,
-                       **kwargs):
+                       transform_callable=None, **kwargs):
         """
         Perform k-fold cross validation given a Network and DataLoader object.
 
@@ -763,18 +829,8 @@ class BaseNetwork(nn.Module):
                 Whether or not to plot all results in prompt and charts.
             save_path : str
                 Where to save all figures and results.
-            transform_outputs : boolean
-                Not used in the multi-class case.
-                If true, transform outputs using metrics.transform_outputs.
-                If no transform_callable is provided then the defaults in
-                metrics.transform_outputs will be used: class converstion for
-                one-hot encoded, and identity for one-dimensional outputs.
-                Multiple class multiple outputs are not yet supported.
             transform_callable: callable
-                Not used in the multi-class case.
-                Used to transform values if transform_outputs is true,
-                otherwise defaults in metrics.transform_outputs will be used.
-                An example could be np.round
+                A torch function. e.g. torch.round()
             kwargs: dict of keyworded parameters
                 Values passed to transform callable (function parameters)
 
@@ -796,7 +852,6 @@ class BaseNetwork(nn.Module):
             valid_interv=valid_interv,
             plot=plot,
             save_path=save_path,
-            transform_outputs=transform_outputs,
             transform_callable=transform_callable,
             **kwargs)
 
@@ -843,31 +898,20 @@ class BaseNetwork(nn.Module):
         return self.network(output)
 
     @torch.no_grad()
-    def forward_pass(self, data_loader, transform_outputs=False,
+    def forward_pass(self, data_loader,
                      transform_callable=None, **kwargs):
         """
         Allow the user to pass data through the network.
-
         Parameters:
             data_loader : DataLoader
                 DataLoader object to make the pass with.
-            transform_outputs : boolean
-                If true, transform outputs using metrics.transform_outputs.
-                If no transform_callable is provided then the defaults in
-                metrics.transform_outputs will be used: class converstion for
-                one-hot encoded, and identity for one-dimensional outputs.
-                Multiple class multiple outputs are not yet supported.
             transform_callable: callable
-                Used to transform values if transform_outputs is true,
-                otherwise defaults in metrics.transform_outputs will be used.
-                An example could be np.round
+                A torch function. e.g. torch.round()
             kwargs: dict of keyworded parameters
                 Values passed to transform callable (function parameters)
-
         Returns:
             outputs : numpy.ndarray
                 Numpy matrix with the output. Same shape as network out_dim.
-
         """
         self.eval()
         # prediction_shape used to aggregate network outputs
@@ -877,28 +921,23 @@ class BaseNetwork(nn.Module):
         pred_collector = torch.tensor([], dtype=dtype, device=self.device)
         for data, _ in data_loader:
             # Get raw network output
-            raw_outputs = self(data)
-            if self._num_classes:
-                if self._final_transform:
-                    predictions = self._final_transform(raw_outputs)
-                else:
-                    predictions = raw_outputs
+            predictions = self(data)
 
-                if transform_outputs:
-                    predictions = torch.tensor(
-                        self.metrics.transform_outputs(
-                            in_matrix=predictions,
-                            transform_callable=transform_callable, **kwargs
-                        ),
-                        device=self.device)
-            else:
-                predictions = raw_outputs
+            if self._final_transform:
+                predictions = self._final_transform(predictions)
+
+            if transform_callable:
+                predictions = transform_callable(predictions)
 
             # Aggregate predictions
             pred_collector = torch.cat([pred_collector, predictions])
-        # TODO: check this
-        return pred_collector.cpu().numpy()
 
+        pred_collector = pred_collector.cpu().detach().numpy()
+        return pred_collector
+
+
+    # TODO: could integrate map location in the future if needed
+    # https://discuss.pytorch.org/t/on-a-cpu-device-how-to-load-checkpoint-saved-on-gpu-device/349
     def save_model(self, save_path=None):
         """
         Save the model (and it's input networks).
