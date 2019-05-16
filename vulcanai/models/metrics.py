@@ -7,7 +7,7 @@ import math
 import numpy as np
 from sklearn import metrics as skl_metrics
 
-from .utils import round_list, get_probs, filter_matched_subj
+from .utils import round_list, _get_probs, filter_matched_subj
 from ..plotters.visualization import display_confusion_matrix
 from collections import defaultdict
 
@@ -802,7 +802,7 @@ class Metrics(object):
         # calculate p value based on change of not improving 
         p_val = float(score_below_zero)/float(tot_num_imprv)
         logger.info("Improvement scores: {}".format(', '.join(map(str, ls_imprv_scores))))
-        logger.info("P value for bootfold p estimate: %d.", p_val)
+        logger.info("P value for bootfold p estimate: %f.", p_val)
 
     def _boot_cv(network, data_loader, k, epochs, retain_graph, valid_interv, 
                 save_path, plot, index_to_iter, ls_feat_vals):
@@ -879,11 +879,11 @@ class Metrics(object):
                     train_loader, val_loader, epochs,
                     retain_graph=retain_graph,
                     valid_interv=valid_interv, plot=plot, save_path=save_path)
-                dct_scores = get_probs(network, val_loader, index_to_iter, ls_feat_vals)
+                dct_scores = _get_probs(network, val_loader, index_to_iter, ls_feat_vals)
                 dct_filtered = filter_matched_subj(dct_scores, val_loader, index_to_iter)
-                for val in dct_filtered:
-                    dct_filteredSubj[val].append(dct_filtered[val])
-                    ls_filteredProbs.append(dct_filtered[val])
+                for ind in dct_filtered:
+                    dct_filteredSubj[ind].append(dct_filtered[ind])
+                    ls_filteredProbs.append(dct_filtered[ind])
             V_p = np.array(ls_filteredProbs).mean()
             ls_pos_rate = [subj for subj in data_loader.dataset if subj[1].item() == 1]
             V_t = float(len(ls_pos_rate)/len(data_loader.dataset)) * 100
