@@ -90,7 +90,7 @@ class TabularDataset(Dataset):
         Returns:
             The total number of samples: int
         """
-        return self.df.shape[0]
+        return len(self.df.index)
 
     def __getitem__(self, idx):
         """
