@@ -517,7 +517,7 @@ class TabularDataset(Dataset):
     # future improvements could come from
     # https://github.com/pytorch/text/blob/master/torchtext/data/dataset.py
     # noinspection PyUnusedLocal
-    def split(self, split_ratio=0.7, stratified=False, strata_column=None):
+    def split(self, split_ratio=0.7, stratified=False, stratum_column=None):
         """
         Create train-test(-validation) splits from the instance's examples.
         Function signature borrowed from torchtext in an effort to maintain
@@ -539,7 +539,7 @@ class TabularDataset(Dataset):
             stratified: Boolean
                 whether the sampling should be stratified.
                     Default is False.
-            strata_column: String
+            stratum_column: String
                 name of the examples column stratified over.
                 Default is 'label_column'
 
@@ -558,13 +558,13 @@ class TabularDataset(Dataset):
         validation_indices = []
 
         if stratified:
-            if not strata_column:
-                strata_column = self.label_column
+            if not stratum_column:
+                stratum_column = self.label_column
             else:
-                if strata_column not in self.df.columns:
+                if stratum_column not in self.df.columns:
                     raise ValueError("Invalid strata column name")
 
-            grps = self.df.groupby(strata_column)
+            grps = self.df.groupby(stratum_column)
             train_index, test_index, val_index = [], [], []
             for grp in grps:
                 group_train, group_test, group_val = \
