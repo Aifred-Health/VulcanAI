@@ -80,15 +80,15 @@ class TestTabularDataset:
         my_test_dataset.reverse_create_one_hot_encoding(column_name=None)
         assert "LowBirthWeight@Low" not in my_test_dataset.list_all_features()
 
-    def test_identify_sufficient_non_null(self, my_test_dataset):
-        num_threshold = 0.95
-        res = my_test_dataset.identify_sufficient_non_null(num_threshold)
-        print(res, 'NON NULL')
-        assert {'headcirumference', 'fedyrs', 'mnocig'} == set(res)
+    def test_identify_null(self, my_test_dataset):
+        num_threshold = 0.2
+        res = my_test_dataset.identify_null(num_threshold)
+        assert {'fedyrs'} == set(res)
 
     def test_identify_unique(self, my_test_dataset):
         res = my_test_dataset.identify_unique(5)
-        assert set(res) == {'id','length','Birthweight','Gestation','motherage','mnocig','mheight','mppwt','fage'}
+        assert set(res) == {'headcirumference', 'smoker', 'fedyrs', 'LowBirthWeight'}
+
 
     def test_identify_unbalanced_columns(self, my_test_dataset):
         res = my_test_dataset.identify_unbalanced_columns(0.5)

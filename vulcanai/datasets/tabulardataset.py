@@ -345,7 +345,7 @@ class TabularDataset(Dataset):
         logger.info("Successfully converted %d \
                     columns back from dummy format.", len(dummy_tuples))
 
-    def identify_sufficient_non_null(self, threshold):
+    def identify_null(self, threshold):
         """
         Return columns where there is at least threshold percent of
         null values.
@@ -364,7 +364,7 @@ class TabularDataset(Dataset):
             raise ValueError(
                 "Threshold needs to be a proportion between 0 and 1 \
                 (exclusive)")
-        num_threshold = ((1 - threshold) * len(self))
+        num_threshold = ( (1- threshold) * len(self))
         # thresh is "Require that many non-NA values."
         tmp = self.df.dropna(thresh=num_threshold, axis=1)
         cols = list(set(self.df.columns).difference(set(tmp.columns)))
@@ -373,7 +373,8 @@ class TabularDataset(Dataset):
     def identify_unique(self, threshold):
         """
         Returns columns that do not have have at least threshold number of
-        values
+        values. If a column has 9 values and the threshold is 9, that column
+        will not be returned.
 
         Parameters:
             threshold: The minimum number of values needed.
@@ -385,9 +386,17 @@ class TabularDataset(Dataset):
                 The list of columns having threshold number of values
 
         """
+        obj_types = {col: set(map(type, self.df[col])) for col in
+                     self.df.columns}
+
         column_list = []
         for col in self.df.columns:
-            if len(self.df[col].unique()) <= threshold:
+            if len(obj_types[col]) > 1:
+                logger.warning("Column: {} has mixed datatypes, this may"
+                               "interfere with an accurate identification"
+                               "of mixed values: i.e. you may have 1 and '1'"
+                               .format(col))
+            if len(self.df[col].unique()) < threshold:
                 column_list.append(col)
         return column_list
 
