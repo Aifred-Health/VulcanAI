@@ -107,6 +107,10 @@ class ConvNet(BaseNetwork):
             A callable torch.optim.lr_scheduler
         early_stopping : str or None
             So far just 'best_validation_error' is implemented.
+        early_stopping_patience: integer
+            Number of validation iterations of decreasing loss
+            (note -not necessarily every epoch!
+            before early stopping is applied.
         criter_spec : dict
             criterion specification with name and all its parameters.
 
@@ -121,13 +125,15 @@ class ConvNet(BaseNetwork):
                  activation=nn.ReLU(), pred_activation=None,
                  optim_spec={'name': 'Adam', 'lr': 0.001},
                  lr_scheduler=None, early_stopping=None,
+                 early_stopping_patience=2,
                  criter_spec=nn.CrossEntropyLoss(),
                  device="cuda:0"):
         """Define the ConvNet object."""
         super(ConvNet, self).__init__(
             name, ConvNetConfig(config), in_dim, save_path, input_networks,
             num_classes, activation, pred_activation, optim_spec,
-            lr_scheduler, early_stopping, criter_spec, device)
+            lr_scheduler, early_stopping, early_stopping_patience,
+            criter_spec, device)
 
     def _create_network(self, **kwargs):
         """

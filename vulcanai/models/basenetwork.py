@@ -64,6 +64,10 @@ class BaseNetwork(nn.Module):
             A callable torch.optim.lr_scheduler
         early_stopping : str or None
             So far just 'best_validation_error' is implemented.
+        early_stopping_patience: integer
+            Number of validation iterations of decreasing loss
+            (note -not necessarily every epoch!
+            before early stopping is applied.
         criter_spec : dict
             criterion specification with name and all its parameters.
         device : str or torch.device
@@ -80,6 +84,7 @@ class BaseNetwork(nn.Module):
                  activation=nn.ReLU(), pred_activation=None,
                  optim_spec={'name': 'Adam', 'lr': 0.001},
                  lr_scheduler=None, early_stopping=None,
+                 early_stopping_patience=None,
                  criter_spec=nn.CrossEntropyLoss(),
                  device="cuda:0"):
         """Define, initialize, and build the BaseNetwork."""
@@ -108,6 +113,7 @@ class BaseNetwork(nn.Module):
 
         self._lr_scheduler = lr_scheduler
         self._early_stopping = early_stopping
+        self._early_stopping_patience = early_stopping_patience
 
         if self._num_classes:
             self.metrics = Metrics()
@@ -359,6 +365,22 @@ class BaseNetwork(nn.Module):
         self._early_stopping = value
 
     @property
+    def early_stopping_patience(self):
+        """
+        Return the early stopping patience.
+
+        Returns:
+            early_stopping_patience : int
+                The early stopping patience
+
+        """
+        return self._early_stopping_patience
+
+    @early_stopping_patience.setter
+    def early_stopping_patience(self, value):
+        self._early_stopping_patience = value
+
+    @property
     def criter_spec(self):
         """
         Return the criterion specification.
@@ -494,6 +516,61 @@ class BaseNetwork(nn.Module):
                     comparison_device,
                     incompatible_collector))
 
+    # modified from
+    # https://github.com/Bjarten/early-stopping-pytorch/blob/master
+    # /pytorchtools.py
+    class EarlyStopping:
+        """Early stops the training if validation loss doesn't improve after
+        a given patience."""
+
+        def __init__(self, patience=2, verbose=False):
+            """
+            Args:
+                patience (int): How long to wait after last time validation
+                loss improved.
+                                Default: 7
+                verbose (bool): If True, prints a message for each
+                validation loss improvement.
+                                Default: False
+            """
+            self.patience = patience
+            self.verbose = verbose
+            self.counter = 0
+            self.best_score = None
+            self.early_stop = False
+            self.val_loss_min = np.Inf
+            self.best_model = None
+            self.save_path = ""
+
+        def __call__(self, val_loss, model):
+
+            # TODO: check this - loss is always negative right?
+            score = -val_loss
+
+            if self.best_score is None:
+                self.best_score = score
+                self.save_checkpoint(val_loss, model)
+            elif score < self.best_score:
+                self.counter += 1
+                logger.info('EarlyStopping counter: {} out of {}'.format(
+                    self.counter, self.patience
+                ))
+                if self.counter >= self.patience:
+                    self.early_stop = True
+            else:
+                self.best_score = score
+                self.save_checkpoint(val_loss, model)
+                self.counter = 0
+
+        def save_checkpoint(self, val_loss, model):
+            '''Saves model when validation loss decrease.'''
+            if self.verbose:
+                logger.info(
+                    f'Validation loss decreased ({self.val_loss_min:.6f} --> '
+                    f'{val_loss:.6f}).  Saving model ...')
+            self.save_path = model.save_model()
+            self.val_loss_min = val_loss
+
     def fit(self, train_loader, val_loader, epochs,
             retain_graph=None, valid_interv=4, plot=False, save_path=None):
         """
@@ -527,6 +604,8 @@ class BaseNetwork(nn.Module):
         if self.optim is None:
             self._init_trainer()
 
+        early_stopping = self.EarlyStopping(patience=self.early_stopping_patience, verbose=True)
+
         try:
             if plot:
                 fig_number = plt.gcf().number + 1 if plt.fignum_exists(1) else 1
@@ -538,7 +617,9 @@ class BaseNetwork(nn.Module):
                 else:
                     save_path = save_path + '/' + self.name + '_'
                 save_path = get_save_path(save_path, vis_type='train')
-            for epoch in trange(epochs, desc='Epoch: '):
+            iterator = trange(epochs, desc='Epoch: ')
+
+            for epoch in iterator:
 
                 train_loss, train_acc = self._train_epoch(train_loader,
                                                           retain_graph)
@@ -549,6 +630,17 @@ class BaseNetwork(nn.Module):
 
                 if self.lr_scheduler:
                     self.lr_scheduler.step(epoch=epoch)
+
+                if self.early_stopping:
+                    early_stopping(valid_loss, self)
+                    if early_stopping.early_stop:
+                        logger.info("Early stopping")
+                        # this should restore everything to the earlier version
+                        # need to confirm
+                        self.__dict__.update(self.load_model(
+                            early_stopping.save_path).__dict__)
+                        iterator.close()
+                        break
 
                 tqdm.write(
                     "\n Epoch {}:\n"

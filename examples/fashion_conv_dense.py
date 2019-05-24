@@ -73,15 +73,18 @@ dense_model = DenseNet(
     name='dense_model',
     input_networks=conv_2D,
     config=dense_config,
-    num_classes=10
+    num_classes=10,
+    early_stopping="best_validation_error",
+    early_stopping_patience=2
 )
 
 dense_model.fit(
     train_loader,
     val_loader,
-    epochs=1,
+    epochs=40,
     plot=True,
-    save_path="."
+    save_path=".",
+    valid_interv=1
 )
 dense_model.run_test(val_loader, plot=True, save_path=".")
 dense_model.save_model()
