@@ -219,7 +219,12 @@ class BaseNetwork(nn.Module):
                 The output shape of the network.
 
         """
-        if self.network:
+        if isinstance(self.network, torch.nn.modules.rnn.LSTM):
+            out, hid = self.network(torch.ones([self._config['num_layers'], 
+                                    self._config['batch_size'], 
+                                    self._config['hid_units'][0]]))
+            return tuple(out.shape[1:])
+        elif self.network:
             out = self.network(torch.ones([1, *self.in_dim]))
             return tuple(out.shape[1:])
         else:
@@ -520,8 +525,6 @@ class BaseNetwork(nn.Module):
 
         """
         # Check all networks are on same device.
-        self._assert_same_devices()
-
         # In case there is already one, don't overwrite it.
         # Important for not removing the ref from a lr scheduler
         if self.optim is None:
@@ -602,6 +605,9 @@ class BaseNetwork(nn.Module):
             targets = set_tensor_device(targets, device=self.device)
 
             # Forward + Backward + Optimize
+            if (isinstance(self.network, torch.nn.modules.rnn.LSTM)) and \
+               (data.shape[0] != self._config['batch_size']):
+                continue
             predictions = self(data)
             train_loss = self.criterion(predictions, targets)
             train_loss_accumulator += train_loss.item()
@@ -663,6 +669,10 @@ class BaseNetwork(nn.Module):
 
             data = set_tensor_device(data, device=self.device)
             targets = set_tensor_device(targets, device=self.device)
+            
+            if (isinstance(self.network, torch.nn.modules.rnn.LSTM)) and \
+               (data.shape[0] != self._config['batch_size']):
+                continue
 
             predictions = self(data)
             validation_loss = self.criterion(predictions, targets)
@@ -892,10 +902,17 @@ class BaseNetwork(nn.Module):
         # Return actionable error if input shapes don't match up.
         if output.shape[1:] != self.in_dim:
             raise ValueError(
-                "Input data incorrect dimension shape for network: {}. "
-                "Expecting shape {} but recieved shape {}".format(
-                    self.name, self.in_dim, output.shape[1:]))
-        return self.network(output)
+                "Input data incorrect dimension shape for network: {}. ")
+        if isinstance(self.network, torch.nn.modules.rnn.LSTM):
+            h = self.hidden[0]
+            c = self.hidden[0]
+            self.hidden = (h.to(self.device), c.to(self.device))
+            output = output.view(1, output.shape[0], -1)
+            rnn_output, self.hidden = self.network(output, self.hidden)
+            self.rnn_out_layer = self.rnn_out_layer.to(self.device)
+            return self.rnn_out_layer(rnn_output[-1].view(self._config['batch_size'], -1))
+        else:
+            return self.network(output)
 
     @torch.no_grad()
     def forward_pass(self, data_loader,
