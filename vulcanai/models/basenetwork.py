@@ -68,6 +68,8 @@ class BaseNetwork(nn.Module):
             Number of validation iterations of decreasing loss
             (note -not necessarily every epoch!
             before early stopping is applied.
+        early_stopping_metric: string
+            Either "loss" or "accuracy" are implemented.
         criter_spec : dict
             criterion specification with name and all its parameters.
         device : str or torch.device
@@ -85,6 +87,7 @@ class BaseNetwork(nn.Module):
                  optim_spec={'name': 'Adam', 'lr': 0.001},
                  lr_scheduler=None, early_stopping=None,
                  early_stopping_patience=None,
+                 early_stopping_metric = "accuracy",
                  criter_spec=nn.CrossEntropyLoss(),
                  device="cuda:0"):
         """Define, initialize, and build the BaseNetwork."""
@@ -114,6 +117,7 @@ class BaseNetwork(nn.Module):
         self._lr_scheduler = lr_scheduler
         self._early_stopping = early_stopping
         self._early_stopping_patience = early_stopping_patience
+        self._early_stopping_metric = early_stopping_metric
 
         if self._num_classes:
             self.metrics = Metrics()
@@ -380,6 +384,24 @@ class BaseNetwork(nn.Module):
     def early_stopping_patience(self, value):
         self._early_stopping_patience = value
 
+
+
+    @property
+    def early_stopping_metric(self):
+        """
+        Return the early stopping netric.
+
+        Returns:
+            early_stopping_metric : string
+                The early stopping metric
+
+        """
+        return self._early_stopping_metric
+
+    @early_stopping_metric.setter
+    def early_stopping_metric(self, value):
+        self._early_stopping_metric = value
+
     @property
     def criter_spec(self):
         """
@@ -542,14 +564,11 @@ class BaseNetwork(nn.Module):
             self.best_model = None
             self.save_path = ""
 
-        def __call__(self, val_loss, model):
-
-            # TODO: check this - loss is always negative right?
-            score = -val_loss
+        def __call__(self, score, model):
 
             if self.best_score is None:
                 self.best_score = score
-                self.save_checkpoint(val_loss, model)
+                self.save_checkpoint(score, model)
             elif score < self.best_score:
                 self.counter += 1
                 logger.info('EarlyStopping counter: {} out of {}'.format(
@@ -557,9 +576,10 @@ class BaseNetwork(nn.Module):
                 ))
                 if self.counter >= self.patience:
                     self.early_stop = True
+
             else:
                 self.best_score = score
-                self.save_checkpoint(val_loss, model)
+                self.save_checkpoint(score, model)
                 self.counter = 0
 
         def save_checkpoint(self, val_loss, model):
@@ -632,13 +652,19 @@ class BaseNetwork(nn.Module):
                     self.lr_scheduler.step(epoch=epoch)
 
                 if self.early_stopping:
-                    early_stopping(valid_loss, self)
+                    if self.early_stopping_metric == "loss":
+                        early_stopping(-1* valid_loss, self)
+                    elif self.early_stopping_metric == "accuracy":
+                        early_stopping(valid_acc, self)
+                    else:
+                        raise ValueError("Not a valid stopping metric")
+
                     if early_stopping.early_stop:
                         logger.info("Early stopping")
-                        # this should restore everything to the earlier version
-                        # need to confirm
+                        # restores everything to the earlier saved version
                         self.__dict__.update(self.load_model(
                             early_stopping.save_path).__dict__)
+                        # for tqdm
                         iterator.close()
                         break
 
