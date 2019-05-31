@@ -89,7 +89,6 @@ class TestTabularDataset:
         res = my_test_dataset.identify_unique(5)
         assert set(res) == {'headcirumference', 'smoker', 'fedyrs', 'LowBirthWeight'}
 
-
     def test_identify_unbalanced_columns(self, my_test_dataset):
         res = my_test_dataset.identify_unbalanced_columns(0.5)
         assert set(res) == {'headcirumference', 'smoker','mnocig', 'LowBirthWeight'}
@@ -109,3 +108,30 @@ class TestTabularDataset:
         res = my_test_dataset.split([0.1, 0.9])
         assert len(res) == 2
         assert isinstance(res[1], TabularDataset)
+
+    def test_split_length_correct_stratified(self, my_test_dataset):
+        res = my_test_dataset.split([0.1, 0.2, 0.7], stratified=True, stratum_column=
+                                             "motherage" )
+        assert len(res) == 3
+        assert isinstance(res[1], TabularDataset)
+        res = my_test_dataset.split([0.1, 0.9], stratified=True, stratum_column=
+                                             "motherage")
+        assert len(res) == 2
+        assert isinstance(res[1], TabularDataset)
+
+
+
+
+    def test_stratified_values(self, my_test_dataset):
+        res = my_test_dataset.split([0.1, 0.2, 0.7], stratified=True, stratum_column=
+                                             "motherage" )
+
+
+        assert list(res[0].df["motherage"].values) == [20]
+        assert list(res[1].df["motherage"].values) == [19, 20, 21, 24, 27, 31]
+        assert list(res[2].df["motherage"].values) == [18, 19, 19, 20, 20, 20,
+                                                 20, 20, 21, 21, 22, 22, 23,
+                                                 23, 24, 24, 24, 26, 26, 27,
+                                                 27, 27, 28, 28, 29, 29, 30,
+                                                 30, 31, 31, 32, 35, 37, 37,
+                                                 41]
