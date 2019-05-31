@@ -575,14 +575,14 @@ class TabularDataset(Dataset):
 
             grps = self.df.groupby(stratum_column)
             train_index, test_index, val_index = [], [], []
-            for grp in grps:
+            for key, grp in grps:
                 group_train, group_test, group_val = \
                     utils.rationed_split(grp, train_ratio, test_ratio,
                                          validation_ratio)
 
-                train_indices += group_train
-                test_indices += group_test
-                validation_indices += group_val
+                train_indices += list(group_train)
+                test_indices += list(group_test)
+                validation_indices += list(group_val)
 
         else:
 
