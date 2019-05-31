@@ -554,8 +554,8 @@ class TabularDataset(Dataset):
 
         Returns:
             datasets: Tuple of TabularDatasets
-                Datasets for train, validation, and
-                test splits in that order, if the splits are provided.
+                Datasets for train, test, validation
+                 splits in that order, if the splits are provided.
 
         """
 
@@ -598,6 +598,6 @@ class TabularDataset(Dataset):
         if validation_ratio:
             validation = TabularDataset(val=self.df.loc[validation_indices],
                                         label_column=self.label_column)
-            return train, validation, test
+            return train, test, validation
         else:
             return train, test
