@@ -69,6 +69,25 @@ def check_split_ratio(split_ratio):
 
 
 def rationed_split(df, train_ratio, test_ratio, validation_ratio):
+    """
+    Function to split a dataset given ratios
+
+    Parameters:
+        df: Dataframe
+            The dataframe you want to split
+        train_ratio: int
+            proportion of the dataset that will go to the train split.
+            between 0 and 1
+        test_ratio: int
+            proportion of the dataset that will go to the test split.
+            between 0 and 1
+        validation_ratio: int
+            proportion of the dataset that will go to the val split.
+            between 0 and 1
+
+    Returns:
+        indices: tuple of list of indices.
+    """
     N = len(df.index)
     perm = np.random.permutation(df.index)
     train_len = int(round(train_ratio * N))
