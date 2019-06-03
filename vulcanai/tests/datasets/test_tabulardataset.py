@@ -3,10 +3,10 @@
 import pytest
 from vulcanai.datasets import TabularDataset
 import os
-import numpy as np
 import pandas as pd
-import copy
 
+
+# noinspection PyMissingOrEmptyDocstring
 class TestTabularDataset:
 
     @pytest.fixture
@@ -16,7 +16,8 @@ class TestTabularDataset:
     @pytest.fixture
     def my_test_dataset(self):
         """Create a dataset by importing from the test csv"""
-        fpath = str(os.path.dirname(__file__)) + "/test_data/birthweight_reduced.csv"
+        fpath = str(os.path.dirname(__file__)) + \
+            "/test_data/birthweight_reduced.csv"
         return TabularDataset(
             data=fpath,
             label_column="id",
@@ -26,18 +27,24 @@ class TestTabularDataset:
     @pytest.fixture
     def my_test_dataset_two(self):
         """Create a second dataset by importing from the test csv"""
-        fpath = str(os.path.dirname(__file__)) + "/test_data/birthweight_reduced2.csv"
-        return (fpath)
+        fpath = str(os.path.dirname(__file__)) + \
+            "/test_data/birthweight_reduced2.csv"
+        return fpath
 
     @pytest.fixture
     def my_merged_test_dataset(self):
-        fpath = str(os.path.dirname(__file__)) + "/test_data/birthweight_reduced_merged.csv"
+        fpath = str(os.path.dirname(__file__)) + \
+            "/test_data/birthweight_reduced_merged.csv"
         return pd.read_csv(fpath)
 
-    def test_merge_dataframe(self, my_test_dataset, my_test_dataset_two, my_merged_test_dataset):
+    def test_merge_dataframe(self, my_test_dataset, my_test_dataset_two,
+                             my_merged_test_dataset):
         dct_df = {'df_test_two': my_test_dataset_two}
-        my_test_dataset.merge_dataframe(merge_on_columns=['id'], na_values='Nan', **dct_df)
-        pd.testing.assert_frame_equal(my_test_dataset.df, my_merged_test_dataset, check_dtype=False)
+        my_test_dataset.merge_dataframe(merge_on_columns=['id'],
+                                        na_values='Nan', **dct_df)
+        pd.testing.assert_frame_equal(my_test_dataset.df,
+                                      my_merged_test_dataset,
+                                      check_dtype=False)
 
     def test_single_dataset_length(self, my_test_dataset):
         assert len(my_test_dataset) == 42
@@ -50,12 +57,12 @@ class TestTabularDataset:
         os.remove(fpath)
 
     def test_list_columns(self, my_test_dataset):
-        column_list = ["id", "headcirumference", "length", "Birthweight", "LowBirthWeight", "Gestation", "smoker", "motherage",
+        column_list = ["id", "headcirumference", "length", "Birthweight",
+                       "LowBirthWeight", "Gestation", "smoker", "motherage",
                        "mnocig", "mheight", "mppwt", "fage", "fedyrs"]
         assert set(my_test_dataset.list_all_features()) == set(column_list)
 
     def test_replace_value_in_column(self, my_test_dataset):
-
         before = my_test_dataset.list_all_column_values("motherage")
         my_test_dataset.replace_value_in_column("motherage", 24, 25)
         after = my_test_dataset.list_all_column_values("motherage")
@@ -68,8 +75,10 @@ class TestTabularDataset:
         assert (set(before) - set(after)) == {"motherage"}
 
     def test_create_label_encoding(self, my_test_dataset):
-        my_test_dataset.create_label_encoding("LowBirthWeight", {"Low": 0, "Normal": 1})
-        assert set(my_test_dataset.list_all_column_values("LowBirthWeight")) == {0,1}
+        my_test_dataset.create_label_encoding("LowBirthWeight",
+                                              {"Low": 0, "Normal": 1})
+        assert set(my_test_dataset.list_all_column_values("LowBirthWeight")) \
+            == {0, 1}
 
     def test_create_one_hot_encoding(self, my_test_dataset):
         my_test_dataset.create_one_hot_encoding("LowBirthWeight")
@@ -87,11 +96,13 @@ class TestTabularDataset:
 
     def test_identify_unique(self, my_test_dataset):
         res = my_test_dataset.identify_unique(5)
-        assert set(res) == {'headcirumference', 'smoker', 'fedyrs', 'LowBirthWeight'}
+        assert set(res) == {'headcirumference', 'smoker', 'fedyrs',
+                            'LowBirthWeight'}
 
     def test_identify_unbalanced_columns(self, my_test_dataset):
         res = my_test_dataset.identify_unbalanced_columns(0.5)
-        assert set(res) == {'headcirumference', 'smoker','mnocig', 'LowBirthWeight'}
+        assert set(res) == {'headcirumference', 'smoker', 'mnocig',
+                            'LowBirthWeight'}
 
     def test_identify_highly_correlated(self, my_test_dataset):
         res = my_test_dataset.identify_highly_correlated(0.2)
@@ -110,28 +121,24 @@ class TestTabularDataset:
         assert isinstance(res[1], TabularDataset)
 
     def test_split_length_correct_stratified(self, my_test_dataset):
-        res = my_test_dataset.split([0.1, 0.2, 0.7], stratified=True, stratum_column=
-                                             "motherage" )
+        res = my_test_dataset.split([0.1, 0.2, 0.7], stratified=True,
+                                    stratum_column="motherage")
         assert len(res) == 3
         assert isinstance(res[1], TabularDataset)
-        res = my_test_dataset.split([0.1, 0.9], stratified=True, stratum_column=
-                                             "motherage")
+        res = my_test_dataset.split([0.1, 0.9], stratified=True,
+                                    stratum_column="motherage")
         assert len(res) == 2
         assert isinstance(res[1], TabularDataset)
 
-
-
-
     def test_stratified_values(self, my_test_dataset):
-        res = my_test_dataset.split([0.1, 0.2, 0.7], stratified=True, stratum_column=
-                                             "motherage" )
-
+        res = my_test_dataset.split([0.1, 0.2, 0.7], stratified=True,
+                                    stratum_column="motherage")
 
         assert list(res[0].df["motherage"].values) == [20]
         assert list(res[1].df["motherage"].values) == [19, 20, 21, 24, 27, 31]
         assert list(res[2].df["motherage"].values) == [18, 19, 19, 20, 20, 20,
-                                                 20, 20, 21, 21, 22, 22, 23,
-                                                 23, 24, 24, 24, 26, 26, 27,
-                                                 27, 27, 28, 28, 29, 29, 30,
-                                                 30, 31, 31, 32, 35, 37, 37,
-                                                 41]
+                                                       20, 20, 21, 21, 22, 22,
+                                                       23, 23, 24, 24, 24, 26,
+                                                       26, 27, 27, 27, 28, 28,
+                                                       29, 29, 30, 30, 31, 31,
+                                                       32, 35, 37, 37, 41]
