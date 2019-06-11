@@ -222,3 +222,27 @@ class TestDenseNet:
             data_loader=test_dataloader,
             transform_outputs=False)
         assert np.any(~np.isnan(raw_output))
+
+    def test_early_stopping(self, dnn_class_early_stopping,
+                            dnn_class):
+        """ Test that their final params are different: aka
+        that the early stopping did something"""
+
+        ds = DataLoader(TensorDataset(
+            torch.rand(size=[3, *dnn_class_early_stopping.in_dim]),
+            torch.tensor([0, 1, 2]).long()))
+
+        dnn_class.fit(
+            train_loader=ds,
+            val_loader=ds,
+            epochs=5)
+
+        dnn_class_early_stopping.fit(
+            train_loader=ds,
+            val_loader=ds,
+            epochs=5)
+
+        stopping_params = list(dnn_class_early_stopping.parameters())[-1].data
+        non_stopping_params = list(dnn_class.parameters())[-1].data
+
+        assert not torch.eq(stopping_params, non_stopping_params).all()
