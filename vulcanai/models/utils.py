@@ -4,13 +4,81 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
+from torch.utils.data import DataLoader, TensorDataset
 
 import numpy as np
 import math
 from sklearn.metrics import confusion_matrix
 from sklearn.preprocessing import LabelBinarizer
 from collections import OrderedDict as odict
+from collections import defaultdict
 
+def _get_probs(network, loader, index_to_iter, ls_feat_vals):
+    """
+    Returns probability for each object within loader based on output from training neural network
+
+    Parameters:
+        network : vulcan.model
+	    training vulcan network
+	loader : torch.dataloader
+	    dataloader containing validation set
+	index_to_iter : string
+	    feature to iterate through adjusting values
+	ls_feat_vals : list
+	    values to iterate through for feature in index_to_iter
+    Returns:
+	dct_scores : dictionary
+	    dictionary of scores
+    """
+    dct_scores = defaultdict()
+    for index in range(len(loader)):
+        dct_scores[index] = {}
+    for index in range(len(loader)):
+        # Extract specific index from loader and create a DataLoader instance to send to forward_pass
+        input_loader = DataLoader(TensorDataset(loader.dataset[index][0].unsqueeze(0), \
+                                                loader.dataset[index][1].unsqueeze(0)))
+        
+        subj_prob = network.forward_pass(data_loader=input_loader, transform_outputs=False)
+        # Standardize probability of positive label
+        subj_prob = subj_prob[0][1] * 100
+        subj_prob = round(subj_prob, 2)
+        # Add probability to scores dictionary where keys are the index and value the probability belongs to.
+        dct_scores[index][loader.dataset[index][0][index_to_iter].item()] = subj_prob
+        # Iterate through other possible values and find probability of positive label and add to dictionary
+        # for current index.
+        for new_val in ls_feat_vals:
+            if new_val != loader.dataset[index][0][index_to_iter].item():
+                loader.dataset[index][0][index_to_iter] = new_val
+                input_loader = DataLoader(TensorDataset(loader.dataset[index][0].unsqueeze(0), \
+                                                        loader.dataset[index][1].unsqueeze(0)))
+                subj_prob = network.forward_pass(data_loader=input_loader, transform_outputs=False)
+                subj_prob = subj_prob[0][1] * 100
+                subj_prob = round(subj_prob, 2)
+                dct_scores[index][new_val] = subj_prob
+    return dct_scores
+
+def _filter_matched_subj(dct_scores, loader, index_to_iter):
+    """
+    Returns dictionary of filtered keys based on predicted value and value truly assigned in actual set.
+
+    Parameters:
+        dct_scores : dictionary
+            dictionary of probability scores produced in get_scores function
+        loader : torch.dataloader
+            dataloader containing validation set
+        index_to_iter : string
+            feature to iterate through adjusting values
+    Returns:
+        dct_filtered : dictionary
+            dictionary of filtered entities 
+    """
+    dct_filtered = {}
+    for subj in list(dct_scores):
+        highest_prob = max(dct_scores[subj].values())
+        highest_val = [val for val, prob in dct_scores[subj].items() if prob==highest_prob]
+        if loader.dataset.dataset[subj][0][index_to_iter].item() in highest_val:
+            dct_filtered[subj] = highest_prob
+    return dct_filtered
 
 def round_list(raw_list, decimals=4):
     """
@@ -245,7 +313,8 @@ def set_tensor_device(data, device=None):
 
     """
     if not isinstance(data, (list, tuple)):
-        data = data.to(device=device)
+        data = data.to(device=device, non_blocking=True)
+
     else:
         for idx, d in enumerate(data):
             data[idx] = set_tensor_device(d, device=device)

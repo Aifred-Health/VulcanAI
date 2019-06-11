@@ -7,11 +7,12 @@ import math
 import numpy as np
 from sklearn import metrics as skl_metrics
 
-from .utils import round_list
+from .utils import round_list, _get_probs, _filter_matched_subj
 from ..plotters.visualization import display_confusion_matrix
 from collections import defaultdict
 
 import copy
+import inspect
 
 import logging
 logger = logging.getLogger(__name__)
@@ -91,25 +92,17 @@ class Metrics(object):
         return results_dict
 
     @staticmethod
-    def transform_outputs(in_matrix, transform_callable=None, **kwargs):
+    def transform_outputs(in_matrix):
         """
         Reformat output matrix.
 
-        If one-hot, truth matrix to be the classes in a 1D array. Otherwise use
-        transform_callable. If this is not provided, then return unchanged.
+        If one-hot, truth matrix to be the classes in a 1D array.
 
         Note: This does not handle multiple class prediction.
 
         Parameters:
             in_matrix : numpy.ndarray or torch.Tensor
                 One-hot matrix of shape [batch, num_classes].
-            transform_callable: callable
-                Used to transform values if convert_to_class is true,
-                otherwise np.argmax will be used for one-hot encoded entries
-                (shape[1] > 1) or no tranform for shape[1] = 1
-                Must return floats.
-            kwargs: dict of keyworded parameters
-                Values passed to transform callable
 
         Returns:
             class_list : numpy.ndarray of floats
@@ -119,11 +112,9 @@ class Metrics(object):
         if isinstance(in_matrix, torch.Tensor):
             in_matrix = in_matrix.cpu().detach().numpy()
 
-        # Callable provided
-        if transform_callable:
-            return transform_callable(in_matrix, **kwargs)
+
         # For one-hot encoded entries
-        elif in_matrix.shape[1] > 1:
+        if in_matrix.shape[1] > 1:
             return np.argmax(in_matrix, axis=1).astype(np.float32)
         # For single value entries
         elif in_matrix.shape[1] == 1:
@@ -512,15 +503,17 @@ class Metrics(object):
 
     @staticmethod
     def run_test(network, data_loader, plot=False, save_path=None,
-                 pos_label=1, transform_outputs=False,
-                 transform_callable=None, **kwargs):
+                 pos_label=1, transform_callable=None, **kwargs):
         """
         Will conduct the test suite to determine network strength.
 
         Calls either _run_test_single_continuous or _run_test_multi
-        depending on the number of classes. If _run_test_multi, then
-        the transform_output callable will not be observed. _run_test_multi
-        only works with raw one-hot encoded output values.
+        depending on the number of classes. _run_test_multi
+        only works with raw one-hot encoded output values. Note that multi
+        class multi outputs are not supported: values will either be converted
+        to class values from one-hot encoding or be a single continuous value.
+        However, values can be transformed after the forward pass using
+        transform_callable.
 
         Parameters:
             network: nn.Module
@@ -534,18 +527,8 @@ class Metrics(object):
             pos_label: int
                 The label that is positive in the binary case for macro
                 calculations.
-            transform_outputs : boolean
-                Not used in the multi-class case.
-                If true, transform outputs using metrics.transform_outputs.
-                If no transform_callable is provided then the defaults in
-                metrics.transform_outputs will be used: class converstion for
-                one-hot encoded, and identity for one-dimensional outputs.
-                Multiple class multiple outputs are not yet supported.
             transform_callable: callable
-                Not used in the multi-class case.
-                Used to transform values if transform_outputs is true,
-                otherwise defaults in metrics.transform_outputs will be used.
-                An example could be np.round
+                A torch function. e.g. torch.round()
             kwargs: dict of keyworded parameters
                 Values passed to transform callable (function parameters)
 
@@ -562,7 +545,6 @@ class Metrics(object):
                 Metrics._run_test_single_continuous(
                     network,
                     data_loader,
-                    transform_outputs=transform_outputs,
                     transform_callable=transform_callable,
                     **kwargs)
         else:
@@ -573,7 +555,7 @@ class Metrics(object):
         return results_dict
 
     @staticmethod
-    def _run_test_single_continuous(network, data_loader, transform_outputs,
+    def _run_test_single_continuous(network, data_loader,
                                     transform_callable, **kwargs):
         """
         Will conduct the test suite to determine network strength.
@@ -583,16 +565,8 @@ class Metrics(object):
                 The network
             data_loader : DataLoader
                 A DataLoader object to run the test with.
-            transform_outputs : boolean
-                If true, transform outputs using metrics.transform_outputs.
-                If no transform_callable is provided then the defaults in
-                metrics.transform_outputs will be used: class converstion for
-                one-hot encoded, and identity for one-dimensional outputs.
-                Multiple class multiple outputs are not yet supported.
             transform_callable: callable
-                Used to transform values if transform_outputs is true,
-                otherwise defaults in metrics.transform_outputs will be used.
-                An example could be np.round
+                A torch function. e.g. torch.round()
 
         Returns:
             results : dict
@@ -600,14 +574,14 @@ class Metrics(object):
         """
         targets = np.array([v[1] for v in data_loader.dataset])
 
-        raw_predictions = network.forward_pass(
+        predictions = network.forward_pass(
             data_loader=data_loader,
             convert_to_class=False,
-            transform_outputs=transform_outputs,
-            transform_callable=transform_callable,
+            transform_callable=transform_callable
             **kwargs)
 
-        mse = Metrics.get_mse(targets, raw_predictions)
+
+        mse = Metrics.get_mse(targets, predictions)
 
         logger.info('{} test\'s results'.format(network.name))
 
@@ -617,12 +591,13 @@ class Metrics(object):
 
     @staticmethod
     def _run_test_multi(network, data_loader, plot=False, save_path=None,
-                        pos_label=1):
+                        pos_label=1, transform_callable=None):
         """
         Will conduct the test suite to determine network strength.
 
         No transforms will be conducted on the outputs, save where
-        necessary for calculating metric values.
+        necessary for calculating metric values. You can transform values
+        after the forward pass by using transform_callable.
 
         Parameters:
             network: nn.Module
@@ -633,6 +608,8 @@ class Metrics(object):
                 Folder to place images in.
             plot: bool
                 Determine if graphs should be plotted in real time.
+            transform_callable: callable
+                A torch function. e.g. torch.round()
 
         Returns:
             results : dict
@@ -656,7 +633,7 @@ class Metrics(object):
 
         raw_predictions = network.forward_pass(
             data_loader=data_loader,
-            transform_outputs=False
+            transform_callable=transform_callable
         )
 
         predictions = Metrics.transform_outputs(raw_predictions)
@@ -741,13 +718,186 @@ class Metrics(object):
             'macro_f1': float(f1_macro),
             'macro_auc': float(auc_macro)
         }
+    @staticmethod
+    def bootfold_p_estimate(network, data_loader, n_samples, k, epochs,
+			    index_to_iter, ls_feat_vals, 
+			    retain_graph=None, valid_interv=4, plot=False, 
+                            save_path=None, transform_outputs=False, transform_callable=None, **kwargs):
+        """
+        Performs bootfold - estimation to identify whether training model provides statistically significant
+        difference in predicting various values for a given feature when predicting outcome.
 
-    # TODO: include support
+        Parameters:
+            network : BaseNetwork
+                Network descendant of BaseNetwork.
+            data_loader : torch.utils.data.DataLoader
+                The DataLoader object containing the totality of the data to use
+                for k-fold cross validation.
+            n_samples : int
+                number of times to randomly sample w/ replacement the data_loader and perform boot_cv
+            k : int
+                The number of folds to split the training into.
+            epochs : int
+                The number of epochs to train the network per fold.
+            index_to_iter : string
+                Name of feature within data_loader who's values will be iterated to assess difference
+            ls_feat_vals : list
+                List of values for feature provided in index_to_iter
+            retain_graph : {None, boolean}
+                Whether retain_graph will be true when .backwards is called.
+            valid_interv : int
+                Specifies after how many epochs validation should occur.
+            plot : boolean
+                Whether or not to plot all results in prompt and charts.
+            save_path : str
+                Where to save all figures and results.
+            transform_outputs : boolean
+                Not used in the multi-class case.
+                If true, transform outputs using metrics.transform_outputs.
+                If no transform_callable is provided then the defaults in
+                metrics.transform_outputs will be used: class converstion for
+                one-hot encoded, and identity for one-dimensional outputs.
+                Multiple class multiple outputs are not yet supported.
+            transform_callable: callable
+                Not used in the multi-class case.
+                Used to transform values if transform_outputs is true,
+                otherwise defaults in metrics.transform_outputs will be used.
+                An example could be np.round
+            kwargs: dict of keyworded parameters
+                Values passed to transform callable (function parameters)
+
+        Returns:
+            p_value : float
+        """
+        ls_imprv_scores = []
+
+        rand_sample = data.RandomSampler(data_loader.dataset, replacement=True)
+        data_loader_args = inspect.signature(data.DataLoader.__init__)
+        new_params = {}
+
+        for param in data_loader_args.parameters:
+            if param == "self":
+                continue
+            elif param == "shuffle":
+                continue
+            elif param == "sampler":
+                new_params["sampler"] = rand_sample
+            elif param == "batch_sampler":
+                new_params["batch_sampler"] = None
+            else:
+                new_params[param] = getattr(data_loader, param)
+
+        dl_sample = data.DataLoader(**new_params)
+
+        for samp in range(n_samples):
+            imprv_score = Metrics._boot_cv(network, dl_sample, k, epochs, retain_graph, 
+                valid_interv, plot, save_path, index_to_iter, ls_feat_vals)
+            ls_imprv_scores.append(imprv_score)
+
+        tot_num_imprv = float(len(ls_imprv_scores))
+        score_below_zero = sum(val <= 0.0 for val in ls_imprv_scores)
+        # calculate p value based on change of not improving 
+        p_val = float(score_below_zero)/float(tot_num_imprv)
+        logger.info("Improvement scores: {}".format(', '.join(map(str, ls_imprv_scores))))
+        logger.info("P value for bootfold p estimate: %f.", p_val)
+
+    def _boot_cv(network, data_loader, k, epochs, retain_graph, valid_interv, 
+                save_path, plot, index_to_iter, ls_feat_vals):
+        """
+        Perform a custom cross validation for bootstrapped p estimation.
+
+        Parameters:
+            network : BaseNetwork
+                Network descendant of BaseNetwork.
+            data_loader : torch.utils.data.DataLoader
+                The DataLoader object containing the totality of the data to use
+                for k-fold cross validation.
+            k : int
+                The number of folds to split the training into.
+            epochs : int
+                The number of epochs to train the network per fold.
+            retain_graph : {None, boolean}
+                Whether retain_graph will be true when .backwards is called.
+            valid_interv : int
+                Specifies after how many epochs validation should occur.
+            plot : boolean
+                Whether or not to plot all results in prompt and charts.
+	    index_to_iter : string
+                Index of feature within data_loader who's values will be iterated to assess difference
+            ls_feat_vals : list
+                List of values for feature provided in index_to_iter
+
+	Returns: 
+	    improvement_score : float
+        """
+        dct_improvementScores = defaultdict(list)
+        dct_filteredSubj = defaultdict(list)
+        ls_filteredProbs = []
+	
+        fold_len = math.floor(len(data_loader.dataset) / k)
+        rem = len(data_loader.dataset) % k
+        fold_seq = []
+
+        for _ in range(k-1):
+            fold_seq.append(fold_len)
+        if rem == 0:
+            fold_seq.append(fold_len)
+        else:
+            fold_seq.append(fold_len+rem)  # last one is the longest if unequal
+
+        dataset_splits = data.random_split(data_loader.dataset,
+                                           fold_seq)
+
+        batch_size = data_loader.batch_size
+        shuffle = isinstance(data_loader.sampler, data.sampler.RandomSampler)
+
+        try:
+            for fold in range(k):
+
+                # TODO: this may break on different devices?? test.
+                # TODO: Re-initialize instead of deepcopy?
+                cross_val_network = copy.deepcopy(network)
+
+                # TODO: properly pass params
+
+                # Generate fold training set.
+                train_dataset = data.ConcatDataset(
+                    dataset_splits[:fold] + dataset_splits[fold+1:])
+                # Generate fold validation set.
+                val_dataset = dataset_splits[fold]
+                # Generate fold training data loader object.
+                train_loader = data.DataLoader(
+                    train_dataset, batch_size=batch_size, shuffle=shuffle)
+                # Generate fold validation data loader object.
+                val_loader = data.DataLoader(
+                    val_dataset, batch_size=batch_size)
+                # Train network on fold training data loader.
+                cross_val_network.fit(
+                    train_loader, val_loader, epochs,
+                    retain_graph=retain_graph,
+                    valid_interv=valid_interv, plot=plot, save_path=save_path)
+                dct_scores = _get_probs(network, val_loader, index_to_iter, ls_feat_vals)
+                dct_filtered = _filter_matched_subj(dct_scores, val_loader, index_to_iter)
+                for ind in dct_filtered:
+                    dct_filteredSubj[ind].append(dct_filtered[ind])
+                    ls_filteredProbs.append(dct_filtered[ind])
+            V_p = np.array(ls_filteredProbs).mean()
+            ls_pos_rate = [subj for subj in data_loader.dataset if subj[1].item() == 1]
+            V_t = float(len(ls_pos_rate)/len(data_loader.dataset)) * 100
+            improvement_score = float(V_p/V_t)
+            if np.isnan(improvement_score):
+                improvement_score = 0.0
+            return improvement_score
+        except KeyboardInterrupt:
+            logger.info(
+                "\n\n***KeyboardInterrupt: Cross validate stopped \
+                prematurely.***\n\n")
+	
     @staticmethod
     def cross_validate(network, data_loader, k, epochs,
                        average_results=True, retain_graph=None,
                        valid_interv=4, plot=False, save_path=None,
-                       transform_outputs=False, transform_callable=None,
+                       transform_callable=None,
                        **kwargs):
         """
         Perform k-fold cross validation given a Network and DataLoader object.
@@ -772,18 +922,8 @@ class Metrics(object):
                 Whether or not to plot all results in prompt and charts.
             save_path : str
                 Where to save all figures and results.
-            transform_outputs : boolean
-                Not used in the multi-class case.
-                If true, transform outputs using metrics.transform_outputs.
-                If no transform_callable is provided then the defaults in
-                metrics.transform_outputs will be used: class converstion for
-                one-hot encoded, and identity for one-dimensional outputs.
-                Multiple class multiple outputs are not yet supported.
             transform_callable: callable
-                Not used in the multi-class case.
-                Used to transform values if transform_outputs is true,
-                otherwise defaults in metrics.transform_outputs will be used.
-                An example could be np.round
+                A torch function. e.g. torch.round()
             kwargs: dict of keyworded parameters
                 Values passed to transform callable (function parameters)
 
@@ -847,7 +987,6 @@ class Metrics(object):
                 results = Metrics.run_test(
                     cross_val_network, val_loader,
                     save_path=save_path, plot=plot,
-                    transform_outputs=transform_outputs,
                     transform_callable=transform_callable,
                     **kwargs)
 
@@ -866,6 +1005,10 @@ class Metrics(object):
             averaged_all_results = {}
             for m in all_results:
                 averaged_all_results[m] = np.mean(all_results[m])
+            logger.info(averaged_all_results)
             return averaged_all_results
+
         else:
+            logger.info(all_results)
             return all_results
+
