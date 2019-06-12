@@ -543,17 +543,17 @@ class BaseNetwork(nn.Module):
     # /pytorchtools.py
     class EarlyStopping:
         """Early stops the training if validation loss doesn't improve after
-        a given patience."""
+        a given number of epochs."""
 
         def __init__(self, patience=2, verbose=False):
             """
             Args:
-                patience (int): How long to wait after last time validation
-                loss improved.
-                                Default: 7
-                verbose (bool): If True, prints a message for each
+                patience: int default 7
+                    How many epochs to wait after last time
+                validation loss improved.
+                verbose: bool default False
+                    If True, prints a message for each
                 validation loss improvement.
-                                Default: False
             """
             self.patience = patience
             self.verbose = verbose
@@ -624,7 +624,9 @@ class BaseNetwork(nn.Module):
         if self.optim is None:
             self._init_trainer()
 
-        early_stopping = self.EarlyStopping(patience=self.early_stopping_patience, verbose=True)
+        early_stopping = self.EarlyStopping(patience=
+                                            self.early_stopping_patience,
+                                            verbose=True)
 
         try:
             if plot:
