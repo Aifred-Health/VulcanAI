@@ -10,12 +10,12 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Subset, TensorDataset
 
+import vulcanai
 from vulcanai.models import BaseNetwork
 from vulcanai.models.cnn import ConvNet, ConvNetConfig
 from vulcanai.models.utils import master_device_setter
 
 logger = logging.getLogger(__name__)
-torch.manual_seed(1234)
 
 
 class TestConvNet:
@@ -221,23 +221,49 @@ class TestConvNet:
     def test_early_stopping(self, conv3D_net_class_early_stopping,
                             conv3D_net_class):
         """ Test that their final params are different: aka
-        that the early stopping did something"""
+        that the early stopping did something.
+        Constant seed resetting due to worker init function of dataloader
+        https://github.com/pytorch/pytorch/issues/7068 """
+
+        vulcanai.set_global_seed(42)
 
         ds = DataLoader(TensorDataset(
             torch.rand(size=[10, *conv3D_net_class_early_stopping.in_dim]),
-            torch.tensor([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]).long()))
+            torch.tensor([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]).long()),
+            num_workers=0)
+
+        vulcanai.set_global_seed(42)
+
+        ds2 = copy.deepcopy(ds)
+
+        vulcanai.set_global_seed(42)
+
+        ds3 = copy.deepcopy(ds)
+
+        conv3D_net_class_copy = copy.deepcopy(conv3D_net_class)
+
+        conv3D_net_class_copy.fit(
+            train_loader=ds2,
+            val_loader=ds2,
+            epochs=5)
+        vulcanai.set_global_seed(42)
 
         conv3D_net_class.fit(
             train_loader=ds,
             val_loader=ds,
             epochs=5)
 
+        vulcanai.set_global_seed(42)
+
         conv3D_net_class_early_stopping.fit(
-            train_loader=ds,
-            val_loader=ds,
+            train_loader=ds3,
+            val_loader=ds3,
             epochs=5)
 
-        stopping_params = list(conv3D_net_class_early_stopping.parameters())[-1].data
-        non_stopping_params = list(conv3D_net_class.parameters())[-1].data
+        stopping_params = list(conv3D_net_class_early_stopping.parameters())[0][0][0].data
+        non_stopping_params = list(conv3D_net_class.parameters())[0][0][0][0][0].data
+        non_stopping_params_copy = list(conv3D_net_class_copy.parameters())[0][0][0][0][0].data
 
         assert not torch.eq(stopping_params, non_stopping_params).all()
+        assert torch.eq(non_stopping_params, non_stopping_params_copy).all()
+
