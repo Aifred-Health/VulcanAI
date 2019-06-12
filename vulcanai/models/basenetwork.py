@@ -566,10 +566,20 @@ class BaseNetwork(nn.Module):
 
         def __call__(self, score, model):
 
-            if self.best_score is None:
+            # necessary with current code
+            score = float(score)
+
+            if not score:
+                logger.info('EarlyStopping counter not incremented, score'
+                            'was not calculated this epoch')
+
+            elif score and not np.isnan(score) and self.best_score is None:
                 self.best_score = score
                 self.save_checkpoint(score, model)
-            elif score < self.best_score:
+
+            # never save a model that has nan as a score, but count
+            # it towards total (i.e. don't nan to infinity, exit early).
+            elif score < self.best_score or np.isnan(score):
                 self.counter += 1
                 logger.info('EarlyStopping counter: {} out of {}'.format(
                     self.counter, self.patience
@@ -646,7 +656,7 @@ class BaseNetwork(nn.Module):
                 train_loss, train_acc = self._train_epoch(train_loader,
                                                           retain_graph)
 
-                valid_loss = valid_acc = np.nan
+                valid_loss = valid_acc = None
                 if epoch % valid_interv == 0:
                     valid_loss, valid_acc = self._validate(val_loader)
 
@@ -655,7 +665,7 @@ class BaseNetwork(nn.Module):
 
                 if self.early_stopping:
                     if self.early_stopping_metric == "loss":
-                        early_stopping(-1* valid_loss, self)
+                        early_stopping(-1 * valid_loss, self)
                     elif self.early_stopping_metric == "accuracy":
                         early_stopping(valid_acc, self)
                     else:
