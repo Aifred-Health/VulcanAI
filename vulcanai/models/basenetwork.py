@@ -567,7 +567,8 @@ class BaseNetwork(nn.Module):
         def __call__(self, score, model):
 
             # necessary with current code
-            score = float(score)
+            if score:
+                score = float(score)
 
             if not score:
                 logger.info('EarlyStopping counter not incremented, score'
@@ -579,7 +580,7 @@ class BaseNetwork(nn.Module):
 
             # never save a model that has nan as a score, but count
             # it towards total (i.e. don't nan to infinity, exit early).
-            elif score < self.best_score or np.isnan(score):
+            elif score <= self.best_score or np.isnan(score):
                 self.counter += 1
                 logger.info('EarlyStopping counter: {} out of {}'.format(
                     self.counter, self.patience
@@ -665,7 +666,9 @@ class BaseNetwork(nn.Module):
 
                 if self.early_stopping:
                     if self.early_stopping_metric == "loss":
-                        early_stopping(-1 * valid_loss, self)
+                        if valid_loss:
+                            valid_loss_neg = -1 * valid_loss
+                        early_stopping(valid_loss_neg, self)
                     elif self.early_stopping_metric == "accuracy":
                         early_stopping(valid_acc, self)
                     else:
@@ -679,6 +682,13 @@ class BaseNetwork(nn.Module):
                         # for tqdm
                         iterator.close()
                         break
+
+                # reset from None so that a distinction can be made
+                # between no value being collected
+                if not valid_loss:
+                    valid_loss = np.nan
+                if not valid_acc:
+                    valid_acc = np.nan
 
                 tqdm.write(
                     "\n Epoch {}:\n"
