@@ -485,19 +485,19 @@ class TabularDataset(Dataset):
         return dct_low_var
 
     def convert_all_categorical_binary(self, list_only=False,
-                                       exception_columns = None):
-        """
-        Recodes all columns with only two values as ones and zeros, float
+                                       exception_columns=None):
+        """Recodes all columns with only two values as ones and zeros, float
         valued.
-        This should only be used once you have a final dataset in case values
-        are not actually binary.
 
-        Useful for dealing with all the variations of YES/NO ,yEs/nO etc.
+        This should only be used once you have a final dataset in case values
+        are not actually binary. Useful for dealing with all the variations of
+        YES/NO ,yEs/nO etc.
 
         Parameters:
              list_only: boolean
                 only return a list of columns for which this would
-                apply, do not actually do the transformation
+                apply, do not actually do the transformation.
+                If false operation is performed in place.
             exception_columns: list
                 list of column names you do not wish to convert.
 
@@ -521,7 +521,7 @@ class TabularDataset(Dataset):
                 self.df = self.df.replace({col: di})
             except:
                 continue
-            self.df[col].astype(np.float64)
+            self.df[col] = self.df[col].astype(np.float64)
 
     # future improvements could come from
     # https://github.com/pytorch/text/blob/master/torchtext/data/dataset.py
