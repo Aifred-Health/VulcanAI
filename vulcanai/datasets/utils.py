@@ -70,7 +70,8 @@ def check_split_ratio(split_ratio):
 
 def rationed_split(df, train_ratio, test_ratio, validation_ratio):
     """
-    Function to split a dataset given ratios
+    Function to split a dataset given ratios. Assumes the ratios given
+    are valid (checked using check_split_ratio).
 
     Parameters:
         df: Dataframe
