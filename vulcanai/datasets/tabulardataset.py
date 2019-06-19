@@ -90,7 +90,7 @@ class TabularDataset(Dataset):
         Returns:
             The total number of samples: int
         """
-        return self.df.shape[0]
+        return len(self.df.index)
 
     def __getitem__(self, idx):
         """
@@ -345,14 +345,15 @@ class TabularDataset(Dataset):
         logger.info("Successfully converted %d \
                     columns back from dummy format.", len(dummy_tuples))
 
-    def identify_sufficient_non_null(self, threshold):
+    def identify_null(self, threshold):
         """
         Return columns where there is at least threshold percent of
-        non-null values.
+        null values.
 
         Parameters:
             threshold: Float
-                A number between 0 and 1, representing proportion of non-null.
+                A number between 0 and 1, representing proportion of null
+                values.
 
         Returns:
             cols: List
@@ -363,7 +364,7 @@ class TabularDataset(Dataset):
             raise ValueError(
                 "Threshold needs to be a proportion between 0 and 1 \
                 (exclusive)")
-        num_threshold = (threshold * len(self))
+        num_threshold = ( (1- threshold) * len(self))
         # thresh is "Require that many non-NA values."
         tmp = self.df.dropna(thresh=num_threshold, axis=1)
         cols = list(set(self.df.columns).difference(set(tmp.columns)))
@@ -371,7 +372,9 @@ class TabularDataset(Dataset):
 
     def identify_unique(self, threshold):
         """
-        Returns columns that have at least threshold number of values
+        Returns columns that do not have have at least threshold number of
+        values. If a column has 9 values and the threshold is 9, that column
+        will not be returned.
 
         Parameters:
             threshold: The minimum number of values needed.
@@ -383,9 +386,17 @@ class TabularDataset(Dataset):
                 The list of columns having threshold number of values
 
         """
+        obj_types = {col: set(map(type, self.df[col])) for col in
+                     self.df.columns}
+
         column_list = []
         for col in self.df.columns:
-            if len(self.df[col].unique()) >= threshold:
+            if len(obj_types[col]) > 1:
+                logger.warning("Column: {} has mixed datatypes, this may"
+                               "interfere with an accurate identification"
+                               "of mixed values: i.e. you may have 1 and '1'"
+                               .format(col))
+            if len(self.df[col].unique()) < threshold:
                 column_list.append(col)
         return column_list
 
@@ -473,10 +484,49 @@ class TabularDataset(Dataset):
                     dct_low_var[col] = col_var
         return dct_low_var
 
+    def convert_all_categorical_binary(self, list_only=False,
+                                       exception_columns=None):
+        """Recodes all columns with only two values as ones and zeros, float
+        valued.
+
+        This should only be used once you have a final dataset in case values
+        are not actually binary. Useful for dealing with all the variations of
+        YES/NO ,yEs/nO etc.
+
+        Parameters:
+             list_only: boolean
+                only return a list of columns for which this would
+                apply, do not actually do the transformation.
+                If false operation is performed in place.
+            exception_columns: list
+                list of column names you do not wish to convert.
+
+        Returns:
+            list or None
+            list if list_only if true, nothing otherwise.
+        """
+
+        # recoding binary valued columns as ones and zeros
+
+        binary_cols = [(col, self.df[col].value_counts().index) for col
+                       in self.df.columns if
+                       len(self.df[col].value_counts()) == 2]
+
+        if list_only:
+            return binary_cols
+
+        for col, index in binary_cols:
+            di = {index[0]: 1.0, index[1]: 0.0}
+            try:
+                self.df = self.df.replace({col: di})
+            except:
+                continue
+            self.df[col] = self.df[col].astype(np.float64)
+
     # future improvements could come from
     # https://github.com/pytorch/text/blob/master/torchtext/data/dataset.py
     # noinspection PyUnusedLocal
-    def split(self, split_ratio=0.7, stratified=False, strata_field='label'):
+    def split(self, split_ratio=0.7, stratified=False, stratum_column=None):
         """
         Create train-test(-validation) splits from the instance's examples.
         Function signature borrowed from torchtext in an effort to maintain
@@ -498,41 +548,56 @@ class TabularDataset(Dataset):
             stratified: Boolean
                 whether the sampling should be stratified.
                     Default is False.
-            strata_field: String
-                name of the examples Field stratified over.
-                Default is 'label' for the conventional label field.
+            stratum_column: String
+                name of the examples column stratified over.
+                Default is 'label_column'
 
         Returns:
             datasets: Tuple of TabularDatasets
-                Datasets for train, validation, and
-                test splits in that order, if the splits are provided.
+                Datasets for train, test, validation
+                 splits in that order, if the splits are provided.
 
         """
-        if stratified:
-            raise NotImplementedError("We still need to get to this!")
 
         train_ratio, test_ratio, validation_ratio = utils.check_split_ratio(
             split_ratio)
 
-        perm = np.random.permutation(self.df.index)
-        m = len(self.df.index)
+        train_indices = []
+        test_indices = []
+        validation_indices = []
 
-        train_end = int(train_ratio * m)
-        train_df = self.df.loc[perm[:train_end]]
-        validation_df = None  # just to shut up linter
-        if validation_ratio:
-            validation_end = int(validation_ratio * m) + train_end
-            validation_df = self.df.loc[perm[train_end:validation_end]]
-            test_start = validation_end
+        if stratified:
+            if not stratum_column:
+                stratum_column = self.label_column
+            else:
+                if stratum_column not in self.df.columns:
+                    raise ValueError("Invalid strata column name")
+
+            grps = self.df.groupby(stratum_column)
+            train_index, test_index, val_index = [], [], []
+            for key, grp in grps:
+                group_train, group_test, group_val = \
+                    utils.rationed_split(grp, train_ratio, test_ratio,
+                                         validation_ratio)
+
+                train_indices += list(group_train)
+                test_indices += list(group_test)
+                validation_indices += list(group_val)
+
         else:
-            test_start = train_end
-        test_df = self.df.loc[perm[test_start:]]
 
-        train = TabularDataset(train=train_df, label_column=self.label_column)
-        test = TabularDataset(test=test_df, label_column=self.label_column)
+            train_indices, test_indices, validation_indices = \
+                utils.rationed_split(self.df, train_ratio,
+                                     test_ratio, validation_ratio)
+
+        train = TabularDataset(train=self.df.loc[train_indices],
+                               label_column=self.label_column)
+        test = TabularDataset(test=self.df.loc[test_indices],
+                              label_column=self.label_column)
+
         if validation_ratio:
-            validation = TabularDataset(val=validation_df,
+            validation = TabularDataset(val=self.df.loc[validation_indices],
                                         label_column=self.label_column)
-            return train, validation, test
+            return train, test, validation
         else:
             return train, test
