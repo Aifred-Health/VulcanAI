@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 # Load the fashion-mnist pre-shuffled train data and test data
-
+import vulcanai #for random
 
 
 tf.random.set_random_seed(42)
@@ -34,10 +34,10 @@ model = tf.keras.Sequential()
 # Must define the input shape in the first layer of the neural network
 model.add(tf.keras.layers.Conv2D(filters=16, strides=2, kernel_size=(5,5), padding='same', activation='relu', input_shape=(28,28,1)))
 model.add(tf.keras.layers.Dropout(0.1))
+model.add(tf.keras.layers.MaxPooling2D(pool_size=2))
 model.add(tf.keras.layers.Conv2D(filters=32, kernel_size=(5,5), padding='same', activation='relu'))
 model.add(tf.keras.layers.Dropout(0.1))
 model.add(tf.keras.layers.MaxPooling2D(pool_size=2))
-model.add(tf.keras.layers.Dropout(0.1))
 model.add(tf.keras.layers.Flatten())
 model.add(tf.keras.layers.Dense(10, activation='softmax'))
 
