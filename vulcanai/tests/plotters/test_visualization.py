@@ -7,6 +7,11 @@ from torch.utils.data import TensorDataset, DataLoader
 from vulcanai.datasets import tabulardataset
 import os
 from copy import deepcopy
+import matplotlib
+import tkinter
+matplotlib.use('TkAgg')
+import warnings
+
 
 from sklearn.datasets import load_digits
 from sklearn.metrics import confusion_matrix
@@ -16,7 +21,6 @@ from vulcanai.plotters.visualization import compute_saliency_map, \
                                             display_receptive_fields, \
                                             display_saliency_overlay, \
                                             display_confusion_matrix
-
 
 class TestVisualization:
     """Test all visualization functionality."""
@@ -168,6 +172,7 @@ class TestVisualization:
 
     def test_display_tsne(self, dnn_class):
         """Test t-SNE displays and saves."""
+        warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
         curr_path = str(os.path.dirname(__file__)) + '/'
         digits = load_digits()
         display_tsne(

@@ -11,6 +11,7 @@ from .utils import GuidedBackprop, get_notable_indices
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 
+
 import matplotlib
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.pyplot as plt
@@ -215,7 +216,7 @@ def _plot_reduction(x_transform, targets, label_map, title, save_path=None):
             "Display environment needed to plot, "
             "or set save_path=path/to/dir")
     else:
-        plt.show(False)
+        plt.show(block=False)
 
 
 def display_confusion_matrix(cm, class_list=None, save_path=None):
@@ -269,7 +270,7 @@ def display_confusion_matrix(cm, class_list=None, save_path=None):
             "Display environment needed to plot, "
             "or set save_path=path/to/dir")
     else:
-        plt.show(False)
+        plt.show(block=False)
 
 
 def compute_saliency_map(network, input_data, targets):
@@ -365,7 +366,7 @@ def display_saliency_overlay(image, saliency_map, shape=(28, 28), save_path=None
             "Display environment needed to plot, "
             "or set save_path=path/to/dir")
     else:
-        plt.show(False)
+        plt.show(block=False)
 
 
 def display_receptive_fields(network, top_k=5, save_path=None):
@@ -430,6 +431,6 @@ def display_receptive_fields(network, top_k=5, save_path=None):
             "Display environment needed to plot, "
             "or set save_path=path/to/dir")
     else:
-        plt.show(False)
+        plt.show(block=False)
 
     return feature_importance
