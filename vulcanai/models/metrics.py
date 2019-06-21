@@ -896,12 +896,28 @@ class Metrics(object):
 
     @staticmethod
     def stratified_split(dataset, k, strata_column):
+        """ Perform k-fold cross validation given a Network and DataLoader object.
+
+        Parameters:
+            dataset : data.dataset
+                The dataset to be split.
+            k : int
+                The number of folds to split the training into.
+            strata_column: string or int
+                Either "class_label" or integer index of column.
+                Default "class_label"
+
+        Returns:
+            split_datasets : list
+            A list of dataset objects split into k parts.
+
+        """
 
         if strata_column == "class_label":
             sr = pd.Series(dataset.tensors[1].numpy())
         else:
             #just let it fail if it doesn't work
-            sr = pd.Series(dataset[0][strata_column].numpy())
+            sr = pd.Series(dataset.tensors[0][strata_column].numpy())
 
         ls = [[] for i in range(k)]
 
