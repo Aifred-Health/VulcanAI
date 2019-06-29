@@ -1,0 +1,5 @@
+recursive-include projectname *.py
+recursive-include projectname *.pickle
+include README.md
+include LICENSE
+include requirements.txt
