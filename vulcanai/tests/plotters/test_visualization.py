@@ -8,7 +8,6 @@ from vulcanai.datasets import tabulardataset
 import os
 from copy import deepcopy
 import matplotlib
-import tkinter
 matplotlib.use('TkAgg')
 import warnings
 
@@ -172,7 +171,7 @@ class TestVisualization:
 
     def test_display_tsne(self, dnn_class):
         """Test t-SNE displays and saves."""
-        warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+        #warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
         curr_path = str(os.path.dirname(__file__)) + '/'
         digits = load_digits()
         display_tsne(
