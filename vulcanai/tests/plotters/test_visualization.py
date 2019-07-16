@@ -10,9 +10,7 @@ from copy import deepcopy
 
 import tkinter
 import matplotlib
-matplotlib.use("TKAgg")
-
-
+matplotlib.use("TkAgg") if os.environ.get("DISPLAY") else matplotlib.use("Agg")
 
 from sklearn.datasets import load_digits
 from sklearn.metrics import confusion_matrix
