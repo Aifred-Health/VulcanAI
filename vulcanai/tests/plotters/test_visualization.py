@@ -7,9 +7,11 @@ from torch.utils.data import TensorDataset, DataLoader
 from vulcanai.datasets import tabulardataset
 import os
 from copy import deepcopy
+
+import tkinter
 import matplotlib
-matplotlib.use('TkAgg')
-import warnings
+matplotlib.use("TKAgg")
+
 
 
 from sklearn.datasets import load_digits
