@@ -1,12 +1,10 @@
+# coding=utf-8
 """Contains all visualization utilities."""
-import numpy as np
 import torch
 from torch.nn import ReLU, SELU, ModuleList
 import logging
-import collections
 
 logger = logging.getLogger(__name__)
-# from ..models.basenetwork import BaseNetwork
 
 
 def get_notable_indices(feature_importances, top_k=5):
@@ -14,7 +12,7 @@ def get_notable_indices(feature_importances, top_k=5):
     Return dict of top k and bottom k features useful from matrix.
 
     Parameters:
-        feature_importance : numpy.ndarray
+        feature_importances: numpy.ndarray
             1D numpy array to extract the top of bottom indices.
         top_k : int
             How many features from top and bottom to extract.
@@ -62,40 +60,43 @@ class GuidedBackprop(object):
 
     def _crop_negative_gradients(self):
         """Update relu/selu activations to return positive gradients."""
-        def activation_hook_function(module, grad_in, grad_out):
+        def activation_hook_function(module, grad_in):
             """If there is a negative gradient, changes it to zero."""
             if isinstance(module, ReLU) or isinstance(module, SELU):
-                return (torch.clamp(grad_in[0], min=0.0),)
+                return torch.clamp(grad_in[0], min=0.0),
             else:
                 raise NotImplementedError("Only ReLU and SELU supported.")
 
-        def hook_all_networks(network):
+        # noinspection PyProtectedMember
+        def _hook_all_networks(network):
             self.hooks.append(
                     network.network[0]._activation.
                     register_backward_hook(activation_hook_function))
             logging.info("Cropping gradients in {}.".format(network.name))
             if network.input_networks:
                 for in_net in network.input_networks.values():
-                    hook_all_networks(in_net)
+                    _hook_all_networks(in_net)
         # For Snapshot Networks
         if isinstance(self.network.network, ModuleList):
             for net in self.network.network:
-                hook_all_networks(net)
+                _hook_all_networks(net)
         else:
-            hook_all_networks(self.network)
+            _hook_all_networks(self.network)
 
     def _remove_hooks(self):
         """Remove all previously placed hooks from model."""
         for h in self.hooks:
             h.remove()
 
+    # noinspection PyProtectedMember
     def generate_gradients(self, input_data, targets):
         """
         Compute guided backprop gradients and returns top layer gradients.
 
         Parameters:
             input_data : numpy.ndarray or torch.Tensor
-                2D for DenseNet, 4D (for 2D images) or 5D (for 3D images) Tensor.
+                2D for DenseNet, 4D (for 2D images) or 5D (for 3D images)
+                Tensor.
             targets : numpy.ndarray or torch.LongTensor
                 1D list of class labels
 
@@ -106,16 +107,16 @@ class GuidedBackprop(object):
         """
         assert isinstance(targets, torch.LongTensor)
 
-        def requires_grad_multidataset(data_list):
+        def _requires_grad_multidataset(data_list):
             for d in data_list:
                 if isinstance(d, list):
-                    requires_grad_multidataset(d)
+                    _requires_grad_multidataset(d)
                 else:
                     assert isinstance(d, torch.Tensor)
                     d.requires_grad_()
 
         if isinstance(input_data, list):
-            requires_grad_multidataset(input_data)
+            _requires_grad_multidataset(input_data)
         else:
             assert isinstance(input_data, torch.Tensor)
             input_data.requires_grad_()
@@ -133,16 +134,18 @@ class GuidedBackprop(object):
         # Backward pass
         network_output.backward(gradient=one_hot_output)
 
-        def extract_input_gradients_multidataset(input_data):
+        # noinspection PyShadowingNames
+        def _extract_input_gradients_multidataset(input_data):
             for data in input_data:
                 if isinstance(data, list):
-                    extract_input_gradients_multidataset(data)
+                    _extract_input_gradients_multidataset(data)
                 else:
                     self.gradients.append(data.grad.detach().cpu().numpy())
 
         if isinstance(input_data, list):
-            extract_input_gradients_multidataset(input_data)
+            _extract_input_gradients_multidataset(input_data)
         else:
+            # noinspection PyUnresolvedReferences
             self.gradients.append(input_data.grad.detach().cpu().numpy())
 
         self._remove_hooks()
