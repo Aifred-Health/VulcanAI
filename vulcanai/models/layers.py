@@ -1,3 +1,4 @@
+# coding=utf-8
 """Define the ConvUnit and DenseUnit."""
 import torch
 import torch.nn as nn
@@ -83,6 +84,7 @@ class FlattenUnit(BaseUnit):
         return x.view(x.shape[0], -1)
 
 
+# noinspection PyUnresolvedReferences
 class DenseUnit(BaseUnit):
     """
     Define the DenseUnit object.
@@ -120,9 +122,7 @@ class DenseUnit(BaseUnit):
         # Main layer
         self._kernel = nn.Linear(
                             in_features=self.in_features,
-                            out_features=self.out_features,
-                            bias=True
-                            )
+                            out_features=self.out_features)
         self.add_module('_kernel', self._kernel)
 
         # Norm
@@ -301,6 +301,7 @@ class InputUnit(BaseUnit):
 
     def forward(self, input):
         """Define forward for InputUnit."""
+        # NCHW = batch size, channels, height, width
         if input.dim() > 2:
             input = input.transpose(1, 3)  # NCHW --> NHWC
             output = self._kernel(input)
