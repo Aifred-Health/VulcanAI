@@ -71,6 +71,7 @@ class DenseNetConfig:
             self.units.append(temp_unit)
 
 
+# noinspection PyDefaultArgument,PyTypeChecker
 class DenseNet(BaseNetwork):
     """
     Subclass of BaseNetwork defining a DenseNet.
@@ -81,8 +82,8 @@ class DenseNet(BaseNetwork):
         config : dict
             The configuration of the network module, as a dict.
         in_dim : tuple
-            The input dimensions of the network. Not required to specify when the
-            network has input_networks.
+            The input dimensions of the network. Not required to specify when
+            the network has input_networks.
         save_path : str
             The name of the file to which you would like to save this network.
         input_networks : list of BaseNetwork
@@ -174,6 +175,7 @@ class DenseNet(BaseNetwork):
 
     def __str__(self):
         if self.optim is not None:
-            return super(DenseNet, self).__str__() + '\noptim: {}'.format(self.optim)
+            return super(DenseNet, self).__str__() + '\noptim: {}'\
+                .format(self.optim)
         else:
             return super(DenseNet, self).__str__()
