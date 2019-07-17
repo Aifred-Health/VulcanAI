@@ -4,14 +4,12 @@ This file defines the TabularDataset Class
 """
 import torch
 from torch.utils.data import Dataset
-import copy
 import numpy as np
 import pandas as pd
 from . import utils as utils
 import logging
 from itertools import groupby
 from sklearn import preprocessing
-import time
 
 logger = logging.getLogger(__name__)
 
@@ -109,8 +107,7 @@ class TabularDataset(Dataset):
 
         if self.label_column:
             if self.all_xs is None:
-                self.all_xs = self.df.drop(self.label_column,
-                              axis=1)
+                self.all_xs = self.df.drop(self.label_column, axis=1)
             if self.all_y is None:
                 self.all_y = self.df[[self.label_column]]
             xs = torch.from_numpy(self.all_xs.iloc[[idx]].values[0]).float()
@@ -283,13 +280,13 @@ class TabularDataset(Dataset):
         Parameters:
             column_name: String
                 The name of the column you want to one-hot encode
-            prefix_sep String default("@")
+            prefix_sep: String default("@")
                 The prefix used when creating a one-hot encoding
 
         """
         # TODO: ensure dummy_na =False is what you want
         self.df = pd.get_dummies(self.df, columns=[column_name],
-                                    prefix_sep=prefix_sep)
+                                 prefix_sep=prefix_sep)
         logger.info("Successfully encoded %s", column_name)
 
     # if a use case presents itself column_name could easily become a list
@@ -364,7 +361,7 @@ class TabularDataset(Dataset):
             raise ValueError(
                 "Threshold needs to be a proportion between 0 and 1 \
                 (exclusive)")
-        num_threshold = ( (1- threshold) * len(self))
+        num_threshold = ((1 - threshold) * len(self))
         # thresh is "Require that many non-NA values."
         tmp = self.df.dropna(thresh=num_threshold, axis=1)
         cols = list(set(self.df.columns).difference(set(tmp.columns)))
@@ -516,10 +513,12 @@ class TabularDataset(Dataset):
             return binary_cols
 
         for col, index in binary_cols:
+            if col in exception_columns:
+                continue
             di = {index[0]: 1.0, index[1]: 0.0}
             try:
                 self.df = self.df.replace({col: di})
-            except:
+            except (AssertionError, TypeError, ValueError):
                 continue
             self.df[col] = self.df[col].astype(np.float64)
 
