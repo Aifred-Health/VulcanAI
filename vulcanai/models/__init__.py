@@ -1,3 +1,4 @@
+# coding=utf-8
 """ Imports network classes so they can be used directly"""
 from .utils import (
         round_list,

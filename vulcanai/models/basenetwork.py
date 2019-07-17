@@ -2,8 +2,6 @@
 """Defines the basenetwork class."""
 # Core imports
 import abc
-import torch
-from torch import nn
 
 # Vulcan imports
 from .layers import *
@@ -18,11 +16,9 @@ from tqdm import tqdm, trange
 from datetime import datetime
 import logging
 import os
-from os import environ
 import pickle
 import numpy as np
 
-import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -34,6 +30,8 @@ sns.set(style='dark')
 logger = logging.getLogger(__name__)
 
 
+# Because pytorch causes a bunch of unresolved references
+# noinspection PyDefaultArgument,PyUnresolvedReferences,PyTypeChecker
 class BaseNetwork(nn.Module):
     """
     Defines the BaseNetwork object.
@@ -44,8 +42,8 @@ class BaseNetwork(nn.Module):
         config : dict
             The configuration of the network module, as a dict.
         in_dim : tuple
-            The input dimensions of the network. Not required to specify when the
-            network has input_networks.
+            The input dimensions of the network. Not required to specify when
+            the network has input_networks.
         save_path : str
             The name of the file to which you would like to save this network.
         input_networks : list of BaseNetwork
@@ -87,7 +85,7 @@ class BaseNetwork(nn.Module):
                  optim_spec={'name': 'Adam', 'lr': 0.001},
                  lr_scheduler=None, early_stopping=None,
                  early_stopping_patience=None,
-                 early_stopping_metric = "accuracy",
+                 early_stopping_metric="accuracy",
                  criter_spec=nn.CrossEntropyLoss(),
                  device="cuda:0"):
         """Define, initialize, and build the BaseNetwork."""
@@ -156,6 +154,8 @@ class BaseNetwork(nn.Module):
         self.device = device
         self._optim_spec = optim_spec
         self._criter_spec = criter_spec
+
+        self.save_path = save_path
 
     def _add_input_network(self, in_network):
         """
@@ -384,8 +384,6 @@ class BaseNetwork(nn.Module):
     def early_stopping_patience(self, value):
         self._early_stopping_patience = value
 
-
-
     @property
     def early_stopping_metric(self):
         """
@@ -488,6 +486,7 @@ class BaseNetwork(nn.Module):
         # Recursively toggle freeze on
         if apply_inputs and self.input_networks:
             for in_net in self.input_networks.values():
+                # noinspection PyProtectedMember
                 in_net._toggle_freeze(
                     freeze=freeze,
                     apply_inputs=apply_inputs)
@@ -506,7 +505,7 @@ class BaseNetwork(nn.Module):
         # TODO: Use logger to describe if the optimizer is changed.
         self.criterion = self._init_criterion(self._criter_spec)
 
-    def _assert_same_devices(self, comparison_device=None):
+    def assert_same_devices(self, comparison_device=None):
         """
         Will check if all incoming networks are on the same device.
 
@@ -528,7 +527,7 @@ class BaseNetwork(nn.Module):
         if self.input_networks:
             for net_name, net in self.input_networks.items():
                 if net.input_networks:
-                    net._assert_same_devices(comparison_device)
+                    net.assert_same_devices(comparison_device)
                 if net.device != comparison_device:
                     incompatible_collector[net_name] = net.device
         if incompatible_collector:
@@ -594,7 +593,7 @@ class BaseNetwork(nn.Module):
                 self.counter = 0
 
         def save_checkpoint(self, val_loss, model):
-            '''Saves model when validation loss decrease.'''
+            """Saves model when validation loss decrease."""
             if self.verbose:
                 logger.info(
                     f'Validation loss decreased ({self.val_loss_min:.6f} --> '
@@ -628,7 +627,7 @@ class BaseNetwork(nn.Module):
 
         """
         # Check all networks are on same device.
-        self._assert_same_devices()
+        self.assert_same_devices()
 
         # In case there is already one, don't overwrite it.
         # Important for not removing the ref from a lr scheduler
@@ -641,7 +640,8 @@ class BaseNetwork(nn.Module):
 
         try:
             if plot:
-                fig_number = plt.gcf().number + 1 if plt.fignum_exists(1) else 1
+                fig_number = plt.gcf().number + 1 if plt.fignum_exists(1) \
+                    else 1
                 plt.show()
 
             if save_path:
@@ -668,7 +668,7 @@ class BaseNetwork(nn.Module):
                     if self.early_stopping_metric == "loss":
                         if valid_loss:
                             valid_loss_neg = -1 * valid_loss
-                        early_stopping(valid_loss_neg, self)
+                            early_stopping(valid_loss_neg, self)
                     elif self.early_stopping_metric == "accuracy":
                         early_stopping(valid_acc, self)
                     else:
@@ -708,6 +708,7 @@ class BaseNetwork(nn.Module):
 
                 if plot:
                     plt.ion()
+                    # noinspection PyUnboundLocalVariable
                     plt.figure(fig_number)
                     display_record(record=self.record, save_path=save_path)
 
@@ -877,28 +878,32 @@ class BaseNetwork(nn.Module):
     def bootfold_p_estimate(self, data_loader, n_samples, k, epochs, 
                             index_to_iter, ls_feat_vals, retain_graph=None,
                             valid_interv=4, plot=False, save_path=None,
-                            transform_outputs=False, transform_callable=None, p_output_path = None,
-			    **kwargs):
-        """
-	Performs bootfold - estimation to identify whether training model provides statistically significant
-	difference in predicting various values for a given feature when predicting outcome. 
-
-	Parameters:
-	    network : BaseNetwork
-                Network descendant of BaseNetwork.
+                            transform_outputs=False, transform_callable=None,
+                            p_output_path=None, **kwargs):
+        """Performs bootfold - estimation to identify whether training model
+        provides statistically significant
+        difference in predicting various values for a given feature when
+        predicting outcome.
+        Parameters:
             data_loader : torch.utils.data.DataLoader
-                The DataLoader object containing the totality of the data to use
+                The DataLoader object containing the totality of the data to
+                use
                 for k-fold cross validation.
             n_samples : int
-                number of times to randomly sample w/ replacement the data_loader and perform boot_cv
+                number of times to randomly sample w/ replacement the
+                data_loader and perform boot_cv
             k : int
                 The number of folds to split the training into.
             epochs : int
                 The number of epochs to train the network per fold.
-	    index_to_iter : string
-		Index of feature within data_loader who's values will be iterated to assess difference
-	    ls_feat_vals : list
-		List of values for feature provided in feat_to_iter
+            index_to_iter : string
+                Index of feature within data_loader who's values will be
+                iterated.
+            to assess difference
+            ls_feat_vals : list
+                List of values for feature provided in feat_to_iter
+            retain_graph: boolean
+                Whether or not to retain the computation graph.
             valid_interv : int
                 Specifies after how many epochs validation should occur.
             plot : boolean
@@ -917,13 +922,12 @@ class BaseNetwork(nn.Module):
                 Used to transform values if transform_outputs is true,
                 otherwise defaults in metrics.transform_outputs will be used.
                 An example could be np.round
-	    p_output_path = str
-		Output file to save p_value to
+            p_output_path: str
+                Output file to save p_value to
             kwargs: dict of keyworded parameters
                 Values passed to transform callable (function parameters)
-
-	Returns:
-	    p_value : float
+        Returns:
+            p_value : float
         """
         return self.metrics.bootfold_p_estimate(
             network=self,
@@ -950,17 +954,16 @@ class BaseNetwork(nn.Module):
         Perform k-fold cross validation given a Network and DataLoader object.
 
         Parameters:
-            network : BaseNetwork
-                Network descendant of BaseNetwork.
             data_loader : torch.utils.data.DataLoader
-                The DataLoader object containing the totality of the data to use
-                for k-fold cross validation.
+                The DataLoader object containing the totality of the data to
+                use for k-fold cross validation.
             k : int
                 The number of folds to split the training into.
             epochs : int
                 The number of epochs to train the network per fold.
             average_results : boolean
-                Whether or not to return results from all folds or just an average.
+                Whether or not to return results from all folds or just an
+                average.
             retain_graph : {None, boolean}
                 Whether retain_graph will be true when .backwards is called.
             valid_interv : int
@@ -1037,6 +1040,7 @@ class BaseNetwork(nn.Module):
                     self.name, self.in_dim, output.shape[1:]))
         return self.network(output)
 
+    # noinspection PyUnusedLocal
     @torch.no_grad()
     def forward_pass(self, data_loader,
                      transform_callable=None, **kwargs):
@@ -1075,9 +1079,9 @@ class BaseNetwork(nn.Module):
         pred_collector = pred_collector.cpu().detach().numpy()
         return pred_collector
 
-
     # TODO: could integrate map location in the future if needed
-    # https://discuss.pytorch.org/t/on-a-cpu-device-how-to-load-checkpoint-saved-on-gpu-device/349
+    # https://discuss.pytorch.org/t/
+    # on-a-cpu-device-how-to-load-checkpoint-saved-on-gpu-device/349
     def save_model(self, save_path=None):
         """
         Save the model (and it's input networks).
@@ -1117,6 +1121,7 @@ class BaseNetwork(nn.Module):
         pickle.dump(self.state_dict, open(state_dict_file_path, "wb"), 2)
         return self.save_path
 
+    # noinspection PyUnusedLocal
     @classmethod
     def load_model(cls, load_path, load_complete_model_stack=True):
         """
@@ -1126,7 +1131,8 @@ class BaseNetwork(nn.Module):
             load_path : str
                 The load directory (not a file)
             load_complete_model_stack : boolean
-                Whether to load all parent networks as well. Not yet implemented.
+                Whether to load all parent networks as well. Not yet
+                implemented.
 
         Returns:
             network : BaseNetwork
