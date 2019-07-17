@@ -38,6 +38,3 @@ __all__ = [
     'FlattenUnit',
     'BaseUnit'
 ]
-
-def start():
-    " Start module"
