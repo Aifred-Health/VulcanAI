@@ -1,0 +1,20 @@
+language: python
+python:
+- '3.6'
+install:
+- pip install --upgrade pip
+- pip install --progress-bar off -r requirements.txt
+- pip install -e .
+script:
+- pytest
+branches:
+  only:
+  - master
+  - /^\d+\.\d+\.\d+$/
+deploy:
+  provider: pypi
+  user: "rfratila"
+  password:
+    secure: i1SMEd951TYKtVhAAOFduJaRraqrhyyresjOK2V19xRy0c1AiMcoUSZlKS3xr1ET4p27zDkZdGDiu+bQono22UDHFKg039EXz8zGk5TybmLkL/v+KsStWSU9Y7wUm/GGPPyACR0UPYJoMjGVyJFaGhJWGNX3k2PGDZdaAenGaeJUdsutMlHquBUTNgJg3Ib0z34bDTf6KSssXlbMSwx0fvcztbKRCbst0QrorZ/osp9udMWyAcyXXJEl+rBmSd1zTkcfbku/O6y+y9HQWBWEuQS9iXUW8Gc8HUm8zlVQafJkvEyvSR8KBMUl99sxG8UAkdsrP3CkiRnS0OzJkHQR/aq8ClfN1Kz6gid5SMt06px8k/J1zZ8E7EUCLK6ra+QpfngdT6z391ZVga7dLOri3kP964LJ6gSdeAx5XFAKY7fN3xSUfZ3je39AZ2dkiFmogOmnzAkIDBhbWdLG1KruLmq9XRZri/fJ/WZZ1Cxw7RcT+7SCaFEhiJdhzUWuoor30WwglzX4lOUgnBJw+9uH7FrH9WrLD6RRwAN8m3P868crSLERKf0Vja73ZkUOS9zVcHkw1gc55VqsOu+I3RU8FpPNU5IpaKOwAvEfCIliPLAE4Lnh+3r4b+ZBqk5V+TD/hgtyLQuupFdhTCXRZM4xo4GlA9V1hiWz68G0VjJkNTA=
+  on:
+    tags: true

@@ -1,25 +1,39 @@
 """Setup script for uploading package to PyPI servers."""
-from setuptools import setup
+from setuptools import setup, find_packages
+
+tests_require = [
+    'pytest',
+    'numpydoc'
+]
+
+docs_require = [
+    'Sphinx', # TODO: maybe numpydoc?
+]
+
+with open('requirements.txt') as f:
+    install_requires = [l.strip() for l in f]
+
 
 setup(
-    name='vulcanai2',
-    version='2.0rc1',
+    name='vulcanai',
+    version='1.0.3',
     description='A high-level framework built on top of Pytorch'
                 ' using added functionality from Scikit-learn to provide '
                 'all of the tools needed for visualizing and processing '
-                'high-dimensional data, modular neural networks, and model evaluation',
-    author='Robert Fratila, Priyatharsan Rajasekar, Caitrin Armstrong',
+                'high-dimensional data, modular neural networks, '
+                'and model evaluation',
+    author='Robert Fratila, Priyatharsan Rajasekar, Caitrin Armstrong, '
+            'Joseph Mehltretter',
     author_email='robertfratila10@gmail.com',
-    url='https://github.com/Aifred-Health/Vulcan', #TODO: make sure we've updated appropriately
-    install_requires=['numpy>=1.12.0',
-                      'scipy>=0.17.1',
-                      'matplotlib>=1.5.3',
-                      'scikit-learn>=0.18',
-                      'jsonschema>=2.6.0',
-                      'torch>=0.4',
-                      'pydash>=4.7.3',
-                      'tqdm>=4.25.0'],
-    packages=['vulcanai2'],
+    url='https://github.com/Aifred-Health/Vulcan',
+    install_requires=install_requires,
+    extras_require={
+        'testing': tests_require,
+        'docs': docs_require,
+    },
+    packages=find_packages(),
+    include_package_data=True,
+    package_data={'vulcanai': ['logging.conf']},
     classifiers=['Development Status :: 3 - Alpha',
                  'Intended Audience :: Developers',
                  'Intended Audience :: Science/Research',
