@@ -10,24 +10,26 @@ import torch
 import codecs
 import torchvision.transforms as transforms
 import urllib
-import io
 
-# FROM https://raw.githubusercontent.com/mayurbhangale/fashion-mnist-pytorch/master/fashion.py
+
+# FROM https://raw.githubusercontent.com/mayurbhangale/
+# fashion-mnist-pytorch/master/fashion.py
 class FashionData(data.Dataset):
     """'MNIST <http://yann.lecun.com/exdb/mnist/>`_ Dataset.
 
     Parameters:
-        root (string): Root directory of dataset where ``processed/training.pt``
-            and  ``processed/test.pt`` exist.
+        root (string): Root directory of dataset where
+        ``processed/training.pt`` and ``processed/test.pt`` exist.
         train (bool, optional): If True, creates dataset from ``training.pt``,
             otherwise from ``test.pt``.
-        download (bool, optional): If true, downloads the dataset from the internet and
-            puts it in root directory. If dataset is already downloaded, it is not
-            downloaded again.
-        transform (callable, optional): A function/transform that  takes in an PIL image
-            and returns a transformed version. E.g, ``transforms.RandomCrop``
-        target_transform (callable, optional): A function/transform that takes in the
-            target and transforms it.
+        download (bool, optional): If true, downloads the dataset from the
+        internet and puts it in root directory. If dataset is already
+        downloaded, it is not downloaded again.
+        transform (callable, optional): A function/transform that  takes in an
+        PIL image and returns a transformed version. E.g,
+        ``transforms.RandomCrop``
+        target_transform (callable, optional): A function/transform that
+        takes in the target and transforms it.
     """
     urls = [
         'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz',
@@ -40,14 +42,16 @@ class FashionData(data.Dataset):
     training_file = 'training.pt'
     test_file = 'test.pt'
 
-    def __init__(self, root, train=True, transform=None, target_transform=None, download=False):
+    def __init__(self, root, train=True, transform=None, target_transform=None,
+                 download=False):
         self.root = os.path.expanduser(root)
         self.transform = transform
         self.target_transform = target_transform
         self.train = train  # training set or test set
 
         self.transform = transforms.Compose([transforms.ToTensor(),
-                                            transforms.Normalize((0.1307,), (0.3081,))])
+                                            transforms.Normalize((0.1307,),
+                                                                 (0.3081,))])
 
         if download:
             self.download()
@@ -60,7 +64,8 @@ class FashionData(data.Dataset):
             self.train_data, self.train_labels = torch.load(
                 os.path.join(root, self.processed_folder, self.training_file))
         else:
-            self.test_data, self.test_labels = torch.load(os.path.join(root, self.processed_folder, self.test_file))
+            self.test_data, self.test_labels = torch.load(os.path.join(
+                root, self.processed_folder, self.test_file))
 
     def __getitem__(self, index):
         """
@@ -94,12 +99,15 @@ class FashionData(data.Dataset):
             return len(self.test_data)
 
     def _check_exists(self):
-        return os.path.exists(os.path.join(self.root, self.processed_folder, self.training_file)) and \
-            os.path.exists(os.path.join(self.root, self.processed_folder, self.test_file))
+        return os.path.exists(os.path.join(self.root, self.processed_folder,
+                                           self.training_file)) and \
+            os.path.exists(os.path.join(self.root, self.processed_folder,
+                                        self.test_file))
 
     # TODO: Need to fix. File not found error before it downloads
     def download(self):
-        """Download the MNIST data if it doesn't exist in processed_folder already."""
+        """Download the MNIST data if it doesn't exist in processed_folder
+        already."""
         import gzip
 
         if self._check_exists():
@@ -130,30 +138,33 @@ class FashionData(data.Dataset):
         print('Processing...')
 
         training_set = (
-            read_image_file(os.path.join(self.root, self.raw_folder, 'train-images-idx3-ubyte')),
-            read_label_file(os.path.join(self.root, self.raw_folder, 'train-labels-idx1-ubyte'))
+            read_image_file(os.path.join(self.root, self.raw_folder,
+                                         'train-images-idx3-ubyte')),
+            read_label_file(os.path.join(self.root, self.raw_folder,
+                                         'train-labels-idx1-ubyte'))
         )
         test_set = (
-            read_image_file(os.path.join(self.root, self.raw_folder, 't10k-images-idx3-ubyte')),
-            read_label_file(os.path.join(self.root, self.raw_folder, 't10k-labels-idx1-ubyte'))
+            read_image_file(os.path.join(self.root, self.raw_folder,
+                                         't10k-images-idx3-ubyte')),
+            read_label_file(os.path.join(self.root, self.raw_folder,
+                                         't10k-labels-idx1-ubyte'))
         )
-        with open(os.path.join(self.root, self.processed_folder, self.training_file), 'wb') as f:
+        with open(os.path.join(self.root, self.processed_folder,
+                               self.training_file), 'wb') as f:
             torch.save(training_set, f)
-        with open(os.path.join(self.root, self.processed_folder, self.test_file), 'wb') as f:
+        with open(os.path.join(self.root, self.processed_folder,
+                               self.test_file), 'wb') as f:
             torch.save(test_set, f)
 
         print('Done!')
 
-
 def get_int(b):
     return int(codecs.encode(b, 'hex'), 16)
-
 
 def parse_byte(b):
     if isinstance(b, str):
         return ord(b)
     return b
-
 
 def read_label_file(path):
     with open(path, 'rb') as f:
@@ -163,7 +174,6 @@ def read_label_file(path):
         labels = [parse_byte(b) for b in data_in[8:]]
         assert len(labels) == length
         return torch.LongTensor(labels)
-
 
 def read_image_file(path):
     with open(path, 'rb') as f:

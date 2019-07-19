@@ -878,7 +878,6 @@ class BaseNetwork(nn.Module):
     def bootfold_p_estimate(self, data_loader, n_samples, k, epochs, 
                             index_to_iter, ls_feat_vals, retain_graph=None,
                             valid_interv=4, plot=False, save_path=None,
-                            transform_outputs=False, transform_callable=None,
                             p_output_path=None, **kwargs):
         """Performs bootfold - estimation to identify whether training model
         provides statistically significant
@@ -910,18 +909,6 @@ class BaseNetwork(nn.Module):
                 Whether or not to plot all results in prompt and charts.
             save_path : str
                 Where to save all figures and results.
-            transform_outputs : boolean
-                Not used in the multi-class case.
-                If true, transform outputs using metrics.transform_outputs.
-                If no transform_callable is provided then the defaults in
-                metrics.transform_outputs will be used: class converstion for
-                one-hot encoded, and identity for one-dimensional outputs.
-                Multiple class multiple outputs are not yet supported.
-            transform_callable: callable
-                Not used in the multi-class case.
-                Used to transform values if transform_outputs is true,
-                otherwise defaults in metrics.transform_outputs will be used.
-                An example could be np.round
             p_output_path: str
                 Output file to save p_value to
             kwargs: dict of keyworded parameters
@@ -941,8 +928,6 @@ class BaseNetwork(nn.Module):
             valid_interv=valid_interv,
             plot=plot,
             save_path=save_path,
-            transform_outputs=transform_outputs,
-            transform_callable=transform_callable,
             p_output_path=p_output_path,
             **kwargs)
 

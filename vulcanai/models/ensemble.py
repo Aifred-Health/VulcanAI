@@ -129,7 +129,8 @@ class SnapshotNet(BaseNetwork):
             network : BaseNetwork
                 Network stack to update names of with new append_str.
             append_str : int, str
-                The characters to append at the end of BaseNetwork stack of names.
+                The characters to append at the end of BaseNetwork stack of
+                names.
 
         """
         if network.input_networks:
