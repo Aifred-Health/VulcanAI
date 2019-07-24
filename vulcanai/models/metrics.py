@@ -1015,7 +1015,7 @@ class Metrics(object):
             return all_results
 
     def conduct_sensitivity_analysis(self, network, data_loader, filename,
-                                     features, cutoff=20):
+                                     features=None, cutoff=20):
         """
         Will conduct tests to figure out directionality of features by finding all the unique feature values present in
         the dataset and setting the feature for all examples to every unique value of that feature.
@@ -1028,44 +1028,55 @@ class Metrics(object):
                 A DataLoader object which contains all the data
             filename: string
                 The name of the file to save the test results to
+            features: list
+                Feature names ordered as the data in the data_loader
             cutoff: int
-                Maximum number of unique feature values for a particular feature that will be tested
+                Maximum number of unique feature values for a particular
+                feature that will be tested
 
         Returns
         -------
-        #TODO
+        dataframe characterizing the number of examples classified in the
+        different classes when altering the input to constant feature values
         """
 
         if network._num_classes is None or network._num_classes == 0:
             raise ValueError('There\'s no classification layer')
 
-        dataset = data_loader.dataset
+        if features is None:
+            features = [i for i in range(data_loader.dataset[:][0].shape[1])]
 
         test_df = None
         col_headers = None
 
-        for feature in range(len(features)):
-            feature_val_list = dataset[:][0][:, feature].tolist()
+        for feature_idx in range(len(features)):
+            feature_val_list = data_loader.dataset[:][0][
+                               :, feature_idx].tolist()
 
-            unique_feature_values = list(np.unique(feature_val_list))
+            unique_feature_values = list(set(feature_val_list))
 
             if len(unique_feature_values) > cutoff:
-                print("================================")
-                print("Cutting off number of features to be tested for feature "
-                      "{} from {} to {}".format(features[feature],
-                                                len(unique_feature_values),
-                                                cutoff))
-                print("================================")
-                unique_feature_values = unique_feature_values[0::int(
-                        len(unique_feature_values) / cutoff)]
-            dataset_temp = copy.deepcopy(dataset)
-            for feature_value in range(len(unique_feature_values)):
-                dataset_temp[:][0][:, feature] = unique_feature_values[
-                    feature_value]
-                print("Testing value {} for feature {}".format(
-                    unique_feature_values[feature_value], features[feature]))
+                logger.info("================================")
+                logger.info("Cutting off number of features to be tested for "
+                            "feature {} from {} to {}".format(
+                    features[feature_idx], len(unique_feature_values), cutoff))
+                logger.info("================================")
 
-                targets = dataset[:][1].tolist()
+                # unique_feature_values are sorted, this next line
+                # pulls cutoff num of features evenly spaced from the list of
+                # unique features since the list contains more unique features
+                # than the cutoff
+                unique_feature_values = unique_feature_values[0::math.ceil(
+                        len(unique_feature_values) / cutoff)]
+            dataset_temp = copy.deepcopy(data_loader.dataset)
+            for unique_feature_idx in range(len(unique_feature_values)):
+                dataset_temp[:][0][:, feature_idx] = unique_feature_values[
+                    unique_feature_idx]
+                logger.info("Testing value {} for feature {}".format(
+                    unique_feature_values[unique_feature_idx],
+                    features[feature_idx]))
+
+                targets = data_loader.dataset[:][1].tolist()
 
                 raw_predictions = network.forward_pass(
                     data_loader=data_loader)
@@ -1076,23 +1087,22 @@ class Metrics(object):
                                                                    predictions)
 
                 if test_df is None and col_headers is None:
-                    num_classes = network._num_classes
                     col_headers = ["Feature", "Value"]
-                    for i in range(num_classes):
+                    for i in range(network._num_classes):
                         col_headers.append("Number of examples classified as "
                                            "class " + str(i))
                     test_df = pd.DataFrame(columns=col_headers)
 
-                row_to_append = [features[feature],
-                                 unique_feature_values[feature_value]]
+                row_to_append = [features[feature_idx],
+                                 unique_feature_values[unique_feature_idx]]
 
-                for i in range(len(tp)):
-                    row_to_append.append(tp[i] + fp[i])
+                row_to_append = row_to_append + [tp_i + fp_i for (tp_i, fp_i)
+                                                 in zip(tp, fp)]
 
                 df = pd.DataFrame(np.array(row_to_append).reshape(1, -1),
                                   columns=col_headers)
                 test_df = test_df.append(df)
-            print("***************************")
-        test_df.to_csv("{}.csv".format(filename))
+            logger.info("***************************")
+        test_df.to_csv("{}.csv".format(filename), index=False)
         return test_df
 

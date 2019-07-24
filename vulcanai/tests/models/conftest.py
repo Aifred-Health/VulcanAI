@@ -320,8 +320,8 @@ def multi_input_cnn_data(conv2D_net, conv3D_net, multi_input_dnn_data):
 
 
 @pytest.fixture(scope="module")
-def dnn_class_single_value_2():
-    """DenseNet with prediction layer."""
+def dnn_class_multi_value():
+    """DenseNet with prediction layer and mulitple classes."""
     return DenseNet(
         name='dnn_class',
         in_dim=(12),
@@ -332,8 +332,11 @@ def dnn_class_single_value_2():
         num_classes=3
     )
 
+
 @pytest.fixture(scope="module")
 def sensitivity_data_loader():
+    torch.manual_seed(7)
     test_input = torch.rand(size=[5, 12])
-    test_dataloader = DataLoader(TensorDataset(test_input, torch.tensor([0, 1, 2, 0, 1])))
+    test_dataloader = DataLoader(TensorDataset(test_input, torch.tensor(
+        [0, 1, 2, 0, 1])))
     return test_dataloader

@@ -6,6 +6,7 @@ import torch
 from vulcanai.models.metrics import Metrics
 from vulcanai.models.cnn import ConvNet
 from torch.utils.data import TensorDataset, DataLoader
+import pandas as pd
 
 
 # noinspection PyProtectedMember
@@ -331,11 +332,22 @@ class TestMetrics:
 
         assert all(k in res_dict for k in required_metrics)
 
-    def test_sensitivity_analysis(self, metrics, dnn_class_single_value_2,
+    def test_sensitivity_analysis(self, metrics, dnn_class_multi_value,
                                   sensitivity_data_loader):
-        metrics.conduct_sensitivity_analysis(dnn_class_single_value_2,
-                                             sensitivity_data_loader,
-                                             'test_sensitivity_analysis',
-                                             ['a', 'b', 'c', 'd', 'e', 'f', 'g',
-                                              'h', 'i', 'j', 'k', 'l'])
-        assert 1 == 1
+        metrics.conduct_sensitivity_analysis(
+            dnn_class_multi_value, sensitivity_data_loader,
+            'sensitivity_analysis_test_output', ['a', 'b', 'c', 'd', 'e', 'f',
+                                                 'g', 'h', 'i', 'j', 'k', 'l'])
+
+        output_df = pd.read_csv('sensitivity_analysis_test_output.csv')
+        truth_df = pd.read_csv('test_data/sensitivity_analysis_test_truth.csv')
+
+        cols = list(truth_df)
+
+        for ((_, row_output), (_, row_truth)) in zip(output_df.iterrows(),
+                                                     truth_df.iterrows()):
+            for col in cols:
+                assert row_output[col] == row_truth[col]
+
+
+
