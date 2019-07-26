@@ -16,6 +16,8 @@ import inspect
 
 import pandas as pd
 
+from torch.utils.data import Dataset, DataLoader
+
 import logging
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
@@ -1014,7 +1016,8 @@ class Metrics(object):
             logger.info(all_results)
             return all_results
 
-    def conduct_sensitivity_analysis(self, network, data_loader, filename,
+    @staticmethod
+    def conduct_sensitivity_analysis(network, data_loader, filename,
                                      features=None, cutoff=20):
         """
         Will conduct tests to figure out directionality of features by finding all the unique feature values present in
@@ -1078,14 +1081,16 @@ class Metrics(object):
 
                 targets = data_loader.dataset[:][1].tolist()
 
+                data_loader = DataLoader(dataset_temp)
                 raw_predictions = network.forward_pass(
                     data_loader=data_loader)
 
-                predictions = self.transform_outputs(raw_predictions)
+                predictions = Metrics.transform_outputs(raw_predictions)
 
                 tp, _, fp, _ = Metrics.get_confusion_matrix_values(targets,
                                                                    predictions)
 
+                print(tp, fp)
                 if test_df is None and col_headers is None:
                     col_headers = ["Feature", "Value"]
                     for i in range(network._num_classes):
