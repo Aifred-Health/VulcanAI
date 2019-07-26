@@ -8,9 +8,9 @@ import torch
 
 def dataloader():
     """Create a dataset by importing from the test csv"""
-    test_input = torch.rand(size=[5, 12])
+    test_input = torch.rand(size=[11, 12])
     test_dataloader = DataLoader(
-        TensorDataset(test_input, torch.tensor([0, 1, 2, 0, 1])))
+        TensorDataset(test_input, torch.tensor([0, 1, 2, 0, 2, 0, 0, 0, 3, 3, 3])))
     return test_dataloader
 
 def dnn():
@@ -22,7 +22,7 @@ def dnn():
             'dense_units': [100, 50],
             'dropout': 0.5,
         },
-        num_classes=3
+        num_classes=4
     )
 
 if __name__ == '__main__':
@@ -32,9 +32,9 @@ if __name__ == '__main__':
     m = Metrics()
 
     # with col names given
-    m.conduct_sensitivity_analysis(net, dl, 'test_sensitivity_analysis',
+    m.conduct_sensitivity_analysis(net, dl, 'test_sensitivity_analysis_1',
                                    ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
                                     'i', 'j', 'k', 'l'])
 
     # without col names given
-    m.conduct_sensitivity_analysis(net, dl, 'test_sensitivity_analysis')
+    m.conduct_sensitivity_analysis(net, dl, 'test_sensitivity_analysis_2')

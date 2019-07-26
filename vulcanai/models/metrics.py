@@ -1071,19 +1071,18 @@ class Metrics(object):
                 # than the cutoff
                 unique_feature_values = unique_feature_values[0::math.ceil(
                         len(unique_feature_values) / cutoff)]
-            dataset_temp = copy.deepcopy(data_loader.dataset)
+            data_loader_temp = copy.deepcopy(data_loader)
             for unique_feature_idx in range(len(unique_feature_values)):
-                dataset_temp[:][0][:, feature_idx] = unique_feature_values[
-                    unique_feature_idx]
+                data_loader_temp.dataset[:][0][:, feature_idx] = \
+                    unique_feature_values[unique_feature_idx]
                 logger.info("Testing value {} for feature {}".format(
                     unique_feature_values[unique_feature_idx],
                     features[feature_idx]))
 
                 targets = data_loader.dataset[:][1].tolist()
 
-                data_loader = DataLoader(dataset_temp)
                 raw_predictions = network.forward_pass(
-                    data_loader=data_loader)
+                    data_loader=data_loader_temp)
 
                 predictions = Metrics.transform_outputs(raw_predictions)
 
