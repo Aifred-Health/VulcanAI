@@ -7,6 +7,7 @@ from vulcanai.models.metrics import Metrics
 from vulcanai.models.cnn import ConvNet
 from torch.utils.data import TensorDataset, DataLoader
 import pandas as pd
+import os
 
 
 # noinspection PyProtectedMember
@@ -340,7 +341,10 @@ class TestMetrics:
                                                  'g', 'h', 'i', 'j', 'k', 'l'])
 
         output_df = pd.read_csv('sensitivity_analysis_test_output.csv')
-        truth_df = pd.read_csv('test_data/sensitivity_analysis_test_truth.csv')
+
+        test_file = str(os.path.dirname(__file__)) + \
+                    "/test_data/sensitivity_analysis_test_truth.csv"
+        truth_df = pd.read_csv(test_file)
 
         cols = list(truth_df)
 
@@ -348,6 +352,8 @@ class TestMetrics:
                                                      truth_df.iterrows()):
             for col in cols:
                 assert row_output[col] == row_truth[col]
+
+        os.remove('sensitivity_analysis_test_output.csv')
 
 
 
