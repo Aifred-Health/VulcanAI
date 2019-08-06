@@ -340,10 +340,14 @@ class TestMetrics:
             'sensitivity_analysis_test_output', ['a', 'b', 'c', 'd', 'e', 'f',
                                                  'g', 'h', 'i', 'j', 'k', 'l'])
 
-        output_df = pd.read_csv('sensitivity_analysis_test_output.csv')
+        output_file = str(os.path.dirname(__file__)) + \
+                    '/test_data/sensitivity_analysis_test_output.csv'
+
+        output_df = pd.read_csv(output_file)
 
         test_file = str(os.path.dirname(__file__)) + \
                     "/test_data/sensitivity_analysis_test_truth.csv"
+
         truth_df = pd.read_csv(test_file)
 
         cols = list(truth_df)
