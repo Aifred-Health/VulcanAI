@@ -692,8 +692,8 @@ class BaseNetwork(nn.Module):
 
                 tqdm.write(
                     "\n Epoch {}:\n"
-                    "Train Loss: {:.6f} | Test Loss: {:.6f} |"
-                    "Train Acc: {:.4f} | Test Acc: {:.4f}".format(
+                    "Train Loss: {:.6f} | Val Loss: {:.6f} |"
+                    "Train Acc: {:.4f} | Val Acc: {:.4f}".format(
                         self.epoch,
                         train_loss,
                         valid_loss,
