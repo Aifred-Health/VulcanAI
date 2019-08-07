@@ -6,11 +6,10 @@ import numpy as np
 from math import sqrt, ceil, floor
 import pickle
 from datetime import datetime
-from .utils import GuidedBackprop, get_notable_indices
+from vulcanai.plotters.utils import GuidedBackprop, get_notable_indices
 
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
-
 
 import matplotlib
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -19,6 +18,11 @@ import seaborn as sns
 
 import itertools
 import logging
+
+from graphviz import Digraph
+import torch
+from torch.autograd import Variable
+
 logger = logging.getLogger(__name__)
 
 DISPLAY_AVAILABLE = True if os.environ.get("DISPLAY") else False
@@ -182,7 +186,7 @@ def display_tsne(input_data, targets, label_map=None, save_path=None):
         save_path=save_path)
 
 
-def _plot_reduction(x_transform, targets, label_map, title, save_path=None,interactive=True):
+def _plot_reduction(x_transform, targets, label_map, title, save_path=None, interactive=True):
     """Once PCA and t-SNE has been calculated, this is used to plot."""
     y_unique = np.unique(targets)
     if label_map is None:
@@ -219,7 +223,8 @@ def _plot_reduction(x_transform, targets, label_map, title, save_path=None,inter
         plt.draw()
         plt.pause(1e-17)
 
-def display_confusion_matrix(cm, class_list=None, save_path=None,interactive=True):
+
+def display_confusion_matrix(cm, class_list=None, save_path=None, interactive=True):
     """
     Print and plot the confusion matrix.
 
@@ -301,7 +306,7 @@ def compute_saliency_map(network, input_data, targets):
     return saliency_map
 
 
-def display_saliency_overlay(image, saliency_map, shape=(28, 28), save_path=None,interactive=True):
+def display_saliency_overlay(image, saliency_map, shape=(28, 28), save_path=None, interactive=True):
     """
     Plot overlay saliency map over image.
 
@@ -371,7 +376,7 @@ def display_saliency_overlay(image, saliency_map, shape=(28, 28), save_path=None
         plt.pause(1e-17)
 
 
-def display_receptive_fields(network, top_k=5, save_path=None,interactive=True):
+def display_receptive_fields(network, top_k=5, save_path=None, interactive=True):
     """
     Display receptive fields of layers from a network [1].
 
@@ -409,7 +414,7 @@ def display_receptive_fields(network, top_k=5, save_path=None,interactive=True):
         field_shape = [
             floor(sqrt(field.shape[0])),
             ceil(sqrt(field.shape[0]))
-            ]
+        ]
         fig.add_subplot(
             floor(sqrt(num_layers)),
             ceil(sqrt(num_layers)),
@@ -437,3 +442,86 @@ def display_receptive_fields(network, top_k=5, save_path=None,interactive=True):
         plt.pause(1e-17)
 
     return feature_importance
+
+
+def resize_graph(dot, size_per_element=0.15, min_size=12):
+    """Resize the graph according to how much content it contains.
+    Modify the graph in place.
+    """
+    # Get the approximate number of nodes and edges
+    num_rows = len(dot.body)
+    content_size = num_rows * size_per_element
+    size = max(min_size, content_size)
+    size_str = str(size) + "," + str(size)
+    dot.graph_attr.update(size=size_str)
+
+
+def make_dot(var, params=None):
+    """ Produces Graphviz representation of PyTorch autograd graph.
+    Blue nodes are the Variables that require grad, orange are Tensors
+    saved for backward in torch.autograd.Function
+    Args:
+        var: output Variable
+        params: dict of (name, Variable) to add names to node that
+            require grad (TODO: make optional)
+    """
+
+    if params is not None:
+        assert all(isinstance(p, Variable) for p in params.values())
+        param_map = {id(v): k for k, v in params.items()}
+
+    node_attr = dict(style='filled',
+                     shape='box',
+                     align='left',
+                     fontsize='12',
+                     ranksep='0.1',
+                     height='0.2')
+    dot = Digraph(node_attr=node_attr, graph_attr=dict(size="12,12"))
+    seen = set()
+
+    def size_to_str(size):
+        return '(' + (', ').join(['%d' % v for v in size]) + ')'
+
+    output_nodes = (var.grad_fn,) if not isinstance(var, tuple) else tuple(v.grad_fn for v in var)
+
+    def add_nodes(var):
+        if var not in seen:
+            if torch.is_tensor(var):
+                # note: this used to show .saved_tensors in pytorch0.2, but stopped
+                # working as it was moved to ATen and Variable-Tensor merged
+                dot.node(str(id(var)), size_to_str(var.size()), fillcolor='orange')
+            elif hasattr(var, 'variable'):
+                u = var.variable
+                name = param_map[id(u)] if params is not None else ''
+                node_name = '%s\n %s' % (name, size_to_str(u.size()))
+                dot.node(str(id(var)), node_name, fillcolor='lightblue')
+            elif var in output_nodes:
+                dot.node(str(id(var)), str(type(var).__name__), fillcolor='darkolivegreen1')
+            else:
+                dot.node(str(id(var)), str(type(var).__name__))
+            seen.add(var)
+            if hasattr(var, 'next_functions'):
+                for u in var.next_functions:
+                    if u[0] is not None:
+                        dot.edge(str(id(u[0])), str(id(var)))
+                        add_nodes(u[0])
+            if hasattr(var, 'saved_tensors'):
+                for t in var.saved_tensors:
+                    dot.edge(str(id(t)), str(id(var)))
+                    add_nodes(t)
+
+    # handle multiple outputs
+    if isinstance(var, tuple):
+        for v in var:
+            add_nodes(v.grad_fn)
+    else:
+        add_nodes(var.grad_fn)
+
+    resize_graph(dot)
+    return dot
+
+
+def plot_architecture(var, file_format, file_name):
+    dot = make_dot(var)
+    dot.format = file_format
+    return dot.render(file_name, view=True)

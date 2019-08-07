@@ -12,7 +12,7 @@ Submodules
     multidataset
 """
 
-from .fashion import FashionData
+from .fashion import FashionData,read_image_file
 from .tabulardataset import TabularDataset
 from .multidataset import MultiDataset
 

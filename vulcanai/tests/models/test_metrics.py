@@ -6,8 +6,7 @@ import torch
 from vulcanai.models.metrics import Metrics
 from vulcanai.models.cnn import ConvNet
 from torch.utils.data import TensorDataset, DataLoader
-import warnings
-import sklearn.exceptions
+
 
 # noinspection PyProtectedMember
 class TestMetrics:
@@ -96,11 +95,9 @@ class TestMetrics:
 
     def test_cross_validate_outputs(self, metrics, cnn_class):
         """Tests that the cross-validate outputs are in the correct form."""
-        warnings.filterwarnings("ignore", category=sklearn.exceptions.UndefinedMetricWarning)
-        np.seterr(divide='ignore', invalid='ignore')
         num_items = 300
-        test_input = torch.Tensor(np.random.randint(0, 10,size=(num_items, *cnn_class.in_dim)))
-        test_target = torch.LongTensor(np.random.randint(0, 10,size=num_items))
+        test_input = torch.Tensor(np.random.randint(1, 10,size=(num_items, *cnn_class.in_dim)))
+        test_target = torch.LongTensor(np.random.randint(1, 10,size=num_items))
         test_dataloader = DataLoader(TensorDataset(test_input, test_target))
 
         k = 2
@@ -293,7 +290,7 @@ class TestMetrics:
 
     def test_run_test(self, metrics, cnn_class):
         """Test that run_test returns values as expected."""
-        warnings.filterwarnings("ignore", category=sklearn.exceptions.UndefinedMetricWarning)
+        #warnings.filterwarnings("ignore", category=sklearn.exceptions.UndefinedMetricWarning)
         num_items = 300
 
         test_input = torch.Tensor(np.random.randint(0, 10,size=(num_items,*cnn_class.in_dim)))
@@ -324,3 +321,6 @@ class TestMetrics:
                             'macro_npv', 'macro_f1', 'macro_auc']
 
         assert all(k in res_dict for k in required_metrics)
+
+
+

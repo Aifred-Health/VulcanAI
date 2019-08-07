@@ -64,6 +64,12 @@ class BaseNetwork(nn.Module):
             A callable torch.optim.lr_scheduler
         early_stopping : str or None
             So far just 'best_validation_error' is implemented.
+        early_stopping_patience: integer
+            Number of validation iterations of decreasing loss
+            (note -not necessarily every epoch!
+            before early stopping is applied.
+        early_stopping_metric: string
+            Either "loss" or "accuracy" are implemented.
         criter_spec : dict
             criterion specification with name and all its parameters.
         device : str or torch.device
@@ -80,6 +86,8 @@ class BaseNetwork(nn.Module):
                  activation=nn.ReLU(), pred_activation=None,
                  optim_spec={'name': 'Adam', 'lr': 0.001},
                  lr_scheduler=None, early_stopping=None,
+                 early_stopping_patience=None,
+                 early_stopping_metric = "accuracy",
                  criter_spec=nn.CrossEntropyLoss(),
                  device="cuda:0"):
         """Define, initialize, and build the BaseNetwork."""
@@ -108,6 +116,8 @@ class BaseNetwork(nn.Module):
 
         self._lr_scheduler = lr_scheduler
         self._early_stopping = early_stopping
+        self._early_stopping_patience = early_stopping_patience
+        self._early_stopping_metric = early_stopping_metric
 
         if self._num_classes:
             self.metrics = Metrics()
@@ -359,6 +369,40 @@ class BaseNetwork(nn.Module):
         self._early_stopping = value
 
     @property
+    def early_stopping_patience(self):
+        """
+        Return the early stopping patience.
+
+        Returns:
+            early_stopping_patience : int
+                The early stopping patience
+
+        """
+        return self._early_stopping_patience
+
+    @early_stopping_patience.setter
+    def early_stopping_patience(self, value):
+        self._early_stopping_patience = value
+
+
+
+    @property
+    def early_stopping_metric(self):
+        """
+        Return the early stopping netric.
+
+        Returns:
+            early_stopping_metric : string
+                The early stopping metric
+
+        """
+        return self._early_stopping_metric
+
+    @early_stopping_metric.setter
+    def early_stopping_metric(self, value):
+        self._early_stopping_metric = value
+
+    @property
     def criter_spec(self):
         """
         Return the criterion specification.
@@ -494,6 +538,70 @@ class BaseNetwork(nn.Module):
                     comparison_device,
                     incompatible_collector))
 
+    # modified from
+    # https://github.com/Bjarten/early-stopping-pytorch/blob/master
+    # /pytorchtools.py
+    class EarlyStopping:
+        """Early stops the training if validation loss doesn't improve after
+        a given number of epochs.
+        Args:
+            patience: int default 7
+                How many epochs to wait after last time
+                validation loss improved.
+            verbose: bool default False
+                If True, prints a message for each
+                validation loss improvement.
+        """
+
+        def __init__(self, patience=2, verbose=False):
+            """ Initialize early stopping """
+            self.patience = patience
+            self.verbose = verbose
+            self.counter = 0
+            self.best_score = None
+            self.early_stop = False
+            self.val_loss_min = np.Inf
+            self.best_model = None
+            self.save_path = ""
+
+        def __call__(self, score, model):
+
+            # necessary with current code
+            if score:
+                score = float(score)
+
+            if not score:
+                logger.info('EarlyStopping counter not incremented, score'
+                            'was not calculated this epoch')
+
+            elif score and not np.isnan(score) and self.best_score is None:
+                self.best_score = score
+                self.save_checkpoint(score, model)
+
+            # never save a model that has nan as a score, but count
+            # it towards total (i.e. don't nan to infinity, exit early).
+            elif score <= self.best_score or np.isnan(score):
+                self.counter += 1
+                logger.info('EarlyStopping counter: {} out of {}'.format(
+                    self.counter, self.patience
+                ))
+                if self.counter >= self.patience:
+                    self.early_stop = True
+
+            else:
+                self.best_score = score
+                self.save_checkpoint(score, model)
+                self.counter = 0
+
+        def save_checkpoint(self, val_loss, model):
+            '''Saves model when validation loss decrease.'''
+            if self.verbose:
+                logger.info(
+                    f'Validation loss decreased ({self.val_loss_min:.6f} --> '
+                    f'{val_loss:.6f}).  Saving model ...')
+            self.save_path = model.save_model()
+            self.val_loss_min = val_loss
+
     def fit(self, train_loader, val_loader, epochs,
             retain_graph=None, valid_interv=4, plot=False, save_path=None):
         """
@@ -527,6 +635,10 @@ class BaseNetwork(nn.Module):
         if self.optim is None:
             self._init_trainer()
 
+        early_stopping = self.EarlyStopping(patience=
+                                            self.early_stopping_patience,
+                                            verbose=True)
+
         try:
             if plot:
                 fig_number = plt.gcf().number + 1 if plt.fignum_exists(1) else 1
@@ -538,17 +650,45 @@ class BaseNetwork(nn.Module):
                 else:
                     save_path = save_path + '/' + self.name + '_'
                 save_path = get_save_path(save_path, vis_type='train')
-            for epoch in trange(epochs, desc='Epoch: '):
+            iterator = trange(epochs, desc='Epoch: ')
+
+            for epoch in iterator:
 
                 train_loss, train_acc = self._train_epoch(train_loader,
                                                           retain_graph)
 
-                valid_loss = valid_acc = np.nan
+                valid_loss = valid_acc = None
                 if epoch % valid_interv == 0:
                     valid_loss, valid_acc = self._validate(val_loader)
 
                 if self.lr_scheduler:
                     self.lr_scheduler.step(epoch=epoch)
+
+                if self.early_stopping:
+                    if self.early_stopping_metric == "loss":
+                        if valid_loss:
+                            valid_loss_neg = -1 * valid_loss
+                        early_stopping(valid_loss_neg, self)
+                    elif self.early_stopping_metric == "accuracy":
+                        early_stopping(valid_acc, self)
+                    else:
+                        raise ValueError("Not a valid stopping metric")
+
+                    if early_stopping.early_stop:
+                        logger.info("Early stopping")
+                        # restores everything to the earlier saved version
+                        self.__dict__.update(self.load_model(
+                            early_stopping.save_path).__dict__)
+                        # for tqdm
+                        iterator.close()
+                        break
+
+                # reset from None so that a distinction can be made
+                # between no value being collected
+                if not valid_loss:
+                    valid_loss = np.nan
+                if not valid_acc:
+                    valid_acc = np.nan
 
                 tqdm.write(
                     "\n Epoch {}:\n"

@@ -8,7 +8,7 @@ from .utils import (
         selu_weight_init_,
         selu_bias_init_,
         set_tensor_device,
-        master_device_setter
+        master_device_setter,
     )
 
 from .basenetwork import BaseNetwork

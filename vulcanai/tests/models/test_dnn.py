@@ -10,12 +10,12 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Subset, TensorDataset
 
+import vulcanai
 from vulcanai.models import BaseNetwork
 from vulcanai.models.dnn import DenseNet, DenseNetConfig
 from vulcanai.models.utils import master_device_setter
 
 logger = logging.getLogger(__name__)
-torch.manual_seed(1234)
 
 
 class TestDenseNet:
@@ -222,3 +222,51 @@ class TestDenseNet:
             data_loader=test_dataloader,
             transform_outputs=False)
         assert np.any(~np.isnan(raw_output))
+
+    def test_early_stopping(self, dnn_class_early_stopping,
+                            dnn_class):
+        """ Test that their final params are different: aka
+        that the early stopping did something
+        Constant seed resetting due to worker init function of dataloader
+        https://github.com/pytorch/pytorch/issues/7068 """
+
+        ds = DataLoader(TensorDataset(
+            torch.rand(size=[3, *dnn_class_early_stopping.in_dim]),
+            torch.tensor([0, 1, 2]).long()))
+
+        vulcanai.set_global_seed(42)
+
+        ds2 = copy.deepcopy(ds)
+
+        vulcanai.set_global_seed(42)
+
+        ds3 = copy.deepcopy(ds)
+
+        dnn_class_copy = copy.deepcopy(dnn_class)
+
+        dnn_class_copy.fit(
+            train_loader=ds2,
+            val_loader=ds2,
+            epochs=5)
+
+        vulcanai.set_global_seed(42)
+
+        dnn_class.fit(
+            train_loader=ds,
+            val_loader=ds,
+            epochs=5)
+
+        vulcanai.set_global_seed(42)
+
+        dnn_class_early_stopping.fit(
+            train_loader=ds3,
+            val_loader=ds3,
+            epochs=5)
+
+        stopping_params = list(dnn_class_early_stopping.parameters())[0][0].data
+        non_stopping_params = list(dnn_class.parameters())[0][0].data
+        non_stopping_params_copy = list(dnn_class_copy.parameters())[0][0].data
+
+        assert not torch.eq(stopping_params, non_stopping_params).all()
+        assert torch.eq(non_stopping_params, non_stopping_params_copy).all()
+

@@ -10,7 +10,15 @@ from .visualization import (
     display_tsne,
     display_confusion_matrix,
     display_record,
-    display_receptive_fields
+    display_receptive_fields,
+    plot_architecture
+
+)
+
+from .utils import (
+    GuidedBackprop,
+    get_notable_indices
+
 )
 
 __all__ = [
