@@ -60,10 +60,10 @@ class GuidedBackprop(object):
 
     def _crop_negative_gradients(self):
         """Update relu/selu activations to return positive gradients."""
-        def activation_hook_function(module, grad_in):
+        def activation_hook_function(module, grad_in, grad_out):
             """If there is a negative gradient, changes it to zero."""
             if isinstance(module, ReLU) or isinstance(module, SELU):
-                return torch.clamp(grad_in[0], min=0.0),
+                return (torch.clamp(grad_in[0], min=0.0),)
             else:
                 raise NotImplementedError("Only ReLU and SELU supported.")
 
