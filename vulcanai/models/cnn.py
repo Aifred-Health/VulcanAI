@@ -168,13 +168,13 @@ class ConvNet(BaseNetwork):
             conv_layers[layer_name] = ConvUnit(**conv_layer_config)
         self.network = nn.Sequential(conv_layers)
 
-        if self._num_classes:
+        if self.num_classes:
             self.network.add_module(
                 'flatten', FlattenUnit())
             self.network.add_module(
                 'classify', DenseUnit(
                     in_features=self._get_out_dim()[0],
-                    out_features=self._num_classes,
+                    out_features=self.num_classes,
                     activation=kwargs['pred_activation']))
 
     def _merge_input_network_outputs(self, tensors):

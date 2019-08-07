@@ -541,7 +541,7 @@ class Metrics(object):
             results : dict
 
         """
-        num_classes = network._num_classes
+        num_classes = network.num_classes
 
         if num_classes is None or num_classes == 0:
             raise ValueError('There\'s no classification layer')
@@ -620,7 +620,7 @@ class Metrics(object):
             results : dict
 
         """
-        num_classes = network._num_classes
+        num_classes = network.num_classes
 
         if num_classes > 2:
             average = "macro"

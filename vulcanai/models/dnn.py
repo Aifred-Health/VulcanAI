@@ -162,11 +162,11 @@ class DenseNet(BaseNetwork):
             dense_layers[layer_name] = DenseUnit(**dense_layer_config)
         self.network = nn.Sequential(dense_layers)
 
-        if self._num_classes:
+        if self.num_classes:
             self.network.add_module(
                 'classify', DenseUnit(
                     in_features=self._get_out_dim()[0],
-                    out_features=self._num_classes,
+                    out_features=self.num_classes,
                     activation=kwargs['pred_activation']))
 
     def _merge_input_network_outputs(self, tensors):

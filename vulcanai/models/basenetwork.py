@@ -110,14 +110,14 @@ class BaseNetwork(nn.Module):
         self._set_final_layer_parameters(pred_activation=pred_activation,
                                          criter_spec=criter_spec)
 
-        self._num_classes = num_classes
+        self.num_classes = num_classes
 
         self._lr_scheduler = lr_scheduler
         self._early_stopping = early_stopping
         self._early_stopping_patience = early_stopping_patience
         self._early_stopping_metric = early_stopping_metric
 
-        if self._num_classes:
+        if self.num_classes:
             self.metrics = Metrics()
 
         self.optim = None
@@ -755,7 +755,7 @@ class BaseNetwork(nn.Module):
             # will be used
             average = None
 
-            if self._num_classes == 1:
+            if self.num_classes == 1:
                 metric = "mse"
             else:
                 metric = "accuracy"
@@ -813,7 +813,7 @@ class BaseNetwork(nn.Module):
             # will be used
             average = None
 
-            if self._num_classes == 1:
+            if self.num_classes == 1:
                 metric = "mse"
             else:
                 metric = "accuracy"

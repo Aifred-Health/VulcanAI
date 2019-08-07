@@ -98,7 +98,7 @@ class TestSnapshotNet:
         output = test_snap.forward_pass(
             data_loader=test_dataloader,
             transform_outputs=False)
-        assert output.shape == (3, test_snap._num_classes)
+        assert output.shape == (3, test_snap.num_classes)
         assert np.any(~np.isnan(output))
 
     def test_snapshot_lr(self, cnn_noclass, dnn_class_two):

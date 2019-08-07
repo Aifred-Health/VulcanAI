@@ -128,7 +128,7 @@ class GuidedBackprop(object):
         # Target for backprop
         one_hot_zeros = torch.zeros(
             network_output.size()[0],
-            self.network._num_classes)
+            self.network.num_classes)
         one_hot_output = one_hot_zeros.scatter_(1, targets.unsqueeze(dim=1), 1)
         one_hot_output = one_hot_output.to(self.network.device)
         # Backward pass
