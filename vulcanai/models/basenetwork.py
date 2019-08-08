@@ -665,14 +665,20 @@ class BaseNetwork(nn.Module):
                     self.lr_scheduler.step(epoch=epoch)
 
                 if self.early_stopping:
-                    if self.early_stopping_metric == "loss":
-                        if valid_loss:
+
+                    # only call if you've actually measured these.
+                    if valid_loss and valid_acc:
+                        if self.early_stopping_metric == "loss":
+                            # because early stopping looks for the greatest
+                            # value
                             valid_loss_neg = -1 * valid_loss
-                        early_stopping(valid_loss_neg, self)
-                    elif self.early_stopping_metric == "accuracy":
-                        early_stopping(valid_acc, self)
-                    else:
-                        raise ValueError("Not a valid stopping metric")
+                            early_stopping(valid_loss_neg, self)
+                        elif self.early_stopping_metric == "accuracy":
+                            early_stopping(valid_acc, self)
+                        else:
+                            raise ValueError("Not a valid stopping metric."
+                                             " Use either loss or accuracy")
+
 
                     if early_stopping.early_stop:
                         logger.info("Early stopping")
