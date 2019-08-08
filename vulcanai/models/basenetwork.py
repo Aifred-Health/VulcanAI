@@ -667,14 +667,18 @@ class BaseNetwork(nn.Module):
                 if self.early_stopping:
 
                     # only call if you've actually measured these.
-                    if valid_loss:
+                    if valid_loss and valid_acc:
                         if self.early_stopping_metric == "loss":
+                            # because early stopping looks for the greatest
+                            # value
                             valid_loss_neg = -1 * valid_loss
                             early_stopping(valid_loss_neg, self)
                         elif self.early_stopping_metric == "accuracy":
                             early_stopping(valid_acc, self)
                         else:
-                            raise ValueError("Not a valid stopping metric")
+                            raise ValueError("Not a valid stopping metric."
+                                             " Use either loss or accuracy")
+
 
                     if early_stopping.early_stop:
                         logger.info("Early stopping")
