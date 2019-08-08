@@ -885,10 +885,12 @@ class BaseNetwork(nn.Module):
                             index_to_iter, ls_feat_vals, retain_graph=None,
                             valid_interv=4, plot=False, save_path=None,
                             p_output_path=None, **kwargs):
-        """Performs bootfold - estimation to identify whether training model
+        """
+        Performs bootfold - estimation to identify whether training model
         provides statistically significant
         difference in predicting various values for a given feature when
         predicting outcome.
+
         Parameters:
             data_loader : torch.utils.data.DataLoader
                 The DataLoader object containing the totality of the data to
@@ -903,8 +905,7 @@ class BaseNetwork(nn.Module):
                 The number of epochs to train the network per fold.
             index_to_iter : string
                 Index of feature within data_loader who's values will be
-                iterated.
-            to assess difference
+                iterated to assess difference.
             ls_feat_vals : list
                 List of values for feature provided in feat_to_iter
             retain_graph: boolean

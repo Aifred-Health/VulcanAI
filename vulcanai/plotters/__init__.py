@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+import matplotlib
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
+
 from .visualization import (
     compute_saliency_map,
     display_saliency_overlay,
@@ -8,8 +12,6 @@ from .visualization import (
     display_record,
     display_receptive_fields
 )
-import matplotlib
-matplotlib.use('agg')
 
 __all__ = [
     'utils',

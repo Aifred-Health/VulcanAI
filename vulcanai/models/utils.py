@@ -28,8 +28,10 @@ def _get_probs(network, loader, index_to_iter, ls_feat_vals):
             values to iterate through for feature in index_to_iter
 
     Returns:
-    dct_scores : dictionary
-        dictionary of scores"""
+        dct_scores : dictionary
+            dictionary of scores
+    """
+
     dct_scores = defaultdict()
     for index in range(len(loader)):
         dct_scores[index] = {}

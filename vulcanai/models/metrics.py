@@ -50,7 +50,7 @@ class Metrics(object):
                 This parameter is required for multiclass/multilabel targets.
                 If None, the scores for each class are returned.
                 Otherwise, this determines the type of averaging performed on
-                the data.See scikit learn
+                the data. See scikit learn documentation for each metric.
             class_converted: binary. default False
                 True: If raw_predictions have already been converted using
                 transform_outputs
@@ -629,7 +629,8 @@ class Metrics(object):
                            set to {}".format(pos_label))
             average = "binary"
         else:
-            raise ValueError("Incorrect number of classes for run_test_multi")
+            raise ValueError("Incorrect number of classes for run_test_multi."
+                             "Need to have more than one class.")
 
         if plot:
             logger.setLevel(logging.INFO)

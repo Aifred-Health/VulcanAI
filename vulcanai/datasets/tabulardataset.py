@@ -518,7 +518,9 @@ class TabularDataset(Dataset):
             di = {index[0]: 1.0, index[1]: 0.0}
             try:
                 self.df = self.df.replace({col: di})
-            except (AssertionError, TypeError, ValueError):
+            except (AssertionError, TypeError, ValueError) as e:
+                logging.info("Could not convert column {} due to error {}"
+                             .format(col, e))
                 continue
             self.df[col] = self.df[col].astype(np.float64)
 
