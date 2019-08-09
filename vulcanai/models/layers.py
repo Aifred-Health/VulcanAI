@@ -285,27 +285,3 @@ class ConvUnit(BaseUnit):
             x = torch.ones(1, *self.in_dim)
             x = self.conv_model(x)
             return x.numel()
-
-
-# TODO: Will work on these classes below later during Vulcan2 deployment
-class InputUnit(BaseUnit):
-    """InputUnit."""
-
-    def __init__(self, in_channels, out_channels, bias=False):
-        """Initialize InputUnit."""
-        super(InputUnit, self).__init__()
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self._kernel = nn.Linear(
-            self.in_channels, self.out_channels, bias=bias)
-
-    def forward(self, input):
-        """Define forward for InputUnit."""
-        # NCHW = batch size, channels, height, width
-        if input.dim() > 2:
-            input = input.transpose(1, 3)  # NCHW --> NHWC
-            output = self._kernel(input)
-            return output.transpose(1, 3)  # NHWC --> NCHW
-        else:
-            output = self._kernel(input)
-            return output
