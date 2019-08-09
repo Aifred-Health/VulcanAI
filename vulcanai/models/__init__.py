@@ -1,3 +1,4 @@
+# coding=utf-8
 """ Imports network classes so they can be used directly"""
 from .utils import (
         round_list,
@@ -38,6 +39,3 @@ __all__ = [
     'FlattenUnit',
     'BaseUnit'
 ]
-
-def start():
-    " Start module"

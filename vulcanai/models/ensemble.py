@@ -34,6 +34,7 @@ class SnapshotNet(BaseNetwork):
 
     """
 
+    # noinspection PyProtectedMember
     def __init__(self, name, template_network, n_snapshots=3):
         """Use Network to build model snapshots."""
         # TODO: Should these be defaulted to the values of template_network?
@@ -43,7 +44,7 @@ class SnapshotNet(BaseNetwork):
             in_dim=template_network.in_dim,
             save_path=None,  # template_network.save_path
             input_networks=None,  # template_network.input_networks
-            num_classes=template_network._num_classes,
+            num_classes=template_network.num_classes,
             activation=None,  # template_network.network[0]._activation
             pred_activation=None,  # pred_activation
             optim_spec=None,  # template_network._optim_spec
@@ -129,7 +130,8 @@ class SnapshotNet(BaseNetwork):
             network : BaseNetwork
                 Network stack to update names of with new append_str.
             append_str : int, str
-                The characters to append at the end of BaseNetwork stack of names.
+                The characters to append at the end of BaseNetwork stack of
+                names.
 
         """
         if network.input_networks:
@@ -158,6 +160,8 @@ class SnapshotNet(BaseNetwork):
         for net in self.network:
             pred_collector.append(net(inputs))
         # Stack outputs along a new 0 dimension to be averaged
+        # Can take a list despite type checker complaining?
+        # noinspection PyTypeChecker
         pred_collector = torch.stack(pred_collector)
 
         return torch.mean(input=pred_collector, dim=0)
