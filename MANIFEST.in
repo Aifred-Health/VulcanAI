@@ -1,0 +1,5 @@
+recursive-include vulcanai *.py
+include README.md
+include LICENSE
+include requirements.txt
+include vulcanai/logging.conf

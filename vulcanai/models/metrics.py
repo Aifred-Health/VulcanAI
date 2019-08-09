@@ -46,11 +46,12 @@ class Metrics(object):
             metrics: list of strings
                 The strings definition the "get_"... functions to call
             average: string,
-                [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
+                [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’,
+                ‘weighted’]
                 This parameter is required for multiclass/multilabel targets.
                 If None, the scores for each class are returned.
-                Otherwise, this determines the type of averaging performed on the
-                data.See scikit learn
+                Otherwise, this determines the type of averaging performed on
+                the data. See scikit learn documentation for each metric.
             class_converted: binary. default False
                 True: If raw_predictions have already been converted using
                 transform_outputs
@@ -82,13 +83,11 @@ class Metrics(object):
                     metric_results = method(targets, predictions)
                 else:
                     metric_results = method(targets, predictions, average)
-
+                results_dict[metric] = metric_results
             except (AttributeError, TypeError):
                 logger.warning(
                     "Metric {} does not exist via function {}().".format(
                         metric, method_name))
-
-            results_dict[metric] = metric_results
 
         return results_dict
 
@@ -112,7 +111,6 @@ class Metrics(object):
         """
         if isinstance(in_matrix, torch.Tensor):
             in_matrix = in_matrix.cpu().detach().numpy()
-
 
         # For one-hot encoded entries
         if in_matrix.shape[1] > 1:
@@ -420,6 +418,8 @@ class Metrics(object):
                 If None, the scores for each class are returned.
                 Otherwise, this determines the type of averaging performed on
                 the data. See Scikit learn.
+            pos_label: int default 1:
+                The index value that is positive when in the binary case
 
         Returns:
             f1: np.float32 or array of np.float32
@@ -434,7 +434,8 @@ class Metrics(object):
 
     # TODO: what type are the raw predicted values that come out??
     @staticmethod
-    def get_auc(targets, raw_predictions, num_classes, average=None, pos_label=1):
+    def get_auc(targets, raw_predictions, num_classes, average=None,
+                pos_label=1):
         """
         Calculate the AUC. Note: raw_predictions and num_classes are required.
 
@@ -443,12 +444,16 @@ class Metrics(object):
                 The target values.
             raw_predictions: numpy.ndarray of floats
                 The raw predicted values, not converted to classes.
+            num_classes: int
+                The number of classes that will be predicted.
             average: string
                 [None, ‘binary’ (def), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
                 This parameter is required for multiclass/multilabel targets.
                 If None, the scores for each class are returned.
                 Otherwise, this determines the type of averaging performed on
                 the data. See Scikit learn.
+            pos_label: int default 1
+                The index value that is positive when in the binary case
 
         Returns:
             f1: np.float32 or array of np.float32
@@ -537,7 +542,7 @@ class Metrics(object):
             results : dict
 
         """
-        num_classes = network._num_classes
+        num_classes = network.num_classes
 
         if num_classes is None or num_classes == 0:
             raise ValueError('There\'s no classification layer')
@@ -550,7 +555,8 @@ class Metrics(object):
                     **kwargs)
         else:
             results_dict = Metrics._run_test_multi(network, data_loader,
-                                                   plot=plot, save_path=save_path,
+                                                   plot=plot,
+                                                   save_path=save_path,
                                                    pos_label=pos_label)
 
         return results_dict
@@ -578,9 +584,8 @@ class Metrics(object):
         predictions = network.forward_pass(
             data_loader=data_loader,
             convert_to_class=False,
-            transform_callable=transform_callable
+            transform_callable=transform_callable,
             **kwargs)
-
 
         mse = Metrics.get_mse(targets, predictions)
 
@@ -616,7 +621,7 @@ class Metrics(object):
             results : dict
 
         """
-        num_classes = network._num_classes
+        num_classes = network.num_classes
 
         if num_classes > 2:
             average = "macro"
@@ -624,6 +629,9 @@ class Metrics(object):
             logger.warning("Will report scores only for pos_label, which is \
                            set to {}".format(pos_label))
             average = "binary"
+        else:
+            raise ValueError("Incorrect number of classes for run_test_multi."
+                             "Need to have more than one class.")
 
         if plot:
             logger.setLevel(logging.INFO)
@@ -719,29 +727,36 @@ class Metrics(object):
             'macro_f1': float(f1_macro),
             'macro_auc': float(auc_macro)
         }
+
+    # TODO: Evaluate these as static methods...
+    # noinspection PyUnusedLocal
     @staticmethod
     def bootfold_p_estimate(network, data_loader, n_samples, k, epochs,
-			    index_to_iter, ls_feat_vals, 
-			    retain_graph=None, valid_interv=4, plot=False, 
-                            save_path=None, transform_outputs=False, transform_callable=None, **kwargs):
+                            index_to_iter, ls_feat_vals, retain_graph=None,
+                            valid_interv=4, plot=False,
+                            save_path=None, **kwargs):
         """
-        Performs bootfold - estimation to identify whether training model provides statistically significant
-        difference in predicting various values for a given feature when predicting outcome.
+        Performs bootfold - estimation to identify whether training model
+        provides statistically significant
+        difference in predicting various values for a given feature when
+        predicting outcome.
 
         Parameters:
             network : BaseNetwork
                 Network descendant of BaseNetwork.
             data_loader : torch.utils.data.DataLoader
-                The DataLoader object containing the totality of the data to use
-                for k-fold cross validation.
+                The DataLoader object containing the totality of the data to
+                use for k-fold cross validation.
             n_samples : int
-                number of times to randomly sample w/ replacement the data_loader and perform boot_cv
+                number of times to randomly sample w/ replacement the
+                data_loader and perform boot_cv
             k : int
                 The number of folds to split the training into.
             epochs : int
                 The number of epochs to train the network per fold.
             index_to_iter : string
-                Name of feature within data_loader who's values will be iterated to assess difference
+                Name of feature within data_loader who's values will be
+                iterated to assess difference
             ls_feat_vals : list
                 List of values for feature provided in index_to_iter
             retain_graph : {None, boolean}
@@ -752,18 +767,6 @@ class Metrics(object):
                 Whether or not to plot all results in prompt and charts.
             save_path : str
                 Where to save all figures and results.
-            transform_outputs : boolean
-                Not used in the multi-class case.
-                If true, transform outputs using metrics.transform_outputs.
-                If no transform_callable is provided then the defaults in
-                metrics.transform_outputs will be used: class converstion for
-                one-hot encoded, and identity for one-dimensional outputs.
-                Multiple class multiple outputs are not yet supported.
-            transform_callable: callable
-                Not used in the multi-class case.
-                Used to transform values if transform_outputs is true,
-                otherwise defaults in metrics.transform_outputs will be used.
-                An example could be np.round
             kwargs: dict of keyworded parameters
                 Values passed to transform callable (function parameters)
 
@@ -791,19 +794,23 @@ class Metrics(object):
         dl_sample = data.DataLoader(**new_params)
 
         for samp in range(n_samples):
-            imprv_score = Metrics._boot_cv(network, dl_sample, k, epochs, retain_graph, 
-                valid_interv, plot, save_path, index_to_iter, ls_feat_vals)
+            imprv_score = Metrics._boot_cv(network, dl_sample, k, epochs,
+                                           retain_graph, valid_interv, plot,
+                                           save_path, index_to_iter,
+                                           ls_feat_vals)
             ls_imprv_scores.append(imprv_score)
 
         tot_num_imprv = float(len(ls_imprv_scores))
         score_below_zero = sum(val <= 0.0 for val in ls_imprv_scores)
         # calculate p value based on change of not improving 
         p_val = float(score_below_zero)/float(tot_num_imprv)
-        logger.info("Improvement scores: {}".format(', '.join(map(str, ls_imprv_scores))))
+        logger.info("Improvement scores: {}"
+                    .format(', '.join(map(str, ls_imprv_scores))))
         logger.info("P value for bootfold p estimate: %f.", p_val)
 
-    def _boot_cv(network, data_loader, k, epochs, retain_graph, valid_interv, 
-                save_path, plot, index_to_iter, ls_feat_vals):
+    @staticmethod
+    def _boot_cv(network, data_loader, k, epochs, retain_graph, valid_interv,
+                 save_path, plot, index_to_iter, ls_feat_vals):
         """
         Perform a custom cross validation for bootstrapped p estimation.
 
@@ -811,8 +818,8 @@ class Metrics(object):
             network : BaseNetwork
                 Network descendant of BaseNetwork.
             data_loader : torch.utils.data.DataLoader
-                The DataLoader object containing the totality of the data to use
-                for k-fold cross validation.
+                The DataLoader object containing the totality of the data to
+                use for k-fold cross validation.
             k : int
                 The number of folds to split the training into.
             epochs : int
@@ -823,18 +830,18 @@ class Metrics(object):
                 Specifies after how many epochs validation should occur.
             plot : boolean
                 Whether or not to plot all results in prompt and charts.
-	    index_to_iter : string
-                Index of feature within data_loader who's values will be iterated to assess difference
+            index_to_iter : string
+                Index of feature within data_loader who's values will be
+                iterated to assess difference
             ls_feat_vals : list
                 List of values for feature provided in index_to_iter
 
-	Returns: 
-	    improvement_score : float
+        Returns:
+            improvement_score : float
         """
-        dct_improvementScores = defaultdict(list)
-        dct_filteredSubj = defaultdict(list)
-        ls_filteredProbs = []
-	
+
+        dct_filtered_subj = defaultdict(list)
+        ls_filtered_probs = []
         fold_len = math.floor(len(data_loader.dataset) / k)
         rem = len(data_loader.dataset) % k
         fold_seq = []
@@ -877,15 +884,18 @@ class Metrics(object):
                     train_loader, val_loader, epochs,
                     retain_graph=retain_graph,
                     valid_interv=valid_interv, plot=plot, save_path=save_path)
-                dct_scores = _get_probs(network, val_loader, index_to_iter, ls_feat_vals)
-                dct_filtered = _filter_matched_subj(dct_scores, val_loader, index_to_iter)
+                dct_scores = _get_probs(network, val_loader, index_to_iter,
+                                        ls_feat_vals)
+                dct_filtered = _filter_matched_subj(dct_scores, val_loader,
+                                                    index_to_iter)
                 for ind in dct_filtered:
-                    dct_filteredSubj[ind].append(dct_filtered[ind])
-                    ls_filteredProbs.append(dct_filtered[ind])
-            V_p = np.array(ls_filteredProbs).mean()
-            ls_pos_rate = [subj for subj in data_loader.dataset if subj[1].item() == 1]
-            V_t = float(len(ls_pos_rate)/len(data_loader.dataset)) * 100
-            improvement_score = float(V_p/V_t)
+                    dct_filtered_subj[ind].append(dct_filtered[ind])
+                    ls_filtered_probs.append(dct_filtered[ind])
+            v_p = np.array(ls_filtered_probs).mean()
+            ls_pos_rate = [subj for subj in data_loader.dataset if
+                           subj[1].item() == 1]
+            v_t = float(len(ls_pos_rate)/len(data_loader.dataset)) * 100
+            improvement_score = float(v_p/v_t)
             if np.isnan(improvement_score):
                 improvement_score = 0.0
             return improvement_score
@@ -952,14 +962,15 @@ class Metrics(object):
             network : BaseNetwork
                 Network descendant of BaseNetwork.
             data_loader : torch.utils.data.DataLoader
-                The DataLoader object containing the totality of the data to use
-                for k-fold cross validation.
+                The DataLoader object containing the totality of the data to
+                use for k-fold cross validation.
             k : int
                 The number of folds to split the training into.
             epochs : int
                 The number of epochs to train the network per fold.
             average_results : boolean
-                Whether or not to return results from all folds or just an average.
+                Whether or not to return results from all folds or just an
+                average.
             retain_graph : {None, boolean}
                 Whether retain_graph will be true when .backwards is called.
             valid_interv : int

@@ -24,6 +24,3 @@ __all__ = [
     'TabularDataset',
     'MultiDataset'
 ]
-
-def start():
-    " Start module "
