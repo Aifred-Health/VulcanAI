@@ -895,8 +895,9 @@ class Metrics(object):
                 prematurely.***\n\n")
 
     @staticmethod
-    def stratified_split(dataset, k, strata_column):
-        """ Perform k-fold cross validation given a Network and DataLoader object.
+    def stratified_split(dataset, k, strata_column="class_label"):
+        """ Split data into k subsets evenly over the given strata_column
+        Does not work for greater than 2-D data.
 
         Parameters:
             dataset : data.dataset
@@ -916,7 +917,8 @@ class Metrics(object):
         if strata_column == "class_label":
             sr = pd.Series(dataset.tensors[1].numpy())
         else:
-            #just let it fail if it doesn't work
+            # just let it fail if it doesn't work
+            # does not work for complex multidimensional data
             sr = pd.Series(dataset.tensors[0][strata_column].numpy())
 
         ls = [[] for i in range(k)]
@@ -933,7 +935,6 @@ class Metrics(object):
                 ls[i].extend(chunks[i])
 
         datasets = [data.Subset(dataset, l) for l in ls]
-
 
         return datasets
 
@@ -952,14 +953,15 @@ class Metrics(object):
             network : BaseNetwork
                 Network descendant of BaseNetwork.
             data_loader : torch.utils.data.DataLoader
-                The DataLoader object containing the totality of the data to use
-                for k-fold cross validation.
+                The DataLoader object containing the totality of the data to
+                 use for k-fold cross validation.
             k : int
                 The number of folds to split the training into.
             epochs : int
                 The number of epochs to train the network per fold.
             average_results : boolean
-                Whether or not to return results from all folds or just an average.
+                Whether or not to return results from all folds or just an
+                average.
             retain_graph : {None, boolean}
                 Whether retain_graph will be true when .backwards is called.
             valid_interv : int
