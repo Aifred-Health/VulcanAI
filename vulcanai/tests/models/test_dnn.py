@@ -195,7 +195,7 @@ class TestDenseNet:
         # the same memory
         if test_net.optim:
             assert isinstance(test_net.optim, torch.optim.Adam)
-            assert isinstance(test_net.criterion, torch.nn.CrossEntropyLoss)
+            assert isinstance(test_net.criterion, torch.nn.NLLLoss)
             for param, opt_param in zip(test_net.parameters(),
                                         test_net.optim.param_groups[0]['params']):
                 assert param is opt_param
