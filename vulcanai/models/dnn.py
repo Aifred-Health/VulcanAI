@@ -117,12 +117,12 @@ class DenseNet(BaseNetwork):
 
     def __init__(self, name, config, in_dim=None, save_path=None,
                  input_networks=None, num_classes=None,
-                 activation=nn.ReLU(), pred_activation=None,
+                 activation=nn.ReLU(), pred_activation=nn.LogSoftmax(),
                  optim_spec={'name': 'Adam', 'lr': 0.001},
                  lr_scheduler=None, early_stopping=None,
                  early_stopping_patience=None,
                  early_stopping_metric="accuracy",
-                 criter_spec=nn.CrossEntropyLoss(),
+                 criter_spec=nn.NLLLoss(),
                  device="cuda:0"):
         """Define the DenseNet object."""
         super(DenseNet, self).__init__(
