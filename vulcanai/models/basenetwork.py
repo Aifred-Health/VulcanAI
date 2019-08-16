@@ -794,7 +794,6 @@ class BaseNetwork(nn.Module):
                 Returns the validation loss and accuracy
 
         """
-        self.eval()  # Set model to evaluate mode
 
         val_loss_accumulator = 0.0
         val_accuracy_accumulator = 0.0
