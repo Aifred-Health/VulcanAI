@@ -81,12 +81,12 @@ class BaseNetwork(nn.Module):
 
     def __init__(self, name, config, in_dim=None, save_path=None,
                  input_networks=None, num_classes=None,
-                 activation=nn.ReLU(), pred_activation=nn.LogSoftmax(),
+                 activation=nn.ReLU(), pred_activation=None,
                  optim_spec={'name': 'Adam', 'lr': 0.001},
                  lr_scheduler=None, early_stopping=None,
                  early_stopping_patience=None,
                  early_stopping_metric="accuracy",
-                 criter_spec=nn.NLLLoss(),
+                 criter_spec=nn.CrossEntropyLoss(),
                  device="cuda:0"):
         """Define, initialize, and build the BaseNetwork."""
         super(BaseNetwork, self).__init__()
@@ -107,7 +107,8 @@ class BaseNetwork(nn.Module):
         else:
             self.input_networks = input_networks
 
-        self._check_final_layer_parameters(criter_spec=criter_spec)
+        self._set_final_layer_parameters(pred_activation=pred_activation,
+                                        criter_spec=criter_spec)
 
         self.num_classes = num_classes
 
@@ -183,9 +184,12 @@ class BaseNetwork(nn.Module):
         self.input_networks[in_network.name] = in_network
         self.in_dim = self._get_in_dim()
 
-    def _check_final_layer_parameters(self, criter_spec):
+    def _set_final_layer_parameters(self, pred_activation, criter_spec):
         """
-        Checks the parameters used in the final output layer.
+        Sets and checks the parameters used in the final output layer.
+        Final transform is needed in forward pass in the case of
+        nn.CrossEntropyLoss as this class combines nn.NLLLoss and softmax,
+        meaning the outputs are not softmax transformed.
 
         Parameters:
             pred_activation : torch.nn.Module
@@ -194,13 +198,16 @@ class BaseNetwork(nn.Module):
                 criterion specification with name and all its parameters.
 
         """
-
+        self._final_transform = None
         if isinstance(criter_spec, nn.CrossEntropyLoss):
-            raise ValueError("The nn.CrossEntropyLoss class combines  \
-                            nn.NLLLoss and softmax for improved efficiency, \
-                            but is not compatible with our current \
-                            implementation of vulcan"
-                            )
+            if pred_activation:
+                raise ValueError("The nn.CrossEntropyLoss class combines  \
+                        nn.NLLLoss and softmax for improved efficiency, \
+                        you cannot set pred_activation when \
+                        criter_spec is set to an instance of this class. \
+                        Set pred_activation to none or change criter_spec."
+                )
+            self._final_transform = nn.Softmax(dim=1)
 
     @abc.abstractmethod
     def _merge_input_network_outputs(self, inputs):
@@ -762,6 +769,9 @@ class BaseNetwork(nn.Module):
             else:
                 metric = "accuracy"
 
+            if self._final_transform:
+                predictions = self._final_transform(predictions)
+
             # will be fixed in the future
             train_accuracy_accumulator += self.metrics.get_score(
                 targets=targets,
@@ -819,6 +829,9 @@ class BaseNetwork(nn.Module):
                 metric = "mse"
             else:
                 metric = "accuracy"
+
+            if self._final_transform:
+                predictions = self._final_transform(predictions)
 
             # will be fixed in the future
             val_accuracy_accumulator += self.metrics.get_score(
@@ -993,6 +1006,9 @@ class BaseNetwork(nn.Module):
         If not, the input is passed through the network and
         returned without passing through a classification layer.
 
+        If nn.CrossEntropyLoss is used, the values will not have been passed
+        though a softmax function and this therefore must be done manually.
+
         Parameters:
             inputs : list(torch.Tensor)
                 The inputs to pass throught the network.
@@ -1031,7 +1047,10 @@ class BaseNetwork(nn.Module):
                      **kwargs):
         """
         Allows the user to pass data through the network with the autograd
-        engine deactivated. Takes a dataloader as input instead of a single
+        engine deactivated. Passes data through a final_transform
+        if it is needed (e.g. if CrossEntropyLoss was used and values are
+        therefore not passed through a final layer softmax).
+        Takes a dataloader as input instead of a single
         tensor. More efficient than calling forward for inference.
         Parameters:
             data_loader : DataLoader
@@ -1053,6 +1072,9 @@ class BaseNetwork(nn.Module):
         for data, _ in data_loader:
             # Get raw network output
             predictions = self(data)
+
+            if self._final_transform:
+                predictions = self._final_transform(predictions)
 
             if transform_callable:
                 predictions = transform_callable(predictions)
