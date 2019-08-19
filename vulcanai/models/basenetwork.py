@@ -732,7 +732,9 @@ class BaseNetwork(nn.Module):
                 Returns the train loss and accuracy.
 
         """
-        self.train()  # Set model to training mode
+        # Set model to training mode
+        # Done here because the default is evaluation
+        self.train()
 
         train_loss_accumulator = 0.0
         train_accuracy_accumulator = 0.0
@@ -776,6 +778,7 @@ class BaseNetwork(nn.Module):
             train_loader.batch_size / len(train_loader.dataset)
 
         # returns the network to evaluation state
+        # done here because the default is evaluation
         self.eval()
 
         return train_loss, train_accuracy
