@@ -924,6 +924,8 @@ class Metrics(object):
 
         """
 
+        # the target column exists in the second tensor
+        # and the training data in the first tensor.
         if strata_column == "class_label":
             sr = pd.Series(dataset.tensors[1].numpy())
         else:
