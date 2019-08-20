@@ -9,10 +9,40 @@ import pandas as pd
 import logging
 from itertools import groupby
 from sklearn import preprocessing
+import torch
+from torch.utils.data import TensorDataset
 
 logger = logging.getLogger(__name__)
-
 # TODO: split function
+
+
+def convert_to_tensor_datasets(df, target_vars=None):
+    """
+    Given a df, returns a TensorDataset, with the target variables contained
+    in the second tensor being specified by the column name(s) in target_vars.
+    Args:
+        df: Dataframe
+            The dataframe to be operated on
+        target_vars: string or list of string
+            The column(s) to be used in the target tensor.
+
+    Returns: TensorDataset
+        The resulting dataset representing the data contained in the df
+
+    """
+
+    if not target_vars:
+        return TensorDataset(torch.Tensor(np.array(df)))
+
+    if target_vars and not target_vars.isinstance(list):
+        target_vars = [target_vars]
+
+    data = torch.Tensor(np.array(df.drop(target_vars, axis=1)))
+    target = torch.LongTensor(np.array(df[target_vars]))
+
+    dataset = TensorDataset(data, target)
+
+    return dataset
 
 
 # TODO: use kwargs
