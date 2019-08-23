@@ -6,6 +6,7 @@ from torch.utils import data
 import math
 import numpy as np
 from sklearn import metrics as skl_metrics
+import pandas as pd
 
 from .utils import round_list, _get_probs, _filter_matched_subj
 from ..plotters.visualization import display_confusion_matrix
@@ -904,10 +905,58 @@ class Metrics(object):
                 prematurely.***\n\n")
 
     @staticmethod
+    def stratified_split(dataset, k, strata_column="class_label"):
+        """ Split data into k subsets evenly over the given strata_column
+        Does not work for greater than 2-D data.
+
+        Parameters:
+            dataset : data.dataset
+                The dataset to be split.
+            k : int
+                The number of folds to split the training into.
+            strata_column: string or int
+                Either "class_label" or integer index of column.
+                Default "class_label"
+
+        Returns:
+            split_datasets : list
+            A list of dataset objects split into k parts.
+
+        """
+
+        # the target column exists in the second tensor
+        # and the training data in the first tensor.
+        if strata_column == "class_label":
+            sr = pd.Series(dataset.tensors[1].numpy())
+        else:
+            # just let it fail if it doesn't work
+            # does not work for complex multidimensional data
+            sr = pd.Series(dataset.tensors[0][strata_column].numpy())
+
+        ls = [[] for i in range(k)]
+
+        grps = sr.groupby(by=sr)
+
+        for key, grp in grps:
+            inds = np.array(grp.index)
+            np.random.shuffle(inds)
+            chunks = np.array_split(inds, k)
+            # also shuffle which chunks get less items.
+            np.random.shuffle(chunks)
+            for i in range(k):
+                ls[i].extend(chunks[i])
+
+        datasets = [data.Subset(dataset, l) for l in ls]
+
+        return datasets
+
+    @staticmethod
     def cross_validate(network, data_loader, k, epochs,
                        average_results=True, retain_graph=None,
                        valid_interv=4, plot=False, save_path=None,
                        transform_callable=None,
+                       stratified=False,
+                       strata_column="class_label",
                        **kwargs):
         """
         Perform k-fold cross validation given a Network and DataLoader object.
@@ -935,6 +984,11 @@ class Metrics(object):
                 Where to save all figures and results.
             transform_callable: callable
                 A torch function. e.g. torch.round()
+            stratified: bool
+                Whether to stratify the dataset. Default false.
+            strata_column: string or int
+                Either "class_label" or integer index of column.
+                Default "class_label"
             kwargs: dict of keyworded parameters
                 Values passed to transform callable (function parameters)
 
@@ -960,9 +1014,12 @@ class Metrics(object):
         else:
             fold_seq.append(fold_len+rem)  # last one is the longest if unequal
 
-        dataset_splits = data.random_split(data_loader.dataset,
-                                           fold_seq)
-
+        if stratified:
+            dataset_splits = Metrics.stratified_split(data_loader.dataset,
+                                                      k, strata_column)
+        else:
+            dataset_splits = data.random_split(data_loader.dataset,
+                                               fold_seq)
         batch_size = data_loader.batch_size
 
         # #TODO: improve the copying of parameters
