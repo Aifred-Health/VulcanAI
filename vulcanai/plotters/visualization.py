@@ -11,6 +11,7 @@ from .utils import GuidedBackprop, get_notable_indices
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 
+
 import matplotlib
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.pyplot as plt
@@ -181,7 +182,7 @@ def display_tsne(input_data, targets, label_map=None, save_path=None):
         save_path=save_path)
 
 
-def _plot_reduction(x_transform, targets, label_map, title, save_path=None):
+def _plot_reduction(x_transform, targets, label_map, title, save_path=None,interactive=True):
     """Once PCA and t-SNE has been calculated, this is used to plot."""
     y_unique = np.unique(targets)
     if label_map is None:
@@ -214,11 +215,11 @@ def _plot_reduction(x_transform, targets, label_map, title, save_path=None):
             "No display environment found. "
             "Display environment needed to plot, "
             "or set save_path=path/to/dir")
-    else:
-        plt.show(False)
+    elif interactive is True:
+        plt.draw()
+        plt.pause(1e-17)
 
-
-def display_confusion_matrix(cm, class_list=None, save_path=None):
+def display_confusion_matrix(cm, class_list=None, save_path=None,interactive=True):
     """
     Print and plot the confusion matrix.
 
@@ -268,8 +269,9 @@ def display_confusion_matrix(cm, class_list=None, save_path=None):
             "No display environment found. "
             "Display environment needed to plot, "
             "or set save_path=path/to/dir")
-    else:
-        plt.show(False)
+    elif interactive is True:
+        plt.draw()
+        plt.pause(1e-17)
 
 
 def compute_saliency_map(network, input_data, targets):
@@ -299,7 +301,7 @@ def compute_saliency_map(network, input_data, targets):
     return saliency_map
 
 
-def display_saliency_overlay(image, saliency_map, shape=(28, 28), save_path=None):
+def display_saliency_overlay(image, saliency_map, shape=(28, 28), save_path=None,interactive=True):
     """
     Plot overlay saliency map over image.
 
@@ -364,11 +366,12 @@ def display_saliency_overlay(image, saliency_map, shape=(28, 28), save_path=None
             "No display environment found. "
             "Display environment needed to plot, "
             "or set save_path=path/to/dir")
-    else:
-        plt.show(False)
+    elif interactive is True:
+        plt.draw()
+        plt.pause(1e-17)
 
 
-def display_receptive_fields(network, top_k=5, save_path=None):
+def display_receptive_fields(network, top_k=5, save_path=None,interactive=True):
     """
     Display receptive fields of layers from a network [1].
 
@@ -429,7 +432,8 @@ def display_receptive_fields(network, top_k=5, save_path=None):
             "No display environment found. "
             "Display environment needed to plot, "
             "or set save_path=path/to/dir")
-    else:
-        plt.show(False)
+    elif interactive is True:
+        plt.draw()
+        plt.pause(1e-17)
 
     return feature_importance
