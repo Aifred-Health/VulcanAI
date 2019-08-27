@@ -1,144 +1,186 @@
-# # coding=utf-8
-# """ Defines test cases for tabular dataset """
-# import pytest
-# from vulcanai.datasets import TabularDataset
-# import os
-# import pandas as pd
-#
-#
-# # noinspection PyMissingOrEmptyDocstring
-# class TestTabularDataset:
-#
-#     @pytest.fixture
-#     def split_data(self):
-#         pass
-#
-#     @pytest.fixture
-#     def my_test_dataset(self):
-#         """Create a dataset by importing from the test csv"""
-#         fpath = str(os.path.dirname(__file__)) + \
-#             "/test_data/birthweight_reduced.csv"
-#         return TabularDataset(
-#             data=fpath,
-#             label_column="id",
-#             na_values='Nan'
-#         )
-#
-#     @pytest.fixture
-#     def my_test_dataset_two(self):
-#         """Create a second dataset by importing from the test csv"""
-#         fpath = str(os.path.dirname(__file__)) + \
-#             "/test_data/birthweight_reduced2.csv"
-#         return fpath
-#
-#     @pytest.fixture
-#     def my_merged_test_dataset(self):
-#         fpath = str(os.path.dirname(__file__)) + \
-#             "/test_data/birthweight_reduced_merged.csv"
-#         return pd.read_csv(fpath)
-#
-#     def test_merge_dataframe(self, my_test_dataset, my_test_dataset_two,
-#                              my_merged_test_dataset):
-#         dct_df = {'df_test_two': my_test_dataset_two}
-#         my_test_dataset.merge_dataframe(merge_on_columns=['id'],
-#                                         na_values='Nan', **dct_df)
-#         pd.testing.assert_frame_equal(my_test_dataset.df,
-#                                       my_merged_test_dataset,
-#                                       check_dtype=False)
-#
-#     def test_single_dataset_length(self, my_test_dataset):
-#         assert len(my_test_dataset) == 42
-#         assert "id" in my_test_dataset.label_column
-#
-#     def test_save_dataframe(self, my_test_dataset):
-#         fpath = str(os.path.dirname(__file__)) + "/test_data/test_save.csv"
-#         my_test_dataset.save_dataframe(fpath)
-#         assert os.path.isfile(fpath)
-#         os.remove(fpath)
-#
-#     def test_list_columns(self, my_test_dataset):
-#         column_list = ["id", "headcirumference", "length", "Birthweight",
-#                        "LowBirthWeight", "Gestation", "smoker", "motherage",
-#                        "mnocig", "mheight", "mppwt", "fage", "fedyrs"]
-#         assert set(my_test_dataset.list_all_features()) == set(column_list)
-#
-#     def test_replace_value_in_column(self, my_test_dataset):
-#         before = my_test_dataset.list_all_column_values("motherage")
-#         my_test_dataset.replace_value_in_column("motherage", 24, 25)
-#         after = my_test_dataset.list_all_column_values("motherage")
-#         assert (set(before) - set(after)) == {24}
-#
-#     def test_delete_columns(self, my_test_dataset):
-#         before = my_test_dataset.list_all_features()
-#         my_test_dataset.delete_column("motherage")
-#         after = my_test_dataset.list_all_features()
-#         assert (set(before) - set(after)) == {"motherage"}
-#
-#     def test_create_label_encoding(self, my_test_dataset):
-#         my_test_dataset.create_label_encoding("LowBirthWeight",
-#                                               {"Low": 0, "Normal": 1})
-#         assert set(my_test_dataset.list_all_column_values("LowBirthWeight")) \
-#             == {0, 1}
-#
-#     def test_create_one_hot_encoding(self, my_test_dataset):
-#         my_test_dataset.create_one_hot_encoding("LowBirthWeight")
-#         assert "LowBirthWeight@Low" in my_test_dataset.list_all_features()
-#
-#     def test_reverse_create_all_one_hot_encodings(self, my_test_dataset):
-#         my_test_dataset.create_one_hot_encoding("LowBirthWeight")
-#         my_test_dataset.reverse_create_one_hot_encoding(column_name=None)
-#         assert "LowBirthWeight@Low" not in my_test_dataset.list_all_features()
-#
-#     def test_identify_null(self, my_test_dataset):
-#         num_threshold = 0.2
-#         res = my_test_dataset.identify_null(num_threshold)
-#         assert {'fedyrs'} == set(res)
-#
-#     def test_identify_unique(self, my_test_dataset):
-#         res = my_test_dataset.identify_unique(5)
-#         assert set(res) == {'headcirumference', 'smoker', 'fedyrs',
-#                             'LowBirthWeight'}
-#
-#     def test_identify_unbalanced_columns(self, my_test_dataset):
-#         res = my_test_dataset.identify_unbalanced_columns(0.5)
-#         assert set(res) == {'headcirumference', 'smoker', 'mnocig',
-#                             'LowBirthWeight'}
-#
-#     def test_identify_highly_correlated(self, my_test_dataset):
-#         res = my_test_dataset.identify_highly_correlated(0.2)
-#         assert (('fage', 'motherage'), 0.8065844173531495) in res
-#
-#     def test_identify_low_variance(self, my_test_dataset):
-#         res = my_test_dataset.identify_low_variance(0.05)
-#         assert 'Gestation' in res
-#
-#     def test_split_length_correct(self, my_test_dataset):
-#         res = my_test_dataset.split([0.1, 0.2, 0.7])
-#         assert len(res) == 3
-#         assert isinstance(res[1], TabularDataset)
-#         res = my_test_dataset.split([0.1, 0.9])
-#         assert len(res) == 2
-#         assert isinstance(res[1], TabularDataset)
-#
-#     def test_split_length_correct_stratified(self, my_test_dataset):
-#         res = my_test_dataset.split([0.1, 0.2, 0.7], stratified=True,
-#                                     stratum_column="motherage")
-#         assert len(res) == 3
-#         assert isinstance(res[1], TabularDataset)
-#         res = my_test_dataset.split([0.1, 0.9], stratified=True,
-#                                     stratum_column="motherage")
-#         assert len(res) == 2
-#         assert isinstance(res[1], TabularDataset)
-#
-#     def test_stratified_values(self, my_test_dataset):
-#         res = my_test_dataset.split([0.1, 0.2, 0.7], stratified=True,
-#                                     stratum_column="motherage")
-#
-#         assert list(res[0].df["motherage"].values) == [20]
-#         assert list(res[1].df["motherage"].values) == [19, 20, 21, 24, 27, 31]
-#         assert list(res[2].df["motherage"].values) == [18, 19, 19, 20, 20, 20,
-#                                                        20, 20, 21, 21, 22, 22,
-#                                                        23, 23, 24, 24, 24, 26,
-#                                                        26, 27, 27, 27, 28, 28,
-#                                                        29, 29, 30, 30, 31, 31,
-#                                                        32, 35, 37, 37, 41]
+# coding=utf-8
+""" Defines test cases for tabular dataset """
+import pytest
+from vulcanai.datasets import tabular_data_utils
+import os
+import pandas as pd
+import torch
+import numpy as np
+
+# noinspection PyMissingOrEmptyDocstring
+class TestTabularDataset:
+    @pytest.fixture
+    def split_data(self):
+        pass
+
+    @pytest.fixture
+    def my_test_dataset(self):
+        """Create a dataset by importing from the test csv"""
+        fpath = str(os.path.dirname(__file__)) + \
+            "/test_data/birthweight_reduced.csv"
+        # Nan just an artifact of this dataset.
+        return pd.read_csv(fpath, na_values='Nan')
+
+    def test_conver_to_tensor_dataset(self, my_test_dataset):
+
+        only_numeric = my_test_dataset.drop("LowBirthWeight", axis=1)
+        res1 = tabular_data_utils.convert_to_tensor_datasets(only_numeric,
+                                                             target_vars="mnocig"
+                                                             )
+        res2 = tabular_data_utils.convert_to_tensor_datasets(only_numeric,
+                                                             target_vars="mnocig",
+                                                             continuous_target=True)
+
+        assert isinstance(res1, torch.utils.data.TensorDataset)
+        assert isinstance(res2, torch.utils.data.TensorDataset)
+
+    def test_create_label_encoding(self, my_test_dataset):
+        tabular_data_utils.create_label_encoding(my_test_dataset,
+                                                 "LowBirthWeight",
+                                              {"Low": 0, "Normal": 1})
+        assert set(list(my_test_dataset["LowBirthWeight"].unique())) \
+            == {0, 1}
+
+    def test_create_one_hot_encoding(self, my_test_dataset):
+        res = tabular_data_utils.create_one_hot_encoding(my_test_dataset,
+                                                   "LowBirthWeight")
+        assert "LowBirthWeight@Low" in list(res.columns)
+
+    def test_reverse_create_all_one_hot_encodings(self, my_test_dataset):
+        tabular_data_utils.create_one_hot_encoding(my_test_dataset,
+                                                   "LowBirthWeight")
+        res = tabular_data_utils.reverse_create_one_hot_encoding(my_test_dataset,
+                                                           prefix_sep="@")
+        assert "LowBirthWeight@Low" not in list(res.columns)
+
+    def test_identify_null(self, my_test_dataset):
+        num_threshold = 0.2
+        res = tabular_data_utils.identify_null(my_test_dataset, num_threshold)
+        assert {'fedyrs'} == set(res)
+
+    def test_identify_unique(self, my_test_dataset):
+        res = tabular_data_utils.identify_unique(my_test_dataset, 5)
+        assert set(res) == {'headcirumference', 'smoker', 'fedyrs',
+                            'LowBirthWeight'}
+
+    def test_identify_unbalanced_columns(self, my_test_dataset):
+        res = tabular_data_utils.identify_unbalanced_columns(my_test_dataset,
+                                                             0.5)
+        assert set(res) == {'headcirumference', 'smoker', 'mnocig',
+                            'LowBirthWeight'}
+
+    def test_identify_highly_correlated(self, my_test_dataset):
+        res = tabular_data_utils.identify_highly_correlated(my_test_dataset,
+                                                            0.2)
+        assert (('fage', 'motherage'), 0.8065844173531495) in res
+
+    def test_identify_low_variance(self, my_test_dataset):
+        res = tabular_data_utils.identify_low_variance(my_test_dataset, 0.05
+                                                       )
+        assert 'Gestation' in res
+
+
+# This is breaking lint for now because it aids in the clarity of the data
+# TODO: refactor
+class TestStitchDataset:
+    @pytest.fixture
+    def my_test_dataset_one(self):
+        dct_dfs = {'df_test_one': pd.DataFrame({'A': ['A0', 'A1', 'A2', 'A3'], 'B': ['B0', 'B1', 'B2', 'B3'],
+                                                'C': ['C0', 'C1', 'C2', 'C3'], 'D': ['D0', 'D1', 'D2', 'D3']},
+                                               index=[0, 1, 2, 3]),
+                   'df_test_two': pd.DataFrame({'A': ['A4', 'A5', 'A6', 'A7'], 'B': ['B4', 'B5', 'B6', 'B7'],
+                                                'C': ['C4', 'C5', 'C6', 'C7'], 'D': ['D4', 'D5', 'D6', 'D7']},
+                                               index=[4, 5, 6, 7])}
+        return dct_dfs
+
+    @pytest.fixture
+    def my_test_dataset_two(self):
+        dct_dfs = {'df_test_one': pd.DataFrame({'name': ['Jane', 'John', 'Jesse', 'Jane', 'John', 'Jesse'],
+                                                'age': [23, 25, 26, np.nan, np.nan, np.nan]},
+                                               index=[0, 1, 2, 3, 4, 5]),
+                   'df_test_two': pd.DataFrame({'name': ['Jane', 'John', 'Jesse'],
+                                                'state': ['CA', 'WA', 'OR']},
+                                               index=[0, 1, 2])}
+        return dct_dfs
+
+    @pytest.fixture
+    def my_test_dataset_three(self):
+        dct_dfs = {'df_test_one': pd.DataFrame({'name': ['Jane', 'John', 'Jesse', 'Jane', 'John', 'Jesse', 'Jane'],
+                                                'age': [23, 25, 26, np.nan, np.nan, np.nan, 23],
+                                                'dob': ['09-18-1995', '10-18-1993', '06-18-1992', np.nan, np.nan,
+                                                        np.nan,
+                                                        '05-23-1995']},
+                                               index=[0, 1, 2, 3, 4, 5, 6]),
+                   'df_test_two': pd.DataFrame({'name': ['Jane', 'John', 'Jesse', 'Jane'],
+                                                'dob': ['09-18-1995', '10-18-1993', '06-18-1992', '05-23-1995'],
+                                                'state': ['CA', 'WA', 'OR', 'AZ']},
+                                               index=[0, 1, 2, 3])}
+        return dct_dfs
+
+    @pytest.fixture
+    def my_test_dataset_four(self):
+        dct_dfs = {'df_test_one': pd.DataFrame({'name': ['Jane', 'John', 'Jesse', 'Jane'],
+                                                'age': [23, 25, 26, 23],
+                                                'dob': ['09-18-1995', '10-18-1993', '06-18-1992', '05-23-1995'],
+                                                'visit_date': ['11/29/2018', '11/29/2018', '11/29/2018', '11/29/2018'],
+                                                'visit_location': ['HI', 'HI', 'HI', 'HI']},
+                                               index=[0, 1, 2, 3]),
+                   'df_test_two': pd.DataFrame({'name': ['John', 'Jesse'],
+                                                'age': [25, 26],
+                                                'dob': ['10-18-1993', '06-18-1992'],
+                                                'visit_date': ['09/12/2018', '12/20/2017'],
+                                                'visit_location': ['CA', 'AZ']},
+                                               index=[0, 1])}
+        return dct_dfs
+
+    def test_no_merge_on_columns(self, my_test_dataset_one):
+        # MOC (merge on columns)
+        df_no_moc_results = pd.DataFrame({'A': ['A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7'],
+                                          'B': ['B0', 'B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7'],
+                                          'C': ['C0', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7'],
+                                          'D': ['D0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7']},
+                                         index=[0, 1, 2, 3, 4, 5, 6, 7])
+
+        stitch_dataset_results = tabular_data_utils.stitch_datasets(merge_on_columns=None, **my_test_dataset_one)
+        pd.testing.assert_frame_equal(stitch_dataset_results, df_no_moc_results)
+
+    def test_single_merge_on_columns(self, my_test_dataset_two):
+        df_single_moc_results = pd.DataFrame({'name': ['Jane', 'John', 'Jesse'],
+                                              'age': [23, 25, 26],
+                                              'state': ['CA', 'WA', 'OR']},
+                                             index=[0, 1, 2])
+        stitch_dataset_results = tabular_data_utils.stitch_datasets(merge_on_columns=['name'], **my_test_dataset_two)
+
+        # Assert_frame_equal checks order of columns; therefore, sort_index by columns when checking. If dataframes are
+        # same, they should sort the same way.
+        pd.testing.assert_frame_equal(stitch_dataset_results.sort_index(axis=1), df_single_moc_results.sort_index(axis=1),
+                                      check_dtype=False)
+
+    def test_two_merge_on_columns(self, my_test_dataset_three):
+        df_two_moc_results = pd.DataFrame({'name': ['Jane', 'John', 'Jesse', 'Jane'],
+                                              'age': [23, 25, 26, 23],
+                                              'dob': ['09-18-1995', '10-18-1993', '06-18-1992', '05-23-1995'],
+                                              'state': ['CA', 'WA', 'OR', 'AZ']},
+                                             index=[0, 1, 2, 6])
+        stitch_dataset_results = tabular_data_utils.stitch_datasets(merge_on_columns=['name', 'dob'], **my_test_dataset_three)
+
+        # Assert_frame_equal checks order of columns; therefore, sort_index by columns when checking. If dataframes are
+        # same, they should sort the same way.
+        pd.testing.assert_frame_equal(stitch_dataset_results.sort_index(axis=1), df_two_moc_results.sort_index(axis=1),
+                                      check_dtype=False)
+
+    def test_three_merge_on_columns(self, my_test_dataset_four):
+        df_three_moc_results = pd.DataFrame({'name': ['Jane', 'John', 'Jesse', 'Jane', 'John', 'Jesse'],
+                                             'age': [23, 25, 26, 23, 25, 26],
+                                             'dob': ['09-18-1995', '10-18-1993', '06-18-1992', '05-23-1995',
+                                                     '10-18-1993', '06-18-1992'],
+                                             'visit_date': ['11/29/2018', '11/29/2018', '11/29/2018', '11/29/2018',
+                                                            '09/12/2018', '12/20/2017'],
+                                             'visit_location': ['HI', 'HI', 'HI', 'HI', 'CA', 'AZ']},
+                                            index=[0, 1, 2, 3, 4, 5])
+
+        stitch_dataset_results = tabular_data_utils.stitch_datasets(merge_on_columns=['name', 'dob', 'visit_date'], **my_test_dataset_four)
+
+        # Assert_frame_equal checks order of columns; therefore, sort_index by columns when checking. If dataframes are
+        # same, they should sort the same way.
+        pd.testing.assert_frame_equal(stitch_dataset_results.sort_index(axis=1), df_three_moc_results.sort_index(axis=1), check_dtype=False)

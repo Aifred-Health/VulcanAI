@@ -13,7 +13,6 @@ import torch
 from torch.utils.data import TensorDataset
 
 logger = logging.getLogger(__name__)
-# TODO: split function
 
 
 def convert_to_tensor_datasets(df, target_vars=None, continuous_target=False):
@@ -36,7 +35,7 @@ def convert_to_tensor_datasets(df, target_vars=None, continuous_target=False):
     if not target_vars:
         return TensorDataset(torch.Tensor(np.array(df)))
 
-    if target_vars and not target_vars.isinstance(list):
+    if target_vars and not isinstance(target_vars, list):
         target_vars = [target_vars]
 
     data = torch.Tensor(np.array(df.drop(target_vars, axis=1)))
@@ -91,6 +90,22 @@ def create_label_encoding(df, column_name, ordered_values):
 
     return df
 
+
+def create_one_hot_encoding(df, column_name, prefix_sep="@"):
+    """
+    Create one-hot encoding for the given column.
+    Parameters:
+        column_name: String
+            The name of the column you want to one-hot encode
+        prefix_sep: String default("@")
+            The prefix used when creating a one-hot encoding
+    """
+    # TODO: ensure dummy_na =False is what you want
+    df = pd.get_dummies(df, columns=[column_name],
+                             prefix_sep=prefix_sep)
+    logger.info("Successfully encoded %s", column_name)
+
+    return df
 
 # if a use case presents itself column_name could easily become a list
 def reverse_create_one_hot_encoding(df, prefix_sep, column_name=None):
