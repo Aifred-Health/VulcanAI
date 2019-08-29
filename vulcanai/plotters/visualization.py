@@ -115,6 +115,7 @@ def display_record(record=None, save_path=None, interactive=True):
                loc=0)
 
     if save_path:
+        save_path = get_save_path(save_path, vis_type=title)
         save_visualization(plt, save_path)
 
     if not DISPLAY_AVAILABLE and save_path is None:
