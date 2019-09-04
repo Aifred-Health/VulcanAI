@@ -106,9 +106,10 @@ class TabularDataset(Dataset):
         # the label column, iloc gets the row, then access values and convert
 
         if self.label_column:
-            if self.all_xs is None:
-                self.all_xs = self.df.drop(self.label_column, axis=1)
-            if self.all_y is None:
+            if not hasattr(self, 'all_xs') or self.all_xs is None:
+                self.all_xs = self.df.drop(self.label_column,
+                              axis=1)
+            if not hasattr(self, 'all_y') or self.all_y is None:
                 self.all_y = self.df[[self.label_column]]
             xs = torch.from_numpy(self.all_xs.iloc[[idx]].values[0]).float()
             y = self.all_y.iloc[[idx]].values.tolist()[0][0]
@@ -405,7 +406,7 @@ class TabularDataset(Dataset):
         Parameters:
             threshold: Float
                 Proportion needed to define unbalanced, between 0 and 1
-                0 is a lesser proportion of the one value, 
+                0 is a lesser proportion of the one value,
                 (less imbalanced)
             non_numeric: Boolean
                 Whether non-numeric columns are also considered.

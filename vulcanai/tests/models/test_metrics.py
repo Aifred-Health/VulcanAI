@@ -6,6 +6,8 @@ import torch
 from vulcanai.models.metrics import Metrics
 from vulcanai.models.cnn import ConvNet
 from torch.utils.data import TensorDataset, DataLoader
+import pandas as pd
+import os
 
 
 # noinspection PyProtectedMember
@@ -330,7 +332,6 @@ class TestMetrics:
                             'macro_npv', 'macro_f1', 'macro_auc']
 
         assert all(k in res_dict for k in required_metrics)
-
 
     def test_cross_validate_outputs_stratified(self, metrics, cnn_class):
         """Tests that the cross-validate outputs are in the correct form."""
