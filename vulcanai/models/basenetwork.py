@@ -874,14 +874,16 @@ class BaseNetwork(nn.Module):
 
     # TODO: need to update transform callable params to match that of
     # cross_validate
-    def bootfold_p_estimate(self, data_loader, n_samples, k, epochs, 
+
+    def bootfold_p_estimate(self, data_loader, n_samples, k, epochs,
                             index_to_iter, ls_feat_vals, retain_graph=None,
                             valid_interv=4, plot=False, save_path=None,
                             transform_outputs=False, transform_callable=None, p_output_path = None,
 			    **kwargs):
+
         """
 	Performs bootfold - estimation to identify whether training model provides statistically significant
-	difference in predicting various values for a given feature when predicting outcome. 
+	difference in predicting various values for a given feature when predicting outcome.
 
 	Parameters:
 	    network : BaseNetwork

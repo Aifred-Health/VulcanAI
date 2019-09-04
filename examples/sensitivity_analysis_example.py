@@ -8,16 +8,17 @@ import torch
 
 def dataloader():
     """Create a dataset by importing from the test csv"""
-    test_input = torch.rand(size=[11, 12])
+    test_input = torch.rand(size=[13, 15])
     test_dataloader = DataLoader(
-        TensorDataset(test_input, torch.tensor([0, 1, 2, 0, 2, 0, 0, 0, 3, 3, 3])))
+        TensorDataset(test_input, torch.tensor([0, 0, 0, 1, 2, 0, 2, 0, 0, 0, 0,
+                                                0, 0])))
     return test_dataloader
 
 def dnn():
     """DenseNet with prediction layer."""
     return DenseNet(
         name='dnn_class',
-        in_dim=(12),
+        in_dim=(15),
         config={
             'dense_units': [100, 50],
             'dropout': 0.5,

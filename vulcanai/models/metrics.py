@@ -1089,7 +1089,9 @@ class Metrics(object):
                 tp, _, fp, _ = Metrics.get_confusion_matrix_values(targets,
                                                                    predictions)
 
-                print(tp, fp)
+                # print(raw_predictions)
+                # print(predictions)
+
                 if test_df is None and col_headers is None:
                     col_headers = ["Feature", "Value"]
                     for i in range(network._num_classes):
