@@ -99,6 +99,10 @@ def create_one_hot_encoding(df, column_name, prefix_sep="@"):
             The name of the column you want to one-hot encode
         prefix_sep: String default("@")
             The prefix used when creating a one-hot encoding
+
+    Returns:
+        df: Dataframe
+            The dataframe with the one hot encoding of the column added
     """
     # TODO: ensure dummy_na =False is what you want
     df = pd.get_dummies(df, columns=[column_name],

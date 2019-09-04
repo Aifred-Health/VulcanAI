@@ -21,7 +21,7 @@ class TestTabularDataset:
         # Nan just an artifact of this dataset.
         return pd.read_csv(fpath, na_values='Nan')
 
-    def test_conver_to_tensor_dataset(self, my_test_dataset):
+    def test_convert_to_tensor_dataset(self, my_test_dataset):
 
         only_numeric = my_test_dataset.drop("LowBirthWeight", axis=1)
         res1 = tabular_data_utils.convert_to_tensor_datasets(only_numeric,
@@ -44,14 +44,14 @@ class TestTabularDataset:
     def test_create_one_hot_encoding(self, my_test_dataset):
         res = tabular_data_utils.create_one_hot_encoding(my_test_dataset,
                                                    "LowBirthWeight")
-        assert "LowBirthWeight@Low" in list(res.columns)
+        assert "LowBirthWeight@Low" in set(list(res.columns))
 
     def test_reverse_create_all_one_hot_encodings(self, my_test_dataset):
         tabular_data_utils.create_one_hot_encoding(my_test_dataset,
                                                    "LowBirthWeight")
         res = tabular_data_utils.reverse_create_one_hot_encoding(my_test_dataset,
                                                            prefix_sep="@")
-        assert "LowBirthWeight@Low" not in list(res.columns)
+        assert "LowBirthWeight@Low" not in set(list(res.columns))
 
     def test_identify_null(self, my_test_dataset):
         num_threshold = 0.2
