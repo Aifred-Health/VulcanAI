@@ -79,6 +79,7 @@ class ConvNetConfig:
         return unit
 
 
+# noinspection PyDefaultArgument,PyTypeChecker
 class ConvNet(BaseNetwork):
     """
     Subclass of BaseNetwork defining a ConvNet.
@@ -89,8 +90,8 @@ class ConvNet(BaseNetwork):
         config : dict
             The configuration of the network module, as a dict.
         in_dim : tuple
-            The input dimensions of the network. Not required to specify when the
-            network has input_networks.
+            The input dimensions of the network. Not required to specify when
+            the network has input_networks.
         save_path : str
             The name of the file to which you would like to save this network.
         input_networks : list of BaseNetwork
@@ -167,13 +168,13 @@ class ConvNet(BaseNetwork):
             conv_layers[layer_name] = ConvUnit(**conv_layer_config)
         self.network = nn.Sequential(conv_layers)
 
-        if self._num_classes:
+        if self.num_classes:
             self.network.add_module(
                 'flatten', FlattenUnit())
             self.network.add_module(
                 'classify', DenseUnit(
                     in_features=self._get_out_dim()[0],
-                    out_features=self._num_classes,
+                    out_features=self.num_classes,
                     activation=kwargs['pred_activation']))
 
     def _merge_input_network_outputs(self, tensors):
@@ -207,7 +208,7 @@ class ConvNet(BaseNetwork):
         # Fill with zeros in missing dim to compare
         # max size later for each dim.
         for in_spatial_dim in spatial_inputs:
-            while(len(in_spatial_dim) < max_spatial_dim):
+            while len(in_spatial_dim) < max_spatial_dim:
                 in_spatial_dim.insert(0, 0)
 
         # All spatial dimensions
@@ -215,7 +216,8 @@ class ConvNet(BaseNetwork):
         max_conv_tensor_size = np.array(spatial_inputs).transpose().max(axis=1)
         return np.array(max_conv_tensor_size)
 
-    def _cast_linear_to_shape(self, tensor, cast_shape):
+    @staticmethod
+    def _cast_linear_to_shape(tensor, cast_shape):
         """
         Convert Linear outputs into Conv outputs.
 
@@ -242,7 +244,8 @@ class ConvNet(BaseNetwork):
         tensor = pad(tensor=tensor, target_shape=[pad_shape])
         return tensor.view(-1, n_channels, *cast_shape)
 
-    def _cast_conv_to_shape(self, tensor, cast_shape):
+    @staticmethod
+    def _cast_conv_to_shape(tensor, cast_shape):
         """
         Convert Conv outputs into Conv outputs.
 
@@ -275,6 +278,7 @@ class ConvNet(BaseNetwork):
     def __str__(self):
         """Specify how to print network."""
         if self.optim is not None:
-            return super(ConvNet, self).__str__() + '\noptim: {}'.format(self.optim)
+            return super(ConvNet, self).__str__() + '\noptim: {}'\
+                .format(self.optim)
         else:
             return super(ConvNet, self).__str__()

@@ -333,31 +333,50 @@ class TestMetrics:
 
         assert all(k in res_dict for k in required_metrics)
 
-    def test_sensitivity_analysis(self, metrics, dnn_class_multi_value,
-                                  sensitivity_data_loader):
-        metrics.conduct_sensitivity_analysis(
-            dnn_class_multi_value, sensitivity_data_loader,
-            'sensitivity_analysis_test_output', ['a', 'b', 'c', 'd', 'e', 'f',
-                                                 'g', 'h', 'i', 'j', 'k', 'l'])
+    def test_cross_validate_outputs_stratified(self, metrics, cnn_class):
+        """Tests that the cross-validate outputs are in the correct form."""
+        num_items = 300
+        test_input = torch.Tensor(np.random.randint(0, 10,
+                                                    size=(num_items,
+                                                          *cnn_class.in_dim)))
+        test_target = torch.LongTensor(np.random.randint(0, 10,
+                                                         size=num_items))
+        test_dataloader = DataLoader(TensorDataset(test_input, test_target))
 
-        output_file = str(os.path.dirname(__file__)) + \
-                    '/test_data/sensitivity_analysis_test_output.csv'
+        k = 2
+        epochs = 2
 
-        output_df = pd.read_csv(output_file)
+        averaged_results = metrics.cross_validate(
+            cnn_class, test_dataloader, k, epochs,
+            average_results=True, stratified=True)
+        all_results = metrics.cross_validate(
+            cnn_class, test_dataloader, k, epochs,
+            average_results=False)
 
-        test_file = str(os.path.dirname(__file__)) + \
-                    "/test_data/sensitivity_analysis_test_truth.csv"
+        for k in averaged_results:
+            assert isinstance(averaged_results[k], float)
 
-        truth_df = pd.read_csv(test_file)
+        for k in all_results:
+            assert isinstance(all_results[k], list)
 
-        cols = list(truth_df)
+    def test_stratified_split(self, metrics, cnn_class):
+        """Tests that the stratified split function returns a reasonable number
+        of datasets"""
+        num_items = 300
+        test_input = torch.Tensor(np.random.randint(0, 10,
+                                                    size=(num_items,
+                                                          10)))
 
-        for ((_, row_output), (_, row_truth)) in zip(output_df.iterrows(),
-                                                     truth_df.iterrows()):
-            for col in cols:
-                assert row_output[col] == row_truth[col]
+        # stratified does not work for complex multi-dimensional data
+        test_target = torch.LongTensor(np.random.randint(0, 10,
+                                                         size=num_items))
+        test_dataset = TensorDataset(test_input, test_target)
 
-        os.remove('sensitivity_analysis_test_output.csv')
+        k = 3
 
+        res_target = metrics.stratified_split(test_dataset, k)
 
+        rest_index = metrics.stratified_split(test_dataset, k, 2)
 
+        assert len(res_target) == k
+        assert len(rest_index) == k

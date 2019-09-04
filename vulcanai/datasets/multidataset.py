@@ -29,18 +29,18 @@ class MultiDataset(Dataset):
 
     def __init__(self, dataset_tuples):
         """Initialize a dataset for multi input networks."""
-        def get_total_targets(multi_datasets):
+        def _get_total_targets(multi_datasets):
             num_targets = 0
             for tup in multi_datasets:
                 if isinstance(tup, MultiDataset):
-                    num_targets += get_total_targets(tup._dataset_tuples)
+                    num_targets += _get_total_targets(tup._dataset_tuples)
                 else:
                     num_targets += int(tup[2])
             return num_targets
 
         self._dataset_tuples = dataset_tuples
         # must always have exactly one target.
-        total_num_targets = get_total_targets(self._dataset_tuples)
+        total_num_targets = _get_total_targets(self._dataset_tuples)
         if total_num_targets > 1:
             raise ValueError(
                 "You may specify at most one target."
@@ -60,18 +60,18 @@ class MultiDataset(Dataset):
         """
         logger.warning("Defaulting to the length of the smallest dataset")
 
-        def get_min_length(multi_datasets):
+        def _get_min_length(multi_datasets):
             min_length = float('inf')
             for tup in multi_datasets:
                 if isinstance(tup, MultiDataset):
-                    length = get_min_length(tup._dataset_tuples)
+                    length = _get_min_length(tup._dataset_tuples)
                 else:
                     length = len(tup[0])
                 if length < min_length:
                     min_length = length
             return min_length
 
-        return get_min_length(self._dataset_tuples)
+        return _get_min_length(self._dataset_tuples)
 
     def __getitem__(self, idx):
         """

@@ -89,15 +89,15 @@ def rationed_split(df, train_ratio, test_ratio, validation_ratio):
     Returns:
         indices: tuple of list of indices.
     """
-    N = len(df.index)
+    n = len(df.index)
     perm = np.random.permutation(df.index)
-    train_len = int(round(train_ratio * N))
+    train_len = int(round(train_ratio * n))
 
     # Due to possible rounding problems
     if not validation_ratio:
-        test_len = N - train_len
+        test_len = n - train_len
     else:
-        test_len = int(round(test_ratio * N))
+        test_len = int(round(test_ratio * n))
 
     indices = (perm[:train_len],  # Train
                perm[train_len:train_len + test_len],  # Test
@@ -112,9 +112,8 @@ def stitch_datasets(df_main=None, merge_on_columns=None,
     Function to produce a single dataset from multiple.
 
     Parameters:
-        df_dict : dictionary of dataframes to concatenated
-            dictionary {key = df name: value = dataframe} of dataframes to
-            stitch together.
+        df_main: dataframe
+            optional primary dataframe to merge onto
         merge_on_columns : list of strings
             key(s) that specifies which columns to use to uniquely stitch
             dataset (default None)
@@ -142,7 +141,8 @@ def stitch_datasets(df_main=None, merge_on_columns=None,
                                     'C': ['C4', 'C5', 'C6', 'C7'],
                                     'D': ['D4', 'D5', 'D6', 'D7']},
                                     index=[4, 5, 6, 7])}
-    >>> df_stitched = stitch_datasets(merge_on_columns=['A'], index_list=['A'], df1=df_test_one, df2=df_test_two)
+    >>> df_stitched = stitch_datasets(merge_on_columns=['A'], index_list=['A'],
+     df1=df_test_one, df2=df_test_two)
 
     """
     # Get name of a dataframe to extract
@@ -162,23 +162,22 @@ def stitch_datasets(df_main=None, merge_on_columns=None,
         # Group by keys, forward fill and backward fill missing data
         # then remove duplicate keys
         merged_df = merged_df.apply(pd.to_numeric, errors='ignore')
-        df_groupOn = merged_df.reset_index(drop=True).\
+        df_group_on = merged_df.reset_index(drop=True).\
             groupby(merge_on_columns).apply(lambda x: x.bfill().ffill())
         logger.info("\tDropping duplicates")
 
-        #Drop rows where there are duplicates for the merged_on_columns.
+        # Drop rows where there are duplicates for the merged_on_columns.
         # We first need to dropna based on merged since drop_duplicates
         # ignores null/na values.
-        df_groupOn = df_groupOn.dropna(subset=merge_on_columns, how='all')
-        df_groupOn = df_groupOn.drop_duplicates(subset=merge_on_columns,
-                                                keep='first', inplace=False)
-        merged_df = df_groupOn
+        df_group_on = df_group_on.dropna(subset=merge_on_columns, how='all')
+        df_group_on = df_group_on.drop_duplicates(subset=merge_on_columns,
+                                                  keep='first', inplace=False)
+        merged_df = df_group_on
 
     if index_list is not None:
         merged_df = merged_df.set_index(index_list, inplace=False)
 
     logger.info("\nMerge Total columns = {totalCols}, rows = {totalRows} "
-        .format(
-        totalCols=len(list(merged_df)),
-        totalRows=len(merged_df)))
+                .format(totalCols=len(list(merged_df)),
+                        totalRows=len(merged_df)))
     return merged_df
