@@ -20,6 +20,5 @@ __all__ = [
     'tabular_data_utils.py',
     'utils',
     'FashionData',
-    'TabularDataset',
     'MultiDataset'
 ]

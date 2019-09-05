@@ -1,5 +1,4 @@
 from torch.utils.data import DataLoader, Subset, TensorDataset
-from vulcanai.datasets import TabularDataset
 from vulcanai.models import ConvNet, DenseNet
 import sys
 sys.path.append('.')
