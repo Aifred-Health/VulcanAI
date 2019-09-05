@@ -3,9 +3,9 @@ import pytest
 
 import torch
 from torch.utils.data import TensorDataset
-
 from vulcanai.datasets import MultiDataset
 from vulcanai.models import ConvNet, DenseNet
+from torch.utils.data import DataLoader, Subset
 
 
 @pytest.fixture(scope="module")
@@ -317,3 +317,26 @@ def multi_input_cnn_data(conv2D_net, conv3D_net, multi_input_dnn_data):
         (TensorDataset(torch.rand(size=[10, *conv3D_net.in_dim])), True, False),
         multi_input_dnn_data
     ])
+
+
+@pytest.fixture(scope="module")
+def dnn_class_multi_value():
+    """DenseNet with prediction layer and mulitple classes."""
+    return DenseNet(
+        name='dnn_class',
+        in_dim=(12),
+        config={
+            'dense_units': [100, 50],
+            'dropout': 0.5,
+        },
+        num_classes=3
+    )
+
+
+@pytest.fixture(scope="module")
+def sensitivity_data_loader():
+    torch.manual_seed(7)
+    test_input = torch.rand(size=[5, 12])
+    test_dataloader = DataLoader(TensorDataset(test_input, torch.tensor(
+        [0, 1, 2, 0, 1])))
+    return test_dataloader

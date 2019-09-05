@@ -6,6 +6,8 @@ import torch
 from vulcanai.models.metrics import Metrics
 from vulcanai.models.cnn import ConvNet
 from torch.utils.data import TensorDataset, DataLoader
+import pandas as pd
+import os
 
 
 # noinspection PyProtectedMember
@@ -330,3 +332,51 @@ class TestMetrics:
                             'macro_npv', 'macro_f1', 'macro_auc']
 
         assert all(k in res_dict for k in required_metrics)
+
+    def test_cross_validate_outputs_stratified(self, metrics, cnn_class):
+        """Tests that the cross-validate outputs are in the correct form."""
+        num_items = 300
+        test_input = torch.Tensor(np.random.randint(0, 10,
+                                                    size=(num_items,
+                                                          *cnn_class.in_dim)))
+        test_target = torch.LongTensor(np.random.randint(0, 10,
+                                                         size=num_items))
+        test_dataloader = DataLoader(TensorDataset(test_input, test_target))
+
+        k = 2
+        epochs = 2
+
+        averaged_results = metrics.cross_validate(
+            cnn_class, test_dataloader, k, epochs,
+            average_results=True, stratified=True)
+        all_results = metrics.cross_validate(
+            cnn_class, test_dataloader, k, epochs,
+            average_results=False)
+
+        for k in averaged_results:
+            assert isinstance(averaged_results[k], float)
+
+        for k in all_results:
+            assert isinstance(all_results[k], list)
+
+    def test_stratified_split(self, metrics, cnn_class):
+        """Tests that the stratified split function returns a reasonable number
+        of datasets"""
+        num_items = 300
+        test_input = torch.Tensor(np.random.randint(0, 10,
+                                                    size=(num_items,
+                                                          10)))
+
+        # stratified does not work for complex multi-dimensional data
+        test_target = torch.LongTensor(np.random.randint(0, 10,
+                                                         size=num_items))
+        test_dataset = TensorDataset(test_input, test_target)
+
+        k = 3
+
+        res_target = metrics.stratified_split(test_dataset, k)
+
+        rest_index = metrics.stratified_split(test_dataset, k, 2)
+
+        assert len(res_target) == k
+        assert len(rest_index) == k

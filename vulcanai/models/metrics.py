@@ -6,6 +6,7 @@ from torch.utils import data
 import math
 import numpy as np
 from sklearn import metrics as skl_metrics
+import pandas as pd
 
 from .utils import round_list, _get_probs, _filter_matched_subj
 from ..plotters.visualization import display_confusion_matrix
@@ -13,6 +14,10 @@ from collections import defaultdict
 
 import copy
 import inspect
+
+import pandas as pd
+
+from torch.utils.data import Dataset, DataLoader
 
 import logging
 logger = logging.getLogger(__name__)
@@ -801,13 +806,12 @@ class Metrics(object):
 
         tot_num_imprv = float(len(ls_imprv_scores))
         score_below_zero = sum(val <= 0.0 for val in ls_imprv_scores)
-        # calculate p value based on change of not improving 
+        # calculate p value based on change of not improving
         p_val = float(score_below_zero)/float(tot_num_imprv)
         logger.info("Improvement scores: {}"
                     .format(', '.join(map(str, ls_imprv_scores))))
         logger.info("P value for bootfold p estimate: %f.", p_val)
 
-    @staticmethod
     def _boot_cv(network, data_loader, k, epochs, retain_graph, valid_interv,
                  save_path, plot, index_to_iter, ls_feat_vals):
         """
@@ -904,10 +908,58 @@ class Metrics(object):
                 prematurely.***\n\n")
 
     @staticmethod
+    def stratified_split(dataset, k, strata_column="class_label"):
+        """ Split data into k subsets evenly over the given strata_column
+        Does not work for greater than 2-D data.
+
+        Parameters:
+            dataset : data.dataset
+                The dataset to be split.
+            k : int
+                The number of folds to split the training into.
+            strata_column: string or int
+                Either "class_label" or integer index of column.
+                Default "class_label"
+
+        Returns:
+            split_datasets : list
+            A list of dataset objects split into k parts.
+
+        """
+
+        # the target column exists in the second tensor
+        # and the training data in the first tensor.
+        if strata_column == "class_label":
+            sr = pd.Series(dataset.tensors[1].numpy())
+        else:
+            # just let it fail if it doesn't work
+            # does not work for complex multidimensional data
+            sr = pd.Series(dataset.tensors[0][strata_column].numpy())
+
+        ls = [[] for i in range(k)]
+
+        grps = sr.groupby(by=sr)
+
+        for key, grp in grps:
+            inds = np.array(grp.index)
+            np.random.shuffle(inds)
+            chunks = np.array_split(inds, k)
+            # also shuffle which chunks get less items.
+            np.random.shuffle(chunks)
+            for i in range(k):
+                ls[i].extend(chunks[i])
+
+        datasets = [data.Subset(dataset, l) for l in ls]
+
+        return datasets
+
+    @staticmethod
     def cross_validate(network, data_loader, k, epochs,
                        average_results=True, retain_graph=None,
                        valid_interv=4, plot=False, save_path=None,
                        transform_callable=None,
+                       stratified=False,
+                       strata_column="class_label",
                        **kwargs):
         """
         Perform k-fold cross validation given a Network and DataLoader object.
@@ -935,6 +987,11 @@ class Metrics(object):
                 Where to save all figures and results.
             transform_callable: callable
                 A torch function. e.g. torch.round()
+            stratified: bool
+                Whether to stratify the dataset. Default false.
+            strata_column: string or int
+                Either "class_label" or integer index of column.
+                Default "class_label"
             kwargs: dict of keyworded parameters
                 Values passed to transform callable (function parameters)
 
@@ -960,9 +1017,12 @@ class Metrics(object):
         else:
             fold_seq.append(fold_len+rem)  # last one is the longest if unequal
 
-        dataset_splits = data.random_split(data_loader.dataset,
-                                           fold_seq)
-
+        if stratified:
+            dataset_splits = Metrics.stratified_split(data_loader.dataset,
+                                                      k, strata_column)
+        else:
+            dataset_splits = data.random_split(data_loader.dataset,
+                                               fold_seq)
         batch_size = data_loader.batch_size
 
         # #TODO: improve the copying of parameters
@@ -1022,4 +1082,100 @@ class Metrics(object):
         else:
             logger.info(all_results)
             return all_results
+
+    @staticmethod
+    def conduct_sensitivity_analysis(network, data_loader, filename,
+                                     features=None, cutoff=20):
+        """
+        Will conduct tests to figure out directionality of features by finding all the unique feature values present in
+        the dataset and setting the feature for all examples to every unique value of that feature.
+
+        Parameters
+        ----------
+            network : BaseNetwork
+                Network descendant of BaseNetwork.
+            data_loader : DataLoader
+                A DataLoader object which contains all the data
+            filename: string
+                The name of the file to save the test results to
+            features: list
+                Feature names ordered as the data in the data_loader
+            cutoff: int
+                Maximum number of unique feature values for a particular
+                feature that will be tested
+
+        Returns
+        -------
+        dataframe characterizing the number of examples classified in the
+        different classes when altering the input to constant feature values
+        """
+
+        if network._num_classes is None or network._num_classes == 0:
+            raise ValueError('There\'s no classification layer')
+
+        if features is None:
+            features = [i for i in range(data_loader.dataset[:][0].shape[1])]
+
+        test_df = None
+        col_headers = None
+
+        for feature_idx in range(len(features)):
+            feature_val_list = data_loader.dataset[:][0][
+                               :, feature_idx].tolist()
+
+            unique_feature_values = list(set(feature_val_list))
+
+            if len(unique_feature_values) > cutoff:
+                logger.info("================================")
+                logger.info("Cutting off number of features to be tested for "
+                            "feature {} from {} to {}".format(
+                    features[feature_idx], len(unique_feature_values), cutoff))
+                logger.info("================================")
+
+                # unique_feature_values are sorted, this next line
+                # pulls cutoff num of features evenly spaced from the list of
+                # unique features since the list contains more unique features
+                # than the cutoff
+                unique_feature_values = unique_feature_values[0::math.ceil(
+                        len(unique_feature_values) / cutoff)]
+            data_loader_temp = copy.deepcopy(data_loader)
+            for unique_feature_idx in range(len(unique_feature_values)):
+                data_loader_temp.dataset[:][0][:, feature_idx] = \
+                    unique_feature_values[unique_feature_idx]
+                logger.info("Testing value {} for feature {}".format(
+                    unique_feature_values[unique_feature_idx],
+                    features[feature_idx]))
+
+                targets = data_loader.dataset[:][1].tolist()
+
+                raw_predictions = network.forward_pass(
+                    data_loader=data_loader_temp)
+
+                predictions = Metrics.transform_outputs(raw_predictions)
+
+                tp, _, fp, _ = Metrics.get_confusion_matrix_values(targets,
+                                                                   predictions)
+
+                # print(raw_predictions)
+                # print(predictions)
+
+                if test_df is None and col_headers is None:
+                    col_headers = ["Feature", "Value"]
+                    for i in range(network._num_classes):
+                        col_headers.append("Number of examples classified as "
+                                           "class " + str(i))
+                    test_df = pd.DataFrame(columns=col_headers)
+
+                row_to_append = [features[feature_idx],
+                                 unique_feature_values[unique_feature_idx]]
+
+                row_to_append = row_to_append + [tp_i + fp_i for (tp_i, fp_i)
+                                                 in zip(tp, fp)]
+
+                df = pd.DataFrame(np.array(row_to_append).reshape(1, -1),
+                                  columns=col_headers)
+                test_df = test_df.append(df)
+            logger.info("***************************")
+        test_df.to_csv("{}.csv".format(filename), index=False)
+        return test_df
 
