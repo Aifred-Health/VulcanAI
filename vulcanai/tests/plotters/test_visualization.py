@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data import TensorDataset, DataLoader
-from vulcanai.datasets import tabulardataset
+from vulcanai.datasets import tabular_data_utils
 import os
 from copy import deepcopy
 

@@ -108,7 +108,7 @@ class BaseNetwork(nn.Module):
             self.input_networks = input_networks
 
         self._set_final_layer_parameters(pred_activation=pred_activation,
-                                         criter_spec=criter_spec)
+                                        criter_spec=criter_spec)
 
         self.num_classes = num_classes
 
@@ -157,6 +157,9 @@ class BaseNetwork(nn.Module):
 
         self.save_path = save_path
 
+        # the network is in evaluation mode by default
+        self.eval()
+
     def _add_input_network(self, in_network):
         """
         Add a new network to  an input for this network.
@@ -184,7 +187,6 @@ class BaseNetwork(nn.Module):
     def _set_final_layer_parameters(self, pred_activation, criter_spec):
         """
         Sets and checks the parameters used in the final output layer.
-
         Final transform is needed in forward pass in the case of
         nn.CrossEntropyLoss as this class combines nn.NLLLoss and softmax,
         meaning the outputs are not softmax transformed.
@@ -197,15 +199,14 @@ class BaseNetwork(nn.Module):
 
         """
         self._final_transform = None
-
         if isinstance(criter_spec, nn.CrossEntropyLoss):
             if pred_activation:
                 raise ValueError("The nn.CrossEntropyLoss class combines  \
-                            nn.NLLLoss and softmax for improved efficiency, \
-                            you cannot set pred_activation when \
-                            criter_spec is set to an instance of this class. \
-                            Set pred_activation to none or change criter_spec."
-                                 )
+                        nn.NLLLoss and softmax for improved efficiency, \
+                        you cannot set pred_activation when \
+                        criter_spec is set to an instance of this class. \
+                        Set pred_activation to none or change criter_spec."
+                )
             self._final_transform = nn.Softmax(dim=1)
 
     @abc.abstractmethod
@@ -738,7 +739,9 @@ class BaseNetwork(nn.Module):
                 Returns the train loss and accuracy.
 
         """
-        self.train()  # Set model to training mode
+        # Set model to training mode
+        # Done here because the default is evaluation
+        self.train()
 
         train_loss_accumulator = 0.0
         train_accuracy_accumulator = 0.0
@@ -784,6 +787,10 @@ class BaseNetwork(nn.Module):
         train_accuracy = train_accuracy_accumulator * \
             train_loader.batch_size / len(train_loader.dataset)
 
+        # returns the network to evaluation state
+        # done here because the default is evaluation
+        self.eval()
+
         return train_loss, train_accuracy
 
     @torch.no_grad()
@@ -800,7 +807,6 @@ class BaseNetwork(nn.Module):
                 Returns the validation loss and accuracy
 
         """
-        self.eval()  # Set model to evaluate mode
 
         val_loss_accumulator = 0.0
         val_accuracy_accumulator = 0.0
@@ -1001,6 +1007,9 @@ class BaseNetwork(nn.Module):
         If not, the input is passed through the network and
         returned without passing through a classification layer.
 
+        If nn.CrossEntropyLoss is used, the values will not have been passed
+        though a softmax function and this therefore must be done manually.
+
         Parameters:
             inputs : list(torch.Tensor)
                 The inputs to pass throught the network.
@@ -1035,22 +1044,27 @@ class BaseNetwork(nn.Module):
 
     # noinspection PyUnusedLocal
     @torch.no_grad()
-    def forward_pass(self, data_loader,
-                     transform_callable=None, **kwargs):
+    def forward_pass(self, data_loader, transform_callable = None,
+                     **kwargs):
         """
-        Allow the user to pass data through the network.
+        Allows the user to pass data through the network with the autograd
+        engine deactivated. Passes data through a final_transform
+        if it is needed (e.g. if CrossEntropyLoss was used and values are
+        therefore not passed through a final layer softmax).
+        Takes a dataloader as input instead of a single
+        tensor. More efficient than calling forward for inference.
         Parameters:
             data_loader : DataLoader
                 DataLoader object to make the pass with.
             transform_callable: callable
-                A torch function. e.g. torch.round()
+                A torch function. e.g. torch.round() used to transform
+                the outputs before they are passed to some scoring function.
             kwargs: dict of keyworded parameters
                 Values passed to transform callable (function parameters)
         Returns:
             outputs : numpy.ndarray
                 Numpy matrix with the output. Same shape as network out_dim.
         """
-        self.eval()
         # prediction_shape used to aggregate network outputs
         # (e.g. with or without class conversion)
         # so far always a float.

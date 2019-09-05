@@ -13,14 +13,12 @@ Submodules
 """
 
 from .fashion import FashionData
-from .tabulardataset import TabularDataset
 from .multidataset import MultiDataset
 
 __all__ = [
     'fashion',
-    'tabulardataset',
+    'tabular_data_utils.py',
     'utils',
     'FashionData',
-    'TabularDataset',
     'MultiDataset'
 ]
