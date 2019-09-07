@@ -2,6 +2,7 @@
 import pytest
 import numpy as np
 import pandas as pd
+import matplotlib
 import torch
 from torch.utils.data import TensorDataset, DataLoader
 from vulcanai.datasets import tabulardataset
@@ -16,6 +17,8 @@ from vulcanai.plotters.visualization import compute_saliency_map, \
                                             display_receptive_fields, \
                                             display_saliency_overlay, \
                                             display_confusion_matrix
+
+matplotlib.use("TkAgg") if os.environ.get("DISPLAY") else matplotlib.use("Agg")
 
 
 class TestVisualization:
