@@ -7,6 +7,7 @@ from math import sqrt, ceil, floor
 import pickle
 from datetime import datetime
 from vulcanai.plotters.utils import GuidedBackprop, get_notable_indices
+from vulcanai.models.utils import network_summary
 
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
@@ -18,7 +19,6 @@ import seaborn as sns
 
 import itertools
 import logging
-
 from graphviz import Digraph
 import torch
 from torch.autograd import Variable
@@ -521,7 +521,9 @@ def make_dot(var, params=None):
     return dot
 
 
-def plot_architecture(var, file_format, file_name):
-    dot = make_dot(var)
+def plot_architecture(train_loader,model,file_format, file_name):
+    dataiter = iter(train_loader)
+    x,y = dataiter.next()
+    dot = make_dot(model(x),params=dict(list(model.named_parameters())))
     dot.format = file_format
     return dot.render(file_name, view=True)

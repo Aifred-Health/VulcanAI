@@ -5,6 +5,7 @@ from vulcanai.models import ConvNet, DenseNet
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 
+
 normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
                                  std=[x/255.0 for x in [63.0, 62.1, 66.7]])
 
@@ -81,10 +82,12 @@ dense_model = DenseNet(
 dense_model.fit(
     train_loader,
     val_loader,
-    epochs=40,
+    epochs=1,
     plot=True,
     save_path=".",
     valid_interv=1
 )
 dense_model.run_test(val_loader, plot=True, save_path=".")
 dense_model.save_model()
+
+

@@ -1,5 +1,6 @@
 from vulcanai import datasets
 from vulcanai.models import ConvNet, DenseNet
+from vulcanai.plotters import visualization
 import torch
 from torch.utils.data import DataLoader, Subset, TensorDataset
 import numpy as np
