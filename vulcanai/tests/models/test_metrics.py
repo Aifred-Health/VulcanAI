@@ -90,10 +90,10 @@ class TestMetrics:
     def test_extract_class_labels(self, metrics):
         """Correctly represents max likelihood class."""
         test_input = np.array([
-                [0.2, 0.8],
-                [0.7, 0.3],
-                [0.25, 0.75]
-            ])
+            [0.2, 0.8],
+            [0.7, 0.3],
+            [0.25, 0.75]
+        ])
         output = metrics.transform_outputs(test_input)
         assert np.all(output == np.array([1, 0, 1]))
 
@@ -304,7 +304,7 @@ class TestMetrics:
         num_items = 300
 
         test_input = torch.Tensor(np.random.randint(0, 10,
-                                                    size=(num_items,*cnn_class.in_dim)))
+                                                    size=(num_items, *cnn_class.in_dim)))
         test_target = torch.LongTensor(np.random.randint(0, 10,
                                                          size=num_items))
         test_dataloader = DataLoader(TensorDataset(test_input, test_target))
