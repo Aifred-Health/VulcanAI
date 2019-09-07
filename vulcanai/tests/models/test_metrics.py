@@ -1,13 +1,15 @@
 # coding=utf-8
 """Includes TestMetrics which tests the metrics class of vulcanai."""
-import pytest
-import numpy as np
-import torch
-from vulcanai.models.metrics import Metrics
-from vulcanai.models.cnn import ConvNet
-from torch.utils.data import TensorDataset, DataLoader
 import warnings
+
+import numpy as np
+import pytest
 import sklearn.exceptions
+import torch
+from torch.utils.data import TensorDataset, DataLoader
+
+from vulcanai.models.cnn import ConvNet
+from vulcanai.models.metrics import Metrics
 
 
 # noinspection PyProtectedMember
@@ -100,8 +102,11 @@ class TestMetrics:
         warnings.filterwarnings("ignore", category=sklearn.exceptions.UndefinedMetricWarning)
         np.seterr(divide='ignore', invalid='ignore')
         num_items = 300
-        test_input = torch.Tensor(np.random.randint(0, 10,size=(num_items, *cnn_class.in_dim)))
-        test_target = torch.LongTensor(np.random.randint(0, 10,size=num_items))
+        test_input = torch.Tensor(np.random.randint(0, 10,
+                                                    size=(num_items,
+                                                          *cnn_class.in_dim)))
+        test_target = torch.LongTensor(np.random.randint(0, 10,
+                                                         size=num_items))
         test_dataloader = DataLoader(TensorDataset(test_input, test_target))
 
         k = 2
@@ -278,7 +283,8 @@ class TestMetrics:
     def test_get_auc(self, metrics):
         """Test that auc returns values as expected."""
         num_items = 300
-        test_target = torch.LongTensor(np.random.randint(0, 10,size=num_items))
+        test_target = torch.LongTensor(np.random.randint(0, 10,
+                                                         size=num_items))
 
         raw_predictions = np.random.randint(0, 10, size=(300, 10))
 
@@ -297,8 +303,10 @@ class TestMetrics:
         warnings.filterwarnings("ignore", category=sklearn.exceptions.UndefinedMetricWarning)
         num_items = 300
 
-        test_input = torch.Tensor(np.random.randint(0, 10,size=(num_items,*cnn_class.in_dim)))
-        test_target = torch.LongTensor(np.random.randint(0, 10,size=num_items))
+        test_input = torch.Tensor(np.random.randint(0, 10,
+                                                    size=(num_items,*cnn_class.in_dim)))
+        test_target = torch.LongTensor(np.random.randint(0, 10,
+                                                         size=num_items))
         test_dataloader = DataLoader(TensorDataset(test_input, test_target))
 
         res_dict = metrics.run_test(cnn_class, test_dataloader)
@@ -313,8 +321,11 @@ class TestMetrics:
         """Test that run_test returns values as expected."""
         num_items = 300
 
-        test_input = torch.Tensor(np.random.randint(0, 2,size=(num_items,*cnn_class_binary.in_dim)))
-        test_target = torch.LongTensor(np.random.randint(0, 2,size=num_items))
+        test_input = torch.Tensor(np.random.randint(0, 2,
+                                                    size=(num_items,
+                                                          *cnn_class_binary.in_dim)))
+        test_target = torch.LongTensor(np.random.randint(0, 2,
+                                                         size=num_items))
 
         test_dataloader = DataLoader(TensorDataset(test_input, test_target))
 

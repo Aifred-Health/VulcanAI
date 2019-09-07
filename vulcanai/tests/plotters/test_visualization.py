@@ -7,7 +7,6 @@ from torch.utils.data import TensorDataset, DataLoader
 from vulcanai.datasets import tabulardataset
 import os
 from copy import deepcopy
-import warnings
 import matplotlib
 matplotlib.use("TkAgg") if os.environ.get("DISPLAY") else matplotlib.use("Agg")
 
@@ -170,7 +169,6 @@ class TestVisualization:
 
     def test_display_tsne(self, dnn_class):
         """Test t-SNE displays and saves."""
-        warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
         curr_path = str(os.path.dirname(__file__)) + '/'
         digits = load_digits()
         display_tsne(
