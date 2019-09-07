@@ -11,3 +11,5 @@ seaborn>=0.9.0
 torch>=1.0.0
 torchvision>=0.2.1
 pytest>=3.8.0
+torchviz>=0.0.1
+graphviz>=2.40.1
