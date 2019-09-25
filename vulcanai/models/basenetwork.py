@@ -110,6 +110,11 @@ class BaseNetwork(nn.Module):
         self._set_final_layer_parameters(pred_activation=pred_activation,
                                          criter_spec=criter_spec)
 
+
+
+
+
+
         self.num_classes = num_classes
 
         self._lr_scheduler = lr_scheduler
