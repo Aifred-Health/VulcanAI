@@ -28,6 +28,7 @@ warnings.filterwarnings("ignore")
 
 sns.set(style='dark')
 logger = logging.getLogger(__name__)
+logger.addHandler(logging.StreamHandler())
 
 
 # Because pytorch causes a bunch of unresolved references
@@ -651,9 +652,11 @@ class BaseNetwork(nn.Module):
                 else:
                     save_path = save_path + '/' + self.name + '_'
                 save_path = get_save_path(save_path, vis_type='train')
-            iterator = trange(epochs, desc='Epoch: ')
+            # iterator = trange(epochs, desc='Epoch: ')
 
-            for epoch in iterator:
+            for epoch in range(epochs):
+
+                logger.info('\n -------- Epoch: {}  --------\n'.format(epoch))
 
                 train_loss, train_acc = self._train_epoch(train_loader,
                                                           retain_graph)
@@ -687,7 +690,7 @@ class BaseNetwork(nn.Module):
                         self.__dict__.update(self.load_model(
                             early_stopping.save_path).__dict__)
                         # for tqdm
-                        iterator.close()
+                        # iterator.close()
                         break
 
                 # reset from None so that a distinction can be made
@@ -697,15 +700,26 @@ class BaseNetwork(nn.Module):
                 if not valid_acc:
                     valid_acc = np.nan
 
-                tqdm.write(
-                    "\n Epoch {}:\n"
-                    "Train Loss: {:.6f} | Val Loss: {:.6f} |"
-                    "Train Acc: {:.4f} | Val Acc: {:.4f}".format(
-                        self.epoch,
-                        train_loss,
-                        valid_loss,
-                        train_acc,
-                        valid_acc))
+
+                if epoch % valid_interv == 0:
+                    tqdm.write(
+                        "\nEpoch {} Summary:\n"
+                        "Train Loss: {:.6f} | Val Loss: {:.6f} |"
+                        "Train Acc: {:.4f} | Val Acc: {:.4f} \n".format(
+                            self.epoch,
+                            train_loss,
+                            valid_loss,
+                            train_acc,
+                            valid_acc))
+
+                else:
+                    tqdm.write(
+                        "\nEpoch {} Summary:\n"
+                        "Train Loss: {:.6f} | Train Acc: {:.4f} \n".format(
+                            self.epoch,
+                            train_loss,
+                            train_acc))
+
 
                 self.record['epoch'].append(self.epoch)
                 self.record['train_error'].append(train_loss)
@@ -723,8 +737,8 @@ class BaseNetwork(nn.Module):
 
         except KeyboardInterrupt:
             logger.warning(
-                "\n\n**********KeyboardInterrupt: "
-                "Training stopped prematurely.**********\n\n")
+                "\n\n**********  KeyboardInterrupt: "
+                "Training stopped prematurely.  **********\n\n")
 
     def _train_epoch(self, train_loader, retain_graph):
         """
