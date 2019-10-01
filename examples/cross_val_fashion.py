@@ -1,4 +1,4 @@
-"""Simple Convolution and fully connected blocks example."""
+"""Simple Convolution and fully connected blocks cross validation example."""
 from vulcanai import datasets
 from vulcanai.models import ConvNet, DenseNet
 from vulcanai.models.metrics import Metrics
@@ -6,6 +6,7 @@ from vulcanai.models.metrics import Metrics
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 
+# prepare the data
 normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
                                  std=[x/255.0 for x in [63.0, 62.1, 66.7]])
 
@@ -26,6 +27,8 @@ data_loader = DataLoader(dataset=dataset,
                           shuffle=True)
 
 
+
+# define neural network - 3 2D conv layers followed by a dense layer
 conv_2D_config = {
     'conv_units': [
                     dict(
@@ -72,6 +75,7 @@ dense_model = DenseNet(
 )
 
 
+# cross validate on 5 folds training each fold for 2 epochs
 m = Metrics()
 
 m.cross_validate(dense_model, data_loader, 5, 2)
