@@ -736,7 +736,7 @@ class Metrics(object):
     # noinspection PyUnusedLocal
     @staticmethod
     def bootfold_p_estimate(network, data_loader, n_samples, k, epochs,
-                            index_to_iter, base_target_rate, ls_feat_vals, retain_graph=None,
+                            index_to_iter, ls_feat_vals, retain_graph=None,
                             valid_interv=4, plot=False,
                             save_path=None, **kwargs):
         """
@@ -778,6 +778,7 @@ class Metrics(object):
             p_value : float
         """
         ls_imprv_scores = []
+
         rand_sample = data.RandomSampler(data_loader.dataset, replacement=True)
         data_loader_args = inspect.signature(data.DataLoader.__init__)
         new_params = {}
@@ -805,26 +806,11 @@ class Metrics(object):
 
         tot_num_imprv = float(len(ls_imprv_scores))
         score_below_zero = sum(val <= 0.0 for val in ls_imprv_scores)
-        # calculate confidence interval based on the improvement scores and base rate
-
-        z = 1.96
-        n = n_samples
-
-        np_imprv_scores = np.array(ls_imprv_scores)
-
-        pop_stdev = np.std(((np_imprv_scores)*base_target_rate) - base_target_rate)
-        boot_samp_mean = (base_target_rate * np_imprv_scores.mean()) - base_target_rate
-        boot_samp_mean = round(boot_samp_mean, 2)
-
-        moe = z * (pop_stdev/np.sqrt(n))
-
-        # Calculate p value based on change of not improving
+        # calculate p value based on change of not improving
         p_val = float(score_below_zero)/float(tot_num_imprv)
         logger.info("Improvement scores: {}"
                     .format(', '.join(map(str, ls_imprv_scores))))
         logger.info("P value for bootfold p estimate: %f.", p_val)
-
-        return p_val, boot_samp_mean, moe
 
     def _boot_cv(network, data_loader, k, epochs, retain_graph, valid_interv,
                  save_path, plot, index_to_iter, ls_feat_vals):

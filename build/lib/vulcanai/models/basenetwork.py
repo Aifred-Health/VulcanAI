@@ -889,7 +889,7 @@ class BaseNetwork(nn.Module):
     # cross_validate
 
     def bootfold_p_estimate(self, data_loader, n_samples, k, epochs,
-                            index_to_iter, base_target_rate, ls_feat_vals, retain_graph=None,
+                            index_to_iter, ls_feat_vals, retain_graph=None,
                             valid_interv=4, plot=False, save_path=None,
                             p_output_path=None, **kwargs):
         """
@@ -913,8 +913,6 @@ class BaseNetwork(nn.Module):
             index_to_iter : string
                 Index of feature within data_loader who's values will be
                 iterated to assess difference.
-            base_target_rate : float
-                Base percentage rate of the positive value for the target
             ls_feat_vals : list
                 List of values for feature provided in feat_to_iter
             retain_graph: boolean
@@ -939,7 +937,6 @@ class BaseNetwork(nn.Module):
             k=k,
             epochs=epochs,
             index_to_iter=index_to_iter,
-            base_target_rate=base_target_rate,
             ls_feat_vals=ls_feat_vals,
             retain_graph=retain_graph,
             valid_interv=valid_interv,
