@@ -37,6 +37,7 @@ def _one_hot_probs(network, loader, index_to_iter, ls_feats_vals, dct_scores):
         # Iterate through other possible values and find probability of
         # positive label and add to dictionary
         # for current index.
+        import pdb; pdb.set_trace()
         for ind in index_to_iter:
             if curr_ind != loader.dataset[index][0][ind].item():
                 loader.dataset[index][0][ind] = ls_feats_vals[0]
@@ -51,6 +52,9 @@ def _one_hot_probs(network, loader, index_to_iter, ls_feats_vals, dct_scores):
                 subj_prob = subj_prob[0][1] * 100
                 subj_prob = round(subj_prob, 2)
                 dct_scores[index][ind] = subj_prob
+                import pdb; pdb.set_trace()
+                loader.dataset[index][0][ind] = 0
+
     return dct_scores
 
 def _single_ind_probs(network, loader, index_to_iter, ls_feats_vals, dct_scores):
