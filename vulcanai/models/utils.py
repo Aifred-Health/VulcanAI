@@ -32,15 +32,15 @@ def _one_hot_probs(network, loader, index_to_iter, ls_feats_vals, dct_scores):
         # For multi-index (i.e. one_hot_encoded)
         curr_ind = index_to_iter[(loader.dataset[index][0][index_to_iter] == 1.).nonzero()[0][0].item()]
         dct_scores[index][curr_ind] = subj_prob
-        loader.dataset[index][0][curr_ind] = 0
 
+        loader.dataset[index][0][curr_ind] = 0
         # Iterate through other possible values and find probability of
         # positive label and add to dictionary
         # for current index.
-        import pdb; pdb.set_trace()
         for ind in index_to_iter:
-            if curr_ind != loader.dataset[index][0][ind].item():
+            if curr_ind != ind:#loader.dataset[index][0][ind].item():
                 loader.dataset[index][0][ind] = ls_feats_vals[0]
+
                 input_loader = DataLoader(TensorDataset(loader
                                                         .dataset[index][0]
                                                         .unsqueeze(0),
@@ -52,8 +52,8 @@ def _one_hot_probs(network, loader, index_to_iter, ls_feats_vals, dct_scores):
                 subj_prob = subj_prob[0][1] * 100
                 subj_prob = round(subj_prob, 2)
                 dct_scores[index][ind] = subj_prob
-                import pdb; pdb.set_trace()
                 loader.dataset[index][0][ind] = 0
+        loader.dataset[index][0][curr_ind] = 1
 
     return dct_scores
 
