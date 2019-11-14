@@ -32,7 +32,6 @@ def _one_hot_probs(network, loader, index_to_iter, ls_feats_vals, dct_scores):
         # For multi-index (i.e. one_hot_encoded)
         curr_ind = index_to_iter[(loader.dataset[index][0][index_to_iter] == 1.).nonzero()[0][0].item()]
         dct_scores[index][curr_ind] = subj_prob
-
         loader.dataset[index][0][curr_ind] = 0
         # Iterate through other possible values and find probability of
         # positive label and add to dictionary
