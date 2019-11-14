@@ -738,7 +738,7 @@ class Metrics(object):
     def bootfold_p_estimate(network, data_loader, n_samples, k, epochs,
                             index_to_iter, base_target_rate, ls_feat_vals, retain_graph=None,
                             valid_interv=4, plot=False,
-                            save_path=None, **kwargs):
+                            save_path=None, one_hot=False, **kwargs):
         """
         Performs bootfold - estimation to identify whether training model
         provides statistically significant
@@ -800,11 +800,11 @@ class Metrics(object):
             imprv_score = Metrics._boot_cv(network, dl_sample, k, epochs,
                                            retain_graph, valid_interv, plot,
                                            save_path, index_to_iter,
-                                           ls_feat_vals)
+                                           ls_feat_vals, one_hot)
             ls_imprv_scores.append(imprv_score)
 
         tot_num_imprv = float(len(ls_imprv_scores))
-        score_below_zero = sum(val <= 0.0 for val in ls_imprv_scores)
+        score_below_zero = sum(val <= 1.0 for val in ls_imprv_scores)
         # calculate confidence interval based on the improvement scores and base rate
 
         z = 1.96
@@ -827,7 +827,7 @@ class Metrics(object):
         return p_val, boot_samp_mean, moe
 
     def _boot_cv(network, data_loader, k, epochs, retain_graph, valid_interv,
-                 save_path, plot, index_to_iter, ls_feat_vals):
+                 save_path, plot, index_to_iter, ls_feat_vals, one_hot):
         """
         Perform a custom cross validation for bootstrapped p estimation.
 
@@ -902,9 +902,9 @@ class Metrics(object):
                     retain_graph=retain_graph,
                     valid_interv=valid_interv, plot=plot, save_path=save_path)
                 dct_scores = _get_probs(network, val_loader, index_to_iter,
-                                        ls_feat_vals)
+                                        ls_feat_vals, one_hot)
                 dct_filtered = _filter_matched_subj(dct_scores, val_loader,
-                                                    index_to_iter)
+                                                    index_to_iter, one_hot)
                 for ind in dct_filtered:
                     dct_filtered_subj[ind].append(dct_filtered[ind])
                     ls_filtered_probs.append(dct_filtered[ind])

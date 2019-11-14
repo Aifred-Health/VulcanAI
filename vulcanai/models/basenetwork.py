@@ -891,7 +891,7 @@ class BaseNetwork(nn.Module):
     def bootfold_p_estimate(self, data_loader, n_samples, k, epochs,
                             index_to_iter, base_target_rate, ls_feat_vals, retain_graph=None,
                             valid_interv=4, plot=False, save_path=None,
-                            p_output_path=None, **kwargs):
+                            p_output_path=None, one_hot=False, **kwargs):
         """
         Performs bootfold - estimation to identify whether training model
         provides statistically significant
@@ -946,6 +946,7 @@ class BaseNetwork(nn.Module):
             plot=plot,
             save_path=save_path,
             p_output_path=p_output_path,
+            one_hot=one_hot,
             **kwargs)
 
     def cross_validate(self, data_loader, k, epochs,

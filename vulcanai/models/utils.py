@@ -12,29 +12,7 @@ from sklearn.preprocessing import LabelBinarizer
 from collections import OrderedDict
 from collections import defaultdict
 
-
-def _get_probs(network, loader, index_to_iter, ls_feat_vals):
-    """Returns probability for each object within loader based on output
-    from training neural network
-
-    Parameters:
-        network : vulcan.model
-            training vulcan network
-        loader : torch.dataloader
-            dataloader containing validation set
-        index_to_iter : string
-            feature to iterate through adjusting values
-        ls_feat_vals : list
-            values to iterate through for feature in index_to_iter
-
-    Returns:
-        dct_scores : dictionary
-            dictionary of scores
-    """
-
-    dct_scores = defaultdict()
-    for index in range(len(loader)):
-        dct_scores[index] = {}
+def _one_hot_probs(network, loader, index_to_iter, ls_feats_vals, dct_scores):
     for index in range(len(loader)):
         # Extract specific index from loader and create a DataLoader instance
         # to send to forward_pass
@@ -50,6 +28,47 @@ def _get_probs(network, loader, index_to_iter, ls_feat_vals):
         subj_prob = round(subj_prob, 2)
         # Add probability to scores dictionary where keys are the index
         # and value the probability belongs to.
+
+        # For multi-index (i.e. one_hot_encoded)
+        curr_ind = index_to_iter[(loader.dataset[index][0][index_to_iter] == 1.).nonzero()[0][0].item()]
+        dct_scores[index][curr_ind] = subj_prob
+
+        # Iterate through other possible values and find probability of
+        # positive label and add to dictionary
+        # for current index.
+        for ind in index_to_iter:
+            if curr_ind != loader.dataset[index][0][ind].item():
+                loader.dataset[index][0][ind] = ls_feats_vals[0]
+                input_loader = DataLoader(TensorDataset(loader
+                                                        .dataset[index][0]
+                                                        .unsqueeze(0),
+                                                        loader
+                                                        .dataset[index][1]
+                                                        .unsqueeze(0)))
+                subj_prob = network.forward_pass(data_loader=input_loader,
+                                                 ransform_outputs=False)
+                subj_prob = subj_prob[0][1] * 100
+                subj_prob = round(subj_prob, 2)
+                dct_scores[index][ind] = subj_prob
+    return dct_scores
+
+def _single_ind_probs(network, loader, index_to_iter, ls_feats_vals, dct_scores):
+    for index in range(len(loader)):
+        # Extract specific index from loader and create a DataLoader instance
+        # to send to forward_pass
+        input_loader = DataLoader(TensorDataset(loader.dataset[index][0]
+                                                .unsqueeze(0),
+                                                loader.dataset[index][1]
+                                                .unsqueeze(0)))
+
+        subj_prob = network.forward_pass(data_loader=input_loader,
+                                         transform_outputs=False)
+        # Standardize probability of positive label
+        subj_prob = subj_prob[0][1] * 100
+        subj_prob = round(subj_prob, 2)
+        # Add probability to scores dictionary where keys are the index
+        # and value the probability belongs to.
+
         dct_scores[index][loader.dataset[index][0][index_to_iter].item()] = \
             subj_prob
         # Iterate through other possible values and find probability of
@@ -71,8 +90,39 @@ def _get_probs(network, loader, index_to_iter, ls_feat_vals):
                 dct_scores[index][new_val] = subj_prob
     return dct_scores
 
+def _get_probs(network, loader, index_to_iter, ls_feat_vals, one_hot=False):
+    """Returns probability for each object within loader based on output
+    from training neural network
 
-def _filter_matched_subj(dct_scores, loader, index_to_iter):
+    Parameters:
+        network : vulcan.model
+            training vulcan network
+        loader : torch.dataloader
+            dataloader containing validation set
+        index_to_iter : string
+            feature to iterate through adjusting values
+        ls_feat_vals : list
+            values to iterate through for feature in index_to_iter
+
+    Returns:
+        dct_scores : dictionary
+            dictionary of scores
+    """
+
+    dct_scores = defaultdict()
+    for index in range(len(loader)):
+        dct_scores[index] = {}
+
+    if one_hot:
+        dct_scores = _one_hot_probs(network, loader, index_to_iter, ls_feat_vals, dct_scores)
+    else:
+        dct_scores = _single_ind_probs(network, loader, index_to_iter, ls_feat_vals, dct_scores)
+
+    return dct_scores
+
+
+
+def _filter_matched_subj(dct_scores, loader, index_to_iter, one_hot):
     """
     Returns dictionary of filtered keys based on predicted value and value
     truly assigned in actual set.
@@ -93,9 +143,13 @@ def _filter_matched_subj(dct_scores, loader, index_to_iter):
         highest_prob = max(dct_scores[subj].values())
         highest_val = [val for val, prob in dct_scores[subj].items()
                        if prob == highest_prob]
-        if loader.dataset.dataset[subj][0][index_to_iter].item() \
-                in highest_val:
-            dct_filtered[subj] = highest_prob
+        if one_hot:
+            if index_to_iter[(loader.dataset.dataset[subj][0][index_to_iter] == 1.).nonzero()[0][0].item()] in highest_val:
+                dct_filtered[subj] = highest_prob
+        else:
+            if loader.dataset.dataset[subj][0][index_to_iter].item() in highest_val:
+                dct_filtered[subj] = highest_prob
+
     return dct_filtered
 
 
