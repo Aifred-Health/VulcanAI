@@ -34,7 +34,7 @@ pip install -e vulcanai
 ```
 
 ## Releases
-The current stable release is 1.0.6
+The current stable release is 1.0.8
 
 ## Contributions
 We welcome contributions, particularily to tabular_data_utils, additional processing methods, and to generalized and generalizable network architectures. Please create an issue before embarking on a solution, however, as we may already have something similar in the works!

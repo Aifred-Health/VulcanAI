@@ -16,14 +16,14 @@ with open('requirements.txt') as f:
 
 setup(
     name='vulcanai',
-    version='1.0.7',
+    version='1.0.8',
     description='A high-level framework built on top of Pytorch'
                 ' using added functionality from Scikit-learn to provide '
                 'all of the tools needed for visualizing and processing '
                 'high-dimensional data, modular neural networks, '
                 'and model evaluation',
     author='Robert Fratila, Priyatharsan Rajasekar, Caitrin Armstrong, '
-            'Joseph Mehltretter',
+            'Joseph Mehltretter, Sneha Desai',
     author_email='robertfratila10@gmail.com',
     url='https://github.com/Aifred-Health/Vulcan',
     install_requires=install_requires,
