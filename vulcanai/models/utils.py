@@ -13,7 +13,7 @@ from collections import OrderedDict
 from collections import defaultdict
 
 def _one_hot_probs(network, loader, index_to_iter, ls_feats_vals, dct_scores):
-    for index in range(len(loader)):
+    for index in range(len(loader.dataset)):
         # Extract specific index from loader and create a DataLoader instance
         # to send to forward_pass
         input_loader = DataLoader(TensorDataset(loader.dataset[index][0]
@@ -53,11 +53,10 @@ def _one_hot_probs(network, loader, index_to_iter, ls_feats_vals, dct_scores):
                 dct_scores[index][ind] = subj_prob
                 loader.dataset[index][0][ind] = 0
         loader.dataset[index][0][curr_ind] = 1
-
     return dct_scores
 
 def _single_ind_probs(network, loader, index_to_iter, ls_feats_vals, dct_scores):
-    for index in range(len(loader)):
+    for index in range(len(loader.dataset)):
         # Extract specific index from loader and create a DataLoader instance
         # to send to forward_pass
         input_loader = DataLoader(TensorDataset(loader.dataset[index][0]
@@ -114,7 +113,7 @@ def _get_probs(network, loader, index_to_iter, ls_feat_vals, one_hot=False):
     """
 
     dct_scores = defaultdict()
-    for index in range(len(loader)):
+    for index in range(len(loader.dataset)):
         dct_scores[index] = {}
 
     if one_hot:
