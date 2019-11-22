@@ -901,7 +901,7 @@ class Metrics(object):
                     train_loader, val_loader, epochs,
                     retain_graph=retain_graph,
                     valid_interv=valid_interv, plot=plot, save_path=save_path)
-                dct_scores = _get_probs(network, val_loader, index_to_iter,
+                dct_scores = _get_probs(cross_val_network, val_loader, index_to_iter,
                                         ls_feat_vals, one_hot)
                 dct_filtered = _filter_matched_subj(dct_scores, val_loader,
                                                     index_to_iter, one_hot)
