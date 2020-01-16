@@ -1069,8 +1069,9 @@ class Metrics(object):
         # all the results so far
         except KeyboardInterrupt:
             logger.info(
-                "\n\n***KeyboardInterrupt: Cross validate stopped \
-                prematurely.***\n\n")
+                "\n\n**********  KeyboardInterrupt: Cross validate stopped "
+                "prematurely.  **********\n\n")
+            cross_val_network.save_model()
 
         if average_results:
             averaged_all_results = {}
