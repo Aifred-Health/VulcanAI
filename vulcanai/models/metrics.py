@@ -1174,7 +1174,8 @@ class Metrics(object):
 
                 df = pd.DataFrame(np.array(row_to_append).reshape(1, -1),
                                   columns=col_headers)
-                test_df = test_df.append(df)
+                # test_df = test_df.append(df)
+                test_df = pd.concat([test_df, df])
             logger.info("***************************")
         test_df.to_csv("{}.csv".format(filename), index=False)
         return test_df
