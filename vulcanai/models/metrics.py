@@ -583,7 +583,7 @@ class Metrics(object):
             results : dict
 
         """
-        targets = np.array([v[1] for v in data_loader.dataset])
+        targets = np.array([v[1] for v in data_loader.dataset], dtype=object)
 
         predictions = network.forward_pass(
             data_loader=data_loader,
