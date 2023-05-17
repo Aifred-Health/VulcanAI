@@ -583,7 +583,7 @@ class Metrics(object):
             results : dict
 
         """
-        targets = np.array([v[1] for v in data_loader.dataset])
+        targets = np.array([v[1] for v in data_loader.dataset], dtype=object)
 
         predictions = network.forward_pass(
             data_loader=data_loader,
@@ -1174,7 +1174,8 @@ class Metrics(object):
 
                 df = pd.DataFrame(np.array(row_to_append).reshape(1, -1),
                                   columns=col_headers)
-                test_df = test_df.append(df)
+                # test_df = test_df.append(df)
+                test_df = pd.concat([test_df, df])
             logger.info("***************************")
         test_df.to_csv("{}.csv".format(filename), index=False)
         return test_df

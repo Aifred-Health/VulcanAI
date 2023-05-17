@@ -163,6 +163,7 @@ class DenseNet(BaseNetwork):
         self.network = nn.Sequential(dense_layers)
 
         if self.num_classes:
+            self._num_classes = self.num_classes
             self.network.add_module(
                 'classify', DenseUnit(
                     in_features=self._get_out_dim()[0],
